@@ -1,1 +1,1208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diagnóstico de madurez en Tiempo &amp; Asistencia | Ideas Control</title>
+<meta name="description" content="Descubre en 10 preguntas el nivel de madurez de tu organización en gestión de Tiempo y Asistencia. Diagnóstico gratuito de Ideas Control.">
+<style>
+  :root{
+    --primary:#1B8CA8;
+    --primary-dark:#0F5F74;
+    --primary-light:#57B9CE;
+    --accent:#C9A227;
+    --accent-light:#E4C65A;
+    --success:#1D9A6C;
+    --success-bg:#E7F7F1;
+    --danger:#C0392B;
+    --danger-bg:#FDECEA;
+    --ink:#26313A;
+    --ink-soft:#5B6773;
+    --gray-border:#DDE3E7;
+    --bg:#F5F8F9;
+    --white:#FFFFFF;
+    --radius:14px;
+    --radius-sm:8px;
+    --shadow:0 4px 20px rgba(15,95,116,0.08);
+    --shadow-lg:0 12px 40px rgba(15,95,116,0.14);
+    --max-w:920px;
+    --font: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    font-family:var(--font);
+    color:var(--ink);
+    background:var(--bg);
+    -webkit-font-smoothing:antialiased;
+    line-height:1.55;
+  }
+  img{max-width:100%;display:block;}
+  a{color:var(--primary);}
+  button{font-family:inherit;}
+  h1,h2,h3,h4{margin:0 0 .5em 0;line-height:1.2;font-weight:700;}
+  p{margin:0 0 1em 0;}
+  .visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}
 
+  /* ---------- Header ---------- */
+  .site-header{
+    background:var(--white);
+    border-bottom:1px solid var(--gray-border);
+    position:sticky;top:0;z-index:50;
+  }
+  .site-header .inner{
+    max-width:1100px;margin:0 auto;padding:14px 20px;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand img{height:38px;width:auto;}
+  .header-phone{
+    display:flex;align-items:center;gap:8px;
+    font-weight:600;color:var(--primary-dark);
+    font-size:.95rem;text-decoration:none;
+    padding:8px 14px;border-radius:999px;background:var(--bg);
+    border:1px solid var(--gray-border);
+    white-space:nowrap;
+  }
+  .header-phone:hover{background:#EAF4F6;}
+
+  /* ---------- Layout shell ---------- */
+  #app{max-width:var(--max-w);margin:0 auto;padding:28px 18px 80px;}
+  .stage{animation:fadeIn .35s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  /* ---------- Hero / Presentacion ---------- */
+  .hero{
+    background:linear-gradient(135deg,var(--primary-dark) 0%,var(--primary) 55%,var(--accent) 130%);
+    color:#fff;border-radius:var(--radius);padding:48px 32px;
+    box-shadow:var(--shadow-lg);margin-bottom:28px;position:relative;overflow:hidden;
+  }
+  .hero::after{
+    content:"";position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(circle at 85% 15%, rgba(255,255,255,.18), transparent 55%);
+  }
+  .hero .eyebrow{
+    display:inline-block;text-transform:uppercase;letter-spacing:.08em;font-size:.75rem;
+    font-weight:700;background:rgba(255,255,255,.16);padding:6px 12px;border-radius:999px;margin-bottom:16px;
+  }
+  .hero h1{font-size:clamp(1.6rem,4vw,2.4rem);max-width:620px;position:relative;}
+  .hero p.lead{font-size:1.05rem;max-width:600px;color:rgba(255,255,255,.92);position:relative;}
+  .hero-benefits{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+    gap:14px;margin:26px 0 28px;position:relative;
+  }
+  .hero-benefits .item{
+    background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);
+    border-radius:var(--radius-sm);padding:14px 16px;font-size:.92rem;
+  }
+  .hero-benefits .item strong{display:block;font-size:.95rem;margin-bottom:2px;}
+
+  .card{
+    background:var(--white);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:32px;border:1px solid var(--gray-border);
+  }
+  @media (max-width:600px){.card{padding:22px 18px;} .hero{padding:32px 20px;}}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    border:none;border-radius:999px;padding:14px 30px;font-size:1rem;font-weight:700;
+    cursor:pointer;transition:transform .15s ease, box-shadow .15s ease, background .15s ease, opacity .15s ease;
+    text-decoration:none;
+  }
+  .btn:focus-visible{outline:3px solid var(--accent-light);outline-offset:2px;}
+  .btn-primary{background:var(--primary);color:#fff;box-shadow:0 6px 18px rgba(27,140,168,.35);}
+  .btn-primary:hover:not(:disabled){background:var(--primary-dark);transform:translateY(-1px);}
+  .btn-accent{background:var(--accent);color:#fff;box-shadow:0 6px 18px rgba(201,162,39,.35);}
+  .btn-accent:hover:not(:disabled){background:#AD8A1E;transform:translateY(-1px);}
+  .btn-ghost{background:transparent;color:var(--primary-dark);border:2px solid var(--gray-border);}
+  .btn-ghost:hover:not(:disabled){border-color:var(--primary);}
+  .btn-outline-light{background:transparent;color:#fff;border:2px solid rgba(255,255,255,.6);}
+  .btn-outline-light:hover:not(:disabled){background:rgba(255,255,255,.14);border-color:#fff;}
+  .btn:disabled{opacity:.55;cursor:not-allowed;transform:none;}
+  .btn-block{width:100%;}
+
+  /* ---------- Forms ---------- */
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media (max-width:640px){.form-grid{grid-template-columns:1fr;}}
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{font-size:.86rem;font-weight:600;color:var(--ink-soft);}
+  .field label .req{color:var(--danger);}
+  .field input,.field select{
+    padding:12px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--gray-border);
+    font-size:1rem;color:var(--ink);background:var(--white);font-family:inherit;
+    transition:border-color .15s ease, box-shadow .15s ease;
+  }
+  .field input:focus,.field select:focus{
+    outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(27,140,168,.15);
+  }
+  .field input.invalid,.field select.invalid{border-color:var(--danger);}
+  .field .error-text{font-size:.8rem;color:var(--danger);min-height:1em;}
+  .field-full{grid-column:1/-1;}
+
+  .consent-box{
+    display:flex;gap:12px;align-items:flex-start;background:var(--bg);
+    border:1.5px solid var(--gray-border);border-radius:var(--radius-sm);padding:16px;margin:20px 0;
+  }
+  .consent-box input[type=checkbox]{width:20px;height:20px;flex:0 0 auto;margin-top:2px;accent-color:var(--primary);}
+  .consent-box label{font-size:.94rem;color:var(--ink);}
+  .consent-box a{font-weight:600;}
+
+  /* ---------- Progress ---------- */
+  .progress-wrap{margin-bottom:26px;}
+  .progress-meta{
+    display:flex;justify-content:space-between;align-items:baseline;
+    font-size:.88rem;color:var(--ink-soft);margin-bottom:8px;font-weight:600;
+  }
+  .progress-meta .pct{color:var(--primary-dark);font-weight:700;}
+  .progress-track{height:10px;background:var(--gray-border);border-radius:999px;overflow:hidden;}
+  .progress-fill{
+    height:100%;border-radius:999px;
+    background:linear-gradient(90deg,var(--primary),var(--accent));
+    transition:width .4s ease;
+  }
+
+  /* ---------- Question ---------- */
+  .question-title{font-size:1.25rem;margin-bottom:22px;}
+  .options-list{display:flex;flex-direction:column;gap:12px;}
+  .option-btn{
+    display:flex;align-items:center;gap:14px;text-align:left;width:100%;
+    padding:16px 18px;border-radius:var(--radius-sm);border:1.5px solid var(--gray-border);
+    background:var(--white);cursor:pointer;font-size:1rem;color:var(--ink);
+    transition:border-color .15s ease, background .15s ease, transform .1s ease;
+  }
+  .option-btn:hover:not(:disabled){border-color:var(--primary-light);background:#F5FBFC;}
+  .option-btn:focus-visible{outline:3px solid var(--accent-light);outline-offset:1px;}
+  .option-btn .dot{
+    width:22px;height:22px;border-radius:50%;border:2px solid var(--gray-border);flex:0 0 auto;
+    display:flex;align-items:center;justify-content:center;transition:border-color .15s ease;
+  }
+  .option-btn.selected{border-color:var(--primary);background:#EAF6F9;}
+  .option-btn.selected .dot{border-color:var(--primary);background:var(--primary);}
+  .option-btn.selected .dot::after{content:"";width:10px;height:10px;border-radius:50%;background:#fff;}
+  .option-btn:disabled{cursor:default;}
+  .option-btn.locked-out{opacity:.5;}
+
+  /* ---------- Result ---------- */
+  .result-hero{
+    text-align:center;padding:8px 0 20px;border-bottom:1px solid var(--gray-border);margin-bottom:26px;
+  }
+  .eyebrow-dark{
+    display:inline-block;text-transform:uppercase;letter-spacing:.08em;font-size:.74rem;
+    font-weight:700;color:var(--primary-dark);background:var(--bg);padding:5px 12px;
+    border-radius:999px;margin-bottom:10px;
+  }
+  .result-level{
+    display:inline-block;padding:8px 22px;border-radius:999px;font-weight:700;font-size:1.1rem;
+    background:var(--success-bg);color:var(--success);margin-bottom:14px;
+  }
+  .result-score-row{display:flex;justify-content:center;gap:36px;flex-wrap:wrap;margin-top:10px;}
+  .result-score-row .stat{text-align:center;}
+  .result-score-row .stat .num{font-size:2.1rem;font-weight:800;color:var(--primary-dark);}
+  .result-score-row .stat .lbl{font-size:.82rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}
+  .result-titulo{font-size:1.15rem;color:var(--ink);margin:18px auto 0;max-width:560px;}
+  .interpretation{
+    background:var(--bg);border-left:4px solid var(--primary);border-radius:var(--radius-sm);
+    padding:18px 20px;font-size:1rem;color:var(--ink);margin-bottom:20px;
+  }
+  .interpretation.recommendation{
+    border-left-color:var(--accent);background:#FFFBF0;margin-bottom:28px;
+  }
+  .area-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:8px;}
+  .area-card{border:1.5px solid var(--gray-border);border-radius:var(--radius-sm);padding:18px;}
+  .area-card .area-name{font-weight:700;font-size:1rem;margin-bottom:8px;}
+  .area-level-pill{
+    display:inline-block;font-size:.74rem;font-weight:700;padding:3px 10px;border-radius:999px;
+    background:var(--success-bg);color:var(--success);margin-bottom:10px;
+  }
+  .area-bar-track{height:8px;background:var(--gray-border);border-radius:999px;overflow:hidden;margin-bottom:6px;}
+  .area-bar-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:999px;}
+  .area-card .area-value{font-size:.85rem;color:var(--ink-soft);margin-bottom:10px;}
+  .area-card .area-titulo{font-weight:700;font-size:.92rem;color:var(--primary-dark);margin-bottom:6px;}
+  .area-card .area-text{font-size:.88rem;color:var(--ink);line-height:1.5;margin-bottom:10px;}
+  .area-card .area-recomendacion{
+    background:var(--bg);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:0;
+  }
+  .area-card .area-recomendacion strong{color:var(--primary-dark);}
+  .area-card.weak{border-color:var(--accent);background:#FFFBF0;}
+  .area-card.weak .area-name::after{content:" • área a priorizar";font-weight:500;color:var(--accent);font-size:.78rem;}
+
+  /* ---------- CTA / contacto ---------- */
+  .cta-section{
+    margin-top:34px;padding:32px;border-radius:var(--radius);
+    background:linear-gradient(135deg,var(--primary-dark),var(--primary));
+    color:#fff;text-align:center;
+  }
+  .cta-section h3{font-size:1.35rem;}
+  .cta-section p{color:rgba(255,255,255,.9);max-width:520px;margin:0 auto 22px;}
+  .cta-phone{
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    margin-top:18px;font-size:1.15rem;font-weight:700;color:#fff;text-decoration:none;
+  }
+  .cta-phone svg{width:20px;height:20px;fill:#fff;}
+  .confirmation-box{
+    margin-top:18px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);
+    border-radius:var(--radius-sm);padding:18px;
+  }
+  .confirmation-box .ok-badge{
+    display:inline-flex;align-items:center;gap:8px;font-weight:700;color:#fff;margin-bottom:10px;
+  }
+
+  /* ---------- Status / loading / errors ---------- */
+  .status-banner{
+    display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:var(--radius-sm);
+    font-size:.92rem;margin-bottom:18px;
+  }
+  .status-banner.error{background:var(--danger-bg);color:var(--danger);border:1px solid #F1C6C0;}
+  .status-banner.info{background:var(--bg);color:var(--ink-soft);border:1px solid var(--gray-border);}
+  .spinner{
+    width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(0,0,0,.15);
+    border-top-color:var(--primary);animation:spin .7s linear infinite;flex:0 0 auto;
+  }
+  .cta-section .spinner{border-color:rgba(255,255,255,.3);border-top-color:#fff;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading-overlay{
+    position:fixed;inset:0;background:rgba(38,49,58,.45);backdrop-filter:blur(1px);
+    display:flex;align-items:center;justify-content:center;z-index:200;
+  }
+  .loading-box{
+    background:#fff;padding:22px 28px;border-radius:var(--radius);box-shadow:var(--shadow-lg);
+    display:flex;align-items:center;gap:14px;font-weight:600;color:var(--ink);max-width:320px;
+  }
+  .loading-box .spinner{width:24px;height:24px;border-width:3px;}
+
+  .retry-row{margin-top:10px;}
+
+  /* ---------- Footer ---------- */
+  .site-footer{
+    text-align:center;padding:26px 18px;color:var(--ink-soft);font-size:.82rem;
+  }
+
+  /* small helper */
+  .center{text-align:center;}
+  .mt-24{margin-top:24px;}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="inner">
+    <div class="brand">
+      <img id="brandLogo" src="/ideascontrol/assets/ideascontrol.webp" alt="Ideas Control - Equipos y Soluciones S.A.S.">
+    </div>
+    <a class="header-phone" href="tel:+573213184853" aria-label="Llamar a Ideas Control">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24 11.3 11.3 0 003.54.57 1 1 0 011 1V20a1 1 0 01-1 1C10.4 21 3 13.6 3 4.5a1 1 0 011-1h3.49a1 1 0 011 1c0 1.24.2 2.44.57 3.54a1 1 0 01-.25 1.02l-2.2 2.2z"/></svg>
+      57 321 318 4853
+    </a>
+  </div>
+</header>
+
+<main id="app" aria-live="polite"></main>
+
+<div id="loadingOverlay" class="loading-overlay" style="display:none;" role="status" aria-live="assertive">
+  <div class="loading-box">
+    <div class="spinner"></div>
+    <span id="loadingMsg">Cargando…</span>
+  </div>
+</div>
+
+<footer class="site-footer">
+  Ideas Control Equipos y Soluciones S.A.S. — Diagnóstico de madurez en Tiempo &amp; Asistencia
+</footer>
+
+<script>
+(function(){
+"use strict";
+
+/* =========================================================================
+   CONFIGURACIÓN — NO MODIFICAR (contrato fijo con la API existente)
+   ========================================================================= */
+var API_URL       = "https://script.google.com/macros/s/AKfycbwGt0M2Uk2DiwVphpiPgTutLdjUGhw2N7yvQ6nc9s2IrbxQY1qCDLrAn3-i5WXm3R1u/exec";
+var MICROAPP_ID    = "APP-001";
+var LANDING_ID     = "LANDING-APP001";
+var FUENTE         = "Landing APP-001";
+var PHONE_DISPLAY  = "57 321 318 4853";
+var PHONE_TEL      = "+573213184853";
+var VERSION_POLITICA = "1.0";
+var POLICY_URL     = ""; // Se completará cuando Ideas Control entregue el enlace a la política de tratamiento de datos.
+
+/* =========================================================================
+   ESTADO EN MEMORIA (nunca en localStorage / cookies / URL)
+   ========================================================================= */
+var state = {
+  stage: "PRESENTACION", // PRESENTACION -> REGISTRO -> CONSENTIMIENTO -> CREAR_SESION -> DIAGNOSTICO -> RESULTADO -> CONTACTO -> CONFIRMACION
+  leadId: null,
+  sessionId: null,
+  microappId: MICROAPP_ID,
+  landingId: LANDING_ID,
+  utm: { utm_source: "", utm_medium: "", utm_campaign: "", utm_content: "", utm_term: "" },
+  consentAccepted: false,
+  questions: [],
+  currentIndex: 0,
+  answeredCount: 0,
+  resultado: null,
+  conversionRegistrada: false,
+  busy: false,
+  optionsCache: {} // pregunta_id -> array de opciones ya parseadas (precargadas en segundo plano)
+};
+
+/* =========================================================================
+   UTILIDADES
+   ========================================================================= */
+function $(sel, ctx){ return (ctx||document).querySelector(sel); }
+function el(tag, attrs, children){
+  var node = document.createElement(tag);
+  attrs = attrs || {};
+  Object.keys(attrs).forEach(function(k){
+    if(k === "class") node.className = attrs[k];
+    else if(k === "html") node.innerHTML = attrs[k];
+    else if(k.indexOf("on") === 0 && typeof attrs[k] === "function") node.addEventListener(k.slice(2), attrs[k]);
+    else node.setAttribute(k, attrs[k]);
+  });
+  (children||[]).forEach(function(c){ if(c) node.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+  return node;
+}
+/* Decodifica entidades HTML (&amp; &quot; etc.) por si el texto que entrega la
+   API ya viene HTML-encoded desde su origen (p.ej. una hoja de cálculo). Se usa
+   con .textContent (nunca .innerHTML), por lo que es segura frente a XSS: el
+   textarea temporal nunca ejecuta el contenido, solo lo interpreta como texto plano. */
+function decodeEntities(str){
+  if(str == null) return "";
+  var ta = document.createElement("textarea");
+  ta.innerHTML = String(str);
+  return ta.value;
+}
+function captureUTM(){
+  try{
+    var params = new URLSearchParams(window.location.search);
+    ["utm_source","utm_medium","utm_campaign","utm_content","utm_term"].forEach(function(k){
+      var v = params.get(k);
+      if(v) state.utm[k] = v;
+    });
+  }catch(e){ console.error("Error capturando UTM:", e); }
+}
+function detectDevice(){
+  var ua = navigator.userAgent || "";
+  if(/tablet|ipad/i.test(ua)) return "Tablet";
+  if(/mobi|android|iphone/i.test(ua)) return "Mobile";
+  return "Desktop";
+}
+/* Busca el primer valor definido entre varias posibles llaves (tolerante a
+   variaciones de nombres de campo en la respuesta real de la API). */
+function pick(obj, keys, fallback){
+  if(!obj) return fallback;
+  for(var i=0;i<keys.length;i++){
+    if(obj[keys[i]] !== undefined && obj[keys[i]] !== null && obj[keys[i]] !== "") return obj[keys[i]];
+  }
+  return fallback;
+}
+function extractArray(data, keys){
+  if(Array.isArray(data)) return data;
+  if(!data || typeof data !== "object") return [];
+  for(var i=0;i<keys.length;i++){
+    if(Array.isArray(data[keys[i]])) return data[keys[i]];
+  }
+  return [];
+}
+function isTruthyFlag(v){
+  if(v === undefined || v === null) return true; // si la API no manda el campo, se asume activa/obligatoria
+  if(typeof v === "boolean") return v;
+  if(typeof v === "number") return v !== 0;
+  var s = String(v).trim().toLowerCase();
+  return ["true","1","si","sí","activo","activa","yes"].indexOf(s) !== -1;
+}
+
+/* =========================================================================
+   CAPA DE API — único punto de contacto con Google Apps Script
+   ========================================================================= */
+function apiRequest(method, params){
+  return new Promise(function(resolve, reject){
+    var opts = { method: method };
+    var url = API_URL;
+    if(method === "GET"){
+      var qs = Object.keys(params).map(function(k){
+        return encodeURIComponent(k) + "=" + encodeURIComponent(params[k]);
+      }).join("&");
+      url += (url.indexOf("?") === -1 ? "?" : "&") + qs;
+    } else {
+      // text/plain evita el preflight CORS que Apps Script no siempre maneja bien.
+      opts.headers = { "Content-Type": "text/plain;charset=utf-8" };
+      opts.body = JSON.stringify(params);
+    }
+    fetch(url, opts).then(function(res){
+      return res.text().then(function(text){
+        var data;
+        try{ data = JSON.parse(text); }
+        catch(parseErr){
+          console.error("Respuesta no-JSON de la API para action=" + params.action + ":", text);
+          throw new Error("NON_JSON_RESPONSE");
+        }
+        if(!res.ok){
+          console.error("HTTP " + res.status + " en action=" + params.action, data);
+        }
+        resolve(data);
+      });
+    }).catch(function(err){
+      console.error("Error de red llamando a la API (action=" + params.action + "):", err);
+      reject(err);
+    });
+  });
+}
+
+/* Llamada de alto nivel: gestiona loading global, valida ok:true y homogeniza errores.
+   friendlyMsg: mensaje a mostrar al usuario si falla.
+   loadingMsg: texto del overlay mientras está en curso (si se omite, no bloquea con overlay). */
+function callApi(action, payload, opts){
+  opts = opts || {};
+  var params = Object.assign({ action: action }, payload || {});
+  if(opts.loadingMsg) showLoading(opts.loadingMsg);
+  return apiRequest(opts.method || "POST", params).then(function(data){
+    if(opts.loadingMsg) hideLoading();
+    if(!data || data.ok === false){
+      var apiMsg = data && (data.error || data.message || data.mensaje);
+      console.error("La API respondió ok:false para action=" + action + ":", data);
+      var err = new Error(apiMsg || "API_ERROR");
+      err.friendly = opts.friendlyMsg;
+      err.raw = data;
+      throw err;
+    }
+    return data;
+  }).catch(function(err){
+    if(opts.loadingMsg) hideLoading();
+    if(!err.friendly) err.friendly = opts.friendlyMsg;
+    throw err;
+  });
+}
+
+/* =========================================================================
+   LOADING / OVERLAY
+   ========================================================================= */
+function showLoading(msg){
+  $("#loadingMsg").textContent = msg;
+  $("#loadingOverlay").style.display = "flex";
+}
+function hideLoading(){
+  $("#loadingOverlay").style.display = "none";
+}
+
+/* =========================================================================
+   RENDER HELPERS
+   ========================================================================= */
+var app = document.getElementById("app");
+function renderStage(node){
+  app.innerHTML = "";
+  var wrap = el("div", { class: "stage" }, [node]);
+  app.appendChild(wrap);
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+function statusBanner(type, message){
+  return el("div", { class: "status-banner " + type }, [
+    type === "info" ? el("div", { class: "spinner" }) : null,
+    el("div", {}, [message])
+  ]);
+}
+function errorBannerWithRetry(message, onRetry){
+  var wrap = el("div", {});
+  wrap.appendChild(statusBanner("error", message));
+  var row = el("div", { class: "retry-row" }, [
+    el("button", { class: "btn btn-ghost", onclick: onRetry }, ["Reintentar"])
+  ]);
+  wrap.appendChild(row);
+  return wrap;
+}
+
+/* =========================================================================
+   ETAPA 1 — PRESENTACIÓN
+   ========================================================================= */
+function renderPresentacion(){
+  state.stage = "PRESENTACION";
+  var hero = el("div", { class: "hero" }, [
+    el("span", { class: "eyebrow" }, ["Microapp · Ideas Control"]),
+    el("h1", {}, ["Diagnóstico de madurez en Tiempo & Asistencia"]),
+    el("p", { class: "lead" }, [
+      "Responde 10 preguntas breves sobre cómo tu organización gestiona la asistencia, los horarios y el control de tiempo laboral, y recibe de inmediato un resultado claro sobre tu nivel de madurez."
+    ]),
+    el("div", { class: "hero-benefits" }, [
+      el("div", { class: "item" }, [ el("strong", {}, ["Rápido"]), "Solo toma unos minutos completarlo." ]),
+      el("div", { class: "item" }, [ el("strong", {}, ["Resultado inmediato"]), "Obtén tu nivel de madurez al instante." ]),
+      el("div", { class: "item" }, [ el("strong", {}, ["Accionable"]), "Identifica las áreas con mayor oportunidad de mejora." ])
+    ]),
+    el("button", { class: "btn btn-accent", onclick: function(){ renderRegistro(); } }, ["Comenzar diagnóstico"])
+  ]);
+  renderStage(hero);
+}
+
+/* =========================================================================
+   ETAPA 4 — REGISTRO DEL LEAD
+   ========================================================================= */
+var SECTORES = ["Manufactura","Retail / Comercio","Servicios","Salud","Educación","Construcción","Logística y Transporte","Tecnología","Financiero","Agroindustria","Gobierno / Sector público","Otro"];
+var TIPOS_EMPRESA = ["Privada","Pública","Mixta","ONG / Sin ánimo de lucro","Multinacional","Otro"];
+var RANGOS_EMPLEADOS = ["1 - 10","11 - 50","51 - 200","201 - 500","Más de 500"];
+var PAISES = ["Colombia","México","Perú","Chile","Ecuador","Panamá","Costa Rica","República Dominicana","Argentina","Estados Unidos","España","Otro"];
+
+function selectField(id, label, options, required){
+  var select = el("select", { id: id, name: id, required: required ? "required" : null }, [
+    el("option", { value: "" }, ["Seleccione…"])
+  ]);
+  options.forEach(function(o){ select.appendChild(el("option", { value: o }, [o])); });
+  return el("div", { class: "field" }, [
+    el("label", { for: id }, [label, required ? el("span", { class: "req" }, [" *"]) : null]),
+    select,
+    el("div", { class: "error-text", id: id + "_err" }, [])
+  ]);
+}
+function textField(id, label, type, required){
+  return el("div", { class: "field" }, [
+    el("label", { for: id }, [label, required ? el("span", { class: "req" }, [" *"]) : null]),
+    el("input", { id: id, name: id, type: type || "text", required: required ? "required" : null, autocomplete: "on" }),
+    el("div", { class: "error-text", id: id + "_err" }, [])
+  ]);
+}
+
+function renderRegistro(){
+  state.stage = "REGISTRO";
+  var card = el("div", { class: "card" }, [
+    el("h2", {}, ["Cuéntanos sobre ti y tu empresa"]),
+    el("p", {}, ["Estos datos nos permiten preparar y enviarte un diagnóstico relevante."])
+  ]);
+  var errorSlot = el("div", {});
+  var form = el("form", { id: "registroForm", novalidate: "novalidate" }, [
+    el("div", { class: "form-grid" }, [
+      textField("nombre", "Nombre", "text", true),
+      textField("apellido", "Apellido", "text", true),
+      textField("email", "Email", "email", true),
+      textField("telefono", "Teléfono", "tel", true),
+      textField("empresa", "Empresa", "text", true),
+      textField("cargo", "Cargo", "text", true),
+      textField("ciudad", "Ciudad", "text", true),
+      selectField("pais", "País", PAISES, true),
+      selectField("empleados", "Número de empleados", RANGOS_EMPLEADOS, true),
+      selectField("sector", "Sector", SECTORES, true),
+      selectField("tipo_empresa", "Tipo de empresa", TIPOS_EMPRESA, true)
+    ]),
+    el("div", { class: "mt-24" }, [
+      el("button", { class: "btn btn-primary btn-block", type: "submit", id: "registroSubmitBtn" }, ["Continuar"])
+    ])
+  ]);
+  card.appendChild(errorSlot);
+  card.appendChild(form);
+  renderStage(card);
+
+  form.addEventListener("submit", function(ev){
+    ev.preventDefault();
+    if(state.busy) return;
+    var data = collectRegistro(form);
+    if(!data) return; // errores de validación ya mostrados
+    submitLead(data, errorSlot);
+  });
+}
+
+function collectRegistro(form){
+  var fields = ["nombre","apellido","email","telefono","empresa","cargo","ciudad","pais","empleados","sector","tipo_empresa"];
+  var data = {};
+  var valid = true;
+  fields.forEach(function(f){
+    var input = form.querySelector("#" + f);
+    var errBox = form.querySelector("#" + f + "_err");
+    var val = input.value.trim();
+    input.classList.remove("invalid");
+    errBox.textContent = "";
+    if(!val){
+      input.classList.add("invalid");
+      errBox.textContent = "Este campo es obligatorio.";
+      valid = false;
+    }
+    data[f] = val;
+  });
+  var emailInput = form.querySelector("#email");
+  var emailErr = form.querySelector("#email_err");
+  var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if(data.email && !emailRe.test(data.email)){
+    emailInput.classList.add("invalid");
+    emailErr.textContent = "Ingresa un email válido.";
+    valid = false;
+  }
+  return valid ? data : null;
+}
+
+function submitLead(data, errorSlot){
+  state.busy = true;
+  errorSlot.innerHTML = "";
+  var btn = document.getElementById("registroSubmitBtn");
+  if(btn){ btn.disabled = true; }
+  var payload = Object.assign({}, data, {
+    fuente: FUENTE,
+    landing_id: LANDING_ID,
+    microapp_id: MICROAPP_ID
+  });
+  callApi("crear_lead", payload, {
+    loadingMsg: "Guardando tus datos…",
+    friendlyMsg: "No pudimos completar tu registro. Por favor, inténtalo nuevamente."
+  }).then(function(res){
+    var leadId = pick(res, ["lead_id","leadId","id"], null) || pick(res.data || {}, ["lead_id","leadId","id"], null);
+    if(!leadId){
+      console.error("crear_lead respondió ok:true pero sin lead_id reconocible:", res);
+      throw Object.assign(new Error("NO_LEAD_ID"), { friendly: "No pudimos completar tu registro. Por favor, inténtalo nuevamente." });
+    }
+    state.leadId = leadId;
+    state.busy = false;
+    renderConsentimiento();
+  }).catch(function(err){
+    state.busy = false;
+    if(btn){ btn.disabled = false; }
+    errorSlot.innerHTML = "";
+    errorSlot.appendChild(statusBanner("error", err.friendly || "No pudimos completar tu registro. Por favor, inténtalo nuevamente."));
+  });
+}
+
+/* =========================================================================
+   ETAPA 5 — CONSENTIMIENTO
+   ========================================================================= */
+function renderConsentimiento(){
+  state.stage = "CONSENTIMIENTO";
+  var errorSlot = el("div", {});
+  var checkbox = el("input", { type: "checkbox", id: "consentCheck" });
+  var continueBtn = el("button", { class: "btn btn-primary btn-block", disabled: "disabled" }, ["Aceptar y continuar"]);
+
+  checkbox.addEventListener("change", function(){
+    continueBtn.disabled = !checkbox.checked;
+  });
+  continueBtn.addEventListener("click", function(){
+    if(state.busy || !checkbox.checked) return;
+    registrarConsentimiento(errorSlot, continueBtn, checkbox);
+  });
+
+  var policyLink = POLICY_URL
+    ? el("a", { href: POLICY_URL, target: "_blank", rel: "noopener" }, ["política de tratamiento de datos"])
+    : el("span", {}, ["política de tratamiento de datos"]);
+
+  var card = el("div", { class: "card" }, [
+    el("h2", {}, ["Antes de continuar"]),
+    el("p", {}, ["Para procesar tu diagnóstico necesitamos tu consentimiento para el tratamiento de tus datos personales."]),
+    el("div", { class: "consent-box" }, [
+      checkbox,
+      el("label", { for: "consentCheck" }, [
+        "Acepto el tratamiento de mis datos personales de acuerdo con la ",
+        policyLink,
+        "."
+      ])
+    ]),
+    errorSlot,
+    continueBtn
+  ]);
+  renderStage(card);
+}
+
+function registrarConsentimiento(errorSlot, continueBtn, checkbox){
+  state.busy = true;
+  errorSlot.innerHTML = "";
+  continueBtn.disabled = true;
+  callApi("registrar_consentimiento", {
+    lead_id: state.leadId,
+    tipo: "tratamiento_datos",
+    version_politica: VERSION_POLITICA,
+    aceptado: true,
+    fuente: FUENTE
+  }, {
+    loadingMsg: "Guardando tu consentimiento…",
+    friendlyMsg: "No pudimos registrar tu consentimiento. Por favor, inténtalo nuevamente."
+  }).then(function(){
+    state.consentAccepted = true;
+    state.busy = false;
+    crearSesionYContinuar();
+  }).catch(function(err){
+    state.busy = false;
+    continueBtn.disabled = !checkbox.checked;
+    errorSlot.innerHTML = "";
+    errorSlot.appendChild(statusBanner("error", err.friendly || "No pudimos registrar tu consentimiento. Por favor, inténtalo nuevamente."));
+  });
+}
+
+/* =========================================================================
+   ETAPA 6 — CREAR SESIÓN (transición automática, con pantalla de carga)
+   ========================================================================= */
+function renderPreparando(errorNode){
+  state.stage = "CREAR_SESION";
+  var card = el("div", { class: "card center" }, [
+    el("div", { class: "spinner", style: "margin:0 auto 16px;width:28px;height:28px;" }),
+    el("h2", {}, ["Preparando tu diagnóstico…"]),
+    errorNode || el("p", {}, ["Esto solo tomará un momento."])
+  ]);
+  renderStage(card);
+}
+
+function crearSesionYContinuar(){
+  renderPreparando();
+  callApi("crear_sesion", {
+    lead_id: state.leadId,
+    microapp_id: MICROAPP_ID,
+    landing_id: LANDING_ID,
+    dispositivo: detectDevice(),
+    utm_source: state.utm.utm_source,
+    utm_medium: state.utm.utm_medium,
+    utm_campaign: state.utm.utm_campaign,
+    utm_content: state.utm.utm_content,
+    utm_term: state.utm.utm_term
+  }, {
+    friendlyMsg: "No pudimos preparar tu diagnóstico. Por favor, inténtalo nuevamente."
+  }).then(function(res){
+    var sessionId = pick(res, ["session_id","sessionId","id"], null) || pick(res.data || {}, ["session_id","sessionId","id"], null);
+    if(!sessionId){
+      console.error("crear_sesion respondió ok:true pero sin session_id reconocible:", res);
+      throw Object.assign(new Error("NO_SESSION_ID"), { friendly: "No pudimos preparar tu diagnóstico. Por favor, inténtalo nuevamente." });
+    }
+    state.sessionId = sessionId;
+    cargarPreguntas();
+  }).catch(function(err){
+    var retryBtn = el("button", { class: "btn btn-ghost", onclick: crearSesionYContinuar }, ["Reintentar"]);
+    var errNode = el("div", { class: "mt-24" }, [
+      statusBanner("error", err.friendly || "No pudimos preparar tu diagnóstico. Por favor, inténtalo nuevamente."),
+      retryBtn
+    ]);
+    renderPreparando(errNode);
+  });
+}
+
+/* =========================================================================
+   ETAPA 7/8/9/10 — DIAGNÓSTICO (preguntas + opciones dinámicas)
+   ========================================================================= */
+function cargarPreguntas(){
+  if(!state.sessionId){
+    console.error("Intento de cargar preguntas sin session_id válido.");
+    return;
+  }
+  showLoading("Preparando tu diagnóstico…");
+  apiRequest("GET", { action: "preguntas", microapp_id: MICROAPP_ID }).then(function(data){
+    hideLoading();
+    if(!data || data.ok === false){
+      console.error("Error cargando preguntas:", data);
+      mostrarErrorCargaDiagnostico(cargarPreguntas);
+      return;
+    }
+    var raw = extractArray(data, ["preguntas","data","items","result"]);
+    var preguntas = raw
+      .filter(function(p){ return isTruthyFlag(pick(p, ["activo","activa","active","estado"], true)); })
+      .map(function(p){
+        return {
+          id: pick(p, ["pregunta_id","id","codigo"], null),
+          texto: decodeEntities(pick(p, ["texto","pregunta","text","label","enunciado"], "")),
+          orden: Number(pick(p, ["orden","order","posicion","position"], 0)) || 0,
+          obligatoria: isTruthyFlag(pick(p, ["obligatoria","required"], true))
+        };
+      })
+      .filter(function(p){ return p.id !== null; })
+      .sort(function(a,b){ return a.orden - b.orden; });
+
+    if(preguntas.length === 0){
+      console.error("La API de preguntas no devolvió preguntas utilizables:", data);
+      mostrarErrorCargaDiagnostico(cargarPreguntas);
+      return;
+    }
+    state.questions = preguntas;
+    state.currentIndex = 0;
+    state.answeredCount = 0;
+    precargarOpciones(preguntas);
+    renderPregunta();
+  }).catch(function(err){
+    hideLoading();
+    console.error("Error de red cargando preguntas:", err);
+    mostrarErrorCargaDiagnostico(cargarPreguntas);
+  });
+}
+
+function mostrarErrorCargaDiagnostico(retryFn){
+  var card = el("div", { class: "card" }, [
+    errorBannerWithRetry("No pudimos cargar el diagnóstico. Por favor, inténtalo nuevamente.", retryFn)
+  ]);
+  renderStage(card);
+}
+
+function renderPregunta(){
+  state.stage = "DIAGNOSTICO";
+  var total = state.questions.length;
+  var idx = state.currentIndex;
+  var q = state.questions[idx];
+  var pct = Math.round((state.answeredCount / total) * 100);
+
+  var progress = el("div", { class: "progress-wrap" }, [
+    el("div", { class: "progress-meta" }, [
+      el("span", {}, ["Pregunta " + (idx+1) + " de " + total]),
+      el("span", { class: "pct" }, [pct + "% completado"])
+    ]),
+    el("div", { class: "progress-track" }, [
+      el("div", { class: "progress-fill", style: "width:" + pct + "%;" })
+    ])
+  ]);
+
+  var optionsSlot = el("div", { class: "options-list" }, [
+    el("div", { class: "spinner", style: "margin:20px auto;" })
+  ]);
+  var errorSlot = el("div", {});
+
+  var card = el("div", { class: "card" }, [
+    progress,
+    el("h2", { class: "question-title" }, [q.texto]),
+    optionsSlot,
+    errorSlot
+  ]);
+  renderStage(card);
+
+  cargarOpciones(q, optionsSlot, errorSlot);
+}
+
+/* Parsea la respuesta cruda de la API de opciones al formato interno.
+   Reutilizada tanto por la precarga en segundo plano como por la carga
+   en vivo, para que ambas rutas se comporten idénticamente. */
+function parseOpciones(data){
+  var raw = extractArray(data, ["opciones","data","items","result"]);
+  return raw
+    .filter(function(o){ return isTruthyFlag(pick(o, ["activa","activo","active","estado"], true)); })
+    .map(function(o){
+      return {
+        id: pick(o, ["opcion_id","id","codigo"], null),
+        // Campo real confirmado en la API: "respuesta". Se dejan alternativas solo como
+        // respaldo si en el futuro la API cambia de nombre; "respuesta" siempre tiene prioridad.
+        texto: decodeEntities(pick(o, ["respuesta","texto","opcion","text","label","respuesta_texto"], "")),
+        valor: pick(o, ["valor","value","puntaje","score"], 0),
+        orden: Number(pick(o, ["orden","order","posicion","position"], 0)) || 0
+      };
+    })
+    .filter(function(o){ return o.id !== null; })
+    .sort(function(a,b){ return a.orden - b.orden; });
+}
+
+/* Pide en paralelo, en segundo plano, las opciones de TODAS las preguntas apenas
+   se conoce la lista — así el usuario nunca ve el spinner de "cargando opciones"
+   salvo, como mucho, en la primera pregunta. Si una precarga falla o llega tarde,
+   cargarOpciones() simplemente hace su pedido en vivo como respaldo: nada se rompe. */
+function precargarOpciones(preguntas){
+  preguntas.forEach(function(q){
+    apiRequest("GET", { action: "opciones", pregunta_id: q.id }).then(function(data){
+      if(!data || data.ok === false) return;
+      var opciones = parseOpciones(data);
+      if(opciones.length > 0) state.optionsCache[q.id] = opciones;
+    }).catch(function(err){
+      console.error("Precarga de opciones falló para " + q.id + " (se reintentará en vivo si hace falta):", err);
+    });
+  });
+}
+
+function cargarOpciones(q, optionsSlot, errorSlot){
+  if(state.optionsCache[q.id]){
+    renderOpciones(state.optionsCache[q.id], q, optionsSlot, errorSlot);
+    return;
+  }
+  apiRequest("GET", { action: "opciones", pregunta_id: q.id }).then(function(data){
+    if(!data || data.ok === false){
+      console.error("Error cargando opciones para " + q.id + ":", data);
+      optionsSlot.innerHTML = "";
+      errorSlot.innerHTML = "";
+      errorSlot.appendChild(errorBannerWithRetry("No pudimos cargar el diagnóstico. Por favor, inténtalo nuevamente.", function(){
+        errorSlot.innerHTML = "";
+        optionsSlot.innerHTML = "";
+        optionsSlot.appendChild(el("div", { class: "spinner", style: "margin:20px auto;" }));
+        cargarOpciones(q, optionsSlot, errorSlot);
+      }));
+      return;
+    }
+    var opciones = parseOpciones(data);
+    if(opciones.length === 0){
+      console.error("La API de opciones no devolvió opciones utilizables para " + q.id + ":", data);
+      optionsSlot.innerHTML = "";
+      errorSlot.innerHTML = "";
+      errorSlot.appendChild(errorBannerWithRetry("No pudimos cargar el diagnóstico. Por favor, inténtalo nuevamente.", function(){
+        errorSlot.innerHTML = "";
+        cargarOpciones(q, optionsSlot, errorSlot);
+      }));
+      return;
+    }
+    state.optionsCache[q.id] = opciones;
+    renderOpciones(opciones, q, optionsSlot, errorSlot);
+  }).catch(function(err){
+    console.error("Error de red cargando opciones para " + q.id + ":", err);
+    optionsSlot.innerHTML = "";
+    errorSlot.innerHTML = "";
+    errorSlot.appendChild(errorBannerWithRetry("No pudimos cargar el diagnóstico. Por favor, inténtalo nuevamente.", function(){
+      errorSlot.innerHTML = "";
+      optionsSlot.appendChild(el("div", { class: "spinner", style: "margin:20px auto;" }));
+      cargarOpciones(q, optionsSlot, errorSlot);
+    }));
+  });
+}
+
+function renderOpciones(opciones, q, optionsSlot, errorSlot){
+  optionsSlot.innerHTML = "";
+  var buttons = [];
+  opciones.forEach(function(o){
+    var btn = el("button", { class: "option-btn", type: "button" }, [
+      el("span", { class: "dot" }),
+      el("span", {}, [o.texto])
+    ]);
+    btn.addEventListener("click", function(){
+      if(state.busy) return;
+      buttons.forEach(function(b){ b.classList.remove("selected"); });
+      btn.classList.add("selected");
+      registrarRespuesta(q, o, buttons, errorSlot);
+    });
+    buttons.push(btn);
+    optionsSlot.appendChild(btn);
+  });
+}
+
+function registrarRespuesta(q, o, buttons, errorSlot){
+  state.busy = true;
+  errorSlot.innerHTML = "";
+  buttons.forEach(function(b){ b.disabled = true; if(!b.classList.contains("selected")) b.classList.add("locked-out"); });
+
+  callApi("registrar_respuesta", {
+    session_id: state.sessionId,
+    lead_id: state.leadId,
+    microapp_id: MICROAPP_ID,
+    pregunta_id: q.id,
+    opcion_id: o.id,
+    valor: o.valor,
+    respuesta_texto: o.texto
+  }, {
+    friendlyMsg: "No pudimos guardar esta respuesta. Verifica tu conexión e inténtalo nuevamente."
+  }).then(function(){
+    state.busy = false;
+    state.answeredCount += 1;
+    var isLast = state.currentIndex >= state.questions.length - 1;
+    setTimeout(function(){
+      if(isLast){
+        calcularResultado();
+      } else {
+        state.currentIndex += 1;
+        renderPregunta();
+      }
+    }, 350);
+  }).catch(function(err){
+    state.busy = false;
+    buttons.forEach(function(b){ b.disabled = false; b.classList.remove("locked-out"); });
+    errorSlot.appendChild(errorBannerWithRetry(err.friendly || "No pudimos guardar esta respuesta. Verifica tu conexión e inténtalo nuevamente.", function(){
+      errorSlot.innerHTML = "";
+      registrarRespuesta(q, o, buttons, errorSlot);
+    }));
+  });
+}
+
+/* =========================================================================
+   ETAPA 11/12 — CALCULAR Y MOSTRAR RESULTADO
+   ========================================================================= */
+function calcularResultado(){
+  state.stage = "RESULTADO";
+  var card = el("div", { class: "card center" }, [
+    el("div", { class: "spinner", style: "margin:0 auto 16px;width:28px;height:28px;" }),
+    el("h2", {}, ["Calculando resultado…"])
+  ]);
+  renderStage(card);
+
+  callApi("calcular_resultado", { session_id: state.sessionId }, {
+    friendlyMsg: "No pudimos calcular tu resultado. Por favor, inténtalo nuevamente."
+  }).then(function(res){
+    var d = res.resultado || res.data || res;
+    var areasRaw = extractArray(d, ["areas","resultados_por_area","por_area"]);
+
+    var NOMBRE_AREA_KEYS = ["nombre_area","area","nombre","name","area_nombre","categoria","nombre_categoria","dimension"];
+    var TITULO_KEYS = ["titulo","título","title"];
+    var RECOMENDACION_KEYS = ["recomendacion","recomendación","recommendation"];
+
+    state.resultado = {
+      puntaje: pick(d, ["puntaje","score"], null),
+      puntajeMaximo: pick(d, ["puntaje_maximo","puntajeMaximo","max_score"], null),
+      porcentaje: pick(d, ["porcentaje","percentage"], null),
+      nivel: decodeEntities(pick(d, ["nivel","level"], "")),
+      titulo: decodeEntities(pick(d, TITULO_KEYS, "")),
+      interpretacion: decodeEntities(pick(d, ["interpretacion","interpretación","interpretation"], "")),
+      recomendacion: decodeEntities(pick(d, RECOMENDACION_KEYS, "")),
+      areaMenor: pick(d, ["area_menor","areaMenor"], ""),
+      areas: areasRaw.map(function(a){
+        return {
+          id: pick(a, ["area_id","id","codigo"], null),
+          nombre: decodeEntities(pick(a, NOMBRE_AREA_KEYS, "")),
+          porcentaje: pick(a, ["porcentaje","percentage"], null),
+          puntos: pick(a, ["puntos","puntaje","score"], null),
+          maximo: pick(a, ["maximo","puntaje_maximo","max_score"], null),
+          nivel: decodeEntities(pick(a, ["nivel","level"], "")),
+          titulo: decodeEntities(pick(a, TITULO_KEYS, "")),
+          interpretacion: decodeEntities(pick(a, ["interpretacion","interpretación","interpretation"], "")),
+          recomendacion: decodeEntities(pick(a, RECOMENDACION_KEYS, ""))
+        };
+      }),
+      resultadoId: pick(d, ["resultado_id","resultadoId","id"], null)
+    };
+
+    // Aviso en consola de campos esperados que no llegaron — nunca se inventa contenido,
+    // simplemente se omite ese bloque en pantalla (ver renderResultado).
+    ["porcentaje","nivel","titulo","interpretacion","recomendacion"].forEach(function(k){
+      var v = state.resultado[k];
+      if(v === null || v === undefined || v === "") console.error("RESPUESTA API INCOMPLETA: falta el campo general '" + k + "' en calcular_resultado.", res);
+    });
+    state.resultado.areas.forEach(function(a, i){
+      ["nombre","porcentaje","nivel","titulo","interpretacion","recomendacion"].forEach(function(k){
+        var v = a[k];
+        if(v === null || v === undefined || v === "") console.error("RESPUESTA API INCOMPLETA: falta el campo '" + k + "' en el área #" + (i+1) + " (area_id=" + a.id + ").", areasRaw[i]);
+      });
+    });
+
+    renderResultado();
+  }).catch(function(err){
+    var card = el("div", { class: "card" }, [
+      errorBannerWithRetry(err.friendly || "No pudimos calcular tu resultado. Por favor, inténtalo nuevamente.", calcularResultado)
+    ]);
+    renderStage(card);
+  });
+}
+
+function renderResultado(){
+  var r = state.resultado;
+  var areasNode = el("div", { class: "area-grid" });
+  if(r.areas && r.areas.length){
+    r.areas.forEach(function(a){
+      var esMenor = r.areaMenor && a.nombre && String(r.areaMenor).toLowerCase() === String(a.nombre).toLowerCase();
+      var barPct = a.porcentaje != null ? Number(a.porcentaje) : 0;
+      areasNode.appendChild(el("div", { class: "area-card" + (esMenor ? " weak" : "") }, [
+        a.nombre ? el("div", { class: "area-name" }, [a.nombre]) : null,
+        a.nivel ? el("div", { class: "area-level-pill" }, [a.nivel]) : null,
+        el("div", { class: "area-bar-track" }, [
+          el("div", { class: "area-bar-fill", style: "width:" + Math.max(0, Math.min(100, barPct)) + "%;" })
+        ]),
+        el("div", { class: "area-value" }, [
+          a.porcentaje != null ? (a.porcentaje + "%") : "",
+          (a.porcentaje != null && a.puntos != null) ? " · " : "",
+          a.puntos != null ? ("Puntaje: " + a.puntos + (a.maximo != null ? ("/" + a.maximo) : "")) : ""
+        ]),
+        a.titulo ? el("div", { class: "area-titulo" }, [a.titulo]) : null,
+        a.interpretacion ? el("div", { class: "area-text" }, [a.interpretacion]) : null,
+        a.recomendacion ? el("div", { class: "area-text area-recomendacion" }, [
+          el("strong", {}, ["Recomendación: "]),
+          a.recomendacion
+        ]) : null
+      ]));
+    });
+  }
+
+  var card = el("div", { class: "card" }, [
+    el("div", { class: "result-hero" }, [
+      el("span", { class: "eyebrow-dark" }, ["Resultado general"]),
+      el("h2", {}, ["Tu resultado"]),
+      r.nivel ? el("div", { class: "result-level" }, [r.nivel]) : null,
+      el("div", { class: "result-score-row" }, [
+        r.porcentaje != null ? el("div", { class: "stat" }, [
+          el("div", { class: "num" }, [r.porcentaje + "%"]),
+          el("div", { class: "lbl" }, ["Porcentaje"])
+        ]) : null,
+        r.puntaje != null ? el("div", { class: "stat" }, [
+          el("div", { class: "num" }, [r.puntaje + (r.puntajeMaximo != null ? ("/" + r.puntajeMaximo) : "")]),
+          el("div", { class: "lbl" }, ["Puntaje"])
+        ]) : null
+      ]),
+      r.titulo ? el("h3", { class: "result-titulo" }, [r.titulo]) : null
+    ]),
+    r.interpretacion ? el("div", { class: "interpretation" }, [r.interpretacion]) : null,
+    r.recomendacion ? el("div", { class: "interpretation recommendation" }, [
+      el("strong", {}, ["Recomendación: "]),
+      r.recomendacion
+    ]) : null,
+    (r.areas && r.areas.length) ? el("h3", {}, ["Resultado por área"]) : null,
+    (r.areas && r.areas.length) ? areasNode : null
+  ]);
+
+  var ctaSection = buildCtaSection();
+  card.appendChild(ctaSection);
+  renderStage(card);
+}
+
+/* =========================================================================
+   ETAPA 13/14/15 — CTA CONTACTO + REGISTRO DE CONVERSIÓN
+   ========================================================================= */
+function buildCtaSection(){
+  state.stage = "CONTACTO";
+  var statusSlot = el("div", { class: "mt-24" });
+  var contactBtn = el("button", { class: "btn btn-accent", type: "button" }, ["CONTÁCTENOS"]);
+
+  contactBtn.addEventListener("click", function(){
+    if(state.busy || state.conversionRegistrada) return;
+    registrarConversion(contactBtn, statusSlot);
+  });
+
+  var section = el("div", { class: "cta-section" }, [
+    el("h3", {}, ["¿Quieres conocer cómo llevar este resultado a la práctica?"]),
+    el("p", {}, ["Escríbenos y un especialista de Ideas Control te ayudará a interpretar tu diagnóstico y a definir los próximos pasos."]),
+    contactBtn,
+    el("a", { class: "cta-phone", href: "tel:" + PHONE_TEL }, [
+      el("span", {}, [PHONE_DISPLAY])
+    ]),
+    statusSlot
+  ]);
+  return section;
+}
+
+function registrarConversion(contactBtn, statusSlot){
+  state.busy = true;
+  statusSlot.innerHTML = "";
+  var originalLabel = contactBtn.textContent;
+  contactBtn.disabled = true;
+  contactBtn.textContent = "Registrando contacto…";
+
+  callApi("registrar_conversion", {
+    lead_id: state.leadId,
+    session_id: state.sessionId,
+    microapp_id: MICROAPP_ID,
+    origen: FUENTE,
+    comentario: "Contacto solicitado desde la microapp"
+  }, {
+    friendlyMsg: "No pudimos registrar tu solicitud de contacto. Puedes intentarlo nuevamente."
+  }).then(function(res){
+    state.busy = false;
+    if(res && res.ok === true){
+      state.conversionRegistrada = true;
+      state.stage = "CONFIRMACION";
+      contactBtn.style.display = "none";
+      statusSlot.innerHTML = "";
+      var finishBtn = el("button", { class: "btn btn-outline-light mt-24", type: "button" }, ["Terminar"]);
+      var finishNote = el("div", { style: "font-size:.8rem;color:rgba(255,255,255,.75);margin-top:10px;" }, []);
+      finishBtn.addEventListener("click", function(){
+        finishBtn.disabled = true;
+        try{ window.close(); }catch(e){ console.error("No se pudo cerrar la ventana automáticamente:", e); }
+        // La mayoría de navegadores bloquean cerrar por script una pestaña que el usuario
+        // abrió directamente (no vía window.open). Si sigue aquí tras el intento, mostramos
+        // el mensaje de respaldo para que el usuario la cierre manualmente.
+        setTimeout(function(){
+          finishBtn.style.display = "none";
+          finishNote.textContent = "Ya puedes cerrar esta pestaña. ¡Gracias por completar el diagnóstico!";
+        }, 300);
+      });
+      statusSlot.appendChild(el("div", { class: "confirmation-box" }, [
+        el("div", { class: "ok-badge" }, ["✓ Solicitud de contacto registrada correctamente."]),
+        el("div", {}, [
+          "Nos pondremos en contacto contigo pronto. También puedes llamarnos directamente al ",
+          el("a", { href: "tel:" + PHONE_TEL, style: "color:#fff;font-weight:700;" }, [PHONE_DISPLAY]),
+          "."
+        ]),
+        finishBtn,
+        finishNote
+      ]));
+    } else {
+      throw Object.assign(new Error("CONVERSION_NOT_OK"), { friendly: "No pudimos registrar tu solicitud de contacto. Puedes intentarlo nuevamente." });
+    }
+  }).catch(function(err){
+    state.busy = false;
+    contactBtn.disabled = false;
+    contactBtn.textContent = originalLabel;
+    statusSlot.innerHTML = "";
+    statusSlot.appendChild(statusBanner("error", err.friendly || "No pudimos registrar tu solicitud de contacto. Puedes intentarlo nuevamente."));
+  });
+}
+
+/* =========================================================================
+   ARRANQUE
+   ========================================================================= */
+captureUTM();
+renderPresentacion();
+
+})();
+</script>
+</body>
+</html>
