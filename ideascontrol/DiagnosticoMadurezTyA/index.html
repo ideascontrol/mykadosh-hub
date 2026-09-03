@@ -734,7 +734,12 @@ function renderPreparando(errorNode){
 
 function crearSesionYContinuar(){
   renderPreparando();
-  callApi("crear_sesion", {
+
+  // Antes: crear_sesion esperaba su respuesta completa antes de siquiera empezar a
+  // pedir las preguntas. Pero pedir las preguntas no depende de que la sesión ya
+  // exista — son dos llamadas independientes, así que se disparan en paralelo.
+  // Esto recorta a la mitad la espera antes de que aparezca la primera pregunta.
+  var sesionPromise = callApi("crear_sesion", {
     lead_id: state.leadId,
     microapp_id: MICROAPP_ID,
     landing_id: LANDING_ID,
@@ -752,9 +757,21 @@ function crearSesionYContinuar(){
       console.error("crear_sesion respondió ok:true pero sin session_id reconocible:", res);
       throw Object.assign(new Error("NO_SESSION_ID"), { friendly: "No pudimos preparar tu diagnóstico. Por favor, inténtalo nuevamente." });
     }
-    state.sessionId = sessionId;
-    cargarPreguntas();
+    return sessionId;
+  });
+
+  var preguntasPromise = fetchPreguntas();
+
+  Promise.all([sesionPromise, preguntasPromise]).then(function(results){
+    state.sessionId = results[0];
+    var preguntas = results[1];
+    state.questions = preguntas;
+    state.currentIndex = 0;
+    state.answeredCount = 0;
+    precargarOpciones(preguntas);
+    renderPregunta();
   }).catch(function(err){
+    console.error("Error preparando el diagnóstico (sesión y/o preguntas):", err);
     var retryBtn = el("button", { class: "btn btn-ghost", onclick: crearSesionYContinuar }, ["Reintentar"]);
     var errNode = el("div", { class: "mt-24" }, [
       statusBanner("error", err.friendly || "No pudimos preparar tu diagnóstico. Por favor, inténtalo nuevamente."),
@@ -767,18 +784,13 @@ function crearSesionYContinuar(){
 /* =========================================================================
    ETAPA 7/8/9/10 — DIAGNÓSTICO (preguntas + opciones dinámicas)
    ========================================================================= */
-function cargarPreguntas(){
-  if(!state.sessionId){
-    console.error("Intento de cargar preguntas sin session_id válido.");
-    return;
-  }
-  showLoading("Preparando tu diagnóstico…");
-  apiRequest("GET", { action: "preguntas", microapp_id: MICROAPP_ID }).then(function(data){
-    hideLoading();
+/* Pide y parsea la lista de preguntas. No depende de session_id — por eso se puede
+   disparar en paralelo con crear_sesion en vez de esperar a que esa termine primero. */
+function fetchPreguntas(){
+  return apiRequest("GET", { action: "preguntas", microapp_id: MICROAPP_ID }).then(function(data){
     if(!data || data.ok === false){
       console.error("Error cargando preguntas:", data);
-      mostrarErrorCargaDiagnostico(cargarPreguntas);
-      return;
+      throw Object.assign(new Error("PREGUNTAS_ERROR"), { friendly: "No pudimos cargar el diagnóstico. Por favor, inténtalo nuevamente." });
     }
     var raw = extractArray(data, ["preguntas","data","items","result"]);
     var preguntas = raw
@@ -796,30 +808,21 @@ function cargarPreguntas(){
 
     if(preguntas.length === 0){
       console.error("La API de preguntas no devolvió preguntas utilizables:", data);
-      mostrarErrorCargaDiagnostico(cargarPreguntas);
-      return;
+      throw Object.assign(new Error("PREGUNTAS_VACIAS"), { friendly: "No pudimos cargar el diagnóstico. Por favor, inténtalo nuevamente." });
     }
-    state.questions = preguntas;
-    state.currentIndex = 0;
-    state.answeredCount = 0;
-    precargarOpciones(preguntas);
-    renderPregunta();
+    return preguntas;
   }).catch(function(err){
-    hideLoading();
-    console.error("Error de red cargando preguntas:", err);
-    mostrarErrorCargaDiagnostico(cargarPreguntas);
+    if(!err.friendly){
+      console.error("Error de red cargando preguntas:", err);
+      err.friendly = "No pudimos cargar el diagnóstico. Por favor, inténtalo nuevamente.";
+    }
+    throw err;
   });
-}
-
-function mostrarErrorCargaDiagnostico(retryFn){
-  var card = el("div", { class: "card" }, [
-    errorBannerWithRetry("No pudimos cargar el diagnóstico. Por favor, inténtalo nuevamente.", retryFn)
-  ]);
-  renderStage(card);
 }
 
 function renderPregunta(){
   state.stage = "DIAGNOSTICO";
+
   var total = state.questions.length;
   var idx = state.currentIndex;
   var q = state.questions[idx];
