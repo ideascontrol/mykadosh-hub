@@ -344,7 +344,9 @@ var state = {
   resultado: null,
   conversionRegistrada: false,
   busy: false,
-  optionsCache: {} // pregunta_id -> array de opciones ya parseadas (precargadas en segundo plano)
+  optionsCache: {}, // pregunta_id -> array de opciones ya parseadas (precargadas en segundo plano)
+  pendingSaves: [], // promesas de registrar_respuesta en vuelo (guardado optimista en segundo plano)
+  saveErrors: [] // respuestas que fallaron incluso después de reintentar
 };
 
 /* =========================================================================
@@ -760,7 +762,7 @@ function crearSesionYContinuar(){
     return sessionId;
   });
 
-  var preguntasPromise = fetchPreguntas();
+  var preguntasPromise = ensurePreguntasLoading();
 
   Promise.all([sesionPromise, preguntasPromise]).then(function(results){
     state.sessionId = results[0];
@@ -786,6 +788,20 @@ function crearSesionYContinuar(){
    ========================================================================= */
 /* Pide y parsea la lista de preguntas. No depende de session_id — por eso se puede
    disparar en paralelo con crear_sesion en vez de esperar a que esa termine primero. */
+/* Pide y parsea la lista de preguntas. No depende de session_id — por eso se dispara
+   apenas carga la página (ver ARRANQUE), muy antes de que el usuario llegue a la
+   pantalla de preguntas, en vez de esperar a que exista una sesión. */
+var _preguntasPromise = null;
+function ensurePreguntasLoading(){
+  if(!_preguntasPromise){
+    _preguntasPromise = fetchPreguntas().catch(function(err){
+      _preguntasPromise = null; // permite que un reintento vuelva a pedir, no repita el mismo fallo
+      throw err;
+    });
+  }
+  return _preguntasPromise;
+}
+
 function fetchPreguntas(){
   return apiRequest("GET", { action: "preguntas", microapp_id: MICROAPP_ID }).then(function(data){
     if(!data || data.ok === false){
@@ -953,12 +969,11 @@ function renderOpciones(opciones, q, optionsSlot, errorSlot){
   });
 }
 
-function registrarRespuesta(q, o, buttons, errorSlot){
-  state.busy = true;
-  errorSlot.innerHTML = "";
-  buttons.forEach(function(b){ b.disabled = true; if(!b.classList.contains("selected")) b.classList.add("locked-out"); });
-
-  callApi("registrar_respuesta", {
+/* Guarda la respuesta en el backend con reintentos automáticos. No bloquea el avance
+   de pantalla — se llama "en el fondo" desde registrarRespuesta(). */
+function guardarRespuestaConReintento(q, o, intentosRestantes){
+  if(intentosRestantes === undefined) intentosRestantes = 2;
+  return callApi("registrar_respuesta", {
     session_id: state.sessionId,
     lead_id: state.leadId,
     microapp_id: MICROAPP_ID,
@@ -967,27 +982,37 @@ function registrarRespuesta(q, o, buttons, errorSlot){
     valor: o.valor,
     respuesta_texto: o.texto
   }, {
-    friendlyMsg: "No pudimos guardar esta respuesta. Verifica tu conexión e inténtalo nuevamente."
-  }).then(function(){
-    state.busy = false;
-    state.answeredCount += 1;
-    var isLast = state.currentIndex >= state.questions.length - 1;
-    setTimeout(function(){
-      if(isLast){
-        calcularResultado();
-      } else {
-        state.currentIndex += 1;
-        renderPregunta();
-      }
-    }, 350);
+    friendlyMsg: "No pudimos guardar esta respuesta."
   }).catch(function(err){
-    state.busy = false;
-    buttons.forEach(function(b){ b.disabled = false; b.classList.remove("locked-out"); });
-    errorSlot.appendChild(errorBannerWithRetry(err.friendly || "No pudimos guardar esta respuesta. Verifica tu conexión e inténtalo nuevamente.", function(){
-      errorSlot.innerHTML = "";
-      registrarRespuesta(q, o, buttons, errorSlot);
-    }));
+    if(intentosRestantes > 0) return guardarRespuestaConReintento(q, o, intentosRestantes - 1);
+    throw err;
   });
+}
+
+/* Avance optimista: la pantalla pasa a la siguiente pregunta sin esperar la
+   confirmación del backend. El guardado real viaja en segundo plano (con
+   reintentos); calcularResultado() espera a que todos los guardados pendientes
+   terminen antes de pedir el resultado, así ninguna respuesta se pierde. */
+function registrarRespuesta(q, o, buttons, errorSlot){
+  errorSlot.innerHTML = "";
+  buttons.forEach(function(b){ b.disabled = true; if(!b.classList.contains("selected")) b.classList.add("locked-out"); });
+
+  var savePromise = guardarRespuestaConReintento(q, o).catch(function(err){
+    console.error("No se pudo guardar la respuesta para " + q.id + " tras reintentar:", err);
+    state.saveErrors.push({ q: q, o: o, error: err });
+  });
+  state.pendingSaves.push(savePromise);
+
+  state.answeredCount += 1;
+  var isLast = state.currentIndex >= state.questions.length - 1;
+  setTimeout(function(){
+    if(isLast){
+      calcularResultado();
+    } else {
+      state.currentIndex += 1;
+      renderPregunta();
+    }
+  }, 150); // pausa breve solo para que se alcance a ver el botón seleccionado, no para esperar red
 }
 
 /* =========================================================================
@@ -1001,6 +1026,33 @@ function calcularResultado(){
   ]);
   renderStage(card);
 
+  // Todas las respuestas se guardaron en segundo plano mientras el usuario avanzaba
+  // por las preguntas (ver registrarRespuesta). Antes de pedir el resultado hay que
+  // esperar a que ese guardado termine — si no, se podría calcular con datos
+  // incompletos.
+  Promise.all(state.pendingSaves).then(function(){
+    if(state.saveErrors.length > 0){
+      var erroresPendientes = state.saveErrors.slice();
+      state.saveErrors = [];
+      var reintentarTodo = function(){
+        state.pendingSaves = erroresPendientes.map(function(e){
+          return guardarRespuestaConReintento(e.q, e.o).catch(function(err){
+            state.saveErrors.push({ q: e.q, o: e.o, error: err });
+          });
+        });
+        calcularResultado();
+      };
+      var errCard = el("div", { class: "card" }, [
+        errorBannerWithRetry("No pudimos guardar " + erroresPendientes.length + " de tus respuestas. Inténtalo de nuevo antes de ver el resultado.", reintentarTodo)
+      ]);
+      renderStage(errCard);
+      return;
+    }
+    ejecutarCalculoResultado();
+  });
+}
+
+function ejecutarCalculoResultado(){
   callApi("calcular_resultado", { session_id: state.sessionId }, {
     friendlyMsg: "No pudimos calcular tu resultado. Por favor, inténtalo nuevamente."
   }).then(function(res){
@@ -1203,6 +1255,7 @@ function registrarConversion(contactBtn, statusSlot){
    ARRANQUE
    ========================================================================= */
 captureUTM();
+ensurePreguntasLoading(); // arranca la carga de preguntas ya, en paralelo con todo lo que sigue
 renderPresentacion();
 
 })();
