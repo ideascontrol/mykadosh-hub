@@ -291,9 +291,9 @@
     <div class="brand">
       <img id="brandLogo" src="/ideascontrol/assets/ideascontrol.webp" alt="Ideas Control - Equipos y Soluciones S.A.S.">
     </div>
-    <a class="header-phone" href="tel:+573213184853" aria-label="Llamar a Ideas Control">
+    <a class="header-phone" href="tel:+573228506363" aria-label="Llamar a Ideas Control">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24 11.3 11.3 0 003.54.57 1 1 0 011 1V20a1 1 0 01-1 1C10.4 21 3 13.6 3 4.5a1 1 0 011-1h3.49a1 1 0 011 1c0 1.24.2 2.44.57 3.54a1 1 0 01-.25 1.02l-2.2 2.2z"/></svg>
-      57 321 318 4853
+      57 322 850 6363
     </a>
   </div>
 </header>
@@ -322,8 +322,8 @@ var API_URL       = "https://script.google.com/macros/s/AKfycbwGt0M2Uk2DiwVphpiP
 var MICROAPP_ID    = "APP-001";
 var LANDING_ID     = "LANDING-APP001";
 var FUENTE         = "Landing APP-001";
-var PHONE_DISPLAY  = "57 321 318 4853";
-var PHONE_TEL      = "+573213184853";
+var PHONE_DISPLAY  = "57 322 850 6363";
+var PHONE_TEL      = "+573228506363";
 var VERSION_POLITICA = "1.0";
 var POLICY_URL     = ""; // Se completará cuando Ideas Control entregue el enlace a la política de tratamiento de datos.
 
@@ -538,8 +538,6 @@ function renderPresentacion(){
 /* =========================================================================
    ETAPA 4 — REGISTRO DEL LEAD
    ========================================================================= */
-var SECTORES = ["Manufactura","Retail / Comercio","Servicios","Salud","Educación","Construcción","Logística y Transporte","Tecnología","Financiero","Agroindustria","Gobierno / Sector público","Otro"];
-var TIPOS_EMPRESA = ["Privada","Pública","Mixta","ONG / Sin ánimo de lucro","Multinacional","Otro"];
 var RANGOS_EMPLEADOS = ["1 - 10","11 - 50","51 - 200","201 - 500","Más de 500"];
 var PAISES = ["Colombia","México","Perú","Chile","Ecuador","Panamá","Costa Rica","República Dominicana","Argentina","Estados Unidos","España","Otro"];
 
@@ -576,12 +574,8 @@ function renderRegistro(){
       textField("email", "Email", "email", true),
       textField("telefono", "Teléfono", "tel", true),
       textField("empresa", "Empresa", "text", true),
-      textField("cargo", "Cargo", "text", true),
-      textField("ciudad", "Ciudad", "text", true),
       selectField("pais", "País", PAISES, true),
-      selectField("empleados", "Número de empleados", RANGOS_EMPLEADOS, true),
-      selectField("sector", "Sector", SECTORES, true),
-      selectField("tipo_empresa", "Tipo de empresa", TIPOS_EMPRESA, true)
+      selectField("empleados", "Número de empleados", RANGOS_EMPLEADOS, true)
     ]),
     el("div", { class: "mt-24" }, [
       el("button", { class: "btn btn-primary btn-block", type: "submit", id: "registroSubmitBtn" }, ["Continuar"])
@@ -593,7 +587,6 @@ function renderRegistro(){
 
   form.addEventListener("submit", function(ev){
     ev.preventDefault();
-    if(state.busy) return;
     var data = collectRegistro(form);
     if(!data) return; // errores de validación ya mostrados
     submitLead(data, errorSlot);
@@ -601,7 +594,7 @@ function renderRegistro(){
 }
 
 function collectRegistro(form){
-  var fields = ["nombre","apellido","email","telefono","empresa","cargo","ciudad","pais","empleados","sector","tipo_empresa"];
+  var fields = ["nombre","apellido","email","telefono","empresa","pais","empleados"];
   var data = {};
   var valid = true;
   fields.forEach(function(f){
@@ -628,18 +621,11 @@ function collectRegistro(form){
   return valid ? data : null;
 }
 
-function submitLead(data, errorSlot){
-  state.busy = true;
-  errorSlot.innerHTML = "";
-  var btn = document.getElementById("registroSubmitBtn");
-  if(btn){ btn.disabled = true; }
-  var payload = Object.assign({}, data, {
-    fuente: FUENTE,
-    landing_id: LANDING_ID,
-    microapp_id: MICROAPP_ID
-  });
-  callApi("crear_lead", payload, {
-    loadingMsg: "Guardando tus datos…",
+/* Crea el lead con reintento automático (1 reintento — el registro es sensible,
+   no conviene reintentar indefinidamente sin que la persona se entere). */
+function crearLeadConReintento(payload, intentosRestantes){
+  if(intentosRestantes === undefined) intentosRestantes = 1;
+  return callApi("crear_lead", payload, {
     friendlyMsg: "No pudimos completar tu registro. Por favor, inténtalo nuevamente."
   }).then(function(res){
     var leadId = pick(res, ["lead_id","leadId","id"], null) || pick(res.data || {}, ["lead_id","leadId","id"], null);
@@ -648,31 +634,77 @@ function submitLead(data, errorSlot){
       throw Object.assign(new Error("NO_LEAD_ID"), { friendly: "No pudimos completar tu registro. Por favor, inténtalo nuevamente." });
     }
     state.leadId = leadId;
-    state.busy = false;
-    renderConsentimiento();
+    return leadId;
   }).catch(function(err){
-    state.busy = false;
-    if(btn){ btn.disabled = false; }
-    errorSlot.innerHTML = "";
-    errorSlot.appendChild(statusBanner("error", err.friendly || "No pudimos completar tu registro. Por favor, inténtalo nuevamente."));
+    if(intentosRestantes > 0) return crearLeadConReintento(payload, intentosRestantes - 1);
+    throw err;
   });
+}
+
+/* Avance optimista: apenas se envía el formulario, pasamos a la pantalla de
+   consentimiento sin esperar a que crear_lead confirme — la persona puede
+   empezar a leer y marcar la casilla mientras el registro se guarda en el
+   fondo. Solo se espera la confirmación real cuando hace clic en "Aceptar y
+   continuar" (ver renderConsentimiento). Si para entonces el registro ya
+   terminó, el clic se siente instantáneo. */
+function submitLead(data, errorSlot){
+  errorSlot.innerHTML = "";
+  var payload = Object.assign({}, data, {
+    fuente: FUENTE,
+    landing_id: LANDING_ID,
+    microapp_id: MICROAPP_ID
+  });
+  var leadPromise = crearLeadConReintento(payload);
+  renderConsentimiento(payload, leadPromise);
 }
 
 /* =========================================================================
    ETAPA 5 — CONSENTIMIENTO
    ========================================================================= */
-function renderConsentimiento(){
+function renderConsentimiento(payload, leadPromise){
   state.stage = "CONSENTIMIENTO";
   var errorSlot = el("div", {});
   var checkbox = el("input", { type: "checkbox", id: "consentCheck" });
   var continueBtn = el("button", { class: "btn btn-primary btn-block", disabled: "disabled" }, ["Aceptar y continuar"]);
+  var originalLabel = continueBtn.textContent;
+
+  function intentar(){
+    errorSlot.innerHTML = "";
+    continueBtn.disabled = true;
+    continueBtn.textContent = "Guardando…";
+    leadPromise
+      .then(function(){
+        return callApi("registrar_consentimiento", {
+          lead_id: state.leadId,
+          tipo: "tratamiento_datos",
+          version_politica: VERSION_POLITICA,
+          aceptado: true,
+          fuente: FUENTE
+        }, {
+          friendlyMsg: "No pudimos registrar tu consentimiento. Por favor, inténtalo nuevamente."
+        });
+      })
+      .then(function(){
+        state.consentAccepted = true;
+        crearSesionYContinuar();
+      })
+      .catch(function(err){
+        continueBtn.disabled = !checkbox.checked;
+        continueBtn.textContent = originalLabel;
+        errorSlot.innerHTML = "";
+        errorSlot.appendChild(errorBannerWithRetry(err.friendly || "No pudimos completar tu registro. Por favor, inténtalo nuevamente.", function(){
+          leadPromise = crearLeadConReintento(payload); // reintento completo desde cero
+          intentar();
+        }));
+      });
+  }
 
   checkbox.addEventListener("change", function(){
     continueBtn.disabled = !checkbox.checked;
   });
   continueBtn.addEventListener("click", function(){
-    if(state.busy || !checkbox.checked) return;
-    registrarConsentimiento(errorSlot, continueBtn, checkbox);
+    if(!checkbox.checked) return;
+    intentar();
   });
 
   var policyLink = POLICY_URL
@@ -694,31 +726,6 @@ function renderConsentimiento(){
     continueBtn
   ]);
   renderStage(card);
-}
-
-function registrarConsentimiento(errorSlot, continueBtn, checkbox){
-  state.busy = true;
-  errorSlot.innerHTML = "";
-  continueBtn.disabled = true;
-  callApi("registrar_consentimiento", {
-    lead_id: state.leadId,
-    tipo: "tratamiento_datos",
-    version_politica: VERSION_POLITICA,
-    aceptado: true,
-    fuente: FUENTE
-  }, {
-    loadingMsg: "Guardando tu consentimiento…",
-    friendlyMsg: "No pudimos registrar tu consentimiento. Por favor, inténtalo nuevamente."
-  }).then(function(){
-    state.consentAccepted = true;
-    state.busy = false;
-    crearSesionYContinuar();
-  }).catch(function(err){
-    state.busy = false;
-    continueBtn.disabled = !checkbox.checked;
-    errorSlot.innerHTML = "";
-    errorSlot.appendChild(statusBanner("error", err.friendly || "No pudimos registrar tu consentimiento. Por favor, inténtalo nuevamente."));
-  });
 }
 
 /* =========================================================================
@@ -959,7 +966,7 @@ function renderOpciones(opciones, q, optionsSlot, errorSlot){
       el("span", {}, [o.texto])
     ]);
     btn.addEventListener("click", function(){
-      if(state.busy) return;
+      if(btn.disabled) return; // el botón ya queda deshabilitado apenas se responde
       buttons.forEach(function(b){ b.classList.remove("selected"); });
       btn.classList.add("selected");
       registrarRespuesta(q, o, buttons, errorSlot);
@@ -1194,14 +1201,9 @@ function buildCtaSection(){
   return section;
 }
 
-function registrarConversion(contactBtn, statusSlot){
-  state.busy = true;
-  statusSlot.innerHTML = "";
-  var originalLabel = contactBtn.textContent;
-  contactBtn.disabled = true;
-  contactBtn.textContent = "Registrando contacto…";
-
-  callApi("registrar_conversion", {
+function registrarConversionConReintento(intentosRestantes){
+  if(intentosRestantes === undefined) intentosRestantes = 2;
+  return callApi("registrar_conversion", {
     lead_id: state.leadId,
     session_id: state.sessionId,
     microapp_id: MICROAPP_ID,
@@ -1209,7 +1211,23 @@ function registrarConversion(contactBtn, statusSlot){
     comentario: "Contacto solicitado desde la microapp"
   }, {
     friendlyMsg: "No pudimos registrar tu solicitud de contacto. Puedes intentarlo nuevamente."
-  }).then(function(res){
+  }).catch(function(err){
+    if(intentosRestantes > 0) return registrarConversionConReintento(intentosRestantes - 1);
+    throw err;
+  });
+}
+
+function registrarConversion(contactBtn, statusSlot){
+  state.busy = true;
+  statusSlot.innerHTML = "";
+  var originalLabel = contactBtn.textContent;
+  contactBtn.disabled = true;
+  contactBtn.textContent = "Registrando contacto…";
+
+  // Con reintentos: si es un tropiezo de red pasajero, se resuelve solo, sin que
+  // la persona tenga que volver a hacer clic. Solo se muestra error si falla
+  // incluso después de reintentar.
+  registrarConversionConReintento().then(function(res){
     state.busy = false;
     if(res && res.ok === true){
       state.conversionRegistrada = true;
@@ -1232,9 +1250,7 @@ function registrarConversion(contactBtn, statusSlot){
       statusSlot.appendChild(el("div", { class: "confirmation-box" }, [
         el("div", { class: "ok-badge" }, ["✓ Solicitud de contacto registrada correctamente."]),
         el("div", {}, [
-          "Nos pondremos en contacto contigo pronto. También puedes llamarnos directamente al ",
-          el("a", { href: "tel:" + PHONE_TEL, style: "color:#fff;font-weight:700;" }, [PHONE_DISPLAY]),
-          "."
+          "Nos pondremos en contacto contigo pronto."
         ]),
         finishBtn,
         finishNote
