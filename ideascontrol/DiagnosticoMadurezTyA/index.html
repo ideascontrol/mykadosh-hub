@@ -520,17 +520,18 @@ function errorBannerWithRetry(message, onRetry){
 function renderPresentacion(){
   state.stage = "PRESENTACION";
   var hero = el("div", { class: "hero" }, [
-    el("span", { class: "eyebrow" }, ["Microapp · Ideas Control"]),
+    el("span", { class: "eyebrow" }, ["Ideas Control"]),
     el("h1", {}, ["Diagnóstico de madurez en Tiempo & Asistencia"]),
     el("p", { class: "lead" }, [
-      "Responde 10 preguntas breves sobre cómo tu organización gestiona la asistencia, los horarios y el control de tiempo laboral, y recibe de inmediato un resultado claro sobre tu nivel de madurez."
+      "Descubre en 2 minutos qué tan madura está tu empresa en el control de Tiempo & Asistencia y dónde tienes mayores oportunidades de mejora. Responde 10 preguntas breves y recibe tu resultado inmediatamente."
     ]),
     el("div", { class: "hero-benefits" }, [
       el("div", { class: "item" }, [ el("strong", {}, ["Rápido"]), "Solo toma unos minutos completarlo." ]),
       el("div", { class: "item" }, [ el("strong", {}, ["Resultado inmediato"]), "Obtén tu nivel de madurez al instante." ]),
       el("div", { class: "item" }, [ el("strong", {}, ["Accionable"]), "Identifica las áreas con mayor oportunidad de mejora." ])
     ]),
-    el("button", { class: "btn btn-accent", onclick: function(){ renderRegistro(); } }, ["Comenzar diagnóstico"])
+    el("button", { class: "btn btn-accent", onclick: function(){ renderRegistro(); } }, ["Comenzar Diagnóstico Gratuito"]),
+    el("div", { style: "margin-top:12px;font-size:.85rem;color:rgba(255,255,255,.85);" }, ["10 preguntas - 2 minutos - resultado inmediato"])
   ]);
   renderStage(hero);
 }
