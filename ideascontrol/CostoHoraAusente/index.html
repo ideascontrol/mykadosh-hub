@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>El costo del ausentismo | Ideas Control</title>
 <meta name="description" content="Aprende cómo calcular el costo real del ausentismo en tu empresa con Ideas Control.">
-<script type="text/javascript" src="https://me.kis.v2.scr.kaspersky-labs.com/FD126C42-EBFA-4E12-B309-BB3FDD723AC1/main.js?attr=HQ6_VFbLSGAoCF8aNoTi7_hOFg8VxiKt-dxbSY8M7pw0lV8m6jdutNoB3cwlsYwcUxtyK4hhRyMFZro-1-yruwRlOK6mWgt2Z84jizVpMbmohnrlkqrCl1x8HwK0rx-X91sExA9ec3AmtahgfEgrrZzDrO7K7zyJa8Acx55laVC5rEhrdRr_-JfDAc-d9izAyrwEK3JqVQDl6ET02PlCj_aftMWrcJkVbZjhYRuPruU_2Q9gZuhKmX1QlE3XSvxWcWyRoPD5xHUAzWU-S0u3EjKqfCnGDXN5E1cHqvbnuMBqAT_HMKDYyh5FtC7oilXGJ1urPfnAag-fdGBQyOr8XZS5Z4lCBFbA4xFdQJgffeZu7BaraiTzYc3V3SFN7brt" charset="UTF-8"></script><link rel="stylesheet" crossorigin="anonymous" href="https://me.kis.v2.scr.kaspersky-labs.com/E3E8934C-235A-4B0E-825A-35A08381A191/abn/main.css?attr=aHR0cHM6Ly9jaGF0Z3B0LmNvbS9iYWNrZW5kLWFwaS9lc3R1YXJ5L2NvbnRlbnQ_aWQ9ZmlsZV8wMDAwMDAwMGUyMDg4MWY1OTA2MzhjYTJlMjg0M2Y2NCZmbj1jYWxjdWxhZG9yYS1hdXNlbnRpc21vLWNvbnRhY3RvLWd1aWEtaWRlYXMtY29udHJvbC5odG1sJmNkPWF0dGFjaG1lbnQmdHM9NDk3NDE2JnA9ZnMmY2lkPTEmc2lnPWQ0OTRkZjE3YjlmZmNjZWMxMTk4MTkyOTUxOTI2ZWVkNmMwN2M0NzExZWE4NWNkZTYxNzFmZmI3MDg3YjE4OWQmdj0w"/><style>
+<style>
 :root{
   --primary:#1B8CA8;--primary-dark:#0F5F74;--primary-light:#57B9CE;
   --accent:#C9A227;--accent-light:#E4C65A;--success:#1D9A6C;
@@ -152,18 +152,60 @@ function renderInicio(){
   const hero=el("section",{class:"hero"},[
     el("span",{class:"eyebrow"},["Ideas Control"]),
     el("h1",{},["El fantasma del ausentismo tiene un costo. ¿Sabes cuál?"]),
-    el("p",{},["Te enseñamos una forma sencilla de estimarlo y qué variables debes tener en cuenta para entender el verdadero impacto de una ausencia."]),
-
+    el("p",{},["Descubre primero una forma sencilla de estimarlo y las variables que debes tener en cuenta para entender el verdadero impacto de una ausencia."])
   ]);
 
-  const card=el("section",{class:"card"},[
-    el("div",{class:"step"},[el("span",{class:"dot"},["1"]),el("span",{},["Déjanos tus datos de contacto"])]),
-    el("h2",{},["Déjanos tus datos de contacto"]),
-    el("p",{class:"muted"},["Solo necesitamos estos datos para identificarte y, si lo deseas, acompañarte con información de Ideas Control."]),
+  const tips=el("section",{class:"card"},[
+    el("div",{class:"step"},[el("span",{class:"dot"},["1"]),el("span",{},["Empieza por entender el cálculo"])]),
+    el("h2",{},["4 variables que debes mirar"]),
+    el("p",{class:"muted"},["No necesitas comenzar con un modelo complejo. Empieza por estas cuatro preguntas."]),
+    el("div",{class:"tip-grid"},[
+      tip(1,"¿Cuánto cuesta la hora de la persona?","Divide el costo laboral mensual entre las horas laborales del mes. Si quieres un análisis más completo, incorpora prestaciones y cargas laborales."),
+      tip(2,"¿Cuántas horas se perdieron?","Convierte los días u horas de ausencia en horas no trabajadas. Esta es la base del cálculo."),
+      tip(3,"¿Qué costo generó cubrir la ausencia?","Identifica horas extra, reemplazos, redistribución de personal y tiempo adicional de supervisión."),
+      tip(4,"¿Qué productividad dejó de generarse?","Si puedes estimar el valor de una hora productiva, calcula el valor económico que dejó de generarse.")
+    ]),
+    el("div",{class:"formula"},["Costo directo = costo de ausencia + costo de cobertura + costo administrativo"]),
+    el("div",{class:"formula"},["Impacto económico estimado = costo directo + productividad no generada"])
+  ]);
+
+  const example=el("section",{class:"card"},[
+    el("div",{class:"step"},[el("span",{class:"dot"},["2"]),el("span",{},["Mira cómo funciona"])]),
+    el("h2",{},["Ejemplo sencillo"]),
+    el("p",{class:"muted"},["Supongamos una persona con un costo laboral mensual de $3.000.000, una jornada de 8 horas y 20 días laborales."]),
+    el("div",{class:"example"},[
+      el("h3",{},["Paso 1 — Costo de una hora"]),
+      el("table",{class:"example-table"},[
+        row("Horas del mes","20 × 8 = 160 horas"),
+        row("Costo por hora","$3.000.000 ÷ 160 = $18.750")
+      ]),
+      el("h3",{style:"margin-top:18px"},["Paso 2 — Una ausencia de 8 horas"]),
+      el("table",{class:"example-table"},[
+        row("Costo laboral de la ausencia","8 × $18.750 = $150.000"),
+        row("Si además genera horas extra","se suma el costo incremental de esas horas"),
+        row("Si requiere reemplazo","se suma el costo del reemplazo"),
+        row("Si afecta productividad","se estima el valor de las horas productivas no generadas")
+      ])
+    ])
+  ]);
+
+  const insight=el("section",{class:"result-card"},[
+    el("h2",{},["El verdadero susto no es quién falta. Es no saber cuánto cuesta."]),
+    el("p",{},["Una ausencia puede parecer un caso aislado. Cuando se repite, sus efectos pueden aparecer en horas extra, reemplazos, supervisión y productividad."])
+  ]);
+
+  const contact=el("section",{class:"card"},[
+    el("div",{class:"step"},[el("span",{class:"dot"},["3"]),el("span",{},["Si quieres que te contactemos"])]),
+    el("h2",{},["¿Quieres conocer cómo medirlo mejor en tu empresa?"]),
+    el("p",{class:"muted"},["Ya viste la guía y el ejemplo. Si quieres conversar con Ideas Control sobre el control de tiempos, ausentismo y horas extra, déjanos tus datos de contacto."]),
     createForm()
   ]);
 
-  render(el("div",{},[hero,card]));
+  const note=el("div",{class:"note"},[
+    "Nota: los valores del ejemplo son ilustrativos. No representan datos de clientes de Ideas Control."
+  ]);
+
+  render(el("div",{},[hero,tips,example,insight,contact,note]));
 }
 
 function createForm(){
@@ -200,7 +242,7 @@ function createForm(){
   const error=el("div",{class:"error",id:"formError"});
   form.appendChild(error);
 
-  const btn=el("button",{type:"submit",class:"btn btn-primary"},["Ver cómo calcular el costo"]);
+  const btn=el("button",{type:"submit",class:"btn btn-primary"},["Quiero que me contacten"]);
   form.appendChild(el("div",{class:"actions"},[btn]));
 
   form.addEventListener("submit",async function(e){
@@ -242,12 +284,22 @@ function createForm(){
         fuente:FUENTE
       });
 
-      renderGuia(payload);
+      const contactCard=document.getElementById("leadForm");
+      if(contactCard){
+        const parent=contactCard.closest(".card");
+        if(parent){
+          parent.innerHTML="";
+          parent.appendChild(el("div",{class:"step"},[el("span",{class:"dot"},["✓"]),el("span",{},["Datos recibidos"])]));
+          parent.appendChild(el("h2",{},["Gracias. Recibimos tus datos."]));
+          parent.appendChild(el("p",{class:"muted"},["La guía y el ejemplo quedan disponibles en esta página. Ideas Control podrá contactarte para conversar sobre cómo llevar este análisis a tu operación."]));
+          parent.appendChild(el("a",{class:"btn btn-accent",href:"https://wa.me/"+PHONE+"?text="+encodeURIComponent("Hola Ideas Control. Acabo de consultar la guía del costo del ausentismo y quisiera conocer cómo puedo medirlo mejor en mi empresa."),target:"_blank",rel:"noopener"},["Hablar con Ideas Control"]));
+        }
+      }
     }catch(err){
       console.error(err);
       error.textContent="No pudimos guardar tus datos. Por favor, inténtalo nuevamente.";
       error.style.display="block";
-      btn.disabled=false;btn.textContent="Ver cómo calcular el costo";
+      btn.disabled=false;btn.textContent="Quiero que me contacten";
     }
   });
   return form;
