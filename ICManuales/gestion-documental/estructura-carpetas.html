@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Estructura de carpetas · Gestión Documental · Ideas Control</title>
+<link rel="icon" href="assets/img/ideascontrol.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/gd.css">
+<style>
+/* Layout: mapa de nivel 0 (raíz + 6 carpetas) y debajo el detalle de cada carpeta como árbol con líneas guía */
+:root{
+  --bg:#f3f6f9; --papel:#ffffff; --tinta:#14243a; --texto:#3a4757; --suave:#6a7787; --linea:#d6dfe9;
+  --navy:#1B365D; --azul:#0E76BC; --teal:#159090; --oro:#C9A227;
+  --tint-azul:#e7f1f9; --tint-teal:#e4f3f2; --tint-oro:#faf3dc; --tint-gris:#eef2f6;
+  --c00:#1B365D; --c01:#0E76BC; --c02:#159090; --c03:#9a7a12; --c04:#6b4fa0; --c99:#6a7787;
+  --display:'Montserrat',system-ui,-apple-system,'Segoe UI',sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+
+.ec-wrap{max-width:1120px;margin:0 auto;padding-inline:20px;padding-block:28px 60px}
+.ec code,.ec .m{font-family:var(--mono);font-size:.86em}
+.ec h1,.ec h2,.ec h3{color:var(--tinta);text-wrap:balance;margin:0}
+.ec-eyebrow{font-size:11.5px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--teal)}
+.ec-head{display:grid;gap:10px;margin-bottom:26px}
+.ec-head h1{font-size:clamp(26px,4vw,38px);font-weight:800;letter-spacing:-.5px;line-height:1.15}
+.ec-head p{margin:0;max-width:70ch;color:var(--suave)}
+
+/* Mapa nivel 0 */
+.mapa{position:relative;background:var(--papel);border:1px solid var(--linea);border-radius:16px;padding:22px 22px 24px}
+.raiz{display:flex;justify-content:center}
+.raiz span{font-family:var(--mono);font-weight:600;font-size:14px;letter-spacing:1px;color:var(--papel);background:var(--navy);padding:10px 18px;border-radius:10px}
+.tronco{height:18px;width:2px;background:var(--linea);margin:0 auto}
+.ramas0{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;position:relative;padding-top:18px}
+.ramas0::before{content:"";position:absolute;top:0;left:8.33%;right:8.33%;height:2px;background:var(--linea)}
+.n0{position:relative;display:flex;flex-direction:column;gap:6px;border:1px solid var(--linea);border-top:4px solid var(--c);border-radius:10px;padding:12px 12px 13px;background:var(--papel);color:inherit;text-decoration:none;min-width:0}
+.n0::before{content:"";position:absolute;top:-22px;left:50%;width:2px;height:18px;background:var(--linea)}
+.n0:hover,.n0:focus-visible{border-color:var(--c);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--c) 18%,transparent)}
+.n0 .cd{font-family:var(--mono);font-weight:600;font-size:20px;color:var(--c);line-height:1}
+.n0 .nm{font-family:var(--mono);font-size:11.5px;font-weight:600;color:var(--tinta);word-break:break-word}
+.n0 .fd{font-size:12.5px;color:var(--texto);line-height:1.4}
+.n0 .ir{margin-top:auto;font-size:11.5px;font-weight:600;color:var(--c)}
+
+/* Reglas de nombre */
+.reglas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:18px}
+.regla{background:var(--papel);border:1px solid var(--linea);border-radius:12px;padding:12px 14px;min-width:0}
+.regla b{display:block;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--suave);margin-bottom:4px}
+.regla code{display:block;color:var(--tinta);font-size:13px;word-break:break-all}
+.regla span{font-size:12.5px;color:var(--suave)}
+
+/* Secciones de detalle */
+.sec{display:grid;grid-template-columns:240px minmax(0,1fr);gap:24px;margin-top:36px;scroll-margin-top:80px}
+.sec-tit{align-self:start;position:sticky;top:12px}
+.sec-tit .cd{font-family:var(--mono);font-weight:600;font-size:28px;color:var(--c);line-height:1}
+.sec-tit h2{font-family:var(--mono);font-size:15px;margin-top:6px;word-break:break-word}
+.sec-tit .fd{margin-top:6px;font-weight:700;color:var(--tinta);font-size:14px}
+.sec-tit p{margin:6px 0 0;font-size:12.5px;color:var(--suave)}
+.caja{background:var(--papel);border:1px solid var(--linea);border-radius:14px;padding:18px 20px;min-width:0}
+
+/* Árbol */
+.arbol,.arbol ul{list-style:none;margin:0;padding:0}
+.arbol ul{margin-left:14px;padding-left:18px;border-left:2px solid var(--linea)}
+.arbol li{position:relative;padding:5px 0}
+.arbol ul>li::before{content:"";position:absolute;left:-18px;top:17px;width:14px;height:2px;background:var(--linea)}
+.nodo{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.carp{font-family:var(--mono);font-weight:600;font-size:13px;color:var(--tinta);display:inline-flex;align-items:center;gap:7px}
+.carp::before{content:"";width:14px;height:11px;border-radius:2px 3px 3px 3px;background:var(--c, var(--azul));opacity:.85;flex:none;position:relative;top:1px}
+.carp.pat{color:var(--c, var(--azul))}
+.carp.arch::before{width:10px;height:13px;border-radius:1px 4px 1px 1px;background:var(--oro)}
+.carp.arch{font-weight:500;font-size:12px;color:var(--texto)}
+.def{font-size:12.5px;color:var(--suave);line-height:1.45;flex:1 1 260px;min-width:0}
+.tag{font-size:10.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;padding:2px 7px;border-radius:999px;background:var(--tint-gris);color:var(--suave)}
+.tag.ej{background:var(--tint-oro);color:var(--c03)}
+.tag.portal{background:var(--tint-azul);color:var(--azul)}
+.ruta{margin-top:14px;background:var(--tint-azul);border-radius:10px;padding:10px 12px;font-size:12.5px;color:var(--texto)}
+.ruta code{color:var(--tinta);word-break:break-all}
+.consec{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px}
+.consec th,.consec td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--linea);vertical-align:top}
+.consec th{font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:var(--suave);font-weight:700}
+.consec td code{color:var(--tinta);font-size:12.5px}
+.tscroll{overflow-x:auto}
+.flujo-com{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:14px;font-size:12.5px}
+.flujo-com span{border:1px solid var(--linea);border-radius:8px;padding:6px 10px;background:var(--bg);color:var(--tinta);font-weight:600}
+.flujo-com i{font-style:normal;color:var(--suave)}
+.flujo-com span.fin{background:var(--tint-azul);border-color:transparent;color:var(--azul)}
+.nota{margin-top:12px;font-size:12.5px;color:var(--suave)}
+.pie{margin-top:30px;font-size:12px;color:var(--suave)}
+
+@media (max-width:980px){ .ramas0{grid-template-columns:repeat(3,minmax(0,1fr))} .ramas0::before,.n0::before,.tronco{display:none} .ramas0{padding-top:14px} .reglas{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:820px){ .sec{grid-template-columns:1fr;gap:12px} .sec-tit{position:static} }
+@media (max-width:520px){ .ramas0{grid-template-columns:repeat(2,minmax(0,1fr))} .reglas{grid-template-columns:1fr} .ec-wrap{padding-inline:16px} .arbol ul{margin-left:6px;padding-left:12px} .arbol ul>li::before{left:-12px;width:9px} }
+
+.herr-migas{max-width:1120px;margin:0 auto;padding:16px 20px 0}
+</style>
+</head>
+<body>
+<main>
+<nav class="migas herr-migas"><a href="index.html">Inicio</a><span>›</span><a href="gestion-operativa.html">Gestión Operativa</a><span>›</span>Estructura de carpetas del servidor</nav>
+<div class="ec"><div class="ec-wrap">
+  <header class="ec-head">
+    <div class="ec-eyebrow">Gestión Documental · Repositorio del servidor</div>
+    <h1>Estructura de carpetas del servidor de IC</h1>
+    <p>Cómo se organiza la información de Ideas Control en el servidor: seis carpetas raíz, qué guarda cada una y cómo se nombran las carpetas de clientes y actividades.</p>
+  </header>
+
+  <nav class="mapa" aria-label="Carpetas raíz">
+    <div class="raiz"><span>IDEAS CONTROL</span></div>
+    <div class="tronco"></div>
+    <div class="ramas0">
+      <a class="n0" href="#c00" style="--c:var(--c00)"><span class="cd">00</span><span class="nm">DOCUMENTACION_MAESTRA</span><span class="fd">Cómo hacemos las cosas</span><span class="ir">Ver detalle ↓</span></a>
+      <a class="n0" href="#c01" style="--c:var(--c01)"><span class="cd">01</span><span class="nm">CLIENTES</span><span class="fd">Qué hicimos para cada cliente</span><span class="ir">Ver detalle ↓</span></a>
+      <a class="n0" href="#c02" style="--c:var(--c02)"><span class="cd">02</span><span class="nm">COMERCIAL</span><span class="fd">Cómo conseguimos y gestionamos el negocio</span><span class="ir">Ver detalle ↓</span></a>
+      <a class="n0" href="#c03" style="--c:var(--c03)"><span class="cd">03</span><span class="nm">ADMINISTRACION_FINANCIERA</span><span class="fd">Cómo administramos los recursos económicos</span><span class="ir">Ver detalle ↓</span></a>
+      <a class="n0" href="#c04" style="--c:var(--c04)"><span class="cd">04</span><span class="nm">GESTION_INTERNA</span><span class="fd">Cómo administramos Ideas Control</span><span class="ir">Ver detalle ↓</span></a>
+      <a class="n0" href="#c99" style="--c:var(--c99)"><span class="cd">99</span><span class="nm">ARCHIVO</span><span class="fd">Lo que ya no está activo, pero debemos conservar</span><span class="ir">Ver detalle ↓</span></a>
+    </div>
+  </nav>
+
+  <div class="reglas" aria-label="Reglas de nombre">
+    <div class="regla"><b>Carpetas</b><code>NN_NOMBRE</code><span>Número de orden, mayúsculas, sin tildes ni espacios.</span></div>
+    <div class="regla"><b>Cliente</b><code>CCCC_NOMBRE_CLIENTE</code><span>Código de 4 dígitos: <code style="display:inline">0002_YAMAHA</code></span></div>
+    <div class="regla"><b>Actividades</b><code>AAAA \ TIPO-AAAA-NNN</code><span>Una carpeta por año y un consecutivo por actividad.</span></div>
+    <div class="regla"><b>Archivos de trabajo</b><code>CCCC_ACT_FORMATO_DET_AAAAMMDD</code><span>El nombre lo asigna el generador de documentos.</span></div>
+  </div>
+
+  <!-- 00 -->
+  <section class="sec" id="c00" style="--c:var(--c00)">
+    <div class="sec-tit"><div class="cd">00</div><h2>DOCUMENTACION_MAESTRA</h2><div class="fd">Cómo hacemos las cosas</div>
+      <p>Documentos oficiales que establecen cómo Ideas Control realiza sus actividades: manuales, procedimientos, instructivos, formatos, políticas, guías y catálogos. Es la fuente oficial de los documentos controlados.</p></div>
+    <div class="caja">
+      <ul class="arbol">
+        <li><div class="nodo"><span class="carp">Gestión Documental</span><span class="def">Administración y control del sistema documental.</span></div></li>
+        <li><div class="nodo"><span class="carp">Gerencia</span><span class="def">Documentos propios de dirección y gobierno.</span></div></li>
+        <li><div class="nodo"><span class="carp">Gestión Comercial</span><span class="def">Define y soporta la gestión comercial, clientes, marketing y fidelización.</span></div>
+          <ul>
+            <li><span class="carp arch">3100-MAN-COM Manual Maestro Comercial y Relación con Clientes</span></li>
+            <li><span class="carp arch">3200-MAN-COM Manual Maestro de Experiencia y Fidelización del Cliente</span></li>
+            <li><span class="carp arch">3300-MAN-COM Manual de Marketing</span></li>
+            <li><div class="nodo"><span class="carp">Documentación Campañas</span></div>
+              <ul><li><span class="carp">Contenido</span></li><li><span class="carp">Newsletters</span></li><li><span class="carp">Videos</span></li></ul></li>
+            <li><span class="carp arch">3400 Política para Pilotos</span></li>
+          </ul></li>
+        <li><div class="nodo"><span class="carp">Gestión de Inventario</span><span class="def">Control y gestión de inventarios.</span></div></li>
+        <li><div class="nodo"><span class="carp">Gestión de la Información y Tecnología</span><span class="def">Sistemas, información, tecnología y seguridad.</span></div></li>
+        <li><div class="nodo"><span class="carp">Gestión de Operaciones</span><span class="def">Instalación, configuración, soporte y mantenimiento.</span></div>
+          <ul>
+            <li><div class="nodo"><span class="carp">2100 · Instalación Biométrico Hardware</span><span class="tag portal">En el portal</span></div></li>
+            <li><div class="nodo"><span class="carp">2200 · Instalación y Configuración WFM</span></div></li>
+            <li><div class="nodo"><span class="carp">2300 · Soporte Técnico Biométrico</span></div></li>
+            <li><div class="nodo"><span class="carp">2400 · Gestión de Mantenimiento Biométrico</span><span class="tag portal">En el portal</span></div></li>
+          </ul></li>
+        <li><div class="nodo"><span class="carp">Indicadores de Gestión</span><span class="def">Definición, seguimiento y control de indicadores.</span></div></li>
+        <li><div class="nodo"><span class="carp">Reporte de Avance</span><span class="def">Seguimiento de planes, proyectos y avances de gestión.</span></div></li>
+      </ul>
+      <p class="nota">El portal de Gestión Documental publica en modo lectura los documentos aprobados de esta carpeta, y las plantillas de trabajo de los formatos.</p>
+    </div>
+  </section>
+
+  <!-- 01 -->
+  <section class="sec" id="c01" style="--c:var(--c01)">
+    <div class="sec-tit"><div class="cd">01</div><h2>CLIENTES</h2><div class="fd">Qué hicimos para cada cliente</div>
+      <p>Empresas que ya son clientes y toda su relación documental: legal, comercial, proyectos, instalaciones, soporte, mantenimiento, actas y evidencias.</p></div>
+    <div class="caja">
+      <ul class="arbol">
+        <li><div class="nodo"><span class="carp pat">CCCC_NOMBRE_CLIENTE</span><span class="tag ej">Ej.: 0002_YAMAHA</span><span class="def">Una carpeta por cliente, con la misma estructura para todos.</span></div>
+          <ul>
+            <li><div class="nodo"><span class="carp">01_LEGAL</span><span class="def">Contratos, otrosíes, acuerdos, órdenes de compra y documentos similares.</span></div>
+              <ul><li><span class="carp">01_CONTRATOS</span></li><li><span class="carp">02_OTROSI</span></li><li><span class="carp">03_ORDENES_COMPRA</span></li><li><span class="carp">04_ACUERDOS</span></li></ul></li>
+            <li><div class="nodo"><span class="carp">02_COMERCIAL</span><span class="def">Cotizaciones, propuestas, negociaciones y acuerdos comerciales del cliente.</span></div>
+              <ul><li><span class="carp">01_COTIZACIONES</span></li><li><span class="carp">02_PROPUESTAS</span></li><li><span class="carp">03_NEGOCIACIONES</span></li><li><span class="carp">04_ACUERDOS_COMERCIALES</span></li></ul></li>
+            <li><div class="nodo"><span class="carp">03_PROYECTOS</span><span class="def">Documentación de proyectos específicos realizados para el cliente.</span></div>
+              <ul><li><span class="carp">AAAA</span><ul><li><span class="carp pat">PRO-AAAA-NNN</span></li></ul></li></ul></li>
+            <li><div class="nodo"><span class="carp">04_INSTALACIONES</span><span class="def">Instalaciones de equipos, sistemas biométricos, WFM y puesta en funcionamiento.</span></div>
+              <ul><li><span class="carp">2026</span>
+                <ul><li><div class="nodo"><span class="carp pat">INS-2026-001</span><span class="tag ej">Ejemplo</span></div>
+                  <ul>
+                    <li><span class="carp arch">0002_INS-2026-001_2101-FOR-OPE_SEDE-PRINCIPAL_20261015_FIRMADO.pdf</span></li>
+                    <li><span class="carp arch">0002_INS-2026-001_2102-FOR-OPE_EQ01_20261015_FIRMADO.pdf</span></li>
+                    <li><span class="carp arch">0002_INS-2026-001_2103-FOR-OPE_EQ01_20261016_FIRMADO.pdf</span></li>
+                    <li><span class="carp arch">0002_INS-2026-001_2104-FOR-OPE_EQ01_20261015_FIRMADO.pdf</span></li>
+                    <li><span class="carp arch">0002_INS-2026-001_2105-FOR-OPE_20261017_FIRMADO.pdf</span></li>
+                    <li><span class="carp">EVIDENCIAS</span></li>
+                  </ul></li></ul></li></ul></li>
+            <li><div class="nodo"><span class="carp">05_SOPORTE</span><span class="def">Registros y evidencias de servicios de soporte técnico.</span></div>
+              <ul><li><span class="carp">AAAA</span><ul><li><span class="carp pat">TCK-AAAA-NNNN</span></li></ul></li></ul></li>
+            <li><div class="nodo"><span class="carp">06_MANTENIMIENTO</span><span class="def">Mantenimientos preventivos, correctivos y demás actividades sobre equipos o soluciones del cliente.</span></div>
+              <ul><li><span class="carp">AAAA</span><ul><li><span class="carp pat">MTTO-AAAA-NNN</span></li></ul></li></ul></li>
+            <li><div class="nodo"><span class="carp">07_DOCUMENTACION_CLIENTE</span><span class="def">Información propia del cliente que IC necesita consultar para prestar sus servicios.</span></div>
+              <ul><li><span class="carp">01_DATOS_CLIENTE</span></li><li><span class="carp">02_CONTACTOS</span></li><li><span class="carp">03_SEDES</span></li><li><span class="carp">04_EQUIPOS</span></li><li><span class="carp">05_CONFIGURACION</span></li><li><span class="carp">06_DOCUMENTACION_TECNICA</span></li></ul></li>
+          </ul></li>
+      </ul>
+      <div class="tscroll"><table class="consec">
+        <thead><tr><th>Actividad</th><th>Carpeta</th><th>Consecutivo</th><th>Ejemplo</th></tr></thead>
+        <tbody>
+          <tr><td>Proyecto</td><td><code>03_PROYECTOS</code></td><td><code>PRO-AAAA-NNN</code></td><td><code>PRO-2026-001</code></td></tr>
+          <tr><td>Instalación</td><td><code>04_INSTALACIONES</code></td><td><code>INS-AAAA-NNN</code></td><td><code>INS-2026-001</code></td></tr>
+          <tr><td>Soporte (ticket)</td><td><code>05_SOPORTE</code></td><td><code>TCK-AAAA-NNNN</code></td><td><code>TCK-2026-0001</code></td></tr>
+          <tr><td>Mantenimiento</td><td><code>06_MANTENIMIENTO</code></td><td><code>MTTO-AAAA-NNN</code></td><td><code>MTTO-2026-001</code></td></tr>
+        </tbody></table></div>
+      <div class="ruta">Ruta completa del ejemplo: <code>01_CLIENTES\0002_YAMAHA\04_INSTALACIONES\2026\INS-2026-001\</code></div>
+    </div>
+  </section>
+
+  <!-- 02 -->
+  <section class="sec" id="c02" style="--c:var(--c02)">
+    <div class="sec-tit"><div class="cd">02</div><h2>COMERCIAL</h2><div class="fd">Cómo conseguimos y gestionamos el negocio</div>
+      <p>Empresas que aún están en proceso comercial: prospectos, oportunidades, propuestas, cotizaciones, presentaciones y negociaciones.</p></div>
+    <div class="caja">
+      <ul class="arbol">
+        <li><div class="nodo"><span class="carp">01_GESTION_COMERCIAL</span><span class="def">Gestión de prospectos y oportunidades, desde la identificación del potencial cliente hasta la preparación de una propuesta.</span></div></li>
+        <li><div class="nodo"><span class="carp">02_PROPUESTAS_Y_COTIZACIONES</span><span class="def">Propuestas comerciales, cotizaciones, presupuestos y sus versiones.</span></div></li>
+        <li><div class="nodo"><span class="carp">03_CIERRE</span><span class="def">Documentos que formalizan la culminación de la negociación: aceptación de propuesta, orden de compra, contrato.</span></div></li>
+      </ul>
+      <div class="flujo-com" aria-label="Flujo del proceso comercial"><span>Gestión comercial</span><i>→</i><span>Propuesta / cotización</span><i>→</i><span>Negociación</span><i>→</i><span>Se cierra</span><i>→</i><span class="fin">Cliente · pasa a 01_CLIENTES</span></div>
+    </div>
+  </section>
+
+  <!-- 03 -->
+  <section class="sec" id="c03" style="--c:var(--c03)">
+    <div class="sec-tit"><div class="cd">03</div><h2>ADMINISTRACION_FINANCIERA</h2><div class="fd">Cómo administramos los recursos económicos</div>
+      <p>Gestión administrativa, contable y financiera: facturación, cartera, pagos, bancos, impuestos, presupuestos y contabilidad.</p></div>
+    <div class="caja">
+      <ul class="arbol">
+        <li><div class="nodo"><span class="carp">01_CONTABILIDAD</span><span class="def">Comprobantes, conciliaciones y soportes contables.</span></div></li>
+        <li><div class="nodo"><span class="carp">02_FACTURACION</span><span class="def">Elaboración, emisión, control y seguimiento de facturas.</span></div></li>
+        <li><div class="nodo"><span class="carp">03_CUENTAS_POR_COBRAR</span><span class="def">Cartera, seguimiento de vencimientos, acuerdos de pago.</span></div></li>
+        <li><div class="nodo"><span class="carp">04_CUENTAS_POR_PAGAR</span><span class="def">Obligaciones pendientes con proveedores y terceros.</span></div></li>
+        <li><div class="nodo"><span class="carp">05_BANCOS</span><span class="def">Extractos, conciliaciones y soportes bancarios.</span></div></li>
+        <li><div class="nodo"><span class="carp">06_IMPUESTOS</span><span class="def">Declaraciones, liquidaciones, certificados y soportes.</span></div></li>
+        <li><div class="nodo"><span class="carp">07_INFORMES_FINANCIEROS</span><span class="def">Estados financieros, flujo de caja, presupuestos e informes gerenciales.</span></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 04 -->
+  <section class="sec" id="c04" style="--c:var(--c04)">
+    <div class="sec-tit"><div class="cd">04</div><h2>GESTION_INTERNA</h2><div class="fd">Cómo administramos Ideas Control</div>
+      <p>Administración y operación interna que no corresponde a un cliente, al proceso comercial ni a la gestión financiera.</p></div>
+    <div class="caja">
+      <ul class="arbol">
+        <li><div class="nodo"><span class="carp">01_GERENCIA</span><span class="def">Decisiones, planes, reuniones de dirección, proyectos estratégicos y gobierno.</span></div></li>
+        <li><div class="nodo"><span class="carp">02_GESTION_HUMANA</span><span class="def">Hojas de vida, contratos, inducción, capacitación y evaluaciones.</span></div></li>
+        <li><div class="nodo"><span class="carp">03_TECNOLOGIA</span><span class="def">Equipos, sistemas, licencias, configuraciones y accesos internos.</span></div></li>
+        <li><div class="nodo"><span class="carp">04_SEGURIDAD_DE_LA_INFORMACION</span><span class="def">Políticas, controles, riesgos, incidentes, respaldos y evidencias.</span></div></li>
+        <li><div class="nodo"><span class="carp">05_COMPRAS</span><span class="def">Solicitudes, cotizaciones, comparativos y órdenes de compra.</span></div></li>
+        <li><div class="nodo"><span class="carp">06_PROVEEDORES</span><span class="def">Información, contratos, acuerdos y evaluaciones de proveedores.</span></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 99 -->
+  <section class="sec" id="c99" style="--c:var(--c99)">
+    <div class="sec-tit"><div class="cd">99</div><h2>ARCHIVO</h2><div class="fd">Lo que ya no está activo, pero debemos conservar</div>
+      <p>Documentación no vigente que se conserva por razones legales, contractuales, históricas, administrativas o de trazabilidad. No se elimina.</p></div>
+    <div class="caja">
+      <p style="margin:0;font-size:13.5px"><b>Recomendación:</b> cuando un documento o una carpeta deja de estar activa, trasladarla aquí conservando su ruta de origen, por ejemplo <code>99_ARCHIVO\01_CLIENTES\0001_ALCIAUTOS\…</code>, para poder ubicarla después.</p>
+    </div>
+  </section>
+
+  <p class="pie">Ideas Control Equipos y Soluciones S.A.S. · Estructura definida para el repositorio del servidor.</p>
+</div></div>
+</main>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/catalogo.js"></script>
+<script src="assets/js/app.js"></script>
+<script>(function(){ var u = GDAuth.proteger(); if (u) GD.encabezadoSimple(u, 'Herramientas de consulta'); })();</script>
+</body>
+</html>
