@@ -1,0 +1,288 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Ruta del técnico · Gestión Documental · Ideas Control</title>
+<link rel="icon" href="assets/img/ideascontrol.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/gd.css">
+<style>
+/* Layout: banda de fases (oficina → sitio → oficina); flujo vertical con rail, decisiones en rombo y ramas laterales */
+:root{
+  --bg:#f3f6f9; --papel:#ffffff; --tinta:#14243a; --texto:#3a4757; --suave:#6a7787; --linea:#dbe3ec;
+  --navy:#1B365D; --azul:#0E76BC; --teal:#159090; --oro:#C9A227; --rojo:#b8452f;
+  --c-coord:#7a4fb5; --c-tec:#0E76BC; --c-cli:#159090; --c-portal:#C9A227;
+  --tint-azul:#e7f1f9; --tint-teal:#e4f3f2; --tint-oro:#faf3dc; --tint-lila:#f1ebf8; --tint-rojo:#fbece8;
+  --display:'Montserrat',system-ui,-apple-system,'Segoe UI',sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+
+.rt-wrap{max-width:1080px;margin:0 auto;padding-inline:20px;padding-block:28px 60px}
+code,.cod{font-family:var(--mono);font-size:.86em}
+h1,h2,h3{color:var(--tinta);text-wrap:balance;margin:0}
+.eyebrow{font-size:11.5px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--teal)}
+header.rt-head{display:grid;gap:10px;margin-bottom:22px}
+header.rt-head h1{font-size:clamp(26px,4vw,38px);font-weight:800;letter-spacing:-.5px;line-height:1.15}
+header.rt-head p{margin:0;max-width:68ch;color:var(--suave)}
+.ej{display:inline-flex;gap:8px;flex-wrap:wrap;margin-top:4px}
+.ej span{background:var(--papel);border:1px solid var(--linea);border-radius:999px;padding:4px 11px;font-size:12.5px;color:var(--texto)}
+.ej b{color:var(--tinta)}
+
+/* Leyenda */
+.leyenda{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center;background:var(--papel);border:1px solid var(--linea);border-radius:12px;padding:12px 16px;font-size:12.5px;margin-bottom:26px}
+.leyenda .t{font-weight:700;color:var(--tinta);margin-right:4px}
+.act{display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:11px;letter-spacing:.5px;text-transform:uppercase;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.act::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.coord{color:var(--c-coord);background:var(--tint-lila)} .tec{color:var(--c-tec);background:var(--tint-azul)}
+.cli{color:var(--c-cli);background:var(--tint-teal)} .portal{color:#8a6a07;background:var(--tint-oro)}
+.sh{display:inline-flex;align-items:center;gap:6px;color:var(--suave)}
+.sh i{display:inline-block;width:16px;height:12px;border:1.5px solid var(--suave);border-radius:3px}
+.sh i.rombo{width:11px;height:11px;transform:rotate(45deg);border-radius:1px}
+.sh i.dcto{border-radius:2px 2px 6px 2px;border-color:var(--oro)}
+
+/* Fases */
+.fase{display:grid;grid-template-columns:200px minmax(0,1fr);gap:24px;margin-top:8px}
+.fase+.fase{margin-top:30px}
+.fase-tit{position:sticky;top:12px;align-self:start}
+.fase-tit .n{font-family:var(--mono);font-size:12px;color:var(--suave)}
+.fase-tit h2{font-size:20px;line-height:1.2;margin-top:2px}
+.fase-tit p{margin:6px 0 0;font-size:12.5px;color:var(--suave)}
+.fase-tit .lugar{display:inline-block;margin-top:8px;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--navy);border:1px solid var(--linea);border-radius:6px;padding:3px 8px;background:var(--papel)}
+
+/* Flujo */
+.flujo{list-style:none;margin:0;padding:0;position:relative}
+.flujo::before{content:"";position:absolute;left:21px;top:10px;bottom:10px;width:2px;background:repeating-linear-gradient(to bottom,var(--linea) 0 6px,transparent 6px 10px)}
+.paso{position:relative;display:grid;grid-template-columns:44px minmax(0,1fr);gap:14px;padding-bottom:14px}
+.paso:last-child{padding-bottom:0}
+.num{position:relative;z-index:1;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-family:var(--mono);font-weight:600;font-size:14px;background:var(--navy);color:var(--papel)}
+.paso.dec .num{width:34px;height:34px;margin:5px;border-radius:5px;transform:rotate(45deg);background:var(--oro);color:#1d1503}
+.paso.dec .num span{transform:rotate(-45deg)}
+.paso.fin .num{border-radius:50%;background:var(--teal)}
+.caja{background:var(--papel);border:1px solid var(--linea);border-radius:12px;padding:12px 16px;min-width:0}
+.paso.dec .caja{border-color:var(--oro);border-style:dashed}
+.cab{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:4px}
+.caja h3{font-size:15.5px;line-height:1.35}
+.caja p{margin:4px 0 0;font-size:13.5px}
+.rt-docs{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.rt-docs span{display:inline-flex;align-items:center;gap:6px;font-size:12px;border:1px solid var(--linea);border-left:3px solid var(--oro);border-radius:4px 6px 6px 4px;padding:3px 9px;background:var(--bg);color:var(--texto)}
+.rt-docs span b{font-family:var(--mono);font-weight:600;font-size:11.5px;color:var(--tinta)}
+.rt-docs span.lee{border-left-color:var(--azul)}
+.ramas{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.rama{border-radius:9px;padding:8px 11px;font-size:12.5px;line-height:1.45}
+.rama b{display:block;font-size:11px;letter-spacing:.8px;text-transform:uppercase;margin-bottom:2px}
+.rama.si{background:var(--tint-teal);color:var(--texto)} .rama.si b{color:var(--teal)}
+.rama.no{background:var(--tint-rojo);color:var(--texto)} .rama.no b{color:var(--rojo)}
+.salida{margin-top:9px;font-size:12.5px;color:var(--suave)}
+.salida code{color:var(--tinta);word-break:break-all}
+.bucle{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;font-weight:600;color:var(--azul)}
+
+/* Carpeta resultante */
+.resultado{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:18px;margin-top:38px}
+.panel{background:var(--papel);border:1px solid var(--linea);border-radius:14px;padding:18px 20px;min-width:0}
+.panel h2{font-size:17px;margin-bottom:10px}
+.arbol{font-family:var(--mono);font-size:12px;line-height:1.75;color:var(--texto);overflow-x:auto;white-space:pre;margin:0}
+.arbol .d{color:var(--navy);font-weight:600}
+.arbol .f2101,.arbol .f2102,.arbol .f2103,.arbol .f2104,.arbol .f2105{color:var(--tinta)}
+.arbol .k{color:var(--suave)}
+.reglas{margin:0;padding:0;list-style:none;display:grid;gap:10px;font-size:13.5px}
+.reglas li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:8px}
+.reglas li::before{content:"✓";color:var(--teal);font-weight:800}
+.reglas code{color:var(--tinta)}
+.rt-pie{margin-top:26px;font-size:12px;color:var(--suave)}
+
+@media (max-width:820px){
+  .fase{grid-template-columns:1fr;gap:12px}
+  .fase-tit{position:static}
+  .resultado{grid-template-columns:1fr}
+}
+@media (max-width:520px){ .ramas{grid-template-columns:1fr} .rt-wrap{padding-inline:16px} }
+@media (prefers-reduced-motion:no-preference){ .paso .caja{transition:border-color .15s} .paso .caja:hover{border-color:var(--azul)} }
+
+.herr-migas{max-width:1120px;margin:0 auto;padding:16px 20px 0}
+</style>
+</head>
+<body>
+<main>
+<nav class="migas herr-migas"><a href="index.html">Inicio</a><span>›</span><a href="gestion-operativa.html">Gestión Operativa</a><span>›</span>Ruta del técnico en una instalación</nav>
+<div class="rt-wrap">
+  <header class="rt-head">
+    <div class="eyebrow">Gestión Documental · Serie 2100 · Instalación Biométrico Hardware</div>
+    <h1>Ruta del técnico en una instalación</h1>
+    <p>Desde que se asigna la actividad hasta que los registros quedan archivados en el servidor de IC: qué consultar en el portal, qué documento generar, qué diligenciar en sitio y dónde guardarlo.</p>
+    <div class="ej"><span>Ejemplo: <b>0002 · YAMAHA</b></span><span>Actividad <b>INS-2026-001</b></span><span><b>2</b> biométricos (EQ01, EQ02)</span></div>
+  </header>
+
+  <div class="leyenda" aria-label="Convenciones">
+    <span class="t">Quién actúa</span>
+    <span class="act coord">Coordinador</span><span class="act tec">Técnico</span><span class="act cli">Cliente</span><span class="act portal">Portal</span>
+    <span class="t" style="margin-left:8px">Símbolos</span>
+    <span class="sh"><i></i>Actividad</span><span class="sh"><i class="rombo"></i>Decisión</span><span class="sh"><i class="dcto"></i>Documento</span>
+  </div>
+
+  <!-- FASE 1 -->
+  <section class="fase" aria-labelledby="f1">
+    <div class="fase-tit"><div class="n">Fase 1</div><h2 id="f1">Preparación</h2><p>Antes de salir a la visita.</p><span class="lugar">Oficina</span></div>
+    <ol class="flujo">
+      <li class="paso"><div class="num"><span>1</span></div><div class="caja">
+        <div class="cab"><span class="act coord">Coordinador</span></div>
+        <h3>Asigna la actividad</h3>
+        <p>Define el código del cliente, el consecutivo de la instalación y el proyecto u orden de servicio. Un consecutivo por visita o sede.</p>
+        <div class="salida">Resultado: <code>0002 · INS-2026-001 · PRO-2026-001</code></div>
+      </div></li>
+      <li class="paso"><div class="num"><span>2</span></div><div class="caja">
+        <div class="cab"><span class="act tec">Técnico</span><span class="act portal">Portal</span></div>
+        <h3>Consulta el procedimiento</h3>
+        <p>Entra a Gestión Documental › Gestión Operativa › 2100 y lee en línea el manual y los instructivos del modelo que va a instalar.</p>
+        <div class="rt-docs"><span class="lee"><b>2100-MAN-OPE</b> Manual de instalación</span><span class="lee"><b>2106–2109</b> Montaje, ping, Ethernet, Wi-Fi</span><span class="lee"><b>2110 · 2115–2117</b> Enrolamiento por modelo</span></div>
+      </div></li>
+      <li class="paso"><div class="num"><span>3</span></div><div class="caja">
+        <div class="cab"><span class="act tec">Técnico</span><span class="act portal">Portal</span></div>
+        <h3>Genera los documentos de trabajo</h3>
+        <p>En <b>Generar documentos de trabajo</b> diligencia una sola vez la actividad, el cliente y los equipos, y marca los formatos. El portal los entrega prediligenciados y con el nombre definido.</p>
+        <div class="rt-docs"><span><b>2101</b> uno por sede</span><span><b>2102 · 2103 · 2104</b> uno por equipo</span><span><b>2105</b> uno por actividad</span></div>
+      </div></li>
+      <li class="paso dec"><div class="num"><span>?</span></div><div class="caja">
+        <h3>¿Usa Chrome o Edge en el portátil?</h3>
+        <div class="ramas">
+          <div class="rama si"><b>Sí</b>Guardar en mi carpeta de trabajo. El portal crea las carpetas y guarda los Word.</div>
+          <div class="rama no"><b>No (celular, Safari, Firefox)</b>Descargar en ZIP y descomprimirlo en la carpeta de trabajo.</div>
+        </div>
+        <div class="salida">Queda: <code>IC_Trabajo\0002_YAMAHA\04_INSTALACIONES\2026\INS-2026-001\</code> con 8 Word y la carpeta <code>EVIDENCIAS\</code></div>
+      </div></li>
+    </ol>
+  </section>
+
+  <!-- FASE 2 -->
+  <section class="fase" aria-labelledby="f2">
+    <div class="fase-tit"><div class="n">Fase 2</div><h2 id="f2">Ejecución</h2><p>Diligencia los Word ya generados. Guarda siempre <b>sin cambiar el nombre</b>.</p><span class="lugar">Sitio del cliente</span></div>
+    <ol class="flujo">
+      <li class="paso"><div class="num"><span>4</span></div><div class="caja">
+        <div class="cab"><span class="act tec">Técnico</span><span class="act cli">Cliente</span></div>
+        <h3>Valida el sitio de instalación</h3>
+        <p>Recorre el punto de montaje, energía, red y condiciones del entorno con el contacto del cliente.</p>
+        <div class="rt-docs"><span><b>2101-FOR-OPE</b> Checklist de Preinstalación</span></div>
+      </div></li>
+      <li class="paso dec"><div class="num"><span>?</span></div><div class="caja">
+        <h3>¿El sitio es apto?</h3>
+        <div class="ramas">
+          <div class="rama si"><b>Sí</b>Continúa con la instalación.</div>
+          <div class="rama no"><b>No / con ajustes</b>Registra los ajustes y el responsable en el 2101, el cliente firma y se reprograma. Vuelve al paso 1 con un nuevo consecutivo.</div>
+        </div>
+      </div></li>
+      <li class="paso"><div class="num"><span>5</span></div><div class="caja">
+        <div class="cab"><span class="act tec">Técnico</span></div>
+        <h3>Instala el equipo y registra su hoja de vida</h3>
+        <p>Monta, conecta y energiza siguiendo los instructivos. Registra serial, MAC, ubicación, conectividad y accesorios. Toma las fotos y las guarda en <code>EVIDENCIAS\</code>.</p>
+        <div class="rt-docs"><span><b>2104-FOR-OPE</b> Registro de Equipo Instalado · EQ01</span><span class="lee"><b>2106</b> Montaje</span></div>
+        <div class="salida">Fotos: <code>0002_INS-2026-001_EQ01_FOTO01_UBICACION.jpg</code></div>
+      </div></li>
+      <li class="paso"><div class="num"><span>6</span></div><div class="caja">
+        <div class="cab"><span class="act tec">Técnico</span><span class="act cli">Cliente</span></div>
+        <h3>Prueba la conectividad y la operación</h3>
+        <p>Conectividad, comunicación con la plataforma, usuarios de prueba, pruebas funcionales, transmisión de marcaciones, aceptación y capacitación.</p>
+        <div class="rt-docs"><span><b>2102-FOR-OPE</b> Instalación, Puesta en Operación y Pruebas · EQ01</span><span class="lee"><b>2107 · 2108 · 2109</b> Ping, Ethernet, Wi-Fi</span></div>
+      </div></li>
+      <li class="paso dec"><div class="num"><span>?</span></div><div class="caja">
+        <h3>¿Las pruebas son aprobadas?</h3>
+        <div class="ramas">
+          <div class="rama si"><b>Sí</b>Validan el técnico y el cliente en el 2102.</div>
+          <div class="rama no"><b>No</b>Corrige la causa y repite las pruebas (paso 6). Si no se resuelve en sitio: registra el hallazgo y escala al coordinador.</div>
+        </div>
+      </div></li>
+      <li class="paso"><div class="num"><span>7</span></div><div class="caja">
+        <div class="cab"><span class="act tec">Técnico</span></div>
+        <h3>Enrola a los empleados</h3>
+        <p>Sigue el instructivo del modelo; el 2103 ya trae marcados el modelo y el instructivo. Si el enrolamiento es masivo, anota el total y los fallidos, y adjunta la exportación del equipo o de la plataforma.</p>
+        <div class="rt-docs"><span><b>2103-FOR-OPE</b> Checklist de Enrolamiento · EQ01</span><span class="lee"><b>2110 · 2115–2117</b> Instructivo del modelo</span></div>
+        <div class="salida">Anexo masivo: <code>0002_INS-2026-001_2103-ANEXO_EQ01_20261016.xlsx</code></div>
+      </div></li>
+      <li class="paso dec"><div class="num"><span>?</span></div><div class="caja">
+        <h3>¿Quedan equipos por instalar?</h3>
+        <div class="ramas">
+          <div class="rama si"><b>Sí</b>Repite los pasos 5 a 7 con el siguiente equipo (EQ02, EQ03…).</div>
+          <div class="rama no"><b>No</b>Pasa a la entrega.</div>
+        </div>
+      </div></li>
+      <li class="paso"><div class="num"><span>8</span></div><div class="caja">
+        <div class="cab"><span class="act tec">Técnico</span><span class="act cli">Cliente</span></div>
+        <h3>Entrega formal y firma del acta</h3>
+        <p>Relaciona todos los equipos, las actividades, los pendientes con responsable y fecha, y la documentación asociada. Firman Ideas Control y el cliente.</p>
+        <div class="rt-docs"><span><b>2105-FOR-OPE</b> Acta de Entrega y Aceptación</span></div>
+      </div></li>
+    </ol>
+  </section>
+
+  <!-- FASE 3 -->
+  <section class="fase" aria-labelledby="f3">
+    <div class="fase-tit"><div class="n">Fase 3</div><h2 id="f3">Cierre y archivo</h2><p>El mismo día o al regresar.</p><span class="lugar">Oficina</span></div>
+    <ol class="flujo">
+      <li class="paso"><div class="num"><span>9</span></div><div class="caja">
+        <div class="cab"><span class="act tec">Técnico</span></div>
+        <h3>Deja la versión firmada en PDF</h3>
+        <p>Escanea o exporta cada formato firmado con el mismo nombre más <code>_FIRMADO</code>. Si corrige algo después de firmado, agrega <code>_v2</code>.</p>
+        <div class="salida"><code>0002_INS-2026-001_2105-FOR-OPE_20261017_FIRMADO.pdf</code></div>
+      </div></li>
+      <li class="paso"><div class="num"><span>10</span></div><div class="caja">
+        <div class="cab"><span class="act tec">Técnico</span></div>
+        <h3>Copia la carpeta del cliente al servidor</h3>
+        <p>Copia <code>0002_YAMAHA</code> desde su carpeta de trabajo dentro de <code>01_CLIENTES</code> del servidor de IC. Se fusiona con la estructura existente, sin reemplazar otras actividades.</p>
+      </div></li>
+      <li class="paso dec"><div class="num"><span>?</span></div><div class="caja">
+        <h3>¿El registro está completo?</h3>
+        <div class="cab" style="margin-top:6px"><span class="act coord">Coordinador</span></div>
+        <div class="ramas">
+          <div class="rama si"><b>Sí</b>Están los formatos que corresponden, firmados, con fotos y con nombres correctos.</div>
+          <div class="rama no"><b>No</b>Devuelve al técnico lo que falta: firma, foto, formato o nombre mal escrito.</div>
+        </div>
+      </div></li>
+      <li class="paso fin"><div class="num"><span>✓</span></div><div class="caja">
+        <div class="cab"><span class="act coord">Coordinador</span></div>
+        <h3>Cierra la actividad</h3>
+        <p>Marca la instalación como cerrada en el seguimiento y el técnico libera su carpeta de trabajo local.</p>
+      </div></li>
+    </ol>
+  </section>
+
+  <div class="resultado">
+    <div class="panel">
+      <h2>Carpeta final en el servidor</h2>
+<pre class="arbol"><span class="d">01_CLIENTES\</span>
+└── <span class="d">0002_YAMAHA\</span>
+    └── <span class="d">04_INSTALACIONES\</span>
+        └── <span class="d">2026\</span>
+            └── <span class="d">INS-2026-001\</span>
+                ├── 0002_INS-2026-001_2101-FOR-OPE_SEDE-PRINCIPAL_20261015<span class="k">_FIRMADO.pdf</span>
+                ├── 0002_INS-2026-001_2102-FOR-OPE_EQ01_20261015<span class="k">_FIRMADO.pdf</span>
+                ├── 0002_INS-2026-001_2102-FOR-OPE_EQ02_20261015<span class="k">_FIRMADO.pdf</span>
+                ├── 0002_INS-2026-001_2103-FOR-OPE_EQ01_20261016<span class="k">_FIRMADO.pdf</span>
+                ├── 0002_INS-2026-001_2103-FOR-OPE_EQ02_20261016<span class="k">_FIRMADO.pdf</span>
+                ├── 0002_INS-2026-001_2104-FOR-OPE_EQ01_20261015<span class="k">_FIRMADO.pdf</span>
+                ├── 0002_INS-2026-001_2104-FOR-OPE_EQ02_20261015<span class="k">_FIRMADO.pdf</span>
+                ├── 0002_INS-2026-001_2105-FOR-OPE_20261017<span class="k">_FIRMADO.pdf</span>
+                ├── <span class="k">(los .docx editables con el mismo nombre)</span>
+                └── <span class="d">EVIDENCIAS\</span>
+                    └── 0002_INS-2026-001_EQ01_FOTO01_UBICACION.jpg …</pre>
+    </div>
+    <div class="panel">
+      <h2>Reglas que no cambian</h2>
+      <ul class="reglas">
+        <li><span>Los formatos se toman siempre del portal; nunca de una copia guardada de un proyecto anterior.</span></li>
+        <li><span>El nombre lo pone el portal: <code>CLIENTE_ACTIVIDAD_FORMATO_DETALLE_AAAAMMDD</code>. No se renombra.</span></li>
+        <li><span>Un 2102, un 2103 y un 2104 por cada equipo; un 2101 por sede; un 2105 por actividad.</span></li>
+        <li><span>No se registran contraseñas, PIN ni plantillas biométricas en ningún formato ni foto.</span></li>
+        <li><span>El registro oficial es el <code>_FIRMADO.pdf</code> archivado en <code>01_CLIENTES</code>.</span></li>
+      </ul>
+    </div>
+  </div>
+  <p class="rt-pie">Ideas Control Equipos y Soluciones S.A.S. · Gestión Documental · Proceso de instalación de biométricos (serie 2100).</p>
+</div>
+</main>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/catalogo.js"></script>
+<script src="assets/js/app.js"></script>
+<script>(function(){ var u = GDAuth.proteger(); if (u) GD.encabezadoSimple(u, 'Herramientas de consulta'); })();</script>
+</body>
+</html>

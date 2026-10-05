@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>2404-GUI-OPE · Guía de Diagnóstico de Equipos Biométricos</title>
+<link rel="icon" href="../assets/img/ideascontrol.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/gd.css">
+<link rel="stylesheet" href="../assets/css/documento.css">
+<script>window.GD_BASE = '../';</script>
+</head>
+<body data-doc="2404-GUI-OPE" class="dh-body">
+<main>
+<section class="dh-hero">
+  <div class="dh-cont">
+    <p class="dh-crumb"><a href="../index.html">Inicio</a> / <a href="../gestion-operativa.html">Gestión Operativa</a> / <a href="../gestion-operativa.html#mantenimiento">Gestión de Mantenimiento de Equipos Biométricos</a> / 2404-GUI-OPE</p>
+    <p class="dh-eyebrow">GESTIÓN OPERATIVA · GUÍA · 2404-GUI-OPE · VERSIÓN 2.0</p>
+    <h1>Guía de Diagnóstico de Equipos Biométricos</h1>
+    <p class="dh-lead">Secuencia de diagnóstico, matriz por síntoma con la secuencia sugerida, criterios para resolver en sitio o escalar y controles de firmware y configuración.</p>
+    <div class="dh-hmeta"><span><b>Responsable</b>Operaciones Técnicas (Soporte y Mantenimiento)</span><span><b>Emisión</b>Febrero 2025</span><span><b>Aprobó</b>Patricia Ramírez / Gerente General</span></div>
+    <div class="dh-hacc" id="acciones"><span class="dh-vig">Vigente</span><span class="dh-ro">Documento controlado · solo lectura en línea</span></div>
+  </div>
+</section>
+<section class="dh-seccion">
+  <div class="dh-grid">
+    <nav class="dh-toc" aria-label="Contenido del documento">
+      <div class="dh-toc-t">Contenido</div>
+      <ol><li class="n1"><a href="#alcance-y-principios-de-diagnostico">1. Alcance y principios de diagnóstico</a></li><li class="n1"><a href="#secuencia-general-de-diagnostico">2. Secuencia general de diagnóstico</a></li><li class="n1"><a href="#matriz-de-diagnostico-por-sintoma">3. Matriz de diagnóstico por síntoma</a></li><li class="n1"><a href="#criterios-para-solucion-o-escalamiento">4. Criterios para solución o escalamiento</a></li><li class="n1"><a href="#firmware-software-y-configuracion">5. Firmware, software y configuración</a></li><li class="n1"><a href="#registro-del-diagnostico">6. Registro del diagnóstico</a></li><li class="n1"><a href="#control-de-cambios">7. Control de cambios</a></li></ol>
+    </nav>
+    <article class="dh-article">
+      <details class="dh-toc-movil"><summary>Contenido del documento</summary><ol><li class="n1"><a href="#alcance-y-principios-de-diagnostico">1. Alcance y principios de diagnóstico</a></li><li class="n1"><a href="#secuencia-general-de-diagnostico">2. Secuencia general de diagnóstico</a></li><li class="n1"><a href="#matriz-de-diagnostico-por-sintoma">3. Matriz de diagnóstico por síntoma</a></li><li class="n1"><a href="#criterios-para-solucion-o-escalamiento">4. Criterios para solución o escalamiento</a></li><li class="n1"><a href="#firmware-software-y-configuracion">5. Firmware, software y configuración</a></li><li class="n1"><a href="#registro-del-diagnostico">6. Registro del diagnóstico</a></li><li class="n1"><a href="#control-de-cambios">7. Control de cambios</a></li></ol></details>
+<div class="dh-tscroll"><table class="dh-tabla dh-2col"><thead><tr><th scope="col"><strong>Campo</strong></th><th scope="col"><strong>Valor</strong></th></tr></thead><tbody><tr><td><strong>Código</strong></td><td>2404-GUI-OPE</td></tr><tr><td><strong>Versión</strong></td><td>2.0</td></tr><tr><td><strong>Documento relacionado</strong></td><td>2400-MAN-OPE — Manual de Gestión de Mantenimiento de Equipos Biométricos</td></tr><tr><td><strong>Elaborado por</strong></td><td>Martín Molina / Ingeniero</td></tr><tr><td><strong>Revisado por</strong></td><td>Juan Pablo Morales / Líder Técnico</td></tr><tr><td><strong>Aprobado por</strong></td><td>Patricia Ramírez / Gerente General</td></tr><tr><td><strong>Fecha de emisión</strong></td><td>Febrero 2025</td></tr><tr><td><strong>Área responsable</strong></td><td>Operaciones Técnicas (Soporte y Mantenimiento)</td></tr><tr><td><strong>Estado</strong></td><td>Vigente</td></tr><tr><td><strong>Confidencialidad</strong></td><td>Uso interno Ideas Control</td></tr></tbody></table></div>
+<aside class="dh-callout"><span class="dh-tag">Propósito</span><p>Orientar al técnico en la identificación ordenada de síntomas, verificaciones iniciales, diagnóstico y decisión de solución o escalamiento, sin sustituir los manuales del fabricante ni las instrucciones específicas del modelo.</p></aside>
+<h2 id="alcance-y-principios-de-diagnostico" class="dh-h1"><span class="dh-n">01</span>Alcance y principios de diagnóstico</h2>
+<ul class="dh-lista"><li>Aplicar esta guía como apoyo durante mantenimientos preventivos, correctivos y extraordinarios cuando exista una condición que requiera verificación técnica.</li><li>La metodología debe partir del síntoma observado y avanzar desde verificaciones básicas hacia pruebas específicas.</li><li>Antes de intervenir, confirmar modelo, variante, serial/activo y documentación técnica aplicable.</li><li>No ejecutar cambios de firmware, software, configuración o restablecimientos que requieran autorización sin contar con la aprobación correspondiente.</li><li>Cuando la causa no pueda identificarse, la reparación requiera especialidad no disponible, exista riesgo, garantía o falta de repuesto, evaluar el escalamiento.</li></ul>
+<h2 id="secuencia-general-de-diagnostico" class="dh-h1"><span class="dh-n">02</span>Secuencia general de diagnóstico</h2>
+<div class="dh-tscroll"><table class="dh-tabla"><thead><tr><th scope="col"><strong>1. Identificar</strong></th><th scope="col"><strong>2. Observar</strong></th><th scope="col"><strong>3. Verificar</strong></th><th scope="col"><strong>4. Probar</strong></th><th scope="col"><strong>5. Decidir</strong></th></tr></thead><tbody><tr><td>Equipo, modelo, serial, activo y ticket.</td><td>Síntoma, frecuencia, condiciones y antecedentes.</td><td>Alimentación, conexiones, red, configuración y componentes relacionados.</td><td>Prueba funcional o biométrica según el síntoma.</td><td>Solucionar, documentar, dejar operativo con observaciones o escalar.</td></tr></tbody></table></div>
+<h2 id="matriz-de-diagnostico-por-sintoma" class="dh-h1"><span class="dh-n">03</span>Matriz de diagnóstico por síntoma</h2>
+<p>Cada fila parte del síntoma y avanza de las verificaciones básicas a las específicas; la secuencia se detiene cuando se identifica la causa.</p>
+<div class="dh-tscroll"><table class="dh-tabla"><thead><tr><th scope="col"><strong>Síntoma</strong></th><th scope="col"><strong>Verificaciones iniciales</strong></th><th scope="col"><strong>Prueba / decisión</strong></th><th scope="col"><strong>Secuencia sugerida</strong></th></tr></thead><tbody><tr><td>No enciende</td><td>Fuente, alimentación, cableado y conexiones.</td><td>Probar alimentación y revisar indicios de daño.</td><td>Alimentación → fuente → cableado → conectores → equipo → escalamiento.</td></tr><tr><td>No comunica</td><td>Red, cableado, configuración y conectividad.</td><td>Validar comunicación y configuración aplicable.</td><td>Cable/red → enlace → IP/configuración → infraestructura → servidor/plataforma.</td></tr><tr><td>No reconoce rostro</td><td>Limpieza del sensor, iluminación y configuración.</td><td>Ejecutar prueba biométrica y revisar condiciones de captura.</td><td>Cámara/iluminación → condiciones de captura → configuración → usuario/base de datos → comunicación.</td></tr><tr><td>No reconoce huella</td><td>Limpieza del sensor y condición de la huella.</td><td>Ejecutar prueba de lectura y verificar respuesta.</td><td>Sensor/limpieza → calidad de captura → usuario → configuración → comunicación.</td></tr><tr><td>No lee tarjeta</td><td>Estado del lector y tarjeta utilizada.</td><td>Realizar prueba con tarjeta válida y revisar lector.</td><td>Lector → tipo de tarjeta → configuración → comunicación.</td></tr><tr><td>Operación intermitente</td><td>Alimentación, conexiones, red y condiciones del entorno.</td><td>Repetir prueba y buscar condición que reproduce la falla.</td><td>Alimentación → cableado → red → temperatura/entorno → configuración → componente.</td></tr><tr><td>Equipo lento</td><td>Carga del equipo, comunicación y configuración.</td><td>Observar comportamiento y ejecutar prueba funcional.</td><td>Red → comunicación → configuración → plataforma/software → firmware, según autorización.</td></tr></tbody></table></div>
+<h2 id="criterios-para-solucion-o-escalamiento" class="dh-h1"><span class="dh-n">04</span>Criterios para solución o escalamiento</h2>
+<p><strong>Resolver en sitio cuando: </strong><em>la causa esté identificada, la actividad esté dentro del alcance autorizado, existan herramientas/repuestos requeridos y las pruebas finales confirmen el funcionamiento.</em></p>
+<p><strong>Evaluar escalamiento cuando: </strong><em>la falla no pueda identificarse, se requiera reparación especializada, exista riesgo, el equipo esté en garantía, no haya repuesto compatible, exista falla recurrente o el problema esté fuera del alcance técnico, de acuerdo con los criterios definidos en el manual.</em></p>
+<h2 id="firmware-software-y-configuracion" class="dh-h1"><span class="dh-n">05</span>Firmware, software y configuración</h2>
+<p>Cuando el diagnóstico conduzca a cambios de firmware, software o configuración, verificar compatibilidad, realizar respaldo cuando proceda, obtener autorización y registrar las versiones o cambios efectuados. El 2400-MAN-OPE también establece que no debe realizarse un restablecimiento de fábrica sin autorización.</p>
+<h2 id="registro-del-diagnostico" class="dh-h1"><span class="dh-n">06</span>Registro del diagnóstico</h2>
+<p><strong>Importante: </strong><em>La guía orienta el diagnóstico; no autoriza por sí misma modificaciones que requieran aprobación. El síntoma, la causa identificada, las acciones, los cambios de firmware o configuración y el estado final se registran en el Informe Técnico 2403-FOR-OPE del equipo.</em></p>
+<h2 id="control-de-cambios" class="dh-h1"><span class="dh-n">07</span>Control de cambios</h2>
+<div class="dh-tscroll"><table class="dh-tabla"><thead><tr><th scope="col"><strong>Versión</strong></th><th scope="col"><strong>Fecha</strong></th><th scope="col"><strong>Descripción del cambio</strong></th><th scope="col"><strong>Responsable</strong></th></tr></thead><tbody><tr><td>1.0</td><td>Febrero 2025</td><td>Emisión inicial de la guía.</td><td class="dh-vacio"></td></tr><tr><td>1.0</td><td>Agosto 2026</td><td>Revisión sin novedad</td><td class="dh-vacio"></td></tr><tr><td>2.0</td><td>Octubre 2026</td><td>Documento de consulta: la matriz incorpora la secuencia sugerida por síntoma del manual y los campos de registro (diagnóstico, escalamiento, firmware y cierre) pasan al Informe Técnico 2403-FOR-OPE.</td><td class="dh-vacio"></td></tr></tbody></table></div>
+<p><strong>Documentos relacionados: </strong><em>2400-MAN-OPE — Manual de Gestión de Mantenimiento de Equipos Biométricos; 2402-FOR-OPE — Checklist de Mantenimiento; 2403-FOR-OPE — Informe Técnico de Mantenimiento; 2405-FIC-OPE — Ficha Técnica de Equipo Biométrico.</em></p>
+      <div class="dh-nav" id="dh-nav"><a href="../gestion-operativa.html#mantenimiento">← Volver a Gestión de Mantenimiento de Equipos Biométricos</a></div>
+    </article>
+  </div>
+</section>
+</main>
+<button class="dh-arriba" id="arriba" aria-label="Volver arriba">↑</button>
+<div class="dh-zoom" id="zoom" hidden><img alt=""></div>
+<script src="../assets/js/auth.js"></script>
+<script src="../assets/js/catalogo.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>GD.iniciarDocumento();</script>
+</body>
+</html>
