@@ -855,7 +855,7 @@ window.GD_CATALOGO = {
        "fecha": "Octubre 2026",
        "responsable": "Operaciones Técnicas (Soporte Técnico)",
        "relacionado": "2300-MAN-OPE",
-       "resumen": "Campos de cada ticket en Ticket IDC y formato de respaldo cuando la plataforma no está disponible.",
+       "resumen": "Campos que debe tener cada ticket en Ticket IDC. Solo de consulta: el registro oficial es el ticket.",
        "temas": [
         "Ficha de Control del Documento",
         "Identificación del ticket",
@@ -874,9 +874,7 @@ window.GD_CATALOGO = {
         "Documentos relacionados",
         "Control de cambios"
        ],
-       "html": "documentos/2305-FOR-OPE.html",
-       "plantillaDefinitiva": true,
-       "plantilla": "plantillas/2305-FOR-OPE_Registro_de_Ticket_de_Soporte_Tecnico.docx"
+       "html": "documentos/2305-FOR-OPE.html"
       },
       {
        "codigo": "2306-FOR-OPE",
@@ -887,7 +885,7 @@ window.GD_CATALOGO = {
        "fecha": "Octubre 2026",
        "responsable": "Operaciones Técnicas (Soporte Técnico)",
        "relacionado": "2300-MAN-OPE",
-       "resumen": "Información mínima para el diagnóstico remoto: equipo, síntoma, evidencias, validaciones básicas, acceso remoto y resultado de la sesión.",
+       "resumen": "Guía de preguntas para el diagnóstico remoto: equipo, síntoma, evidencias, validaciones básicas y acceso remoto. Las respuestas van en el ticket.",
        "temas": [
         "Ficha de Control del Documento",
         "Identificación del caso",
@@ -904,9 +902,7 @@ window.GD_CATALOGO = {
         "Documentos relacionados",
         "Control de cambios"
        ],
-       "html": "documentos/2306-FOR-OPE.html",
-       "plantillaDefinitiva": true,
-       "plantilla": "plantillas/2306-FOR-OPE_Checklist_de_Informacion_para_Soporte_Remoto.docx"
+       "html": "documentos/2306-FOR-OPE.html"
       },
       {
        "codigo": "2307-DIA-OPE",

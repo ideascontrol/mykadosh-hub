@@ -178,7 +178,7 @@
       ${area.herramientas ? `<div class="seccion-t" style="margin-top:22px">Herramientas de consulta</div><section class="tools">${tarjetasHerr(area.herramientas)}</section>` : ''}
       <div class="area-layout">
         <nav class="lateral" aria-label="Procesos"><div class="tit">Procesos</div>
-          ${area.grupos.map(g => `<a href="#${g.id}" data-g="${g.id}">${g.serie ? `<b class="serie-m">${esc(g.serie)}</b> ` : ''}${esc(g.nombre)}<em>${g.docs.filter(d => d.estado === 'publicado').length || ''}</em></a>`).join('')}
+          ${area.grupos.map(g => `<a href="#${g.id}" data-g="${g.id}">${g.serie ? `<b class="serie-m">${esc(g.serie)}</b>` : ''}<span class="g-n">${esc(g.nombre)}</span><em>${g.docs.filter(d => d.estado === 'publicado').length || ''}</em></a>`).join('')}
         </nav>
         <div>
           <div class="herr">

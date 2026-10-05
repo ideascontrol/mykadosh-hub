@@ -124,7 +124,8 @@ mark{background:#fdf0bf;color:inherit;border-radius:3px;padding:0 1px}
 .grupo>header{display:flex;align-items:baseline;gap:12px;margin-bottom:12px;flex-wrap:wrap}
 .grupo h2{font-size:19px;margin:0;color:var(--tinta)}
 .grupo .serie{font:700 12px/1 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--tinta);color:#fff;padding:5px 8px;border-radius:6px;align-self:center}
-.lateral .serie-m{font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--teal)}
+.lateral a .g-n{flex:1;min-width:0}
+.lateral .serie-m{flex:none;padding-top:2px;font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--teal)}
 .grupo .gen-btn{margin-left:auto;align-self:center;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
 .grupo>header p{margin:0;font-size:13px;color:var(--suave);flex-basis:100%}
 .docs{display:grid;gap:10px}
