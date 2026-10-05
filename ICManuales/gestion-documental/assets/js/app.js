@@ -5,7 +5,7 @@
   const $ = (s, el = document) => el.querySelector(s);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const norm = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
-  const TIPOS = { MAN: 'Manual', FOR: 'Formato', INS: 'Instructivo', DIA: 'Diagrama', GUI: 'Guía', FIC: 'Ficha técnica', POL: 'Política' };
+  const TIPOS = { MAN: 'Manual', FOR: 'Formato', INS: 'Instructivo', DIA: 'Diagrama', GUI: 'Guía', FIC: 'Ficha técnica', POL: 'Política', PRO: 'Procedimiento', CAT: 'Catálogo', ACU: 'Acuerdo de servicio' };
 
   const ICONOS = {
     comercial: '<path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/>',
@@ -76,7 +76,7 @@
     return `<header class="top"><div class="wrap">
       <a class="logo" href="${B}index.html" aria-label="Inicio"><img src="${B}assets/img/ideascontrol.webp" alt="Ideas Control Equipos y Soluciones S.A.S."></a>
       <div class="sistema"><b>Gestión Documental</b><span>${esc(subtitulo || 'Sistema de documentación interna')}</span></div>
-      <div class="usuario"><span>${esc(usuario?.nombre || '')}</span><i>${esc(ini)}</i></div>
+      <div class="usuario"><span>${esc(usuario?.nombre || '')}</span><i>${esc(ini)}</i><button type="button" class="salir" onclick="GDAuth.cerrarSesion()" title="Cerrar sesión">Salir</button></div>
     </div></header>`;
   }
   function pie() {
@@ -184,7 +184,7 @@
           <div class="herr">
             <div class="buscador">${ico('buscar', 18)}<input id="q" type="search" placeholder="Filtrar documentos de esta área…" autocomplete="off" aria-label="Filtrar"></div>
             <div class="filtros" role="group" aria-label="Tipo de documento">
-              <button class="on" data-t="">Todos</button><button data-t="MAN">Manuales</button><button data-t="FOR">Formatos</button><button data-t="INS">Instructivos</button><button data-t="DIA">Diagramas</button><button data-t="GUI">Guías</button><button data-t="FIC">Fichas</button><button data-t="POL">Políticas</button>
+              <button class="on" data-t="">Todos</button><button data-t="MAN">Manuales</button><button data-t="PRO">Procedimientos</button><button data-t="FOR">Formatos</button><button data-t="INS">Instructivos</button><button data-t="DIA">Diagramas</button><button data-t="GUI">Guías</button><button data-t="FIC">Fichas</button><button data-t="POL">Políticas</button><button data-t="CAT">Catálogos</button><button data-t="ACU">Acuerdos</button>
             </div>
           </div>
           <div id="lista"></div>
