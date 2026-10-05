@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>2115-INS-OPE · Instructivo de Enrolamiento de Empleado en Dispositivo VIRDI AC-2100 Plus</title>
+<link rel="icon" href="../assets/img/ideascontrol.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/gd.css?v=20261005b">
+<link rel="stylesheet" href="../assets/css/documento.css?v=20261005b">
+<script>window.GD_BASE = '../';</script>
+</head>
+<body data-doc="2115-INS-OPE" class="dh-body">
+<main>
+<section class="dh-hero">
+  <div class="dh-cont">
+    <p class="dh-crumb"><a href="../index.html">Inicio</a> / <a href="../gestion-operativa.html">Gestión Operativa</a> / <a href="../gestion-operativa.html#instalacion">Instalación Biométrico Hardware</a> / 2115-INS-OPE</p>
+    <p class="dh-eyebrow">GESTIÓN OPERATIVA · INSTRUCTIVO · 2115-INS-OPE · VERSIÓN 1.0</p>
+    <h1>Instructivo de Enrolamiento de Empleado en Dispositivo VIRDI AC-2100 Plus</h1>
+    <p class="dh-lead">Paso a paso del enrolamiento de empleados en el dispositivo VIRDI AC-2100 Plus: creación del usuario, métodos de identificación, prueba de marcación, validación en la plataforma WFM y eliminación de usuarios de prueba.</p>
+    <div class="dh-hmeta"><span><b>Responsable</b>Operaciones Técnicas (Soporte e Implementación)</span><span><b>Emisión</b>Septiembre 2025</span><span><b>Última revisión</b>Septiembre 2026</span><span><b>Aprobó</b>Patricia Ramírez / Gerente General</span><span><b>Próxima revisión</b>Septiembre 2026</span></div>
+    <div class="dh-hacc" id="acciones"><span class="dh-vig">Vigente</span><span class="dh-ro">Documento controlado · solo lectura en línea</span></div>
+  </div>
+</section>
+<section class="dh-seccion">
+  <div class="dh-grid">
+    <nav class="dh-toc" aria-label="Contenido del documento">
+      <div class="dh-toc-t">Contenido</div>
+      <ol><li class="n1"><a href="#ficha-de-control-del-documento">Ficha de Control del Documento</a></li><li class="n1"><a href="#control-de-cambios">Control de Cambios</a></li><li class="n1"><a href="#objetivo">1. Objetivo</a></li><li class="n1"><a href="#alcance">2. Alcance</a></li><li class="n1"><a href="#requisitos-previos">3. Requisitos previos</a></li><li class="n1"><a href="#informacion-del-empleado">4. Información del empleado</a></li><li class="n1"><a href="#consideraciones-de-seguridad-y-proteccion-de-datos">5. Consideraciones de seguridad y protección de datos</a></li><li class="n1"><a href="#acceso-al-menu-de-usuarios">6. Acceso al menú de usuarios</a></li><li class="n1"><a href="#creacion-del-usuario">7. Creación del usuario</a></li><li class="n1"><a href="#enrolamiento-de-huella-digital">8. Enrolamiento de huella digital</a></li><li class="n1"><a href="#validacion-de-huella">9. Validación de huella</a></li><li class="n1"><a href="#enrolamiento-mediante-tarjeta">10. Enrolamiento mediante tarjeta</a></li><li class="n1"><a href="#validacion-del-identificador-del-empleado">11. Validación del identificador del empleado</a></li><li class="n1"><a href="#prueba-de-marcacion">12. Prueba de marcación</a></li><li class="n1"><a href="#validacion-en-la-plataforma-de-wfm">13. Validación en la plataforma de WFM</a></li><li class="n1"><a href="#prueba-completa-de-extremo-a-extremo">14. Prueba completa de extremo a extremo</a></li><li class="n1"><a href="#errores-y-acciones-correctivas">15. Errores y acciones correctivas</a></li><li class="n1"><a href="#eliminacion-de-usuarios-de-prueba">16. Eliminación de usuarios de prueba</a></li><li class="n1"><a href="#criterios-de-aceptacion">17. Criterios de aceptación</a></li><li class="n1"><a href="#registro-de-la-actividad">18. Registro de la actividad</a></li><li class="n1"><a href="#responsabilidades">19. Responsabilidades</a></li><li class="n1"><a href="#anexo-a-especificaciones-tecnicas-de-referencia-virdi-ac-210">20. Anexo A. Especificaciones técnicas de referencia – VIRDI AC-2100 PLUS</a></li></ol>
+    </nav>
+    <article class="dh-article">
+      <details class="dh-toc-movil"><summary>Contenido del documento</summary><ol><li class="n1"><a href="#ficha-de-control-del-documento">Ficha de Control del Documento</a></li><li class="n1"><a href="#control-de-cambios">Control de Cambios</a></li><li class="n1"><a href="#objetivo">1. Objetivo</a></li><li class="n1"><a href="#alcance">2. Alcance</a></li><li class="n1"><a href="#requisitos-previos">3. Requisitos previos</a></li><li class="n1"><a href="#informacion-del-empleado">4. Información del empleado</a></li><li class="n1"><a href="#consideraciones-de-seguridad-y-proteccion-de-datos">5. Consideraciones de seguridad y protección de datos</a></li><li class="n1"><a href="#acceso-al-menu-de-usuarios">6. Acceso al menú de usuarios</a></li><li class="n1"><a href="#creacion-del-usuario">7. Creación del usuario</a></li><li class="n1"><a href="#enrolamiento-de-huella-digital">8. Enrolamiento de huella digital</a></li><li class="n1"><a href="#validacion-de-huella">9. Validación de huella</a></li><li class="n1"><a href="#enrolamiento-mediante-tarjeta">10. Enrolamiento mediante tarjeta</a></li><li class="n1"><a href="#validacion-del-identificador-del-empleado">11. Validación del identificador del empleado</a></li><li class="n1"><a href="#prueba-de-marcacion">12. Prueba de marcación</a></li><li class="n1"><a href="#validacion-en-la-plataforma-de-wfm">13. Validación en la plataforma de WFM</a></li><li class="n1"><a href="#prueba-completa-de-extremo-a-extremo">14. Prueba completa de extremo a extremo</a></li><li class="n1"><a href="#errores-y-acciones-correctivas">15. Errores y acciones correctivas</a></li><li class="n1"><a href="#eliminacion-de-usuarios-de-prueba">16. Eliminación de usuarios de prueba</a></li><li class="n1"><a href="#criterios-de-aceptacion">17. Criterios de aceptación</a></li><li class="n1"><a href="#registro-de-la-actividad">18. Registro de la actividad</a></li><li class="n1"><a href="#responsabilidades">19. Responsabilidades</a></li><li class="n1"><a href="#anexo-a-especificaciones-tecnicas-de-referencia-virdi-ac-210">20. Anexo A. Especificaciones técnicas de referencia – VIRDI AC-2100 PLUS</a></li></ol></details>
+<h2 id="ficha-de-control-del-documento" class="dh-h1 dh-esp">Ficha de Control del Documento</h2>
+<div class="dh-tscroll"><table class="dh-tabla dh-2col"><thead><tr><th scope="col"><strong>Campo</strong></th><th scope="col"><strong>Valor</strong></th></tr></thead><tbody><tr><td><strong>Código del documento</strong></td><td>2115-INS-OPE</td></tr><tr><td><strong>Título</strong></td><td>Instructivo enrolamiento de empleado dispositivo VIRDI AC-2100 PLUS</td></tr><tr><td><strong>Área responsable</strong></td><td>Operaciones Técnicas (Soporte e Implementación)</td></tr><tr><td><strong>Proceso relacionado</strong></td><td>Instalación física, Integración con software WFM, Registro biométrico de usuarios</td></tr><tr><td><strong>Elaborado por</strong></td><td>Martín Molina / Ingeniero</td></tr><tr><td><strong>Revisado por</strong></td><td>Andrés Bernal / Lider Técnico</td></tr><tr><td><strong>Aprobado por</strong></td><td>Patricia Ramírez / Gerente General</td></tr><tr><td><strong>Fecha de elaboración</strong></td><td>Septiembre 2025</td></tr><tr><td><strong>Versión vigente</strong></td><td>1.0</td></tr><tr><td><strong>Próxima revisión programada</strong></td><td>Septiembre 2026 (revisión anual, o antes si cambia el proceso o la normativa aplicable)</td></tr><tr><td><strong>Nivel de confidencialidad</strong></td><td>Uso interno Ideas Control / Distribución autorizada a cliente durante el proyecto</td></tr></tbody></table></div>
+<h2 id="control-de-cambios" class="dh-h1 dh-esp">Control de Cambios</h2>
+<div class="dh-tscroll"><table class="dh-tabla"><thead><tr><th scope="col"><strong>Versión</strong></th><th scope="col"><strong>Fecha</strong></th><th scope="col"><strong>Descripción del cambio</strong></th></tr></thead><tbody><tr><td><strong>1.0</strong></td><td>Septiembre 2025</td><td>Documento elaborado</td></tr><tr><td><strong>1.0</strong></td><td>Septiembre 2026</td><td>Revisado sin novedad</td></tr></tbody></table></div>
+<h2 id="objetivo" class="dh-h1"><span class="dh-n">01</span>Objetivo</h2>
+<p>Establecer el procedimiento para realizar el enrolamiento de un empleado en un dispositivo biométrico VIRDI AC-2100 Plus, garantizando que el usuario quede correctamente identificado, que el método de autenticación seleccionado funcione y que, cuando aplique, la información pueda ser asociada y sincronizada con la plataforma de Tiempos y Asistencia / WFM.</p>
+<h2 id="alcance" class="dh-h1"><span class="dh-n">02</span>Alcance</h2>
+<p>Este instructivo aplica al enrolamiento de empleados en dispositivos VIRDI AC-2100 Plus utilizados por Ideas Control como parte de soluciones de control y gestión de tiempos y asistencia.</p>
+<p>Contempla el registro mediante:</p>
+<ul class="dh-lista"><li>Huella digital.</li><li>Tarjeta RFID, cuando el equipo disponga del módulo correspondiente.</li></ul>
+<p>El procedimiento deberá adaptarse a las funcionalidades disponibles en la versión específica del equipo instalado.</p>
+<h2 id="requisitos-previos" class="dh-h1"><span class="dh-n">03</span>Requisitos previos</h2>
+<p>Antes de iniciar el enrolamiento, el técnico deberá confirmar:</p>
+<ul class="dh-lista"><li>El dispositivo se encuentra instalado y energizado.</li><li>La fecha y hora del dispositivo son correctas.</li><li>La zona horaria corresponde a la ubicación de la sede.</li><li>El dispositivo se encuentra correctamente conectado a la red cuando la prueba incluya integración con el software.</li><li>Se dispone del identificador del empleado que será utilizado en el dispositivo.</li><li>El empleado ha sido previamente autorizado por el responsable del cliente.</li><li>Se ha definido el método de identificación que será utilizado.</li><li>El técnico cuenta con permisos administrativos para realizar el enrolamiento.</li><li>El equipo no presenta errores de funcionamiento.</li></ul>
+<h2 id="informacion-del-empleado" class="dh-h1"><span class="dh-n">04</span>Información del empleado</h2>
+<p>Antes de iniciar, el técnico deberá contar con la información mínima necesaria para identificar al empleado.</p>
+<div class="dh-tscroll"><table class="dh-tabla dh-2col"><thead><tr><th scope="col"><strong>Información</strong></th><th scope="col"><strong>Dato</strong></th></tr></thead><tbody><tr><td>ID / Código del empleado</td><td class="dh-vacio"></td></tr><tr><td>Nombre del empleado</td><td class="dh-vacio"></td></tr><tr><td>Sede</td><td class="dh-vacio"></td></tr><tr><td>Área / Centro de costo</td><td class="dh-vacio"></td></tr><tr><td>Método de identificación</td><td class="dh-vacio"></td></tr><tr><td>Dispositivo</td><td class="dh-vacio"></td></tr><tr><td>Fecha de enrolamiento</td><td class="dh-vacio"></td></tr></tbody></table></div>
+<p>El <strong>ID del empleado</strong> utilizado en el biométrico deberá corresponder al identificador definido para dicho empleado en la plataforma de Tiempos y Asistencia / WFM, cuando exista integración entre ambos sistemas.</p>
+<h2 id="consideraciones-de-seguridad-y-proteccion-de-datos" class="dh-h1"><span class="dh-n">05</span>Consideraciones de seguridad y protección de datos</h2>
+<p>Antes de realizar el enrolamiento, deberá verificarse que el empleado se encuentre autorizado para ser registrado.</p>
+<p>Cuando se utilicen datos biométricos, el tratamiento deberá realizarse conforme a:</p>
+<ul class="dh-lista"><li><strong><a href="4100-POL-TEC.html">4100-POL-TEC</a> Política de Seguridad y Protección de la Información.</strong></li><li>Las políticas de protección de datos aplicables.</li><li>Las condiciones contractuales definidas con el cliente.</li><li>La normativa vigente aplicable al tratamiento de datos personales.</li></ul>
+<p>El técnico deberá:</p>
+<ul class="dh-lista"><li>Registrar únicamente la información necesaria.</li><li>No tomar fotografías del rostro del empleado como evidencia del enrolamiento, salvo autorización y necesidad justificada.</li><li>No copiar ni extraer plantillas biométricas.</li><li>No almacenar huellas, fotografías, plantillas faciales u otra información biométrica en computadores personales.</li><li>No enviar información biométrica por correo, WhatsApp u otros medios no autorizados.</li><li>No utilizar información biométrica del cliente para actividades diferentes a las autorizadas.</li></ul>
+<h2 id="acceso-al-menu-de-usuarios" class="dh-h1"><span class="dh-n">06</span>Acceso al menú de usuarios</h2>
+<p>Para realizar el enrolamiento:</p>
+<ul class="dh-lista"><li>Acceder al menú administrativo del dispositivo.</li><li>Autenticarse utilizando una cuenta autorizada.</li><li>Ingresar a la sección de <strong>Gestión de Usuarios / User Management</strong> o equivalente.</li><li>Seleccionar la opción para <strong>agregar o registrar un nuevo usuario</strong>.</li></ul>
+<p><strong>Nota: La denominación exacta de los menús puede variar según la versión de firmware instalada en el AC-2100 Plus. En caso de diferencia, deberá utilizarse el manual vigente correspondiente a la versión del equipo.</strong></p>
+<h2 id="creacion-del-usuario" class="dh-h1"><span class="dh-n">07</span>Creación del usuario</h2>
+<p>Al crear el usuario, ingresar la información correspondiente.</p>
+<p>Como mínimo deberá configurarse:</p>
+<p><strong>ID de usuario</strong></p>
+<p>Asignar el código o identificador único del empleado.</p>
+<p>El ID deberá:</p>
+<ul class="dh-lista"><li>Ser único dentro del dispositivo.</li><li>Coincidir con el identificador definido en la solución WFM, cuando aplique.</li><li>Cumplir con las restricciones de longitud y formato del sistema.</li></ul>
+<p>La longitud máxima del identificador de usuario deberá verificarse en la especificación vigente del fabricante (VIRDI) para el AC-2100 Plus.</p>
+<p><strong>Nombre</strong></p>
+<p>Registrar el nombre del empleado cuando la configuración del proyecto requiera que este sea almacenado en el dispositivo.</p>
+<p><strong>Método de identificación</strong></p>
+<p>Seleccionar el método que será utilizado:</p>
+<ul class="dh-lista"><li>Fingerprint.</li><li>Card.</li></ul>
+<p>No deberán configurarse métodos adicionales que no estén contemplados en el alcance del servicio.</p>
+<h2 id="enrolamiento-de-huella-digital" class="dh-h1"><span class="dh-n">08</span>Enrolamiento de huella digital</h2>
+<p>Cuando el dispositivo instalado cuente con sensor de huella:</p>
+<ul class="dh-lista"><li>Seleccionar el usuario.</li><li>Seleccionar la opción <strong>Fingerprint / Huella</strong>.</li><li>Seleccionar el dedo que será registrado.</li><li>Solicitar al empleado colocar el dedo sobre el sensor siguiendo las indicaciones del dispositivo.</li><li>Repetir la captura las veces que el equipo solicite.</li><li>Confirmar que el registro haya sido completado correctamente.</li><li>Guardar el registro.</li><li>Realizar una identificación de prueba.</li></ul>
+<p>Se recomienda registrar una huella que pueda ser utilizada cómodamente por el empleado durante la operación diaria.</p>
+<p>El AC-2100 Plus soporta hasta 10.000 huellas (plantillas 1:1: 20.000 / 1:N: 3.000) mediante sensor óptico de 500 dpi, según la especificación del fabricante (VIRDI).</p>
+<h2 id="validacion-de-huella" class="dh-h1"><span class="dh-n">09</span>Validación de huella</h2>
+<p>Realizar como mínimo dos pruebas de identificación.</p>
+<p>Verificar:</p>
+<ul class="dh-lista"><li>Reconocimiento correcto.</li><li>Correspondencia con el usuario.</li><li>Ausencia de errores.</li><li>Generación correcta del evento.</li><li>Tiempo de respuesta adecuado.</li></ul>
+<p>Si el usuario presenta dificultades recurrentes para ser identificado, revisar:</p>
+<ul class="dh-lista"><li>Calidad del enrolamiento.</li><li>Posición del dedo.</li><li>Limpieza del sensor.</li><li>Estado de la huella.</li><li>Configuración del dispositivo.</li></ul>
+<p>Cuando sea necesario, realizar nuevamente el enrolamiento siguiendo el procedimiento del fabricante.</p>
+<h2 id="enrolamiento-mediante-tarjeta" class="dh-h1"><span class="dh-n">10</span>Enrolamiento mediante tarjeta</h2>
+<p>Cuando el dispositivo cuente con el módulo de tarjeta correspondiente:</p>
+<ul class="dh-lista"><li>Seleccionar el usuario.</li><li>Seleccionar la opción <strong>Card / Tarjeta</strong>.</li><li>Aproximar o presentar la tarjeta al lector.</li><li>Esperar a que el dispositivo detecte el identificador.</li><li>Confirmar la asociación de la tarjeta al usuario.</li><li>Guardar la configuración.</li><li>Realizar una prueba de identificación.</li></ul>
+<p>El AC-2100 Plus admite tarjetas de proximidad de 13,56 MHz (125 kHz opcional), con soporte para template on card, según la especificación del fabricante.</p>
+<h2 id="validacion-del-identificador-del-empleado" class="dh-h1"><span class="dh-n">11</span>Validación del identificador del empleado</h2>
+<p>Antes de realizar la integración con el software, verificar que:</p>
+<p><strong>ID del dispositivo = ID del empleado en WFM</strong></p>
+<p>Cuando el software utilice un identificador diferente, deberá existir una correspondencia documentada entre ambos.</p>
+<p>Ejemplo:</p>
+<div class="dh-tscroll"><table class="dh-tabla dh-2col"><thead><tr><th scope="col"><strong>Sistema</strong></th><th scope="col"><strong>Identificador</strong></th></tr></thead><tbody><tr><td>Empleado</td><td>000125</td></tr><tr><td>Biométrico</td><td>000125</td></tr><tr><td>WFM</td><td>000125</td></tr></tbody></table></div>
+<p>Si los identificadores no coinciden, deberá aplicarse el mecanismo de correspondencia definido por la plataforma.</p>
+<h2 id="prueba-de-marcacion" class="dh-h1"><span class="dh-n">12</span>Prueba de marcación</h2>
+<p>Una vez validado el método de identificación:</p>
+<ul class="dh-lista"><li>Solicitar al empleado realizar una marcación.</li><li>Confirmar que el dispositivo acepte la identificación.</li><li>Verificar que se genere el evento.</li><li>Registrar la hora de la prueba.</li><li>Confirmar posteriormente la recepción de la marcación en la plataforma WFM, cuando aplique.</li></ul>
+<p>El flujo esperado es:</p>
+<p><strong>Empleado → Identificación → Biométrico → Red → Plataforma → Marcación</strong></p>
+<h2 id="validacion-en-la-plataforma-de-wfm" class="dh-h1"><span class="dh-n">13</span>Validación en la plataforma de WFM</h2>
+<p>Cuando el dispositivo esté integrado con la plataforma de Tiempos y Asistencia:</p>
+<ul class="dh-lista"><li>Consultar la plataforma.</li><li>Buscar el empleado mediante su identificador.</li><li>Localizar la marcación realizada.</li><li>Confirmar fecha y hora.</li><li>Confirmar que el empleado asociado sea correcto.</li><li>Confirmar que el dispositivo de origen corresponda al instalado.</li><li>Verificar que no se haya generado una marcación duplicada o incorrecta.</li></ul>
+<p>Si la marcación no aparece en la plataforma, deberá iniciarse el diagnóstico de integración antes de declarar satisfactorio el enrolamiento.</p>
+<h2 id="prueba-completa-de-extremo-a-extremo" class="dh-h1"><span class="dh-n">14</span>Prueba completa de extremo a extremo</h2>
+<p>El enrolamiento se considerará técnicamente validado cuando se pueda comprobar el siguiente flujo:</p>
+<p><strong>1. Empleado autorizado</strong></p>
+<p>↓</p>
+<p><strong>2. Usuario creado en AC-2100 Plus</strong></p>
+<p>↓</p>
+<p><strong>3. Método biométrico registrado</strong></p>
+<p>↓</p>
+<p><strong>4. Usuario identificado correctamente</strong></p>
+<p>↓</p>
+<p><strong>5. Marcación generada</strong></p>
+<p>↓</p>
+<p><strong>6. Marcación transmitida</strong></p>
+<p>↓</p>
+<p><strong>7. Marcación recibida por la plataforma</strong></p>
+<p>↓</p>
+<p><strong>8. Marcación asociada al empleado correcto</strong></p>
+<h2 id="errores-y-acciones-correctivas" class="dh-h1"><span class="dh-n">15</span>Errores y acciones correctivas</h2>
+<div class="dh-tscroll"><table class="dh-tabla dh-2col"><thead><tr><th scope="col"><strong>Situación</strong></th><th scope="col"><strong>Acción inicial</strong></th></tr></thead><tbody><tr><td>No permite crear usuario</td><td>Verificar permisos, ID y capacidad disponible</td></tr><tr><td>Usuario ya existe</td><td>Consultar el registro existente antes de crear uno nuevo</td></tr><tr><td>Huella no reconocida</td><td>Revisar calidad de enrolamiento y sensor</td></tr><tr><td>Tarjeta no reconocida</td><td>Verificar módulo y compatibilidad de tarjeta</td></tr><tr><td>Marcación no generada</td><td>Revisar configuración del método de identificación</td></tr><tr><td>Marcación generada pero no transmitida</td><td>Validar conectividad e integración</td></tr><tr><td>Marcación llega con usuario incorrecto</td><td>Revisar correspondencia de ID</td></tr><tr><td>Marcación llega con hora incorrecta</td><td>Revisar fecha, hora y zona horaria</td></tr><tr><td>Usuario duplicado en WFM</td><td>Revisar identificación y parametrización del empleado</td></tr></tbody></table></div>
+<p>Si la causa no puede resolverse dentro del alcance del técnico, deberá registrarse el incidente y seguir el procedimiento de escalamiento correspondiente.</p>
+<h2 id="eliminacion-de-usuarios-de-prueba" class="dh-h1"><span class="dh-n">16</span>Eliminación de usuarios de prueba</h2>
+<p>Cuando el usuario haya sido creado exclusivamente para pruebas:</p>
+<ul class="dh-lista"><li>Confirmar con el responsable del cliente si debe conservarse.</li><li>Si no debe conservarse, eliminar el usuario del dispositivo.</li><li>Eliminar la asociación correspondiente en el software cuando aplique.</li><li>Verificar que no queden registros temporales innecesarios.</li><li>Registrar la acción en el checklist.</li></ul>
+<p>Cuando el usuario pase a producción, no deberá crearse nuevamente sin necesidad. Se deberá validar que el registro existente corresponda al empleado correcto.</p>
+<h2 id="criterios-de-aceptacion" class="dh-h1"><span class="dh-n">17</span>Criterios de aceptación</h2>
+<p>El enrolamiento se considera satisfactorio cuando:</p>
+<ul class="dh-lista"><li>El empleado fue autorizado para el registro.</li><li>El usuario fue creado correctamente.</li><li>El ID es correcto.</li><li>El método de identificación funciona.</li><li>El empleado puede identificarse correctamente.</li><li>Se genera una marcación.</li><li>La marcación es transmitida cuando existe integración.</li><li>La marcación aparece asociada al empleado correcto.</li><li>Fecha y hora son correctas.</li><li>No existen duplicidades o inconsistencias.</li><li>El resultado fue registrado en el formato correspondiente.</li></ul>
+<h2 id="registro-de-la-actividad" class="dh-h1"><span class="dh-n">18</span>Registro de la actividad</h2>
+<p>La actividad deberá registrarse en el checklist o formato correspondiente.</p>
+<div class="dh-tscroll"><table class="dh-tabla dh-2col"><thead><tr><th scope="col"><strong>Dato</strong></th><th scope="col"><strong>Resultado</strong></th></tr></thead><tbody><tr><td>Fecha</td><td class="dh-vacio"></td></tr><tr><td>Sede</td><td class="dh-vacio"></td></tr><tr><td>Dispositivo</td><td>AC-2100 Plus</td></tr><tr><td>Serial</td><td class="dh-vacio"></td></tr><tr><td>ID empleado</td><td class="dh-vacio"></td></tr><tr><td>Método</td><td>Huella / Tarjeta</td></tr><tr><td>Enrolamiento</td><td>Exitoso / Fallido</td></tr><tr><td>Identificación</td><td>Exitoso / Fallido</td></tr><tr><td>Marcación</td><td>Exitoso / Fallido</td></tr><tr><td>Recepción en WFM</td><td>Exitoso / Fallido / N/A</td></tr><tr><td>Usuario correcto</td><td>Sí / No</td></tr><tr><td>Fecha/hora correcta</td><td>Sí / No</td></tr><tr><td>Usuario de prueba eliminado</td><td>Sí / No / N/A</td></tr><tr><td>Observaciones</td><td class="dh-vacio"></td></tr></tbody></table></div>
+<h2 id="responsabilidades" class="dh-h1"><span class="dh-n">19</span>Responsabilidades</h2>
+<p><strong>Técnico de Ideas Control</strong></p>
+<ul class="dh-lista"><li>Verificar los requisitos previos.</li><li>Ejecutar el enrolamiento.</li><li>Realizar las pruebas.</li><li>Validar la marcación.</li><li>Registrar los resultados.</li><li>Proteger la información utilizada durante la actividad.</li></ul>
+<p><strong>Responsable del cliente</strong></p>
+<ul class="dh-lista"><li>Autorizar al empleado.</li><li>Facilitar su disponibilidad.</li><li>Validar el resultado cuando corresponda.</li><li>Informar cualquier inconsistencia en la identificación del empleado.</li></ul>
+<p>VIRDI, a través de su distribuidor BCN-ACCES, mantiene la documentación técnica de la serie AC-2100; esta documentación deberá considerar la referencia técnica del fabricante cuando existan diferencias de menú o comportamiento según firmware.</p>
+<h2 id="anexo-a-especificaciones-tecnicas-de-referencia-virdi-ac-210" class="dh-h1"><span class="dh-n">20</span>Anexo A. Especificaciones técnicas de referencia – VIRDI AC-2100 PLUS</h2>
+<p class="dh-nota"><em>Información de referencia tomada de la ficha técnica del fabricante, incluida como apoyo para el técnico durante la instalación y el enrolamiento.</em></p>
+<div class="dh-tscroll"><table class="dh-tabla dh-2col"><thead><tr><th scope="col"><strong>Campo</strong></th><th scope="col"><strong>Valor</strong></th></tr></thead><tbody><tr><td>Autenticación</td><td>Huella dactilar / Tarjeta de proximidad RFID</td></tr><tr><td>Tipo de sensor de huella</td><td>Óptico, 500 dpi (detección patentada de huellas falsas)</td></tr><tr><td>CPU</td><td>ARM9, 400 MHz</td></tr><tr><td>Memoria</td><td>32 MB NOR + 128 MB NAND Flash + 54 MB DDR</td></tr><tr><td>Pantalla</td><td>TFT LCD a color de 1,77”</td></tr><tr><td>Lector de tarjetas</td><td>13.56 MHz / 125 kHz (opcional) / template on card</td></tr><tr><td>Teclado</td><td>4 teclas de función táctiles retroiluminadas</td></tr><tr><td>Interfaces de comunicación</td><td>RS-232, Wiegand, Ethernet / WiFi (opcional), RS-485 (protocolo OSDP)</td></tr><tr><td>Capacidad de huellas (máx.)</td><td>10.000</td></tr><tr><td>Plantillas de huella 1:1</td><td>20.000</td></tr><tr><td>Plantillas de huella 1:N</td><td>3.000</td></tr><tr><td>Registro de movimientos</td><td>100.000</td></tr><tr><td>Dimensiones (alto x ancho x fondo)</td><td>187,9 x 58 x 51,6 mm</td></tr><tr><td>Grado de protección</td><td>IP65 (apto para instalación en exterior)</td></tr></tbody></table></div>
+<p class="dh-nota"><em>Fuente: ficha técnica del fabricante — VIRDI AC-2100 PLUS (BCN-ACCES, bcn-acces.com).</em></p>
+      <div class="dh-nav" id="dh-nav"><a href="../gestion-operativa.html#instalacion">← Volver a Instalación Biométrico Hardware</a></div>
+    </article>
+  </div>
+</section>
+</main>
+<button class="dh-arriba" id="arriba" aria-label="Volver arriba">↑</button>
+<div class="dh-zoom" id="zoom" hidden><img alt=""></div>
+<script src="../assets/js/auth.js?v=20261005b"></script>
+<script src="../assets/js/catalogo.js?v=20261005b"></script>
+<script src="../assets/js/app.js?v=20261005b"></script>
+<script>GD.iniciarDocumento();</script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>2109-INS-OPE · Instructivo de Configuración de Conexión Wi-Fi</title>
+<link rel="icon" href="../assets/img/ideascontrol.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/gd.css?v=20261005b">
+<link rel="stylesheet" href="../assets/css/documento.css?v=20261005b">
+<script>window.GD_BASE = '../';</script>
+</head>
+<body data-doc="2109-INS-OPE" class="dh-body">
+<main>
+<section class="dh-hero">
+  <div class="dh-cont">
+    <p class="dh-crumb"><a href="../index.html">Inicio</a> / <a href="../gestion-operativa.html">Gestión Operativa</a> / <a href="../gestion-operativa.html#instalacion">Instalación Biométrico Hardware</a> / 2109-INS-OPE</p>
+    <p class="dh-eyebrow">GESTIÓN OPERATIVA · INSTRUCTIVO · 2109-INS-OPE · VERSIÓN 1.0</p>
+    <h1>Instructivo de Configuración de Conexión Wi-Fi</h1>
+    <p class="dh-lead">Configuración y validación de la conexión Wi-Fi cuando no hay Ethernet: cobertura, menú de red, conexión, direccionamiento IP, verificación de comunicación y manejo de fallas.</p>
+    <div class="dh-hmeta"><span><b>Responsable</b>Operaciones Técnicas (Soporte e Implementación)</span><span><b>Emisión</b>Enero 2025</span><span><b>Última revisión</b>Agosto 2026</span><span><b>Aprobó</b>Patricia Ramírez / Gerente General</span><span><b>Próxima revisión</b>11/08/2026</span></div>
+    <div class="dh-hacc" id="acciones"><span class="dh-vig">Vigente</span><span class="dh-ro">Documento controlado · solo lectura en línea</span></div>
+  </div>
+</section>
+<section class="dh-seccion">
+  <div class="dh-grid">
+    <nav class="dh-toc" aria-label="Contenido del documento">
+      <div class="dh-toc-t">Contenido</div>
+      <ol><li class="n1"><a href="#ficha-de-control-del-documento">Ficha de Control del Documento</a></li><li class="n1"><a href="#control-de-cambios">Control de Cambios</a></li><li class="n1"><a href="#objetivo">1. Objetivo</a></li><li class="n1"><a href="#alcance">2. Alcance</a></li><li class="n1"><a href="#responsabilidades">3. Responsabilidades</a></li><li class="n1"><a href="#requisitos-previos">4. Requisitos previos</a></li><li class="n1"><a href="#consideraciones-de-seguridad">5. Consideraciones de seguridad</a></li><li class="n1"><a href="#procedimiento">6. Procedimiento</a></li><li class="n1"><a href="#verificar-cobertura-inalambrica">7. Verificar cobertura inalámbrica</a></li><li class="n1"><a href="#ingresar-al-menu-de-red-del-dispositivo">8. Ingresar al menú de red del dispositivo</a></li><li class="n1"><a href="#buscar-redes-disponibles">9. Buscar redes disponibles</a></li><li class="n1"><a href="#conectar-a-la-red">10. Conectar a la red</a></li><li class="n1"><a href="#configurar-direccionamiento-ip">11. Configurar direccionamiento IP</a></li><li class="n1"><a href="#verificar-conexion">12. Verificar conexión</a></li><li class="n1"><a href="#verificar-comunicacion-de-red">13. Verificar comunicación de red</a></li><li class="n1"><a href="#verificar-comunicacion-con-el-servidor">14. Verificar comunicación con el servidor</a></li><li class="n1"><a href="#criterios-de-aceptacion">15. Criterios de aceptación</a></li><li class="n1"><a href="#manejo-de-fallas-communes">16. Manejo de fallas communes</a></li><li class="n1"><a href="#evidencia-y-registro">17. Evidencia y registro</a></li><li class="n1"><a href="#buenas-practicas">18. Buenas prácticas</a></li></ol>
+    </nav>
+    <article class="dh-article">
+      <details class="dh-toc-movil"><summary>Contenido del documento</summary><ol><li class="n1"><a href="#ficha-de-control-del-documento">Ficha de Control del Documento</a></li><li class="n1"><a href="#control-de-cambios">Control de Cambios</a></li><li class="n1"><a href="#objetivo">1. Objetivo</a></li><li class="n1"><a href="#alcance">2. Alcance</a></li><li class="n1"><a href="#responsabilidades">3. Responsabilidades</a></li><li class="n1"><a href="#requisitos-previos">4. Requisitos previos</a></li><li class="n1"><a href="#consideraciones-de-seguridad">5. Consideraciones de seguridad</a></li><li class="n1"><a href="#procedimiento">6. Procedimiento</a></li><li class="n1"><a href="#verificar-cobertura-inalambrica">7. Verificar cobertura inalámbrica</a></li><li class="n1"><a href="#ingresar-al-menu-de-red-del-dispositivo">8. Ingresar al menú de red del dispositivo</a></li><li class="n1"><a href="#buscar-redes-disponibles">9. Buscar redes disponibles</a></li><li class="n1"><a href="#conectar-a-la-red">10. Conectar a la red</a></li><li class="n1"><a href="#configurar-direccionamiento-ip">11. Configurar direccionamiento IP</a></li><li class="n1"><a href="#verificar-conexion">12. Verificar conexión</a></li><li class="n1"><a href="#verificar-comunicacion-de-red">13. Verificar comunicación de red</a></li><li class="n1"><a href="#verificar-comunicacion-con-el-servidor">14. Verificar comunicación con el servidor</a></li><li class="n1"><a href="#criterios-de-aceptacion">15. Criterios de aceptación</a></li><li class="n1"><a href="#manejo-de-fallas-communes">16. Manejo de fallas communes</a></li><li class="n1"><a href="#evidencia-y-registro">17. Evidencia y registro</a></li><li class="n1"><a href="#buenas-practicas">18. Buenas prácticas</a></li></ol></details>
+<h2 id="ficha-de-control-del-documento" class="dh-h1 dh-esp">Ficha de Control del Documento</h2>
+<div class="dh-tscroll"><table class="dh-tabla dh-2col"><thead><tr><th scope="col"><strong>Campo</strong></th><th scope="col"><strong>Valor</strong></th></tr></thead><tbody><tr><td><strong>Código del documento</strong></td><td>2109-INS-OPE</td></tr><tr><td><strong>Título</strong></td><td>Configuración de Conexión WiFi</td></tr><tr><td><strong>Área responsable</strong></td><td>Operaciones Técnicas (Soporte e Implementación)</td></tr><tr><td><strong>Proceso relacionado</strong></td><td>Instalación física, Integración con software WFM, Registro biométrico de usuarios</td></tr><tr><td><strong>Elaborado por</strong></td><td>Martín Molina / Ingeniero</td></tr><tr><td><strong>Revisado por</strong></td><td>Andrés Bernal / Lider Técnico</td></tr><tr><td><strong>Aprobado por</strong></td><td>Patricia Ramírez / Gerente General</td></tr><tr><td><strong>Fecha de elaboración</strong></td><td>Enero 2025</td></tr><tr><td><strong>Versión vigente</strong></td><td>1.0</td></tr><tr><td><strong>Próxima revisión programada</strong></td><td>11/08/2026 (revisión anual, o antes si cambia el proceso o la normativa aplicable)</td></tr><tr><td><strong>Nivel de confidencialidad</strong></td><td>Uso interno Ideas Control / Distribución autorizada a cliente durante el proyecto</td></tr></tbody></table></div>
+<h2 id="control-de-cambios" class="dh-h1 dh-esp">Control de Cambios</h2>
+<div class="dh-tscroll"><table class="dh-tabla"><thead><tr><th scope="col"><strong>Versión</strong></th><th scope="col"><strong>Fecha</strong></th><th scope="col"><strong>Descripción del cambio</strong></th></tr></thead><tbody><tr><td><strong>1.0</strong></td><td>Enero 2025</td><td>Elaboraciòn del instructivo</td></tr><tr><td><strong>1.0</strong></td><td>Agosto 2026</td><td>Revisiòn sin novedades</td></tr></tbody></table></div>
+<h2 id="objetivo" class="dh-h1"><span class="dh-n">01</span>Objetivo</h2>
+<p>Establecer el procedimiento para configurar y validar la conexión WiFi de dispositivos biométricos cuando no se disponga de conexión Ethernet, garantizando una comunicación estable con el servidor de integración y/o la plataforma de tiempos y asistencia.</p>
+<h2 id="alcance" class="dh-h1"><span class="dh-n">02</span>Alcance</h2>
+<p>Aplica a:</p>
+<ul class="dh-lista"><li>Instalaciones nuevas con conectividad inalámbrica.</li><li>Reubicación de dispositivos biométricos.</li><li>Reconfiguración de red WiFi.</li><li>Actividades de soporte relacionadas con conectividad inalámbrica.</li></ul>
+<h2 id="responsabilidades" class="dh-h1"><span class="dh-n">03</span>Responsabilidades</h2>
+<p><strong>Técnico instalador o de soporte</strong></p>
+<ul class="dh-lista"><li>Configurar la conexión WiFi del dispositivo.</li><li>Verificar la estabilidad de la comunicación.</li><li>Registrar la configuración y evidencias correspondientes.</li></ul>
+<p><strong>Cliente</strong></p>
+<ul class="dh-lista"><li>Proporcionar las credenciales de red autorizadas.</li><li>Garantizar cobertura inalámbrica adecuada en el punto de instalación.</li><li>Autorizar el acceso a la red corporativa cuando sea requerido.</li></ul>
+<h2 id="requisitos-previos" class="dh-h1"><span class="dh-n">04</span>Requisitos previos</h2>
+<p>Antes de iniciar, se debe contar con:</p>
+<ul class="dh-lista"><li>Dispositivo biométrico instalado y energizado.</li><li>Cobertura WiFi disponible en el punto de instalación.</li><li>Información suministrada por el cliente:</li><li>Nombre de la red (SSID).</li><li>Contraseña.</li><li>Tipo de seguridad (WPA2/WPA3).</li><li>Método de direccionamiento (DHCP o IP fija).</li><li>Confirmación de que el SSID se encuentra habilitado para nuevos dispositivos.</li></ul>
+<h2 id="consideraciones-de-seguridad" class="dh-h1"><span class="dh-n">05</span>Consideraciones de seguridad</h2>
+<ul class="dh-lista"><li>Las credenciales WiFi son confidenciales y no deben divulgarse.</li><li>No almacenar contraseñas en dispositivos personales del técnico.</li><li>Utilizar únicamente redes autorizadas por el cliente.</li><li>No modificar políticas de seguridad inalámbrica del cliente sin aprobación.</li></ul>
+<h2 id="procedimiento" class="dh-h1"><span class="dh-n">06</span>Procedimiento</h2>
+<h2 id="verificar-cobertura-inalambrica" class="dh-h1"><span class="dh-n">07</span>Verificar cobertura inalámbrica</h2>
+<ul class="dh-lista"><li>Hay que confirmar que exista señal WiFi en el punto de instalación.</li><li>Validar, preferiblemente con un dispositivo móvil o portátil, que la intensidad de señal sea suficiente para operación continua.</li></ul>
+<p><strong>Referencia recomendada:</strong> intensidad mayor a <strong>-70 dBm</strong>.</p>
+<h2 id="ingresar-al-menu-de-red-del-dispositivo" class="dh-h1"><span class="dh-n">08</span>Ingresar al menú de red del dispositivo</h2>
+<p>Acceder al menú:</p>
+<p><strong>Menú → Red / Network → WiFi</strong></p>
+<p>Activar la interfaz inalámbrica si se encuentra deshabilitada.</p>
+<h2 id="buscar-redes-disponibles" class="dh-h1"><span class="dh-n">09</span>Buscar redes disponibles</h2>
+<ul class="dh-lista"><li>Seleccionar <strong>Buscar / Scan</strong>.</li><li>Esperar la detección de redes.</li><li>Identificar el SSID suministrado por el cliente.</li></ul>
+<h2 id="conectar-a-la-red" class="dh-h1"><span class="dh-n">10</span>Conectar a la red</h2>
+<ul class="dh-lista"><li>Seleccionar el SSID correspondiente.</li><li>Ingresar la contraseña proporcionada por el cliente.</li><li>Confirmar el tipo de seguridad cuando el equipo lo solicite.</li><li>Guardar la configuración.</li></ul>
+<h2 id="configurar-direccionamiento-ip" class="dh-h1"><span class="dh-n">11</span>Configurar direccionamiento IP</h2>
+<p><strong>Opción A – DHCP</strong></p>
+<p>Seleccionar <strong>Obtener IP automáticamente</strong>.</p>
+<p><strong>Opción B – IP fija</strong></p>
+<p>Ingresar:</p>
+<div class="dh-tscroll"><table class="dh-tabla dh-2col"><thead><tr><th scope="col"><strong>Parámetro</strong></th><th scope="col"><strong>Valor</strong></th></tr></thead><tbody><tr><td>Dirección IP</td><td class="dh-vacio"></td></tr><tr><td>Máscara de red</td><td class="dh-vacio"></td></tr><tr><td>Puerta de enlace</td><td class="dh-vacio"></td></tr><tr><td>DNS</td><td class="dh-vacio"></td></tr></tbody></table></div>
+<h2 id="verificar-conexion" class="dh-h1"><span class="dh-n">12</span>Verificar conexión</h2>
+<p>Confirmar en la pantalla del dispositivo:</p>
+<ul class="dh-lista"><li>Estado: <strong>Conectado</strong></li><li>Dirección IP asignada.</li><li>Intensidad de señal.</li><li>SSID conectado.</li></ul>
+<h2 id="verificar-comunicacion-de-red" class="dh-h1"><span class="dh-n">13</span>Verificar comunicación de red</h2>
+<p>Desde un computador conectado a la misma red ejecutar una prueba de ping hacia la IP del biométrico, siguiendo el instructivo <strong>2107-INS-OPE Instructivo prueba conectividad Ping.</strong></p>
+<h2 id="verificar-comunicacion-con-el-servidor" class="dh-h1"><span class="dh-n">14</span>Verificar comunicación con el servidor</h2>
+<p>Cuando aplique, validar sincronización o transmisión de marcaciones hacia:</p>
+<ul class="dh-lista"><li>Servidor WFM.</li><li>Servidor de integración.</li><li>Plataforma de tiempos y asistencia.</li></ul>
+<h2 id="criterios-de-aceptacion" class="dh-h1"><span class="dh-n">15</span>Criterios de aceptación</h2>
+<p>La configuración WiFi se considera satisfactoria cuando:</p>
+<ul class="dh-lista"><li>El dispositivo permanece conectado al SSID autorizado.</li><li>Obtiene dirección IP válida.</li><li>Responde correctamente al ping.</li><li>La pérdida de paquetes es 0 %.</li><li>La señal es estable.</li><li>La sincronización con el servidor es exitosa.</li></ul>
+<h2 id="manejo-de-fallas-communes" class="dh-h1"><span class="dh-n">16</span>Manejo de fallas communes</h2>
+<div class="dh-tscroll"><table class="dh-tabla dh-2col"><thead><tr><th scope="col"><strong>Síntoma</strong></th><th scope="col"><strong>Acción recomendada</strong></th></tr></thead><tbody><tr><td>SSID no visible</td><td>Verificar cobertura y habilitación del SSID</td></tr><tr><td>Contraseña incorrecta</td><td>Confirmar credenciales con el cliente</td></tr><tr><td>No obtiene IP</td><td>Revisar DHCP o configurar IP fija</td></tr><tr><td>Señal débil</td><td>Reubicar equipo o instalar punto de acceso</td></tr><tr><td>Desconexiones frecuentes</td><td>Verificar interferencias y calidad de señal</td></tr><tr><td>Sin comunicación con servidor</td><td>Revisar firewall, VLAN o rutas de red</td></tr></tbody></table></div>
+<p>Si la falla persiste, escalar a Nivel 2 de Ideas Control o al área de redes del cliente.</p>
+<h2 id="evidencia-y-registro" class="dh-h1"><span class="dh-n">17</span>Evidencia y registro</h2>
+<p>Registrar en el checklist o ticket:</p>
+<ul class="dh-lista"><li>Fecha y hora.</li><li>Nombre del técnico.</li><li>SSID configurado.</li><li>Método IP (DHCP o fija).</li><li>Dirección IP obtenida.</li><li>Intensidad de señal.</li><li>Resultado del ping.</li><li>Resultado de sincronización.</li><li>Observaciones.</li></ul>
+<p><strong>Formato sugerido</strong></p>
+<div class="dh-tscroll"><table class="dh-tabla dh-2col"><thead><tr><th scope="col"><strong>Ítem</strong></th><th scope="col"><strong>Resultado</strong></th></tr></thead><tbody><tr><td>SSID configurado</td><td>__________</td></tr><tr><td>Tipo de seguridad</td><td>__________</td></tr><tr><td>Método IP</td><td>DHCP / Fija</td></tr><tr><td>IP asignada</td><td>__________</td></tr><tr><td>Intensidad de señal</td><td>__________</td></tr><tr><td>Ping exitoso</td><td>Sí / No</td></tr><tr><td>Sincronización exitosa</td><td>Sí / No</td></tr><tr><td>Observaciones</td><td>__________________</td></tr></tbody></table></div>
+<h2 id="buenas-practicas" class="dh-h1"><span class="dh-n">18</span>Buenas prácticas</h2>
+<ul class="dh-lista"><li>Preferir Ethernet cuando exista disponibilidad de cableado.</li><li>Evitar instalar el equipo cerca de hornos microondas, motores o fuentes de interferencia.</li><li>Mantener antenas libres de obstrucciones.</li><li>Documentar cualquier cambio de red realizado durante la instalación.</li></ul>
+      <div class="dh-nav" id="dh-nav"><a href="../gestion-operativa.html#instalacion">← Volver a Instalación Biométrico Hardware</a></div>
+    </article>
+  </div>
+</section>
+</main>
+<button class="dh-arriba" id="arriba" aria-label="Volver arriba">↑</button>
+<div class="dh-zoom" id="zoom" hidden><img alt=""></div>
+<script src="../assets/js/auth.js?v=20261005b"></script>
+<script src="../assets/js/catalogo.js?v=20261005b"></script>
+<script src="../assets/js/app.js?v=20261005b"></script>
+<script>GD.iniciarDocumento();</script>
+</body>
+</html>
