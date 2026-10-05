@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Evaluación de conocimientos · Gestión Documental · Ideas Control</title>
+<link rel="icon" href="assets/img/ideascontrol.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/gd.css">
+<style>
+.ev{max-width:760px;margin:0 auto;padding:0 16px 60px}
+.ev h1{font-size:26px;color:var(--tinta);margin:14px 0 6px}
+.ev .intro{color:var(--suave);font-size:14.5px;margin:0 0 18px}
+.ev-card{background:var(--papel);border:1px solid var(--linea);border-radius:var(--radio);padding:20px;margin:0 0 14px}
+.ev-reglas{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:0 0 18px}
+.ev-reglas div{background:var(--papel);border:1px solid var(--linea);border-radius:12px;padding:12px 14px;font-size:12.5px;color:var(--suave)}
+.ev-reglas b{display:block;font-size:20px;color:var(--azul-900)}
+.ev label.nm{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600;color:var(--suave)}
+.ev input[type=text]{font:inherit;font-size:16px;padding:12px 14px;border:1px solid var(--linea);border-radius:10px}
+.ev input[type=text]:focus{outline:none;border-color:var(--azul);box-shadow:0 0 0 3px rgba(14,118,188,.12)}
+.ev .btn{padding:12px 18px;font-size:14.5px;justify-content:center}
+.ev .err{color:#b42318;font-size:13px;margin:8px 0 0}
+.ev-prog{display:flex;align-items:center;gap:12px;font-size:13px;color:var(--suave);margin:0 0 12px}
+.ev-prog .barra{flex:1;height:6px;background:#e6ebf0;border-radius:4px;overflow:hidden}
+.ev-prog .barra i{display:block;height:100%;background:var(--teal);transition:width .2s}
+.ev-tema{font-size:11.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--teal);margin:0 0 6px}
+.ev-q{font-size:17px;font-weight:700;color:var(--tinta);line-height:1.4;margin:0 0 14px}
+.ev-op{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;border:1px solid var(--linea);background:#fff;border-radius:12px;padding:13px 14px;margin:0 0 9px;font:inherit;font-size:15px;color:var(--tinta);cursor:pointer;line-height:1.4}
+.ev-op:hover{border-color:var(--azul)}
+.ev-op .l{flex-shrink:0;width:26px;height:26px;border-radius:50%;background:#eef2f6;color:var(--suave);font-weight:700;font-size:13px;display:grid;place-items:center}
+.ev-op.sel{border-color:var(--azul);background:var(--azul-50)}
+.ev-op.sel .l{background:var(--azul);color:#fff}
+.ev-nav{display:flex;gap:10px;justify-content:space-between;margin-top:8px;flex-wrap:wrap}
+.ev-nav .btn{white-space:normal;min-width:0}
+.ev-res{text-align:center;padding:28px 20px}
+.ev-res .pct{font-size:56px;font-weight:800;line-height:1}
+.ev-res.ok .pct{color:#0d6d6d}.ev-res.no .pct{color:#b42318}
+.ev-res .veredicto{display:inline-block;margin:12px 0 6px;padding:6px 16px;border-radius:30px;font-weight:700;font-size:15px}
+.ev-res.ok .veredicto{background:var(--teal-50);color:#0d6d6d}.ev-res.no .veredicto{background:#fdecec;color:#b42318}
+.ev-res p{color:var(--suave);margin:6px 0}
+.ev-rev{margin-top:10px}
+.ev-rev li{margin:0 0 10px;font-size:14px;line-height:1.45}
+.ev-rev .mal{color:#b42318}.ev-rev .bien{color:#0d6d6d}
+.ev-rev small{display:block;color:var(--suave)}
+@media (max-width:560px){.ev-reglas{grid-template-columns:1fr}.ev h1{font-size:22px}}
+</style>
+</head>
+<body>
+<main><div id="gd-aviso-carga" style="max-width:640px;margin:60px auto;padding:24px;font-family:Segoe UI,Arial,sans-serif">Cargando la evaluación… Si este mensaje no desaparece, descomprima el ZIP completo y abra el archivo desde la carpeta extraída.</div></main>
+<script src="assets/js/auth.js"></script>
+<script src="assets/js/catalogo.js"></script>
+<script src="assets/js/app.js"></script>
+<script src="assets/js/evaluacion-banco.js"></script>
+<script>
+(function () {
+  var u = GDAuth.proteger(); if (!u) return;
+  GD.encabezadoSimple(u, 'Evaluación de conocimientos');
+  var B = window.GD_EVAL, N = 10, MINIMO = 0.8, POR_TEMA = { INS: 4, MTTO: 3, SEG: 3 };
+  var main = document.querySelector('main');
+  var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+  var mezclar = function (a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; };
+  var nombre = '', preguntas = [], resp = [], k = 0;
+
+  function inicio(err) {
+    main.innerHTML = '<div class="ev"><nav class="migas"><a href="index.html">Inicio</a> › Evaluación de conocimientos</nav>'
+      + '<h1>Evaluación de conocimientos</h1><p class="intro">Diez preguntas de selección múltiple sobre instalación, mantenimiento y seguridad de la información. Cada pregunta tiene una sola respuesta correcta.</p>'
+      + '<div class="ev-reglas"><div><b>' + N + '</b>preguntas</div><div><b>80 %</b>para aprobar (8 de 10)</div><div><b>1</b>respuesta correcta por pregunta</div></div>'
+      + '<form class="ev-card" id="f"><label class="nm">Nombre completo<input type="text" id="nombre" autocomplete="name" value="' + esc(nombre) + '" placeholder="Escriba su nombre y apellido"></label>'
+      + (err ? '<p class="err">' + err + '</p>' : '') + '<button class="btn pri" style="width:100%;margin-top:14px">Comenzar evaluación</button></form></div>';
+    document.getElementById('f').onsubmit = function (e) {
+      e.preventDefault(); nombre = document.getElementById('nombre').value.trim().replace(/\s+/g, ' ');
+      if (nombre.split(' ').length < 2) { inicio('Escriba su nombre y al menos un apellido.'); return; }
+      preguntas = [];
+      Object.keys(POR_TEMA).forEach(function (t) { preguntas = preguntas.concat(mezclar(B.preguntas.filter(function (p) { return p.t === t; })).slice(0, POR_TEMA[t])); });
+      preguntas = mezclar(preguntas).map(function (p) {  // también se mezcla el orden de las opciones
+        var orden = mezclar([0, 1, 2, 3]);
+        return { t: p.t, q: p.q, j: p.j, o: orden.map(function (i) { return p.o[i]; }), ok: orden.indexOf(p.ok) };
+      });
+      resp = new Array(N).fill(null); k = 0; pregunta();
+    };
+    document.getElementById('nombre').focus();
+  }
+  function pregunta() {
+    var p = preguntas[k];
+    main.innerHTML = '<div class="ev"><div style="height:16px"></div><div class="ev-prog"><span>Pregunta ' + (k + 1) + ' de ' + N + '</span><span class="barra"><i style="width:' + (100 * k / N) + '%"></i></span><span>' + esc(nombre) + '</span></div>'
+      + '<div class="ev-card"><div class="ev-tema">' + esc(B.temas[p.t]) + '</div><div class="ev-q">' + esc(p.q) + '</div>'
+      + p.o.map(function (o, i) { return '<button type="button" class="ev-op' + (resp[k] === i ? ' sel' : '') + '" data-i="' + i + '"><span class="l">' + 'ABCD'[i] + '</span><span>' + esc(o) + '</span></button>'; }).join('')
+      + '<div class="ev-nav">' + (k > 0 ? '<button type="button" class="btn sec" id="ant">← Anterior</button>' : '<span></span>')
+      + '<button type="button" class="btn pri" id="sig"' + (resp[k] === null ? ' disabled style="opacity:.45"' : '') + '>' + (k < N - 1 ? 'Siguiente →' : 'Terminar y ver resultado') + '</button></div></div></div>';
+    main.querySelectorAll('.ev-op').forEach(function (b) { b.onclick = function () { resp[k] = +b.dataset.i; pregunta(); }; });
+    var a = document.getElementById('ant'); if (a) a.onclick = function () { k--; pregunta(); };
+    document.getElementById('sig').onclick = function () { if (resp[k] === null) return; if (k < N - 1) { k++; pregunta(); } else resultado(); };
+    window.scrollTo(0, 0);
+  }
+  function resultado() {
+    var buenas = preguntas.filter(function (p, i) { return resp[i] === p.ok; }).length;
+    var pct = Math.round(100 * buenas / N), paso = buenas / N >= MINIMO;
+    var fecha = new Date().toLocaleString('es-CO', { dateStyle: 'long', timeStyle: 'short' });
+    main.innerHTML = '<div class="ev"><div style="height:16px"></div><div class="ev-card ev-res ' + (paso ? 'ok' : 'no') + '">'
+      + '<p style="font-weight:600;color:var(--tinta)">' + esc(nombre) + '</p><div class="pct">' + pct + ' %</div>'
+      + '<div class="veredicto">' + (paso ? 'APROBÓ' : 'NO APROBÓ') + '</div>'
+      + '<p>' + buenas + ' de ' + N + ' respuestas correctas · mínimo para aprobar: 80 % (8 de 10)</p><p style="font-size:12.5px">' + esc(fecha) + '</p></div>'
+      + '<div class="ev-card"><h3 style="margin:0 0 6px;font-size:15px">Revisión de respuestas</h3><ol class="ev-rev">'
+      + preguntas.map(function (p, i) {
+          var bien = resp[i] === p.ok;
+          return '<li><b>' + esc(p.q) + '</b><br><span class="' + (bien ? 'bien' : 'mal') + '">' + (bien ? '✔ ' : '✘ ') + 'Su respuesta: ' + esc(p.o[resp[i]]) + '</span>'
+            + (bien ? '' : '<small>Correcta: ' + esc(p.o[p.ok]) + '</small>') + '<small>' + esc(p.j) + '</small></li>';
+        }).join('') + '</ol></div>'
+      + '<div class="ev-nav"><button type="button" class="btn sec" id="otra">Nueva evaluación</button><button type="button" class="btn pri" id="imp">Imprimir resultado</button></div></div>';
+    document.getElementById('otra').onclick = function () { inicio(); };
+    document.getElementById('imp').onclick = function () { window.print(); };
+    window.scrollTo(0, 0);
+  }
+  inicio();
+})();
+</script>
+</body>
+</html>
