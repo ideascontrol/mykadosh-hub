@@ -1,0 +1,130 @@
+/* =====================================================================
+   IDEAS CONTROL · Estilos compartidos de las microapps internas
+   shared/css/ic.css — usar en todas las apps (Comercial, Soporte, …)
+   ===================================================================== */
+:root {
+  --ic-azul: #0E76BC;
+  --ic-azul-osc: #0A5A90;
+  --ic-teal: #159090;
+  --ic-dorado: #C9A227;
+  --ic-tinta: #1D2B36;
+  --ic-gris: #5B6770;
+  --ic-gris-claro: #8A96A0;
+  --ic-borde: #DCE4EA;
+  --ic-fondo: #F3F6F9;
+  --ic-blanco: #FFFFFF;
+  --ic-ok: #1F8A4C;
+  --ic-warn: #B7791F;
+  --ic-err: #C0392B;
+  --ic-radio: 12px;
+  --ic-sombra: 0 1px 2px rgba(16, 40, 60, .06), 0 4px 14px rgba(16, 40, 60, .06);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  font-family: Inter, "Segoe UI", Arial, sans-serif;
+  background: var(--ic-fondo);
+  color: var(--ic-tinta);
+  font-size: 15px;
+  line-height: 1.45;
+}
+a { color: var(--ic-azul); }
+[hidden] { display: none !important; }
+
+/* ---------- Encabezado ---------- */
+.ic-header {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--ic-blanco);
+  border-bottom: 3px solid var(--ic-dorado);
+  display: flex; align-items: center; gap: 16px;
+  padding: 10px 24px;
+}
+.ic-header .logo { height: 38px; width: auto; display: block; }
+.ic-header .app-nombre { border-left: 1px solid var(--ic-borde); padding-left: 16px; }
+.ic-header .app-nombre b { display: block; font-size: 16px; color: var(--ic-azul); }
+.ic-header .app-nombre span { font-size: 12px; color: var(--ic-gris); }
+.ic-header .espacio { flex: 1; }
+.ic-user { display: flex; align-items: center; gap: 10px; }
+.ic-avatar {
+  width: 38px; height: 38px; border-radius: 50%; letter-spacing: -.02em;
+  background: linear-gradient(135deg, var(--ic-azul), var(--ic-teal));
+  color: #fff; font-weight: 700; font-size: 11.5px;
+  display: grid; place-items: center;
+}
+.ic-user .datos { text-align: right; font-size: 13px; line-height: 1.25; }
+.ic-user .datos b { display: block; }
+.ic-user .datos span { color: var(--ic-gris); font-size: 12px; }
+
+/* ---------- Contenido ---------- */
+.ic-main { max-width: 1180px; margin: 0 auto; padding: 24px; }
+.ic-titulo { margin: 4px 0 4px; font-size: 24px; }
+.ic-subtitulo { margin: 0 0 20px; color: var(--ic-gris); }
+.ic-seccion { margin: 26px 0 10px; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ic-gris); }
+
+/* ---------- Indicadores ---------- */
+.ic-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.ic-kpi { background: var(--ic-blanco); border: 1px solid var(--ic-borde); border-radius: var(--ic-radio); padding: 14px 16px; box-shadow: var(--ic-sombra); }
+.ic-kpi .valor { font-size: 26px; font-weight: 700; color: var(--ic-azul); }
+.ic-kpi .etiqueta { font-size: 13px; color: var(--ic-gris); }
+
+/* ---------- Tarjetas del menú ---------- */
+.ic-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 16px; }
+.ic-card {
+  position: relative; display: flex; flex-direction: column; gap: 8px;
+  background: var(--ic-blanco); border: 1px solid var(--ic-borde); border-radius: var(--ic-radio);
+  padding: 18px; text-decoration: none; color: inherit; box-shadow: var(--ic-sombra);
+  transition: transform .12s, box-shadow .12s, border-color .12s;
+}
+.ic-card:hover { transform: translateY(-2px); border-color: var(--ic-azul); box-shadow: 0 8px 24px rgba(14, 118, 188, .14); }
+.ic-card .icono {
+  width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center;
+  background: rgba(14, 118, 188, .10); color: var(--ic-azul);
+}
+.ic-card .icono svg { width: 24px; height: 24px; }
+.ic-card.teal .icono { background: rgba(21, 144, 144, .12); color: var(--ic-teal); }
+.ic-card.dorado .icono { background: rgba(201, 162, 39, .15); color: #9A7A12; }
+.ic-card h3 { margin: 4px 0 0; font-size: 16px; }
+.ic-card p { margin: 0; font-size: 13px; color: var(--ic-gris); }
+.ic-card.deshabilitada { opacity: .55; pointer-events: none; box-shadow: none; }
+.ic-badge {
+  position: absolute; top: 14px; right: 14px;
+  font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 999px;
+  background: var(--ic-fondo); color: var(--ic-gris); border: 1px solid var(--ic-borde);
+}
+.ic-badge.admin { background: rgba(201, 162, 39, .15); color: #8A6D0F; border-color: rgba(201, 162, 39, .4); }
+
+/* ---------- Botones ---------- */
+.ic-btn {
+  font: inherit; font-weight: 600; font-size: 14px;
+  border: 1px solid transparent; border-radius: 8px; padding: 9px 16px; cursor: pointer;
+  background: var(--ic-azul); color: #fff; display: inline-flex; align-items: center; gap: 8px;
+}
+.ic-btn:hover { background: var(--ic-azul-osc); }
+.ic-btn.sec { background: var(--ic-blanco); color: var(--ic-azul); border-color: var(--ic-borde); }
+.ic-btn.sec:hover { border-color: var(--ic-azul); }
+.ic-btn:disabled { background: #B8C4CD; border-color: #B8C4CD; color: #fff; cursor: not-allowed; }
+
+/* ---------- Pantallas de estado ---------- */
+.ic-centro { min-height: calc(100vh - 70px); display: grid; place-items: center; padding: 24px; }
+.ic-panel { background: var(--ic-blanco); border: 1px solid var(--ic-borde); border-radius: var(--ic-radio); box-shadow: var(--ic-sombra); padding: 32px; max-width: 440px; width: 100%; text-align: center; }
+.ic-panel img { height: 54px; margin-bottom: 18px; }
+.ic-panel h2 { margin: 0 0 8px; font-size: 20px; }
+.ic-panel p { color: var(--ic-gris); margin: 0 0 20px; }
+.ic-spinner { width: 34px; height: 34px; border: 3px solid var(--ic-borde); border-top-color: var(--ic-azul); border-radius: 50%; animation: ic-giro .8s linear infinite; margin: 0 auto 14px; }
+@keyframes ic-giro { to { transform: rotate(360deg); } }
+
+/* ---------- Avisos ---------- */
+.ic-toast-zona { position: fixed; right: 18px; bottom: 18px; display: flex; flex-direction: column; gap: 8px; z-index: 50; }
+.ic-toast { background: var(--ic-tinta); color: #fff; padding: 11px 16px; border-radius: 8px; font-size: 14px; box-shadow: var(--ic-sombra); max-width: 380px; }
+.ic-toast.ok { background: var(--ic-ok); } .ic-toast.err { background: var(--ic-err); } .ic-toast.warn { background: var(--ic-warn); }
+
+.ic-pie { text-align: center; font-size: 12px; color: var(--ic-gris-claro); padding: 28px 0 20px; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 760px) {
+  .ic-header { padding: 10px 14px; gap: 10px; }
+  .ic-header .logo { height: 30px; }
+  .ic-header .app-nombre, .ic-user .datos { display: none; }
+  .ic-main { padding: 16px; }
+  .ic-kpis { grid-template-columns: repeat(2, 1fr); }
+}
