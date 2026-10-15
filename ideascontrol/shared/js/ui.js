@@ -94,7 +94,7 @@ IC.ui = (function () {
   // Confirmación propia (no bloquea el navegador). Devuelve una promesa true/false.
   function confirmar(titulo, texto, botonSi, peligro) {
     return new Promise((res) => {
-      modal(titulo, '<div class="ic-form"><p style="margin:0 0 16px">' + esc(texto) + '</p><div class="ic-acciones">' +
+      modal(titulo, '<div class="ic-form"><p style="margin:0 0 16px;white-space:pre-line">' + esc(texto) + '</p><div class="ic-acciones">' +
         '<button class="ic-btn sec" data-r="0">Cancelar</button><button class="ic-btn ' + (peligro ? 'peligro' : '') + '" data-r="1">' + esc(botonSi || 'Confirmar') + '</button></div></div>',
         (c) => c.querySelectorAll('[data-r]').forEach((b) => { b.onclick = () => { cerrarModal(); res(b.dataset.r === '1'); }; }));
     });
