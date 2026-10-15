@@ -227,3 +227,18 @@ input[type=checkbox] { width: auto; }
   .ic-tabla .ocultar-movil { display: none; }
   .ic-filtros select { flex: 1 1 140px; }
 }
+
+/* Pasos (carga masiva) y resultados */
+.ic-pasos { display: grid; gap: 12px; margin-bottom: 18px; }
+.ic-paso { display: flex; gap: 14px; background: var(--ic-blanco); border: 1px solid var(--ic-borde); border-radius: var(--ic-radio); padding: 16px 18px; box-shadow: var(--ic-sombra); }
+.ic-paso .num { flex: 0 0 32px; height: 32px; border-radius: 50%; background: var(--ic-azul); color: #fff; font-weight: 700; display: grid; place-items: center; }
+.ic-paso h3 { margin: 4px 0 2px; font-size: 15px; }
+.ic-paso p { margin: 0 0 10px; font-size: 13px; color: var(--ic-gris); }
+.ic-paso .txt { flex: 1; }
+.ic-res { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+.ic-res.ok { background: rgba(31,138,76,.12); color: var(--ic-ok); }
+.ic-res.act { background: rgba(183,121,31,.14); color: var(--ic-warn); }
+.ic-res.igual { background: #EEF1F4; color: var(--ic-gris); }
+.ic-res.error { background: rgba(192,57,43,.10); color: var(--ic-err); }
+.ic-barra-prog { height: 10px; background: var(--ic-borde); border-radius: 6px; overflow: hidden; max-width: 520px; }
+.ic-barra-prog > div { height: 100%; width: 0; background: linear-gradient(90deg, var(--ic-azul), var(--ic-teal)); transition: width .25s; }
