@@ -18,7 +18,7 @@ const ICONOS = {
 };
 
 // Tarjetas del menú. etapa > etapaActual = "Próximamente". admin: solo administradores.
-const ETAPA_ACTUAL = 1;
+const ETAPA_ACTUAL = 2;
 const MENU = [
   { grupo: 'Comercial', items: [
     { ruta: 'cotizar', titulo: 'Nueva cotización', texto: 'Arme una propuesta con productos, descuentos, condiciones y PDF.', icono: 'cotizar', etapa: 2 },
