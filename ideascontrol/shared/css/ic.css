@@ -258,3 +258,14 @@ input[type=checkbox] { width: auto; }
 .ic-prev td { border: 1px solid var(--ic-borde); padding: 8px; vertical-align: top; }
 .ic-prev ul { margin: 6px 0 0; padding-left: 18px; color: var(--ic-gris); }
 @media (max-width: 760px) { .ic-foto.grande { width: 140px; height: 140px; } }
+
+/* Datos automáticos dentro de textos (condiciones comerciales) */
+.ic-var { display: inline-block; font-size: 12px; font-weight: 600; line-height: 1.5; padding: 0 7px; border-radius: 6px; background: rgba(21,144,144,.12); color: var(--ic-teal); border: 1px solid rgba(21,144,144,.3); white-space: nowrap; }
+.ic-var.mala { background: rgba(200,50,50,.1); color: var(--ic-err); border-color: rgba(200,50,50,.35); }
+button.ic-var { cursor: pointer; font-family: inherit; padding: 4px 10px; }
+button.ic-var:hover { background: rgba(21,144,144,.2); }
+.ic-vars { display: flex; flex-wrap: wrap; gap: 6px; }
+.ic-prev-texto { white-space: pre-line; background: #F7F9FB; border: 1px dashed var(--ic-borde); border-radius: 8px; padding: 10px 12px; font-size: 14px; }
+.ic-alerta { background: rgba(201,162,39,.12); border: 1px solid rgba(201,162,39,.45); color: #6B5409; border-radius: var(--ic-radio); padding: 12px 14px; margin-bottom: 14px; font-size: 14px; }
+.ic-alerta.chica { padding: 8px 10px; margin: 8px 0 4px; font-size: 13px; border-radius: 8px; }
+.ic-alerta .ic-btn { padding: 4px 10px; font-size: 12px; margin-left: 6px; }
