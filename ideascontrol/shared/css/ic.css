@@ -242,3 +242,19 @@ input[type=checkbox] { width: auto; }
 .ic-res.error { background: rgba(192,57,43,.10); color: var(--ic-err); }
 .ic-barra-prog { height: 10px; background: var(--ic-borde); border-radius: 6px; overflow: hidden; max-width: 520px; }
 .ic-barra-prog > div { height: 100%; width: 0; background: linear-gradient(90deg, var(--ic-azul), var(--ic-teal)); transition: width .25s; }
+
+/* Fotos de producto y vista previa de cotización */
+.ic-foto { position: relative; background: #F4F7FA; border: 1px solid var(--ic-borde); border-radius: 10px; overflow: hidden; display: grid; place-items: center; }
+.ic-foto img { width: 100%; height: 100%; object-fit: contain; background: #fff; display: none; }
+.ic-foto.con-foto img { display: block; }
+.ic-foto.con-foto .vacia { display: none; }
+.ic-foto .vacia { color: #B5C0C9; }
+.ic-foto.mini { width: 48px; height: 48px; border-radius: 8px; }
+.ic-foto.mini .vacia svg { width: 22px; height: 22px; }
+.ic-foto.grande { width: 220px; height: 220px; }
+.ic-foto.grande .vacia svg { width: 64px; height: 64px; }
+.ic-prev { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+.ic-prev th { background: var(--ic-azul); color: #fff; text-align: left; padding: 6px 8px; font-weight: 600; }
+.ic-prev td { border: 1px solid var(--ic-borde); padding: 8px; vertical-align: top; }
+.ic-prev ul { margin: 6px 0 0; padding-left: 18px; color: var(--ic-gris); }
+@media (max-width: 760px) { .ic-foto.grande { width: 140px; height: 140px; } }
