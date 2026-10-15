@@ -109,7 +109,7 @@ IC.graph = (function () {
       if (k.startsWith('_')) return;
       if ((v === '' || v === undefined) && !permitirVacios) return;
       if (v === undefined) return;
-      if (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) v = v + 'T12:00:00Z';
+      if (k !== 'Title' && typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) v = v + 'T12:00:00Z';   // Title es texto (ej. festivos)
       out[k] = v === '' ? null : v;
     });
     return out;
@@ -139,5 +139,10 @@ IC.graph = (function () {
 
   async function yo() { return llamar('GET', '/me?$select=displayName,mail,userPrincipalName,jobTitle'); }
 
-  return { llamar, todas, sitio, listaId, items, contar, crear, actualizar, siguiente, reservar, subirArchivo, yo };
+  // Borra un item (solo para correcciones puntuales, p. ej. un festivo mal registrado)
+  async function eliminar(lista, itemId) {
+    return llamar('DELETE', '/sites/' + sitioId + '/lists/' + await listaId(lista) + '/items/' + itemId);
+  }
+
+  return { llamar, todas, sitio, listaId, items, contar, crear, actualizar, eliminar, siguiente, reservar, subirArchivo, yo };
 })();
