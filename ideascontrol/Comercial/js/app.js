@@ -136,6 +136,7 @@ async function arrancar() {
     const hoy = new Date().toISOString().slice(0, 10);
     const deleg = (await IC.graph.items('SYS_Delegaciones')).some((d) => d.usuario_id === u.Title && String(d.fecha_inicio).slice(0, 10) <= hoy && hoy <= String(d.fecha_fin).slice(0, 10));
     App.usuario = Object.assign({}, u, { usuario_id: u.Title, es_admin: u.rol === 'ADMIN' || deleg, es_delegado: deleg });
+    App.usuarios = us;
 
     pintarEncabezado();
     const rutas = { '': vistaMenu };
