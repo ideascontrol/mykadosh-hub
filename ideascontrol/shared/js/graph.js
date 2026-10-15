@@ -115,7 +115,29 @@ IC.graph = (function () {
     return out;
   }
 
+
+  // Reserva un bloque de números de una secuencia (para cargas masivas). Devuelve el primero del bloque.
+  async function reservar(clave, cantidad) {
+    if (cantidad <= 0) return 0;
+    for (let i = 0; i < 10; i++) {
+      const r = await items('SYS_Secuencias', { filtro: "fields/Title eq '" + clave + "'" });
+      if (!r.length) { await crear('SYS_Secuencias', { Title: clave, ultimo_numero: cantidad }); return 1; }
+      const actual = Number(r[0].ultimo_numero || 0);
+      try { await actualizar('SYS_Secuencias', r[0]._id, { ultimo_numero: actual + cantidad }, r[0]._etag); return actual + 1; }
+      catch (e) { if (e.status === 412) { await espera(200 + Math.random() * 600); continue; } throw e; }
+    }
+    throw new Error('No se pudo reservar la numeración ' + clave + '. Intente de nuevo.');
+  }
+
+  // Sube un archivo (hasta 4 MB) a la biblioteca "Documentos" del sitio, en la ruta indicada (crea las carpetas).
+  async function subirArchivo(ruta, archivo) {
+    const url = BASE + '/sites/' + sitioId + '/drive/root:/' + ruta.split('/').map(encodeURIComponent).join('/') + ':/content';
+    const res = await fetch(url, { method: 'PUT', headers: { Authorization: 'Bearer ' + await IC.auth.token(), 'Content-Type': archivo.type || 'application/octet-stream' }, body: archivo });
+    if (!res.ok) { const t = await res.text(); const err = new Error('No se pudo guardar el archivo: ' + t.slice(0, 200)); err.status = res.status; throw err; }
+    return res.json();
+  }
+
   async function yo() { return llamar('GET', '/me?$select=displayName,mail,userPrincipalName,jobTitle'); }
 
-  return { llamar, todas, sitio, listaId, items, contar, crear, actualizar, siguiente, yo };
+  return { llamar, todas, sitio, listaId, items, contar, crear, actualizar, siguiente, reservar, subirArchivo, yo };
 })();
