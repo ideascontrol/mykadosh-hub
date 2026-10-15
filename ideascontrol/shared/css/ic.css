@@ -97,7 +97,7 @@ a { color: var(--ic-azul); }
 .ic-btn {
   font: inherit; font-weight: 600; font-size: 14px;
   border: 1px solid transparent; border-radius: 8px; padding: 9px 16px; cursor: pointer;
-  background: var(--ic-azul); color: #fff; display: inline-flex; align-items: center; gap: 8px;
+  background: var(--ic-azul); color: #fff; display: inline-flex; align-items: center; gap: 8px; text-decoration: none;
 }
 .ic-btn:hover { background: var(--ic-azul-osc); }
 .ic-btn.sec { background: var(--ic-blanco); color: var(--ic-azul); border-color: var(--ic-borde); }
@@ -127,4 +127,103 @@ a { color: var(--ic-azul); }
   .ic-header .app-nombre, .ic-user .datos { display: none; }
   .ic-main { padding: 16px; }
   .ic-kpis { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* =====================================================================
+   Formularios, tablas, fichas y ventanas (módulos de captura)
+   ===================================================================== */
+.ic-barra { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 16px; }
+.ic-barra .espacio { flex: 1; }
+.ic-volver { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ic-gris); text-decoration: none; margin-bottom: 6px; }
+.ic-volver:hover { color: var(--ic-azul); }
+
+.ic-filtros { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; background: var(--ic-blanco); border: 1px solid var(--ic-borde); border-radius: var(--ic-radio); padding: 12px; margin-bottom: 14px; }
+.ic-buscar { flex: 1 1 260px; position: relative; }
+.ic-buscar input { width: 100%; padding-left: 36px; }
+.ic-buscar svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); width: 17px; height: 17px; color: var(--ic-gris-claro); }
+.ic-chips { display: inline-flex; background: var(--ic-fondo); border: 1px solid var(--ic-borde); border-radius: 999px; padding: 3px; }
+.ic-chips button { font: inherit; font-size: 13px; font-weight: 600; border: 0; background: transparent; color: var(--ic-gris); padding: 6px 12px; border-radius: 999px; cursor: pointer; }
+.ic-chips button.activo { background: var(--ic-blanco); color: var(--ic-azul); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+
+input, select, textarea {
+  font: inherit; font-size: 14px; color: var(--ic-tinta);
+  border: 1px solid var(--ic-borde); border-radius: 8px; padding: 9px 11px; background: var(--ic-blanco); width: 100%;
+}
+input:focus, select:focus, textarea:focus { outline: 2px solid rgba(14,118,188,.25); border-color: var(--ic-azul); }
+input[readonly] { background: var(--ic-fondo); color: var(--ic-gris); }
+textarea { resize: vertical; min-height: 80px; }
+input[type=checkbox] { width: auto; }
+.ic-filtros select { width: auto; min-width: 150px; }
+
+.ic-form { background: var(--ic-blanco); border: 1px solid var(--ic-borde); border-radius: var(--ic-radio); box-shadow: var(--ic-sombra); padding: 22px; }
+.ic-form fieldset { border: 0; margin: 0 0 18px; padding: 0; }
+.ic-form legend { font-size: 13px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--ic-teal); margin-bottom: 10px; }
+.ic-campos { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
+.ic-campo { grid-column: span 6; display: flex; flex-direction: column; gap: 5px; }
+.ic-campo.c3 { grid-column: span 3; } .ic-campo.c4 { grid-column: span 4; } .ic-campo.c2 { grid-column: span 2; }
+.ic-campo.c8 { grid-column: span 8; } .ic-campo.c12 { grid-column: span 12; }
+.ic-campo label { font-size: 13px; font-weight: 600; }
+.ic-campo label .req { color: var(--ic-err); }
+.ic-campo .ayuda { font-size: 12px; color: var(--ic-gris-claro); }
+.ic-campo.error input, .ic-campo.error select { border-color: var(--ic-err); }
+.ic-campo .msg-error { font-size: 12px; color: var(--ic-err); }
+.ic-check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; }
+.ic-acciones { display: flex; gap: 10px; justify-content: flex-end; border-top: 1px solid var(--ic-borde); padding-top: 16px; margin-top: 4px; }
+.ic-btn.peligro { background: var(--ic-blanco); color: var(--ic-err); border-color: rgba(192,57,43,.35); }
+.ic-btn.peligro:hover { background: rgba(192,57,43,.06); }
+.ic-btn.chico { padding: 6px 12px; font-size: 13px; }
+
+/* Tablas */
+.ic-tabla-caja { background: var(--ic-blanco); border: 1px solid var(--ic-borde); border-radius: var(--ic-radio); overflow: hidden; box-shadow: var(--ic-sombra); }
+.ic-tabla { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ic-tabla th { text-align: left; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ic-gris); background: #F8FAFC; padding: 10px 14px; border-bottom: 1px solid var(--ic-borde); }
+.ic-tabla td { padding: 11px 14px; border-bottom: 1px solid var(--ic-borde); vertical-align: top; }
+.ic-tabla tr:last-child td { border-bottom: 0; }
+.ic-tabla tbody tr { cursor: pointer; }
+.ic-tabla tbody tr:hover { background: rgba(14,118,188,.04); }
+.ic-tabla .sec { display: block; font-size: 12px; color: var(--ic-gris); }
+.ic-tabla tr.inactivo td { color: var(--ic-gris-claro); }
+.ic-vacio { padding: 36px; text-align: center; color: var(--ic-gris); }
+.ic-conteo { font-size: 13px; color: var(--ic-gris); margin: 0 0 8px; }
+
+.ic-tag { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; letter-spacing: .02em; }
+.ic-tag.cliente { background: rgba(21,144,144,.12); color: var(--ic-teal); }
+.ic-tag.prospecto { background: rgba(14,118,188,.10); color: var(--ic-azul); }
+.ic-tag.inactivo { background: #EEF1F4; color: var(--ic-gris); }
+
+/* Ficha */
+.ic-ficha-cab { background: var(--ic-blanco); border: 1px solid var(--ic-borde); border-radius: var(--ic-radio); box-shadow: var(--ic-sombra); padding: 20px 22px; display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; margin-bottom: 16px; }
+.ic-ficha-cab .principal { flex: 1 1 320px; }
+.ic-ficha-cab h1 { margin: 6px 0 4px; font-size: 22px; }
+.ic-ficha-cab .meta { color: var(--ic-gris); font-size: 14px; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.ic-ficha-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.ic-bloque { background: var(--ic-blanco); border: 1px solid var(--ic-borde); border-radius: var(--ic-radio); box-shadow: var(--ic-sombra); }
+.ic-bloque > .cab { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--ic-borde); }
+.ic-bloque > .cab h2 { margin: 0; font-size: 15px; }
+.ic-bloque > .cuerpo { padding: 6px 18px 14px; }
+.ic-datos { display: grid; grid-template-columns: 160px 1fr; gap: 8px 14px; font-size: 14px; padding: 10px 0; }
+.ic-datos dt { color: var(--ic-gris); }
+.ic-datos dd { margin: 0; word-break: break-word; }
+.ic-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--ic-borde); cursor: pointer; }
+.ic-item:last-child { border-bottom: 0; }
+.ic-item:hover .titulo { color: var(--ic-azul); }
+.ic-item .ic-avatar { width: 34px; height: 34px; font-size: 12px; flex: 0 0 34px; }
+.ic-item .titulo { font-weight: 600; }
+.ic-item .sec { font-size: 13px; color: var(--ic-gris); }
+.ic-auditoria { font-size: 12px; color: var(--ic-gris-claro); margin-top: 14px; }
+
+/* Ventana modal */
+.ic-modal-fondo { position: fixed; inset: 0; background: rgba(15,26,34,.45); display: grid; place-items: center; padding: 16px; z-index: 40; }
+.ic-modal { background: var(--ic-blanco); border-radius: var(--ic-radio); width: 100%; max-width: 640px; max-height: calc(100vh - 32px); overflow: auto; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+.ic-modal .cab { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--ic-borde); position: sticky; top: 0; background: var(--ic-blanco); z-index: 1; }
+.ic-modal .cab h2 { margin: 0; font-size: 17px; }
+.ic-modal .cerrar { border: 0; background: transparent; font-size: 22px; line-height: 1; cursor: pointer; color: var(--ic-gris); }
+.ic-modal .ic-form { border: 0; box-shadow: none; border-radius: 0; }
+
+@media (max-width: 760px) {
+  .ic-campo, .ic-campo.c3, .ic-campo.c4, .ic-campo.c8, .ic-campo.c2 { grid-column: span 12; }
+  .ic-ficha-grid { grid-template-columns: 1fr; }
+  .ic-datos { grid-template-columns: 120px 1fr; }
+  .ic-tabla .ocultar-movil { display: none; }
+  .ic-filtros select { flex: 1 1 140px; }
 }
