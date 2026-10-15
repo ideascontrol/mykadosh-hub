@@ -31,7 +31,7 @@ const MENU = [
   { grupo: 'Herramientas', items: [
     { ruta: 'actividad', titulo: 'Actividad reciente', texto: 'Quién creó o modificó información y cuándo.', icono: 'actividad', etapa: 1, color: 'dorado' },
     { ruta: 'carga', titulo: 'Carga masiva', texto: 'Plantillas de Excel para cargar empresas y productos.', icono: 'carga', etapa: 1, color: 'dorado', admin: true },
-    { ruta: 'admin', titulo: 'Administración', texto: 'Usuarios, parámetros, condiciones comerciales y festivos.', icono: 'admin', etapa: 3, color: 'dorado', admin: true }
+    { ruta: 'admin', titulo: 'Administración', texto: 'Usuarios, condiciones comerciales y parámetros de la cotización.', icono: 'admin', etapa: 1, color: 'dorado', admin: true }
   ] }
 ];
 
