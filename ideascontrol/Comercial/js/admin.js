@@ -14,11 +14,11 @@
     { ruta: 'usuarios', titulo: 'Usuarios', texto: 'Alta de comerciales, iniciales, rol y estado.', activa: true },
     { ruta: 'condiciones', titulo: 'Condiciones comerciales', texto: 'Textos de pago, garantía, soporte y generales que van en la cotización.', activa: true },
     { ruta: 'parametros', titulo: 'Parámetros', texto: 'IVA, descuento máximo, vigencia y textos del PDF.', activa: true },
-    { ruta: 'delegaciones', titulo: 'Delegaciones', texto: 'Permisos de administrador por unos días.', activa: false },
-    { ruta: 'distribuidores', titulo: 'Distribuidores', texto: 'Proveedores y sus NIT.', activa: false },
-    { ruta: 'festivos', titulo: 'Festivos', texto: 'Festivos de Colombia para contar días hábiles.', activa: false },
-    { ruta: 'consecutivos', titulo: 'Consecutivos', texto: 'Numeración de empresas, productos y cotizaciones.', activa: false },
-    { ruta: 'registro', titulo: 'Registro de actividad', texto: 'Quién cambió qué y cuándo.', activa: false }
+    { ruta: 'delegaciones', titulo: 'Delegaciones', texto: 'Permisos de administrador por unos días.', activa: true },
+    { ruta: 'distribuidores', titulo: 'Distribuidores', texto: 'Proveedores y sus NIT.', activa: true },
+    { ruta: 'festivos', titulo: 'Festivos', texto: 'Festivos de Colombia para contar días hábiles.', activa: true },
+    { ruta: 'consecutivos', titulo: 'Consecutivos', texto: 'Numeración de empresas, productos y cotizaciones.', activa: true },
+    { ruta: 'registro', titulo: 'Registro de actividad', texto: 'Quién cambió qué y cuándo.', activa: true }
   ];
 
   // ---------- Auditoría ----------
@@ -52,9 +52,10 @@
     c.innerHTML = '<div class="ic-form" style="text-align:center"><div class="ic-spinner"></div>Cargando…</div>';
     try {
       if (!s) return vistaInicio(c);
-      if (sub === 'usuarios') return await vistaUsuarios(c);
-      if (sub === 'condiciones') return await vistaCondiciones(c);
-      if (sub === 'parametros') return await vistaParametros(c);
+      const propias = { usuarios: vistaUsuarios, condiciones: vistaCondiciones, parametros: vistaParametros };
+      const fn = propias[sub] || (App.adminSecciones || {})[sub];
+      if (fn) return await fn(c);
+      return vistaInicio(c);
     } catch (e) {
       console.error(e);
       c.innerHTML = '<a class="ic-volver" href="#admin">← Administración</a><div class="ic-form"><b>No se pudo cargar la información.</b><p>' + esc(U.mensajeError(e)) + '</p><button class="ic-btn" onclick="location.reload()">Reintentar</button></div>';
@@ -406,6 +407,6 @@
     const s = String(v); return s.length > 40 ? s.slice(0, 40) + '…' : s;
   }
 
-  // Lectura de parámetros para otros módulos (cotizaciones)
-  App.admin = { auditar };
+  // Para las demás secciones (admin_extra.js) y, más adelante, las cotizaciones
+  App.admin = { auditar, diferencias, cabecera };
 })();
