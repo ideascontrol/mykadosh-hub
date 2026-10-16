@@ -8,7 +8,10 @@
      (secuencia CV[AAAA], inicia en el parámetro CONSECUTIVO_INICIAL_[AAAA]). Revisiones: -R1, -R2…
    - Al guardar se copian (congelan) los datos del cliente, las líneas y las condiciones ya resueltas.
    - Descuento sobre el tope: solo se avisa y se marca requiere_aprobacion (la aprobación formal es Etapa 3).
-   - BORRADOR se edita; al generar el PDF pasa a LISTA_PARA_ENVIO y ya no se edita (cambios = revisión).
+   - BORRADOR se edita. Con PDF generado pero sin enviar (LISTA_PARA_ENVIO), «Editar» la reabre como
+     borrador con el mismo número y fecha de hoy; el PDF nuevo reemplaza al anterior en SharePoint.
+     Ya enviada (ENVIADA / EN_NEGOCIACION / vencida), «Editar» crea la revisión -R1, -R2… porque el
+     cliente ya tiene ese número. GANADA, PERDIDA, ANULADA y REEMPLAZADA no se editan.
    ===================================================================== */
 (function () {
   const U = IC.ui, G = IC.graph, esc = U.esc;
@@ -157,19 +160,16 @@
     c.innerHTML = '<a class="ic-volver" href="' + (cot ? '#cotizaciones/' + esc(cot.Title) : '#cotizaciones') + '">← ' + (cot ? esc(cot.numero_visible) : 'Cotizaciones') + '</a>' +
       '<h1 class="ic-titulo">' + (cot ? 'Editar borrador ' + esc(cot.numero_visible) : 'Nueva cotización') + '</h1>' +
       '<p class="ic-subtitulo">Nada se envía al cliente hasta que genere el PDF. Puede guardar como borrador y seguir después.</p>' +
-      '<div class="ic-cot">' +
-        '<div class="ic-cot-main">' +
-          '<div class="ic-form" style="margin-bottom:16px"><fieldset><legend>1 · Cliente</legend><div id="zCliente"></div></fieldset></div>' +
-          '<div class="ic-form" style="margin-bottom:16px"><fieldset><legend>2 · Datos de la propuesta</legend><div id="zDatos"></div></fieldset></div>' +
-          '<div class="ic-form" style="margin-bottom:16px"><fieldset><legend>3 · Productos y servicios</legend><div id="zLineas"></div></fieldset></div>' +
-          '<div class="ic-form" style="margin-bottom:16px"><fieldset><legend>4 · Condiciones comerciales</legend><div id="zConds"></div></fieldset></div>' +
-          '<div class="ic-form"><fieldset style="margin:0"><legend>5 · Notas internas (no salen en el PDF)</legend><textarea id="fObs" rows="3" placeholder="Ej.: el cliente pidió entrega antes de diciembre">' + esc(F.observaciones) + '</textarea></fieldset></div>' +
-        '</div>' +
-        '<aside class="ic-cot-lado"><div class="ic-bloque ic-totales"><div class="cab"><h2>Resumen</h2></div><div class="cuerpo" id="zTotales"></div>' +
-          '<div class="ic-totales-acc"><button class="ic-btn sec" id="btnBorrador">Guardar borrador</button><button class="ic-btn" id="btnPdf">Guardar y generar PDF</button></div></div></aside>' +
-      '</div>';
+      '<div class="ic-form ic-maestro" style="margin-bottom:16px"><div class="ic-md-titulo">Encabezado</div>' +
+        '<div class="ic-md-cols"><fieldset><legend>Cliente</legend><div id="zCliente"></div></fieldset>' +
+        '<fieldset><legend>Datos de la propuesta</legend><div id="zDatos"></div></fieldset></div></div>' +
+      '<div class="ic-form ic-detalle" style="margin-bottom:16px"><div class="ic-md-titulo">Detalle · productos y servicios</div><div id="zLineas"></div></div>' +
+      '<div class="ic-form" style="margin-bottom:16px"><fieldset><legend>Condiciones comerciales</legend><div id="zConds"></div></fieldset></div>' +
+      '<div class="ic-form" style="margin-bottom:16px"><fieldset style="margin:0"><legend>Notas internas (no salen en el PDF)</legend><textarea id="fObs" rows="3" placeholder="Ej.: el cliente pidió entrega antes de diciembre">' + esc(F.observaciones) + '</textarea></fieldset></div>' +
+      '<div class="ic-barra-cot"><div id="zTotales"></div><div class="acc"><button class="ic-btn sec" id="btnPrevia">Vista previa</button><button class="ic-btn sec" id="btnBorrador">Guardar borrador</button><button class="ic-btn" id="btnPdf">Guardar y generar PDF</button></div></div>';
     U.$('#fObs', c).oninput = (e) => { F.observaciones = e.target.value; };
     U.$('#btnBorrador', c).onclick = () => guardar(c, false);
+    U.$('#btnPrevia', c).onclick = () => vistaPrevia(c);
     U.$('#btnPdf', c).onclick = () => guardar(c, true);
     pintarCliente(c); pintarDatos(c); pintarLineas(c); pintarConds(c); totales(c);
   }
@@ -245,22 +245,22 @@
     const z = U.$('#zLineas', c);
     if (soloValores) { F.lineas.forEach((l, i) => { const inp = z.querySelector('[data-i="' + i + '"][data-k="precio_unitario"]'); if (inp && !l.precio_editable) inp.value = isNaN(l.precio_unitario) ? '' : l.precio_unitario; }); totales(c); return; }
     const tope = topePct();
-    z.innerHTML = '<div class="ic-buscar">' + ICO_BUSCAR + '<input id="bPrd" type="search" placeholder="Agregar producto: escriba código o nombre" autocomplete="off"></div><div class="ic-sugerencias" id="sPrd"></div>' +
-      (!F.lineas.length ? '<div class="ic-vacio">Aún no hay productos en la cotización.</div>' :
-      '<div class="ic-lineas">' + F.lineas.map((l, i) => {
-        const r = calcLinea(l);
-        return '<div class="ic-linea" data-fila="' + i + '"><div class="ic-linea-cab"><span class="n">' + (i + 1) + '</span><div class="t"><b>' + esc(l.codigo) + '</b> · ' + esc(l.nombre) + '</div>' +
-          '<div class="acc"><button type="button" title="Subir" data-mov="-1" data-i="' + i + '"' + (i === 0 ? ' disabled' : '') + '>▲</button><button type="button" title="Bajar" data-mov="1" data-i="' + i + '"' + (i === F.lineas.length - 1 ? ' disabled' : '') + '>▼</button><button type="button" title="Quitar" class="quitar" data-quitar="' + i + '">✕</button></div></div>' +
-          '<div class="ic-linea-cuerpo">' +
-            '<div class="desc">' + (l.descripcion_editable ? '<textarea rows="2" data-i="' + i + '" data-k="descripcion">' + esc(l.descripcion) + '</textarea>' : '<div class="fija">' + esc(l.descripcion) + '</div>') +
-              (l.ficha_tecnica ? '<div class="ficha">' + esc(String(l.ficha_tecnica).split(/\r?\n/).filter(Boolean).length) + ' características de la ficha técnica</div>' : '') + '</div>' +
-            '<label>Ciudad / sede<input data-i="' + i + '" data-k="ciudad_sede" value="' + esc(l.ciudad_sede) + '"></label>' +
-            '<label>Cantidad<input data-i="' + i + '" data-k="cantidad" inputmode="decimal" value="' + esc(l.cantidad) + '"></label>' +
-            '<label>Unitario (' + F.moneda + ')<input data-i="' + i + '" data-k="precio_unitario" inputmode="decimal" value="' + (isNaN(l.precio_unitario) ? '' : esc(l.precio_unitario)) + '"' + (l.precio_editable ? ' placeholder="Escriba el precio"' : ' readonly title="Precio del catálogo"') + '></label>' +
-            '<label>Descuento %<input data-i="' + i + '" data-k="descuento_porcentaje" inputmode="decimal" value="' + esc(l.descuento_porcentaje || '') + '" placeholder="0"></label>' +
-            '<div class="tot"><span>Total línea</span><b data-tot="' + i + '">' + (isNaN(r.neto) ? '—' : dinero(r.neto, F.moneda)) + '</b><span class="aviso" data-av="' + i + '">' + avisoLinea(l, tope) + '</span></div>' +
-          '</div></div>';
-      }).join('') + '</div>');
+    const fila = (l, i) => { const r = calcLinea(l);
+      return '<tr data-fila="' + i + '"><td class="n">' + (i + 1) + '</td>' +
+        '<td class="prod"><b>' + esc(l.codigo) + '</b><span class="sec">' + esc(l.nombre) + '</span></td>' +
+        '<td class="desc">' + (l.descripcion_editable ? '<textarea rows="2" data-i="' + i + '" data-k="descripcion">' + esc(l.descripcion) + '</textarea>' : esc(l.descripcion)) +
+          (l.ficha_tecnica ? '<span class="sec">+ ' + (function (n) { return n + (n === 1 ? ' línea' : ' líneas'); })(String(l.ficha_tecnica).split(/\r?\n/).filter(Boolean).length) + ' de ficha técnica (salen en el PDF)</span>' : '') + '</td>' +
+        '<td><input data-i="' + i + '" data-k="ciudad_sede" value="' + esc(l.ciudad_sede) + '"></td>' +
+        '<td><input class="num" data-i="' + i + '" data-k="cantidad" inputmode="decimal" value="' + esc(l.cantidad) + '"></td>' +
+        '<td><input class="num" data-i="' + i + '" data-k="precio_unitario" inputmode="decimal" value="' + (isNaN(l.precio_unitario) ? '' : esc(l.precio_unitario)) + '"' + (l.precio_editable ? ' placeholder="Precio"' : ' readonly title="Precio del catálogo"') + '></td>' +
+        '<td><input class="num" data-i="' + i + '" data-k="descuento_porcentaje" inputmode="decimal" value="' + esc(l.descuento_porcentaje || '') + '" placeholder="0"></td>' +
+        '<td class="tot"><b data-tot="' + i + '">' + (isNaN(r.neto) ? '—' : dinero(r.neto, F.moneda)) + '</b><span class="aviso" data-av="' + i + '">' + avisoLinea(l, tope) + '</span></td>' +
+        '<td class="acc"><button type="button" title="Subir" data-mov="-1" data-i="' + i + '"' + (i === 0 ? ' disabled' : '') + '>▲</button><button type="button" title="Bajar" data-mov="1" data-i="' + i + '"' + (i === F.lineas.length - 1 ? ' disabled' : '') + '>▼</button><button type="button" title="Quitar" class="quitar" data-quitar="' + i + '">✕</button></td></tr>'; };
+    z.innerHTML = '<div class="ic-grilla-caja"><table class="ic-grilla"><thead><tr><th class="n">#</th><th>Código / producto</th><th>Descripción</th><th style="width:130px">Ciudad / sede</th><th style="width:80px">Cant.</th><th style="width:120px">Unitario (' + F.moneda + ')</th><th style="width:80px">Desc. %</th><th style="width:130px;text-align:right">Total</th><th style="width:96px"></th></tr></thead>' +
+      '<tbody>' + F.lineas.map(fila).join('') +
+        '<tr class="agregar"><td class="n">' + (F.lineas.length + 1) + '</td><td colspan="8"><div class="ic-buscar">' + ICO_BUSCAR + '<input id="bPrd" type="search" placeholder="Agregar producto: escriba código o nombre" autocomplete="off"></div><div class="ic-sugerencias" id="sPrd"></div></td></tr></tbody>' +
+      '<tfoot id="gPie"></tfoot></table></div>' +
+      (!F.lineas.length ? '<p class="ic-conteo" style="margin-top:8px">Aún no hay productos. Búsquelos en la última fila de la tabla.</p>' : '');
     const inp = U.$('#bPrd', z);
     inp.oninput = () => {
       const t = U.norm(inp.value);
@@ -316,12 +316,17 @@
     return t;
   }
   function totales(c) {
-    const t = calcTotales(), z = U.$('#zTotales', c); if (!z) return;
+    const t = calcTotales(), m = F.moneda;
     const sobreTope = F.lineas.filter((l) => Number(l.descuento_porcentaje) > topePct());
-    z.innerHTML = '<dl class="ic-datos"><dt>Subtotal</dt><dd>' + dinero(t.bruto, F.moneda) + '</dd>' + (t.desc ? '<dt>Descuentos</dt><dd>- ' + dinero(t.desc, F.moneda) + '</dd><dt>Subtotal neto</dt><dd>' + dinero(t.neto, F.moneda) + '</dd>' : '') +
-      '<dt>IVA ' + ivaPct().toLocaleString('es-CO') + ' %</dt><dd>' + dinero(t.iva, F.moneda) + '</dd></dl><div class="ic-total-grande"><span>Total</span><b>' + dinero(t.total, F.moneda) + '</b></div>' +
-      '<p class="ic-conteo" style="margin:8px 0 0">' + F.lineas.length + ' línea(s) · ' + F.conds.length + ' condición(es)</p>' +
-      (sobreTope.length ? '<div class="ic-alerta chica">Descuento sobre el tope (' + topePct().toLocaleString('es-CO') + ' %) en ' + sobreTope.length + ' línea(s). Se puede generar el PDF; quedará marcada para revisión.</div>' : '');
+    const pie = U.$('#gPie', c);
+    if (pie) {
+      const r = (k, v, cls) => '<tr class="' + (cls || '') + '"><td colspan="7" class="k">' + k + '</td><td class="tot">' + v + '</td><td></td></tr>';
+      pie.innerHTML = F.lineas.length ? r('Subtotal', dinero(t.bruto, m)) + (t.desc ? r('Descuentos', '- ' + dinero(t.desc, m)) + r('Subtotal neto', dinero(t.neto, m)) : '') +
+        r('IVA ' + ivaPct().toLocaleString('es-CO') + ' %', dinero(t.iva, m)) + r('Total', dinero(t.total, m), 'total') : '';
+    }
+    const z = U.$('#zTotales', c); if (!z) return;
+    z.innerHTML = '<div class="res"><span>Total</span><b>' + dinero(t.total, m) + '</b><span class="sec">' + F.lineas.length + ' línea(s) · ' + F.conds.length + ' condición(es)</span></div>' +
+      (sobreTope.length ? '<div class="ic-alerta chica">Descuento sobre el tope (' + topePct().toLocaleString('es-CO') + ' %) en ' + sobreTope.length + ' línea(s): se puede generar el PDF; quedará marcada para revisión.</div>' : '');
   }
 
   // ---------- 4 · Condiciones ----------
@@ -343,6 +348,34 @@
   function pintarCondsPreview(c) {
     const ctx = ctxCot();
     c.querySelectorAll('[data-prev]').forEach((el) => { const x = D.condiciones.find((y) => y.Title === el.dataset.prev); if (x) el.textContent = T().resolver(x.texto, D.params, ctx, 'ejemplo'); });
+  }
+
+  // ---------- Vista previa: el PDF tal como saldría, sin guardar nada ----------
+  async function vistaPrevia(c) {
+    const e = empresaDe(F.empresa_id);
+    if (!e || !F.lineas.length) { U.aviso('Elija el cliente y agregue al menos un producto para ver la vista previa.', 'warn'); return; }
+    const win = window.open('', '_blank');   // se abre ya (los navegadores bloquean ventanas abiertas después de esperar)
+    const b = U.$('#btnPrevia', c);
+    await U.conCarga(b, async () => {
+      try {
+        const sede = App.empresas.datos.sucursales.find((s) => s.Title === F.sucursal_id), ct = App.empresas.datos.contactos.find((x) => x.Title === F.contacto_id);
+        const t = calcTotales(), vence = sumarHabiles(F.fecha, Number(param('VIGENCIA_DIAS_HABILES') || 10));
+        const cot = { numero_visible: F.cot ? F.cot.numero_visible : 'BORRADOR', fecha: F.fecha, fecha_vencimiento: vence, moneda: F.moneda, trm_referencia: num(F.trm) > 0 ? num(F.trm) : null,
+          cliente_razon_social: e.razon_social, cliente_nit: e.nit + (e.dv ? '-' + e.dv : ''), cliente_ciudad: sede ? sede.ciudad : e.ciudad, cliente_direccion: sede ? sede.direccion : e.direccion,
+          contacto_nombre: ct ? ct.nombres + ' ' + ct.apellidos : '', contacto_telefono: ct ? ct.celular || ct.telefono || '' : '', contacto_email: ct ? ct.email || '' : '',
+          titulo_seccion: F.titulo_seccion, texto_introduccion: F.texto_introduccion, subtotal_bruto: t.bruto, descuento_total: t.desc, subtotal_neto: t.neto, iva_total: t.iva, total: t.total };
+        const det = F.lineas.map((l, i) => { const r = calcLinea(l); return { linea: i + 1, producto_id: l.producto_id, codigo: l.codigo, descripcion: l.descripcion, ficha_tecnica: l.ficha_tecnica,
+          ciudad_sede: l.ciudad_sede, cantidad: l.cantidad, precio_unitario: l.precio_unitario, descuento_porcentaje: l.descuento_porcentaje, descuento_valor: r.descuento, subtotal_linea: r.subtotal,
+          neto_linea: r.neto, iva_porcentaje: r.iva }; });
+        const ctx = ctxCot();
+        const conds = D.condiciones.filter((x) => F.conds.indexOf(x.Title) >= 0).sort((a, b2) => (Number(a.orden) || 99) - (Number(b2.orden) || 99))
+          .map((x) => ({ titulo: x.titulo, texto: T().resolver(x.texto, D.params, ctx), orden: x.orden }));
+        const doc = await App.cotPdf.generar(cot, det, conds, { params: D.params, productos: App.productos.datos.productos, comercial: usuario(F.cot ? F.cot.comercial_id : yo()),
+          codigoCliente: e.codigo_cliente || e.codigo_cliente_anterior || '', vistaPrevia: true });
+        const url = URL.createObjectURL(doc.output('blob'));
+        if (win) win.location.href = url; else doc.save('Vista_previa.pdf');
+      } catch (er) { if (win) win.close(); U.aviso(U.mensajeError(er), 'err', 8000); }
+    });
   }
 
   // ---------- Guardar ----------
@@ -429,11 +462,11 @@
   }
 
   // ---------- PDF ----------
-  async function armarPdf(cot) {
+  async function armarPdf(cot, vistaPrevia) {
     const [det, conds] = await Promise.all([leerDetalle(cot.Title), leerConds(cot.Title)]);
     const e = empresaDe(cot.empresa_id) || {}, com = usuario(cot.comercial_id);
     const doc = await App.cotPdf.generar(cot, det, conds, { params: D.params, productos: App.productos.datos.productos, comercial: com,
-      codigoCliente: e.codigo_cliente || e.codigo_cliente_anterior || '' });
+      codigoCliente: e.codigo_cliente || e.codigo_cliente_anterior || '', vistaPrevia: !!vistaPrevia });
     return { doc, empresa: e };
   }
   async function emitirPdf(cot) {
@@ -465,10 +498,14 @@
     if (puedeEditar(cot)) acciones.push('<a class="ic-btn sec" href="#cotizaciones/' + esc(id) + '/editar">Editar</a>', '<button class="ic-btn" data-acc="pdf">Generar PDF</button>');
     if (cot.pdf_url) acciones.push('<a class="ic-btn sec" href="' + esc(cot.pdf_url) + '" target="_blank" rel="noopener">Abrir PDF en SharePoint</a>');
     if (cot.estado !== 'BORRADOR') acciones.push('<button class="ic-btn sec" data-acc="descargar">Descargar PDF</button>');
+    else acciones.push('<button class="ic-btn sec" data-acc="previa">Vista previa</button>');
+    acciones.push('<button class="ic-btn sec" data-acc="excel">Exportar a Excel</button>');
     if (esMia && cot.estado === 'LISTA_PARA_ENVIO') acciones.push('<button class="ic-btn" data-acc="enviada">Marcar como enviada</button>');
     if (esMia && cot.estado === 'ENVIADA') acciones.push('<button class="ic-btn sec" data-acc="negociacion">En negociación</button>');
     if (esMia && ['ENVIADA', 'EN_NEGOCIACION', 'LISTA_PARA_ENVIO'].indexOf(cot.estado) >= 0) acciones.push('<button class="ic-btn" data-acc="ganada">Ganada</button>', '<button class="ic-btn sec" data-acc="perdida">Perdida</button>');
-    if (esMia && (abierta || cot.estado === 'PERDIDA')) acciones.push('<button class="ic-btn sec" data-acc="revision">Nueva revisión</button>');
+    if (esMia && ['LISTA_PARA_ENVIO', 'PENDIENTE_APROBACION'].indexOf(cot.estado) >= 0) acciones.unshift('<button class="ic-btn sec" data-acc="reabrir">Editar</button>');
+    if (esMia && ['ENVIADA', 'EN_NEGOCIACION'].indexOf(cot.estado) >= 0) acciones.unshift('<button class="ic-btn sec" data-acc="revision" title="El cliente ya tiene este PDF: los cambios quedan en una revisión">Editar (nueva revisión)</button>');
+    if (esMia && cot.estado === 'PERDIDA') acciones.push('<button class="ic-btn sec" data-acc="revision">Nueva revisión</button>');
     if (esMia && ['BORRADOR', 'LISTA_PARA_ENVIO', 'ENVIADA', 'EN_NEGOCIACION'].indexOf(cot.estado) >= 0) acciones.push('<button class="ic-btn peligro" data-acc="anular">Anular</button>');
 
     c.innerHTML = '<a class="ic-volver" href="#cotizaciones">← Cotizaciones</a>' +
@@ -512,8 +549,29 @@
     };
     if (acc === 'pdf') {
       if (!String(param('SITIO_DOCUMENTAL_URL') || '').trim()) { U.aviso('Falta configurar el sitio documental en Administración › Parámetros.', 'warn', 7000); return; }
-      if (!await U.confirmar('Generar el PDF', 'Se genera el PDF y se archiva en SharePoint. Después ya no se puede editar: los cambios se hacen con una revisión. ¿Continuar?', 'Generar PDF')) return;
+      if (!await U.confirmar('Generar el PDF', 'Se genera el PDF y se archiva en SharePoint. Mientras no la marque como enviada la puede volver a editar con el mismo número; después de enviada, los cambios quedan en una revisión. ¿Continuar?', 'Generar PDF')) return;
       await U.conCarga(boton, async () => { try { await emitirPdf(cot); await recargar('PDF generado y archivado'); } catch (e) { U.aviso(U.mensajeError(e), 'err', 10000); } });
+    } else if (acc === 'reabrir') {
+      if (!await U.confirmar('Editar la cotización', 'Todavía no se ha enviado al cliente, así que se reabre como borrador con el mismo número (' + cot.numero_visible + ') y la fecha de hoy.\nCuando genere el PDF otra vez, reemplaza al anterior en SharePoint. ¿Continuar?', 'Editar')) return;
+      await U.conCarga(boton, async () => {
+        try {
+          const f = hoy(), campos = { estado: 'BORRADOR', fecha: f, fecha_vencimiento: sumarHabiles(f, Number(param('VIGENCIA_DIAS_HABILES') || 10)) };
+          await G.actualizar('COT_Cotizaciones', cot._id, campos, cot._etag);
+          await auditar(cot.Title, 'REABRIR', { estado: cot.estado }, campos);
+          await cargar(true); location.hash = '#cotizaciones/' + cot.Title + '/editar';
+        } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
+      });
+    } else if (acc === 'previa') {
+      const win = window.open('', '_blank');
+      await U.conCarga(boton, async () => { try { const { doc } = await armarPdf(cot, true); const url = URL.createObjectURL(doc.output('blob')); if (win) win.location.href = url; else doc.save('Vista_previa.pdf'); } catch (e) { if (win) win.close(); U.aviso(U.mensajeError(e), 'err', 8000); } });
+    } else if (acc === 'excel') {
+      await U.conCarga(boton, async () => {
+        try {
+          const [det, conds] = await Promise.all([leerDetalle(cot.Title), leerConds(cot.Title)]);
+          const e = empresaDe(cot.empresa_id) || {};
+          await App.cotExcel.exportar(cot, det, conds, { params: D.params, comercial: usuario(cot.comercial_id), codigoCliente: e.codigo_cliente || e.codigo_cliente_anterior || '' });
+        } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
+      });
     } else if (acc === 'descargar') {
       await U.conCarga(boton, async () => { try { const { doc } = await armarPdf(cot); doc.save(cot.numero_visible + '.pdf'); } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); } });
     } else if (acc === 'enviada') {
@@ -553,7 +611,7 @@
           U.cerrarModal(); await cambiar({ estado: 'ANULADA', fecha_cierre: new Date().toISOString(), observaciones_internas: notas(cot, 'Anulada: ' + v.motivo) }, 'ANULAR', 'Cotización anulada'); };
       });
     } else if (acc === 'revision') {
-      if (!await U.confirmar('Nueva revisión', 'Se crea un borrador ' + cot.consecutivo + '-R' + (siguienteRevision(cot)) + ' con las mismas líneas y condiciones, tomando los precios y parámetros vigentes hoy. ' + cot.numero_visible + ' queda como Reemplazada. ¿Continuar?', 'Crear revisión')) return;
+      if (!await U.confirmar(cot.estado === 'PERDIDA' ? 'Nueva revisión' : 'Editar con nueva revisión', (cot.estado === 'PERDIDA' ? '' : 'El cliente ya recibió ' + cot.numero_visible + ', así que no se modifica: ') + 'Se crea un borrador ' + cot.consecutivo + '-R' + (siguienteRevision(cot)) + ' con las mismas líneas y condiciones, tomando los precios y parámetros vigentes hoy. ' + cot.numero_visible + ' queda como Reemplazada. ¿Continuar?', 'Crear revisión')) return;
       await U.conCarga(boton, async () => { try { const id = await crearRevision(cot); U.aviso('Revisión creada', 'ok'); location.hash = '#cotizaciones/' + id + '/editar'; } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); } });
     }
   }

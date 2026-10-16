@@ -78,8 +78,16 @@
     }
     const hayFotos = Object.values(fotos).some(Boolean);
 
-    // ---------- Encabezado ----------
+    // ---------- Control de saltos de página ----------
+    // Regla: un título nunca queda solo al final de una hoja. Antes de escribir un título se
+    // verifica que quepan el título y el comienzo del texto que lo sigue; si no, pasa a la hoja siguiente.
+    const LIMITE = H - 20;
     let y = M;
+    const espacio = (alto) => { if (y + alto > LIMITE) { doc.addPage(); y = M + 4; } };
+    const escribir = (lineas, alto) => { lineas.forEach((l) => { espacio(alto); doc.text(l, M, y); y += alto; }); };   // párrafos largos sí se pueden partir entre hojas
+    const minimo = (lineas) => (lineas.length <= 4 ? lineas.length : 2);   // texto corto va completo con su título; largo, al menos 2 líneas
+
+    // ---------- Encabezado ----------
     if (logo) { const h = 16, w = Math.min(70, h * logo.w / logo.h); doc.addImage(logo.data, 'PNG', M, y, w, h); }
     doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(...AZUL);
     doc.text('COTIZACIÓN', W - M, y + 5, { align: 'right' });
@@ -108,16 +116,17 @@
     y = doc.lastAutoTable.finalY + 6;
 
     // ---------- Introducción ----------
-    doc.setFontSize(10); doc.setTextColor(...TINTA); doc.setFont('helvetica', 'bold');
-    doc.text('Estimados señores:', M, y); y += 5;
+    doc.setFontSize(10); doc.setTextColor(...TINTA); doc.setFont('helvetica', 'normal');
+    const parrafos = String(c.texto_introduccion || '').split(/\n+/).filter(Boolean).map((p) => doc.splitTextToSize(limpio(p), W - 2 * M));
+    espacio(5 + (parrafos[0] ? minimo(parrafos[0]) * 4.6 : 0));
+    doc.setFont('helvetica', 'bold'); doc.text('Estimados señores:', M, y); y += 5;
     doc.setFont('helvetica', 'normal');
-    String(c.texto_introduccion || '').split(/\n+/).filter(Boolean).forEach((p) => {
-      const lineas = doc.splitTextToSize(limpio(p), W - 2 * M);
-      doc.text(lineas, M, y); y += lineas.length * 4.6 + 2;
-    });
+    parrafos.forEach((lineas) => { espacio(minimo(lineas) * 4.6); escribir(lineas, 4.6); y += 2; });
     y += 1;
 
     // ---------- Título de la sección ----------
+    // El título de la sección va con el encabezado de la tabla y al menos la primera línea (≈ 9 + 8 + 20 mm)
+    espacio((c.titulo_seccion ? 9 : 0) + 30);
     if (c.titulo_seccion) {
       doc.setFillColor(...TEAL); doc.rect(M, y, W - 2 * M, 7, 'F');
       doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(255, 255, 255);
@@ -150,7 +159,8 @@
     colStyles[off + 3] = { cellWidth: 27, halign: 'right' };
     colStyles[off + 4] = { cellWidth: 29, halign: 'right' };
     doc.autoTable({
-      startY: y, margin: { left: M, right: M, bottom: 18 }, head: [cab], body: cuerpo.map((r) => r.fila), theme: 'grid',
+      startY: y, margin: { left: M, right: M, bottom: 18, top: M + 4 }, head: [cab], body: cuerpo.map((r) => r.fila), theme: 'grid',
+      rowPageBreak: 'avoid', showHead: 'everyPage',   // una línea (con su foto) no se parte; el encabezado se repite en cada hoja
       headStyles: { fillColor: AZUL, textColor: 255, fontSize: 9, fontStyle: 'bold' },
       styles: { fontSize: 8.5, cellPadding: 1.8, lineColor: BORDE, lineWidth: 0.2, textColor: TINTA, valign: 'top' },
       columnStyles: colStyles,
@@ -187,20 +197,21 @@
     doc.text(mon === 'USD' ? 'Valores en dólares de los Estados Unidos.' : 'Valores en pesos colombianos.', W - M, y, { align: 'right' }); y += 7;
 
     // ---------- Condiciones comerciales ----------
-    const espacio = (alto) => { if (y + alto > H - 20) { doc.addPage(); y = M + 4; } };
     if (conds.length) {
-      espacio(14);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+      const items = conds.slice().sort((a, b) => (Number(a.orden) || 99) - (Number(b.orden) || 99))
+        .map((x) => ({ titulo: limpio(x.titulo), lineas: doc.splitTextToSize(limpio(x.texto), W - 2 * M) }));
+      // «Condiciones comerciales» + el título de la primera condición + el comienzo de su texto
+      espacio(7 + 4.4 + minimo(items[0].lineas) * 4.2);
       doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...AZUL);
       doc.text('Condiciones comerciales', M, y); y += 2;
       doc.setDrawColor(...BORDE); doc.setLineWidth(0.3); doc.line(M, y, W - M, y); y += 5;
-      conds.slice().sort((a, b) => (Number(a.orden) || 99) - (Number(b.orden) || 99)).forEach((x) => {
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
-        const lineas = doc.splitTextToSize(limpio(x.texto), W - 2 * M);
-        espacio(6 + lineas.length * 4.2);
+      items.forEach((x) => {
+        espacio(4.4 + minimo(x.lineas) * 4.2);
         doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...TINTA);
-        doc.text(limpio(x.titulo) + ':', M, y); y += 4.4;
+        doc.text(x.titulo + ':', M, y); y += 4.4;
         doc.setFont('helvetica', 'normal'); doc.setTextColor(...GRIS);
-        doc.text(lineas, M, y); y += lineas.length * 4.2 + 3;
+        escribir(x.lineas, 4.2); y += 3;
       });
     }
 
@@ -225,6 +236,12 @@
       doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...GRIS);
       doc.text('Ideas Control Equipos y Soluciones S.A.S.' + (P.SITIO_WEB ? '  ·  ' + limpio(P.SITIO_WEB) : ''), M, H - 8);
       doc.text(c.numero_visible, W / 2, H - 8, { align: 'center' });
+      if (extra.vistaPrevia) {   // marca de agua: no es la versión que se envía al cliente
+        doc.saveGraphicsState(); doc.setGState(new doc.GState({ opacity: 0.1 }));
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(64); doc.setTextColor(...AZUL);
+        doc.text('VISTA PREVIA', W / 2, H / 2, { align: 'center', angle: 35 });
+        doc.restoreGraphicsState();
+      }
       doc.text('Página ' + i + ' de ' + n, W - M, H - 8, { align: 'right' });
     }
     return doc;
