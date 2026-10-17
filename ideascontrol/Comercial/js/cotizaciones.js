@@ -24,10 +24,13 @@
     ENVIADA: ['Enviada', 'e-enviada'], EN_NEGOCIACION: ['En negociación', 'e-negociacion'], GANADA: ['Ganada', 'e-ganada'], PERDIDA: ['Perdida', 'e-perdida'],
     VENCIDA: ['Vencida', 'e-vencida'], REEMPLAZADA: ['Reemplazada', 'e-cerrada'], ANULADA: ['Anulada', 'e-cerrada']
   };
+  // Motivos antiguos (columna de opción motivo_perdida). Los vigentes salen de COT_MotivosPerdida (Administración).
   const MOTIVOS = [['PRECIO', 'Precio'], ['COMPETENCIA', 'Eligió a la competencia'], ['SIN_PRESUPUESTO', 'Sin presupuesto'], ['SIN_RESPUESTA', 'Sin respuesta del cliente'], ['OTRO', 'Otro']];
   const LINEAS = [['TODAS', 'General'], ['VENTA_HW', 'Venta de equipos'], ['LICENCIA', 'Licencias'], ['SAAS', 'SaaS (suscripción)'], ['ALQUILER_HW', 'Alquiler de equipos'], ['SOPORTE', 'Contratos de soporte'], ['LATAM', 'Clientes de Latinoamérica']];
 
-  const D = { cotizaciones: [], params: {}, condiciones: [], festivos: new Set(), cargado: 0 };
+  // D.motivos = null mientras no exista la lista COT_MotivosPerdida (el Instalador no se ha vuelto a ejecutar).
+  // Cuando existe, también existen las columnas linea_negocio, motivo_perdida_id y comentario_perdida.
+  const D = { cotizaciones: [], params: {}, condiciones: [], festivos: new Set(), motivos: null, cargado: 0 };
   const filtro = { texto: '', estado: 'ABIERTAS', comercial: '', anio: String(new Date().getFullYear()) };
 
   // ---------- Utilidades ----------
@@ -63,10 +66,11 @@
   async function cargar(forzar) {
     if (!forzar && D.cargado && Date.now() - D.cargado < 60000) return;
     const r = await Promise.all([G.items('COT_Cotizaciones', { top: 5000 }), G.items('SYS_Parametros'), G.items('COT_Condiciones'), G.items('SYS_Festivos'),
-      App.empresas.cargar(forzar), App.productos.cargar(forzar)]);
+      App.empresas.cargar(forzar), App.productos.cargar(forzar), G.items('COT_MotivosPerdida').catch(() => null)]);
     D.cotizaciones = r[0].sort((a, b) => String(b.fecha || '').localeCompare(String(a.fecha || '')) || String(b.numero_visible || '').localeCompare(String(a.numero_visible || '')));
     D.params = {}; r[1].filter((p) => !p.app_id || p.app_id === CFG.app.id).forEach((p) => { D.params[p.Title] = p.valor; });
     D.condiciones = r[2]; D.festivos = new Set(r[3].map((f) => sf(f.fecha)));
+    D.motivos = r[6] ? r[6].sort((a, b) => (Number(a.orden) || 99) - (Number(b.orden) || 99)) : null;
     D.cargado = Date.now();
   }
   const leerDetalle = (id) => G.items('COT_Detalle', { filtro: "fields/cotizacion_id eq '" + id + "'" }).then((x) => x.sort((a, b) => Number(a.linea) - Number(b.linea)));
@@ -145,7 +149,7 @@
     if (cot) {
       const [det, conds] = await Promise.all([leerDetalle(cot.Title), leerConds(cot.Title)]);
       F = { cot, empresa_id: cot.empresa_id, sucursal_id: cot.sucursal_id || '', contacto_id: cot.contacto_id || '', fecha: sf(cot.fecha) || hoy(), moneda: cot.moneda || 'COP',
-        trm: cot.trm_referencia || '', linea: 'VENTA_HW', titulo_seccion: cot.titulo_seccion || '', texto_introduccion: cot.texto_introduccion || '', observaciones: cot.observaciones_internas || '',
+        trm: cot.trm_referencia || '', linea: cot.linea_negocio || 'VENTA_HW', titulo_seccion: cot.titulo_seccion || '', texto_introduccion: cot.texto_introduccion || '', observaciones: cot.observaciones_internas || '',
         lineas: det.map((l) => { const p = productoDe(l.producto_id) || {};
           return { producto_id: l.producto_id, codigo: l.codigo, nombre: p.nombre || l.codigo, descripcion: l.descripcion, ficha_tecnica: l.ficha_tecnica, ciudad_sede: l.ciudad_sede || '',
             cantidad: Number(l.cantidad), precio_unitario: Number(l.precio_unitario), precio_base: Number(l.precio_unitario), moneda_base: cot.moneda || 'COP',
@@ -424,6 +428,7 @@
       subtotal_bruto: t.bruto, descuento_total: t.desc, subtotal_neto: t.neto, iva_total: t.iva, total: t.total,
       requiere_aprobacion: F.lineas.some((l) => Number(l.descuento_porcentaje) > topePct()), observaciones_internas: F.observaciones
     };
+    if (D.motivos) campos.linea_negocio = F.linea;   // columna nueva (Instalador v3)
     let id, cot = F.cot;
     if (!cot) {
       const anio = F.fecha.slice(0, 4);
@@ -529,7 +534,8 @@
           fila('Dirección', [cot.cliente_direccion, cot.cliente_ciudad].filter(Boolean).join(' · ')) + fila('Moneda', m + (cot.trm_referencia ? ' · TRM ' + U.fmt.cop(cot.trm_referencia) : '')) + '</dl></div></div>' +
         '<div class="ic-bloque"><div class="cab"><h2>Seguimiento</h2></div><div class="cuerpo"><dl class="ic-datos">' +
           fila('Estado', ESTADOS[ev] ? ESTADOS[ev][0] : ev) + fila('Enviada', cot.fecha_envio ? U.fmt.fechaHora(cot.fecha_envio) : '') + fila('Cerrada', cot.fecha_cierre ? U.fmt.fechaHora(cot.fecha_cierre) : '') +
-          fila('Motivo de pérdida', cot.motivo_perdida ? (MOTIVOS.find((x) => x[0] === cot.motivo_perdida) || [0, cot.motivo_perdida])[1] : '') +
+          fila('Motivo de pérdida', nombreMotivo(cot)) + fila('Comentario', cot.estado === 'PERDIDA' ? cot.comentario_perdida : '') +
+          fila('Línea de negocio', cot.linea_negocio ? (LINEAS.find((x) => x[0] === cot.linea_negocio) || [0, cot.linea_negocio])[1] : '') +
           fila('Revisión de', cot.cotizacion_origen_id ? (D.cotizaciones.find((x) => x.Title === cot.cotizacion_origen_id) || {}).numero_visible : '') + '</dl>' +
           (revisiones.length ? '<p class="ic-conteo" style="margin-top:10px">Otras versiones: ' + revisiones.map((r) => '<a href="#cotizaciones/' + esc(r.Title) + '">' + esc(r.numero_visible) + '</a>').join(' · ') + '</p>' : '') +
           (cot.observaciones_internas ? '<p class="ic-conteo" style="margin-top:10px;white-space:pre-line"><b>Notas internas:</b> ' + esc(cot.observaciones_internas) + '</p>' : '') + '</div></div>' +
@@ -540,6 +546,11 @@
     c.querySelectorAll('[data-acc]').forEach((b) => { b.onclick = () => accion(c, cot, b.dataset.acc, b); });
   }
   const fila = (k, v) => v ? '<dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd>' : '';
+  // Nombre del motivo: el vigente en COT_MotivosPerdida; si es una cotización antigua, el de la lista fija
+  function nombreMotivo(cot) {
+    if (cot.motivo_perdida_id) { const m = (D.motivos || []).find((x) => x.Title === cot.motivo_perdida_id); return m ? m.nombre : cot.motivo_perdida_id; }
+    return cot.motivo_perdida ? (MOTIVOS.find((x) => x[0] === cot.motivo_perdida) || [0, cot.motivo_perdida])[1] : '';
+  }
 
   async function accion(c, cot, acc, boton) {
     const recargar = async (msg) => { await cargar(true); await vistaFicha(c, cot.Title); if (msg) U.aviso(msg, 'ok'); };
@@ -557,7 +568,7 @@
         try {
           const f = hoy(), campos = { estado: 'BORRADOR', fecha: f, fecha_vencimiento: sumarHabiles(f, Number(param('VIGENCIA_DIAS_HABILES') || 10)) };
           await G.actualizar('COT_Cotizaciones', cot._id, campos, cot._etag);
-          await auditar(cot.Title, 'REABRIR', { estado: cot.estado }, campos);
+          await auditar(cot.Title, 'CAMBIO_ESTADO', { estado: cot.estado }, Object.assign({ nota: 'Reabierta para editar' }, campos));
           await cargar(true); location.hash = '#cotizaciones/' + cot.Title + '/editar';
         } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
       });
@@ -594,13 +605,28 @@
         await recargar('Cotización ganada' + (pasa ? ': ' + e.razon_social + ' ya es cliente' : ''));
       } catch (er) { U.aviso(U.mensajeError(er), 'err', 8000); }
     } else if (acc === 'perdida') {
-      U.modal('Cotización perdida', '<form class="ic-form" id="fPer" novalidate><div class="ic-campos">' +
-        U.campo({ name: 'motivo', label: 'Motivo', t: 'select', op: MOTIVOS, req: true, c: 'c12' }) + U.campo({ name: 'detalle', label: 'Detalle (opcional)', t: 'textarea', filas: 2, c: 'c12' }) +
+      const lista = D.motivos ? D.motivos.filter((x) => x.estado !== 'INACTIVO') : null;
+      const op = lista ? lista.map((x) => [x.Title, x.nombre]) : MOTIVOS;
+      const pide = (v) => lista ? !!(lista.find((x) => x.Title === v) || {}).pide_comentario : v === 'OTRO';
+      U.modal('Cotización perdida · ' + cot.numero_visible, '<form class="ic-form" id="fPer" novalidate><div class="ic-campos">' +
+        U.campo({ name: 'motivo', label: 'Motivo', t: 'select', op, req: true, c: 'c12', ayuda: App.usuario.es_admin ? 'Las opciones se administran en Administración › Motivos de pérdida.' : '' }) +
+        U.campo({ name: 'detalle', label: 'Comentario', t: 'textarea', filas: 3, c: 'c12', ph: 'Ej.: compraron a otro proveedor a $ 1.200.000; volver a contactar en enero' }) +
         '</div><div class="ic-acciones"><button type="button" class="ic-btn sec" id="bC">Cancelar</button><button class="ic-btn peligro" id="bG">Marcar perdida</button></div></form>', (m) => {
         U.$('#bC', m).onclick = U.cerrarModal;
-        U.$('#fPer', m).onsubmit = async (ev) => { ev.preventDefault(); const v = U.leerForm(ev.target); if (!U.marcarErrores(ev.target, v.motivo ? {} : { motivo: 'Elija el motivo' })) return;
+        const lbl = U.$('label[for=f_detalle]', m), sel = U.$('[name=motivo]', m);
+        sel.onchange = () => { lbl.innerHTML = 'Comentario' + (pide(sel.value) ? ' <span class="req">*</span>' : ' (opcional)'); };
+        sel.onchange();
+        U.$('#fPer', m).onsubmit = async (ev) => {
+          ev.preventDefault(); const v = U.leerForm(ev.target), err = {};
+          if (!v.motivo) err.motivo = 'Elija el motivo';
+          if (v.motivo && pide(v.motivo) && !v.detalle) err.detalle = 'Este motivo pide un comentario';
+          if (!U.marcarErrores(ev.target, err)) return;
           U.cerrarModal();
-          await cambiar({ estado: 'PERDIDA', motivo_perdida: v.motivo, fecha_cierre: new Date().toISOString(), observaciones_internas: notas(cot, v.detalle ? 'Perdida: ' + v.detalle : '') }, 'CAMBIO_ESTADO', 'Cotización marcada como perdida'); };
+          const campos = { estado: 'PERDIDA', fecha_cierre: new Date().toISOString() };
+          if (lista) { campos.motivo_perdida_id = v.motivo; campos.comentario_perdida = v.detalle; }
+          else { campos.motivo_perdida = v.motivo; campos.observaciones_internas = notas(cot, v.detalle ? 'Perdida: ' + v.detalle : ''); }
+          await cambiar(campos, 'CAMBIO_ESTADO', 'Cotización marcada como perdida');
+        };
       });
     } else if (acc === 'anular') {
       U.modal('Anular cotización', '<form class="ic-form" id="fAn" novalidate><p style="margin:0 0 10px">La cotización ' + esc(cot.numero_visible) + ' queda anulada y no se puede reactivar. Su número no se vuelve a usar.</p><div class="ic-campos">' +
@@ -623,7 +649,7 @@
     const [det, conds] = await Promise.all([leerDetalle(cot.Title), leerConds(cot.Title)]);
     const rev = siguienteRevision(cot), id = 'COT-' + pad(await G.siguiente('COT'), 6);
     const campos = {}; ['empresa_id', 'sucursal_id', 'contacto_id', 'cliente_nit', 'cliente_razon_social', 'cliente_ciudad', 'cliente_direccion', 'contacto_nombre', 'contacto_telefono', 'contacto_email',
-      'moneda', 'trm_referencia', 'titulo_seccion', 'texto_introduccion'].forEach((k) => { campos[k] = cot[k]; });
+      'moneda', 'trm_referencia', 'titulo_seccion', 'texto_introduccion'].concat(D.motivos ? ['linea_negocio'] : []).forEach((k) => { campos[k] = cot[k]; });
     await G.crear('COT_Cotizaciones', Object.assign(campos, { Title: id, consecutivo: cot.consecutivo, revision: rev, numero_visible: cot.consecutivo + '-R' + rev, cotizacion_origen_id: cot.Title,
       comercial_id: cot.comercial_id, fecha: hoy(), fecha_vencimiento: sumarHabiles(hoy(), Number(param('VIGENCIA_DIAS_HABILES') || 10)), estado: 'BORRADOR' }));
     // Líneas con el precio vigente del catálogo (si el producto sigue existiendo y tiene precio)
@@ -649,5 +675,5 @@
     return id;   // se abre en edición: al guardar se recalculan totales y se re-resuelven las condiciones con los datos de hoy
   }
 
-  App.cotizaciones = { cargar, datos: D, sumarHabiles };
+  App.cotizaciones = { cargar, datos: D, sumarHabiles, estadoVisible, nombreMotivo, ESTADOS, LINEAS, param };
 })();

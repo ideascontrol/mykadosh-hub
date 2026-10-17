@@ -1,7 +1,7 @@
 /* =====================================================================
    APP-101 · Comercial — Administración (2): delegaciones, distribuidores,
-   festivos, consecutivos y registro de actividad.
-   Rutas: #admin/delegaciones · #admin/distribuidores · #admin/festivos · #admin/consecutivos · #admin/registro
+   festivos, consecutivos, registro de actividad y motivos de pérdida.
+   Rutas: #admin/delegaciones · #admin/distribuidores · #admin/festivos · #admin/consecutivos · #admin/registro · #admin/motivos
    Se registran en App.adminSecciones; el enrutador está en admin.js.
    ===================================================================== */
 (function () {
@@ -383,6 +383,72 @@
           '<td><span class="ic-res ' + ac[1] + '">' + esc(ac[0]) + '</span><span class="sec">' + esc(ENTIDADES[e.entidad] || e.entidad || '') + ' · ' + esc(e.registro_id || '') + '</span></td><td>' + detalleEvento(e) + '</td></tr>'; }).join('') +
       '</tbody></table></div>' + (lista.length > mostrar ? '<p style="text-align:center;margin-top:12px"><button class="ic-btn sec" id="btnMas">Ver más</button></p>' : '');
     const bm = U.$('#btnMas', c); if (bm) bm.onclick = () => { mostrar += 200; pintarReg(c); };
+  }
+
+  // =====================================================================
+  // MOTIVOS DE PÉRDIDA (COT_MotivosPerdida)
+  // Única fuente de las opciones que el comercial elige al marcar una cotización como perdida.
+  // No se borran: se desactivan, para que los reportes de meses anteriores conserven el motivo.
+  // =====================================================================
+  let motivos = [], usoMotivos = {};
+  App.adminSecciones.motivos = async function vista(c) {
+    let r;
+    try { r = await Promise.all([G.items('COT_MotivosPerdida'), G.items('COT_Cotizaciones', { top: 5000 })]); }
+    catch (e) {
+      c.innerHTML = A().cabecera('Motivos de pérdida', 'Opciones para registrar por qué se perdió una cotización.') +
+        '<div class="ic-form"><b>Falta la lista COT_MotivosPerdida en IC Apps.</b><p>Abra el Instalador (mykadosh.com/ideascontrol/Comercial/Instalador/), inicie sesión y haga clic en «Crear estructura». No borra ni duplica nada: solo agrega lo nuevo.</p></div>';
+      return;
+    }
+    motivos = r[0].sort((a, b) => (Number(a.orden) || 99) - (Number(b.orden) || 99) || String(a.nombre).localeCompare(String(b.nombre), 'es'));
+    usoMotivos = {}; r[1].forEach((x) => { if (x.motivo_perdida_id) usoMotivos[x.motivo_perdida_id] = (usoMotivos[x.motivo_perdida_id] || 0) + 1; });
+    c.innerHTML = A().cabecera('Motivos de pérdida', 'Opciones que el comercial elige al marcar una cotización como perdida. Alimentan el reporte de motivos del Tablero.', '<button class="ic-btn" id="btnNuevo">+ Nuevo motivo</button>') +
+      '<div class="ic-tabla-caja" id="tabla"></div><p class="ic-conteo" style="margin-top:12px">Los motivos no se borran: si ya no se usa, desactívelo. Las cotizaciones perdidas conservan su motivo y su comentario. «Pide comentario» obliga al comercial a explicar (útil en «Otro» o «Competencia»).</p>';
+    U.$('#btnNuevo', c).onclick = () => formMotivo(c, null);
+    U.$('#tabla', c).innerHTML = !motivos.length ? '<div class="ic-vacio">Aún no hay motivos.</div>' :
+      '<table class="ic-tabla"><thead><tr><th style="width:60px">Orden</th><th>Motivo</th><th style="width:150px">Pide comentario</th><th style="width:120px;text-align:right">Usado en</th><th style="width:100px">Estado</th></tr></thead><tbody>' +
+      motivos.map((m) => '<tr data-id="' + esc(m.Title) + '"><td>' + esc(m.orden || '') + '</td><td><b>' + esc(m.nombre) + '</b><span class="sec">' + esc([m.descripcion, m.Title].filter(Boolean).join(' · ')) + '</span></td>' +
+        '<td>' + (m.pide_comentario ? 'Sí' : 'No') + '</td><td style="text-align:right">' + (usoMotivos[m.Title] || 0) + '</td>' +
+        '<td><span class="ic-tag ' + (m.estado === 'INACTIVO' ? 'inactivo' : 'cliente') + '">' + (m.estado === 'INACTIVO' ? 'Inactivo' : 'Activo') + '</span></td></tr>').join('') + '</tbody></table>';
+    c.querySelectorAll('#tabla tr[data-id]').forEach((tr) => { tr.onclick = () => formMotivo(c, motivos.find((m) => m.Title === tr.dataset.id)); });
+  };
+  function formMotivo(c, d) {
+    const nuevo = !d; d = d || { estado: 'ACTIVO', orden: motivos.reduce((mx, m) => Math.max(mx, Number(m.orden) || 0), 0) + 1 };
+    U.modal(nuevo ? 'Nuevo motivo de pérdida' : 'Editar motivo · ' + d.nombre, '<form class="ic-form" id="fMot" novalidate><div class="ic-campos">' +
+      U.campo({ name: 'nombre', label: 'Motivo (lo que ve el comercial)', valor: d.nombre, req: true, c: 'c9', max: 60 }) +
+      U.campo({ name: 'orden', label: 'Orden en la lista', valor: d.orden, c: 'c3', modo: 'numeric' }) +
+      U.campo({ name: 'descripcion', label: 'Aclaración (opcional)', valor: d.descripcion, c: 'c12', ph: 'Ej.: el cliente compró a otro proveedor', max: 120 }) +
+      U.campo({ name: 'pide_comentario', label: 'Pedir comentario obligatorio al elegir este motivo', t: 'checkbox', valor: !!d.pide_comentario, c: 'c12' }) +
+      (nuevo ? '' : U.campo({ name: 'estado', label: 'Estado', t: 'select', op: [['ACTIVO', 'Activo'], ['INACTIVO', 'Inactivo (ya no aparece para elegir)']], valor: d.estado || 'ACTIVO', vacio: false, c: 'c12' })) +
+      '</div>' + (!nuevo && usoMotivos[d.Title] ? '<p class="ic-conteo">Lo usan ' + usoMotivos[d.Title] + ' cotización(es). Si cambia el nombre, los reportes lo muestran con el nombre nuevo.</p>' : '') +
+      '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="bC">Cancelar</button><button class="ic-btn" id="bG">' + (nuevo ? 'Crear motivo' : 'Guardar cambios') + '</button></div></form>', (m) => {
+      U.$('#bC', m).onclick = U.cerrarModal;
+      U.$('#fMot', m).onsubmit = async (ev) => {
+        ev.preventDefault();
+        const v = U.leerForm(ev.target), err = {};
+        if (!v.nombre) err.nombre = 'Obligatorio';
+        else { const dup = motivos.find((x) => x.Title !== d.Title && U.norm(x.nombre) === U.norm(v.nombre)); if (dup) err.nombre = 'Ya existe (' + dup.Title + ')'; }
+        if (v.orden && !/^\d{1,3}$/.test(v.orden)) err.orden = 'Número';
+        if (!nuevo && v.estado === 'INACTIVO' && d.estado !== 'INACTIVO' && motivos.filter((x) => x.estado !== 'INACTIVO' && x.Title !== d.Title).length < 1) err.estado = 'Debe quedar al menos un motivo activo';
+        if (!U.marcarErrores(ev.target, err)) return;
+        const campos = { nombre: v.nombre, descripcion: v.descripcion, orden: v.orden ? Number(v.orden) : 99, pide_comentario: !!v.pide_comentario };
+        if (!nuevo) campos.estado = v.estado;
+        await U.conCarga(U.$('#bG', m), async () => {
+          try {
+            if (nuevo) {
+              const id = await nuevoId('MOT', 'MOT-', 2, motivos);
+              await G.crear('COT_MotivosPerdida', Object.assign({ Title: id, estado: 'ACTIVO' }, campos));
+              await A().auditar('MOTIVO_PERDIDA', id, 'CREAR', null, campos);
+            } else {
+              const df = A().diferencias(d, campos);
+              if (!df.hay) { U.cerrarModal(); U.aviso('No hay cambios', 'ok'); return; }
+              await G.actualizar('COT_MotivosPerdida', d._id, campos, d._etag);
+              await A().auditar('MOTIVO_PERDIDA', d.Title, campos.estado === 'INACTIVO' && d.estado !== 'INACTIVO' ? 'DESACTIVAR' : 'ACTUALIZAR', df.antes, df.despues);
+            }
+            U.cerrarModal(); await App.adminSecciones.motivos(c); U.aviso(nuevo ? 'Motivo creado' : 'Cambios guardados', 'ok');
+          } catch (e) { U.aviso(U.mensajeError(e), 'err', 7000); }
+        });
+      };
+    });
   }
 
   App.festivos = { festivosColombia };   // para pruebas y para el cálculo de días hábiles
