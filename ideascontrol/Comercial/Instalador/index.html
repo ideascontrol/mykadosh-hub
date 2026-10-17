@@ -4,24 +4,951 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Microapp Comercial · Ideas Control</title>
-<link rel="icon" href="/ideascontrol/assets/ideascontrol.webp">
+<title>Instalador IC Apps</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="../shared/css/ic.css">
+<style>
+  :root { --azul:#0E76BC; --teal:#159090; --dorado:#C9A227; --tinta:#1d2b36; --gris:#5b6770; --fondo:#f4f7fa; --borde:#dbe3ea; --ok:#1f8a4c; --err:#c0392b; --warn:#b7791f; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:Inter,Arial,sans-serif; background:var(--fondo); color:var(--tinta); }
+  header { background:#fff; border-bottom:3px solid var(--dorado); padding:14px 20px; display:flex; align-items:center; gap:14px; }
+  header img { height:40px; }
+  header h1 { font-size:18px; margin:0; color:var(--azul); }
+  header p { margin:2px 0 0; font-size:13px; color:var(--gris); }
+  main { max-width:860px; margin:24px auto; padding:0 16px; }
+  .card { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:20px; margin-bottom:16px; }
+  .paso { display:flex; gap:14px; align-items:flex-start; padding:12px 0; border-bottom:1px solid var(--borde); }
+  .paso:last-child { border-bottom:0; }
+  .num { flex:0 0 32px; height:32px; border-radius:50%; background:var(--borde); color:var(--gris); display:grid; place-items:center; font-weight:700; }
+  .paso[data-estado=ok] .num { background:var(--ok); color:#fff; }
+  .paso[data-estado=run] .num { background:var(--azul); color:#fff; }
+  .paso[data-estado=err] .num { background:var(--err); color:#fff; }
+  .paso h2 { font-size:15px; margin:4px 0 4px; }
+  .paso p { margin:0 0 8px; font-size:13px; color:var(--gris); line-height:1.5; }
+  button { font:inherit; font-weight:600; border:0; border-radius:8px; padding:10px 18px; cursor:pointer; background:var(--azul); color:#fff; }
+  button.sec { background:#fff; color:var(--azul); border:1px solid var(--azul); }
+  button:disabled { background:#b8c4cd; cursor:not-allowed; }
+  .fila { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  label { font-size:13px; }
+  input[type=text] { font:inherit; width:70px; padding:6px 8px; border:1px solid var(--borde); border-radius:6px; text-transform:uppercase; }
+  .barra { height:10px; background:var(--borde); border-radius:6px; overflow:hidden; margin-top:12px; }
+  #bar { height:100%; width:0; background:linear-gradient(90deg,var(--azul),var(--teal)); transition:width .3s; }
+  #barText { font-size:12px; color:var(--gris); margin-top:4px; }
+  #log { background:#0f1a22; color:#d7e3ea; font:12px/1.6 ui-monospace,Consolas,monospace; border-radius:8px; padding:12px; height:300px; overflow:auto; white-space:pre-wrap; }
+  .log-line.ok { color:#7fe0a5; } .log-line.err { color:#ff9b8f; } .log-line.warn { color:#f5d27a; } .log-line.title { color:#8cc8f0; font-weight:700; margin-top:6px; }
+  #usuario { font-size:13px; color:var(--ok); font-weight:600; }
+  #fin { border-left:4px solid var(--ok); }
+  #fin a { color:var(--azul); font-weight:600; }
+  @media (max-width:600px){ header{flex-wrap:wrap;} }
+</style>
 </head>
 <body>
-<header class="ic-header" id="encabezado" hidden></header>
-<main class="ic-main" id="contenido"></main>
-
-<!-- Librería oficial de Microsoft para iniciar sesión -->
+<header>
+  <img src="/ideascontrol/assets/ideascontrol.webp" alt="Ideas Control" onerror="this.style.display='none'">
+  <div><h1>Instalador IC Apps · APP-101 Comercial</h1><p>Crea las listas de SharePoint y carga los datos iniciales. Se ejecuta una sola vez (puede repetirse sin duplicar).</p></div>
+</header>
+<main>
+  <div class="card">
+    <div class="paso" id="paso1" data-estado="pend">
+      <div class="num">1</div>
+      <div>
+        <h2>Iniciar sesión con Microsoft</h2>
+        <p>Use su cuenta de Ideas Control. Debe ser propietario del sitio IC Apps.</p>
+        <div class="fila"><button id="btnLogin" hidden>Iniciar sesión</button><span id="usuario"></span><button id="btnLogout" class="sec" hidden>Cerrar sesión</button></div>
+      </div>
+    </div>
+    <div class="paso" id="paso2" data-estado="pend">
+      <div class="num">2</div>
+      <div><h2>Verificar el sitio IC Apps</h2><p>Se revisa automáticamente al iniciar sesión.</p></div>
+    </div>
+    <div class="paso" id="paso3" data-estado="pend">
+      <div class="num">3</div>
+      <div style="flex:1">
+        <h2>Crear estructura</h2>
+        <p>Crea <b id="lblListas">20</b> listas con sus columnas, desplegables e índices, y carga parámetros, condiciones comerciales, festivos, secuencias y el catálogo de microapps.</p>
+        <div class="fila" style="margin-bottom:10px">
+          <label><input type="checkbox" id="chkAdmin" checked> Registrarme como administrador con iniciales</label>
+          <input type="text" id="txtIniciales" maxlength="3">
+        </div>
+        <button id="btnCrear" disabled>Crear estructura</button>
+        <div class="barra"><div id="bar"></div></div><div id="barText"></div>
+      </div>
+    </div>
+  </div>
+  <div class="card" id="fin" hidden>
+    <b>Listo.</b> Puede revisar las listas en <a id="linkSitio" target="_blank" rel="noopener">el contenido del sitio IC Apps</a>. Envíe una captura de este registro a quien le ayuda con la implementación.
+  </div>
+  <div class="card"><div id="log"></div></div>
+</main>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.30.0/lib/msal-browser.min.js"></script>
-<!-- Código compartido de las microapps de IC -->
-<script src="../shared/js/auth.js"></script>
-<script src="../shared/js/graph.js"></script>
-<script src="../shared/js/ui.js"></script>
-<!-- App Comercial -->
-<script src="js/config.js"></script>
-<script src="js/app.js"></script>
+<script>
+// ====== DEFINICIÓN DE LISTAS (IC Apps · APP-101 Comercial + núcleo SYS/MAE) ======
+// Tipos: t=texto · m=texto multilínea · n=número · b=sí/no · d=fecha · dt=fecha y hora · c=opción [choices]
+// i=1 → columna indexada. La columna Title de cada lista guarda el ID de negocio.
+const ESTADO = ['ACTIVO', 'INACTIVO'];
+const LISTAS = [
+  { n: 'SYS_Microapps', title: 'app_id', d: 'Catálogo de microapps de Ideas Control', cols: [
+    ['nombre', 't'], ['tipo', 'c', ['PUBLICA', 'INTERNA', 'PRODUCTO']], ['proposito', 'm'],
+    ['estado', 'c', ['CONSTRUIDA', 'EN_CONSTRUCCION', 'PLANEADA', 'POR_CONFIRMAR', 'RETIRADA']],
+    ['plataforma', 't'], ['carpeta_actual', 't'], ['url', 't']] },
+  { n: 'SYS_Usuarios', title: 'usuario_id', d: 'Usuarios internos de las microapps', cols: [
+    ['nombre', 't'], ['email', 't', null, 1], ['iniciales', 't', null, 1], ['celular', 't'], ['cargo', 't'],
+    ['rol', 'c', ['COMERCIAL', 'ADMIN']], ['estado', 'c', ESTADO, 1]] },
+  { n: 'SYS_Delegaciones', title: 'delegacion_id', d: 'Delegación temporal de administrador', cols: [
+    ['usuario_id', 't', null, 1], ['fecha_inicio', 'd'], ['fecha_fin', 'd'], ['otorgado_por', 't'], ['observaciones', 'm']] },
+  { n: 'SYS_Parametros', title: 'clave', d: 'Parámetros configurables por microapp', cols: [
+    ['valor', 'm'], ['descripcion', 't'], ['app_id', 't', null, 1]] },
+  { n: 'SYS_Secuencias', title: 'clave', d: 'Numeración de IDs y consecutivos (no editar a mano)', cols: [
+    ['ultimo_numero', 'n']] },
+  { n: 'SYS_Festivos', title: 'fecha_texto', d: 'Festivos de Colombia', cols: [
+    ['fecha', 'd', null, 1], ['descripcion', 't']] },
+  { n: 'SYS_Auditoria', title: 'evento_id', d: 'Eventos relevantes de las microapps', cols: [
+    ['fecha_hora', 'dt', null, 1], ['usuario_id', 't', null, 1], ['app_id', 't'], ['entidad', 't', null, 1], ['registro_id', 't', null, 1],
+    ['accion', 'c', ['CREAR', 'ACTUALIZAR', 'DESACTIVAR', 'CAMBIO_ESTADO', 'APROBAR', 'REVISION', 'ANULAR', 'GENERAR_PDF']],
+    ['antes', 'm'], ['despues', 'm']] },
+  { n: 'MAE_Empresas', title: 'empresa_id', d: 'Empresas: prospectos y clientes', cols: [
+    ['tipo_id_fiscal', 'c', ['NIT', 'RUC', 'RFC', 'TAX ID', 'OTRO']], ['nit', 't', null, 1], ['dv', 't'],
+    ['estado_comercial', 'c', ['PROSPECTO', 'CLIENTE'], 1], ['codigo_cliente', 't', null, 1], ['codigo_cliente_anterior', 't'],
+    ['razon_social', 't', null, 1], ['pais', 't'], ['ciudad', 't'], ['direccion', 't'], ['web', 't'], ['telefono', 't'], ['celular', 't'],
+    ['tipo_cliente', 'c', ['NUEVO', 'RECURRENTE']], ['comercial_asignado', 't', null, 1], ['carpeta_url', 't'], ['estado', 'c', ESTADO, 1]] },
+  { n: 'MAE_Sucursales', title: 'sucursal_id', d: 'Sedes de cada empresa', cols: [
+    ['empresa_id', 't', null, 1], ['codigo_sucursal', 't', null, 1], ['nombre', 't'], ['ciudad', 't'], ['direccion', 't'], ['telefonos', 't'], ['estado', 'c', ESTADO]] },
+  { n: 'MAE_Contactos', title: 'contacto_id', d: 'Contactos de empresas y sedes', cols: [
+    ['empresa_id', 't', null, 1], ['sucursal_id', 't'], ['nombres', 't'], ['apellidos', 't'], ['cargo', 't'], ['area', 't'],
+    ['celular', 't'], ['telefono', 't'], ['extension', 't'], ['email', 't', null, 1], ['cumpleanos', 'd'], ['autoriza_datos', 'b'], ['estado', 'c', ESTADO]] },
+  { n: 'MAE_Productos', title: 'producto_id', d: 'Catálogo de productos y servicios', cols: [
+    ['codigo', 't', null, 1], ['codigo_anterior', 't'], ['nombre', 't'], ['tipo', 'c', ['EQUIPO', 'ACCESORIO', 'LICENCIA', 'SERVICIO', 'VIATICOS']],
+    ['categoria', 't'], ['descripcion_corta', 'm'], ['ficha_tecnica', 'm'], ['unidad', 'c', ['UND', 'SERVICIO', 'DIA', 'LICENCIA', 'PAQUETE']],
+    ['maneja_inventario', 'b'], ['aplica_iva', 'b'], ['garantia_meses', 'n'], ['imagen_webp_url', 't'], ['descripcion_editable', 'b'],
+    ['stock_minimo', 'n'], ['estado', 'c', ESTADO, 1]] },
+  { n: 'MAE_Precios', title: 'precio_id', d: 'Historial de precios de venta', cols: [
+    ['producto_id', 't', null, 1], ['valor', 'n'], ['moneda', 'c', ['COP', 'USD']], ['fecha_inicio', 'd'], ['fecha_fin', 'd'], ['activo', 'b', null, 1]] },
+  { n: 'MAE_Distribuidores', title: 'distribuidor_id', d: 'Proveedores de productos', cols: [
+    ['nombre', 't'], ['nit', 't'], ['pais', 't'], ['contacto', 't'], ['telefono', 't'], ['email', 't'], ['estado', 'c', ESTADO]] },
+  { n: 'MAE_ProductoDistribuidor', title: 'producto_distribuidor_id', d: 'Precio de compra por distribuidor', cols: [
+    ['producto_id', 't', null, 1], ['distribuidor_id', 't', null, 1], ['precio_unitario_compra', 'n'], ['moneda', 'c', ['COP', 'USD']], ['fecha_compra', 'd'], ['estado', 'c', ESTADO]] },
+  { n: 'MAE_InventarioCortes', title: 'corte_id', d: 'Cortes de inventario (días 1 y 15)', cols: [
+    ['producto_id', 't', null, 1], ['fecha_corte', 'd', null, 1], ['cantidad', 'n'], ['observaciones', 'm']] },
+  { n: 'COT_Cotizaciones', title: 'cotizacion_id', d: 'Encabezado de cotizaciones y revisiones', cols: [
+    ['consecutivo', 't', null, 1], ['revision', 'n'], ['numero_visible', 't', null, 1], ['cotizacion_origen_id', 't'],
+    ['empresa_id', 't', null, 1], ['sucursal_id', 't'], ['contacto_id', 't'], ['comercial_id', 't', null, 1],
+    ['cliente_nit', 't'], ['cliente_razon_social', 't'], ['cliente_ciudad', 't'], ['cliente_direccion', 't'],
+    ['contacto_nombre', 't'], ['contacto_telefono', 't'], ['contacto_email', 't'],
+    ['fecha', 'd', null, 1], ['fecha_vencimiento', 'd'], ['moneda', 'c', ['COP', 'USD']], ['trm_referencia', 'n'],
+    ['titulo_seccion', 't'], ['texto_introduccion', 'm'],
+    ['subtotal_bruto', 'n'], ['descuento_total', 'n'], ['subtotal_neto', 'n'], ['iva_total', 'n'], ['total', 'n'],
+    ['estado', 'c', ['BORRADOR', 'PENDIENTE_APROBACION', 'LISTA_PARA_ENVIO', 'ENVIADA', 'EN_NEGOCIACION', 'GANADA', 'PERDIDA', 'VENCIDA', 'REEMPLAZADA', 'ANULADA'], 1],
+    ['motivo_perdida', 'c', ['PRECIO', 'COMPETENCIA', 'SIN_PRESUPUESTO', 'SIN_RESPUESTA', 'OTRO']],
+    ['motivo_perdida_id', 't'], ['comentario_perdida', 'm'], ['linea_negocio', 't', null, 1],
+    ['requiere_aprobacion', 'b'], ['aprobado_por', 't'], ['fecha_aprobacion', 'dt'], ['fecha_envio', 'dt'], ['fecha_cierre', 'dt'],
+    ['observaciones_internas', 'm'], ['pdf_url', 't']] },
+  { n: 'COT_Detalle', title: 'detalle_id', d: 'Líneas de cada cotización', cols: [
+    ['cotizacion_id', 't', null, 1], ['linea', 'n'], ['producto_id', 't'], ['codigo', 't'], ['descripcion', 'm'], ['ficha_tecnica', 'm'],
+    ['ciudad_sede', 't'], ['cantidad', 'n'], ['precio_unitario', 'n'], ['descuento_porcentaje', 'n'], ['descuento_valor', 'n'],
+    ['subtotal_linea', 'n'], ['neto_linea', 'n'], ['aplica_iva', 'b'], ['iva_porcentaje', 'n'], ['iva_valor', 'n'], ['total_linea', 'n']] },
+  { n: 'COT_Condiciones', title: 'condicion_id', d: 'Textos estándar de condiciones comerciales', cols: [
+    ['tipo', 'c', ['PAGO', 'GARANTIA', 'SOPORTE', 'GENERALES']],
+    ['linea_negocio', 'c', ['TODAS', 'VENTA_HW', 'LICENCIA', 'SAAS', 'ALQUILER_HW', 'SOPORTE', 'LATAM']],
+    ['titulo', 't'], ['texto', 'm'], ['predeterminada', 'b'], ['orden', 'n'], ['estado', 'c', ESTADO]] },
+  { n: 'COT_CotizacionCondiciones', title: 'cotizacion_condicion_id', d: 'Condiciones aplicadas en cada cotización', cols: [
+    ['cotizacion_id', 't', null, 1], ['condicion_id', 't'], ['tipo', 'c', ['PAGO', 'GARANTIA', 'SOPORTE', 'GENERALES']],
+    ['titulo', 't'], ['texto', 'm'], ['orden', 'n']] },
+  // v3 (Tablero): debe ir de última. Si existe, la app sabe que también existen las columnas nuevas de COT_Cotizaciones.
+  { n: 'COT_MotivosPerdida', title: 'motivo_id', d: 'Motivos para registrar una cotización perdida', cols: [
+    ['nombre', 't'], ['descripcion', 't'], ['pide_comentario', 'b'], ['orden', 'n'], ['estado', 'c', ESTADO]] },
+];
+const SEMILLAS = {
+ "COT_MotivosPerdida": [
+  { "Title": "MOT-01", "nombre": "Precio", "descripcion": "El cliente consideró alto el precio", "pide_comentario": false, "orden": 1, "estado": "ACTIVO" },
+  { "Title": "MOT-02", "nombre": "Eligió a la competencia", "descripcion": "Compró a otro proveedor", "pide_comentario": true, "orden": 2, "estado": "ACTIVO" },
+  { "Title": "MOT-03", "nombre": "Sin presupuesto", "descripcion": "", "pide_comentario": false, "orden": 3, "estado": "ACTIVO" },
+  { "Title": "MOT-04", "nombre": "Proyecto aplazado o cancelado", "descripcion": "", "pide_comentario": false, "orden": 4, "estado": "ACTIVO" },
+  { "Title": "MOT-05", "nombre": "Tiempo de entrega", "descripcion": "Necesitaba el producto antes", "pide_comentario": false, "orden": 5, "estado": "ACTIVO" },
+  { "Title": "MOT-06", "nombre": "No cumple lo técnico", "descripcion": "El producto no se ajusta a lo que necesita", "pide_comentario": true, "orden": 6, "estado": "ACTIVO" },
+  { "Title": "MOT-07", "nombre": "Sin respuesta del cliente", "descripcion": "", "pide_comentario": false, "orden": 7, "estado": "ACTIVO" },
+  { "Title": "MOT-08", "nombre": "Otro", "descripcion": "", "pide_comentario": true, "orden": 8, "estado": "ACTIVO" }
+ ],
+ "SYS_Festivos": [
+  {
+   "Title": "2026-01-01",
+   "fecha": "2026-01-01",
+   "descripcion": "Año Nuevo"
+  },
+  {
+   "Title": "2026-01-12",
+   "fecha": "2026-01-12",
+   "descripcion": "Día de los Reyes Magos"
+  },
+  {
+   "Title": "2026-03-23",
+   "fecha": "2026-03-23",
+   "descripcion": "Día de San José"
+  },
+  {
+   "Title": "2026-04-02",
+   "fecha": "2026-04-02",
+   "descripcion": "Jueves Santo"
+  },
+  {
+   "Title": "2026-04-03",
+   "fecha": "2026-04-03",
+   "descripcion": "Viernes Santo"
+  },
+  {
+   "Title": "2026-05-01",
+   "fecha": "2026-05-01",
+   "descripcion": "Día del Trabajo"
+  },
+  {
+   "Title": "2026-05-18",
+   "fecha": "2026-05-18",
+   "descripcion": "Ascensión del Señor"
+  },
+  {
+   "Title": "2026-06-08",
+   "fecha": "2026-06-08",
+   "descripcion": "Corpus Christi"
+  },
+  {
+   "Title": "2026-06-15",
+   "fecha": "2026-06-15",
+   "descripcion": "Sagrado Corazón"
+  },
+  {
+   "Title": "2026-06-29",
+   "fecha": "2026-06-29",
+   "descripcion": "San Pedro y San Pablo"
+  },
+  {
+   "Title": "2026-07-20",
+   "fecha": "2026-07-20",
+   "descripcion": "Día de la Independencia"
+  },
+  {
+   "Title": "2026-08-07",
+   "fecha": "2026-08-07",
+   "descripcion": "Batalla de Boyacá"
+  },
+  {
+   "Title": "2026-08-17",
+   "fecha": "2026-08-17",
+   "descripcion": "Asunción de la Virgen"
+  },
+  {
+   "Title": "2026-10-12",
+   "fecha": "2026-10-12",
+   "descripcion": "Día de la Raza"
+  },
+  {
+   "Title": "2026-11-02",
+   "fecha": "2026-11-02",
+   "descripcion": "Todos los Santos"
+  },
+  {
+   "Title": "2026-11-16",
+   "fecha": "2026-11-16",
+   "descripcion": "Independencia de Cartagena"
+  },
+  {
+   "Title": "2026-12-08",
+   "fecha": "2026-12-08",
+   "descripcion": "Inmaculada Concepción"
+  },
+  {
+   "Title": "2026-12-25",
+   "fecha": "2026-12-25",
+   "descripcion": "Navidad"
+  },
+  {
+   "Title": "2027-01-01",
+   "fecha": "2027-01-01",
+   "descripcion": "Año Nuevo"
+  },
+  {
+   "Title": "2027-01-11",
+   "fecha": "2027-01-11",
+   "descripcion": "Día de los Reyes Magos"
+  },
+  {
+   "Title": "2027-03-22",
+   "fecha": "2027-03-22",
+   "descripcion": "Día de San José"
+  },
+  {
+   "Title": "2027-03-25",
+   "fecha": "2027-03-25",
+   "descripcion": "Jueves Santo"
+  },
+  {
+   "Title": "2027-03-26",
+   "fecha": "2027-03-26",
+   "descripcion": "Viernes Santo"
+  },
+  {
+   "Title": "2027-05-01",
+   "fecha": "2027-05-01",
+   "descripcion": "Día del Trabajo"
+  },
+  {
+   "Title": "2027-05-10",
+   "fecha": "2027-05-10",
+   "descripcion": "Ascensión del Señor"
+  },
+  {
+   "Title": "2027-05-31",
+   "fecha": "2027-05-31",
+   "descripcion": "Corpus Christi"
+  },
+  {
+   "Title": "2027-06-07",
+   "fecha": "2027-06-07",
+   "descripcion": "Sagrado Corazón"
+  },
+  {
+   "Title": "2027-07-05",
+   "fecha": "2027-07-05",
+   "descripcion": "San Pedro y San Pablo"
+  },
+  {
+   "Title": "2027-07-20",
+   "fecha": "2027-07-20",
+   "descripcion": "Día de la Independencia"
+  },
+  {
+   "Title": "2027-08-07",
+   "fecha": "2027-08-07",
+   "descripcion": "Batalla de Boyacá"
+  },
+  {
+   "Title": "2027-08-16",
+   "fecha": "2027-08-16",
+   "descripcion": "Asunción de la Virgen"
+  },
+  {
+   "Title": "2027-10-18",
+   "fecha": "2027-10-18",
+   "descripcion": "Día de la Raza"
+  },
+  {
+   "Title": "2027-11-01",
+   "fecha": "2027-11-01",
+   "descripcion": "Todos los Santos"
+  },
+  {
+   "Title": "2027-11-15",
+   "fecha": "2027-11-15",
+   "descripcion": "Independencia de Cartagena"
+  },
+  {
+   "Title": "2027-12-08",
+   "fecha": "2027-12-08",
+   "descripcion": "Inmaculada Concepción"
+  },
+  {
+   "Title": "2027-12-25",
+   "fecha": "2027-12-25",
+   "descripcion": "Navidad"
+  }
+ ],
+ "COT_Condiciones": [
+  {
+   "Title": "CND-PAG-01",
+   "tipo": "PAGO",
+   "linea_negocio": "TODAS",
+   "titulo": "Forma de pago",
+   "texto": "50 % de anticipo y saldo contra entrega. Cuenta corriente Bancolombia — Ideas Control Equipos y Soluciones N.º 053 732 341 25.",
+   "predeterminada": true,
+   "orden": 1,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "CND-GAR-01",
+   "tipo": "GARANTIA",
+   "linea_negocio": "VENTA_HW",
+   "titulo": "Garantía",
+   "texto": "36 meses en equipos biométricos y 12 meses en accesorios y periféricos por defectos de fabricación, según garantía estándar adjunta a la factura. No cubre golpes, rayaduras, actos malintencionados ni descargas eléctricas.",
+   "predeterminada": true,
+   "orden": 2,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "CND-SOP-01",
+   "tipo": "SOPORTE",
+   "linea_negocio": "VENTA_HW",
+   "titulo": "Soporte",
+   "texto": "30 días de soporte presencial para implementación y configuración; 1 año de soporte no presencial por TeamViewer o AnyDesk.",
+   "predeterminada": true,
+   "orden": 3,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "CND-GEN-01",
+   "tipo": "GENERALES",
+   "linea_negocio": "TODAS",
+   "titulo": "Condiciones generales",
+   "texto": "Precios antes de IVA. Validez de la oferta: 10 días hábiles y/o hasta agotar inventario, lo que ocurra primero. No aceptamos devolución de mercancía ni hacemos devolución de dinero. Para precios en dólares se factura con la TRM del día. Precios y disponibilidad varían sin previo aviso. Para productos de importación sobre pedido no se aceptan devoluciones ni cancelaciones de órdenes de compra ni devolución de anticipos. El tiempo de importación está sujeto a la disponibilidad de la referencia en fábrica. Demoras de entrega o aplazamiento de tiempos de entrega por causa del fabricante o fuerza mayor no son causal de cancelación de la orden. Las imágenes son de referencia; consulte los requerimientos del equipo a comprar. Esta cotización es una recomendación, por lo tanto debe ser analizada y aprobada por su departamento de ingeniería de sistemas. En caso de requerir instalaciones físicas que impliquen perforaciones, el cliente debe suministrar los planos para evitar accidentes sobre cableado y tuberías. Si no está especificado en el cuerpo de la cotización, no está incluida en esta oferta la instalación, ninguna obra civil ni acometidas hidráulicas o eléctricas. Horario de lunes a viernes de 8 a. m. a 5 p. m.",
+   "predeterminada": true,
+   "orden": 4,
+   "estado": "ACTIVO"
+  }
+ ],
+ "SYS_Parametros": [
+  {
+   "Title": "IVA_PORCENTAJE",
+   "valor": "0.19",
+   "descripcion": "IVA por defecto (fracción)",
+   "app_id": "APP-101"
+  },
+  {
+   "Title": "DESCUENTO_TOPE",
+   "valor": "0.1",
+   "descripcion": "Descuento máximo por línea sin aprobación (fracción)",
+   "app_id": "APP-101"
+  },
+  {
+   "Title": "VIGENCIA_DIAS_HABILES",
+   "valor": "10",
+   "descripcion": "Días hábiles de vigencia de la cotización",
+   "app_id": "APP-101"
+  },
+  {
+   "Title": "DIAS_ALERTA_VENCIMIENTO",
+   "valor": "3",
+   "descripcion": "Días hábiles antes del vencimiento para alertar",
+   "app_id": "APP-101"
+  },
+  {
+   "Title": "DIAS_SEGUIMIENTO",
+   "valor": "5",
+   "descripcion": "Días hábiles sin respuesta para alertar seguimiento (Tablero)",
+   "app_id": "APP-101"
+  },
+  {
+   "Title": "CONSECUTIVO_INICIAL_2026",
+   "valor": "100",
+   "descripcion": "Primer número de la secuencia de cotizaciones en 2026",
+   "app_id": "APP-101"
+  },
+  {
+   "Title": "MONEDA_DEFECTO",
+   "valor": "COP",
+   "descripcion": "Moneda por defecto",
+   "app_id": "APP-101"
+  },
+  {
+   "Title": "TEXTO_INTRO_RECURRENTE",
+   "valor": "Agradecemos su continua confianza en IDEAS CONTROL EQUIPOS Y SOLUCIONES S.A.S.",
+   "descripcion": "Introducción para clientes recurrentes",
+   "app_id": "APP-101"
+  },
+  {
+   "Title": "TEXTO_INTRO_NUEVO",
+   "valor": "Agradecemos la oportunidad de presentarle nuestra propuesta. IDEAS CONTROL EQUIPOS Y SOLUCIONES S.A.S.",
+   "descripcion": "Introducción para clientes nuevos (por validar)",
+   "app_id": "APP-101"
+  },
+  {
+   "Title": "TEXTO_PROPUESTA",
+   "valor": "Nos permitimos presentar nuestra propuesta comercial para el suministro de los equipos requeridos, respaldada por nuestra experiencia en soluciones de control de acceso y asistencia con tecnología RFID y biométrica.",
+   "descripcion": "Segundo párrafo de la introducción (se retiró la cifra de años, por validar)",
+   "app_id": "APP-101"
+  },
+  {
+   "Title": "TEXTO_CIERRE",
+   "valor": "Quedamos a su disposición para cualquier consulta o información adicional que requiera.",
+   "descripcion": "Texto antes de la firma",
+   "app_id": "APP-101"
+  },
+  {
+   "Title": "SITIO_WEB",
+   "valor": "www.ideascontrol.com",
+   "descripcion": "Pie del PDF",
+   "app_id": "APP-101"
+  },
+  {
+   "Title": "SITIO_DOCUMENTAL_URL",
+   "valor": "",
+   "descripcion": "URL del sitio de SharePoint documental (Ideas Control) donde se guardan los PDF",
+   "app_id": "APP-101"
+  },
+  {
+   "Title": "BIBLIOTECA_CLIENTES",
+   "valor": "01_CLIENTES",
+   "descripcion": "Biblioteca de clientes en el sitio documental",
+   "app_id": "APP-101"
+  },
+  {
+   "Title": "BIBLIOTECA_COMERCIAL",
+   "valor": "02_COMERCIAL",
+   "descripcion": "Biblioteca comercial en el sitio documental",
+   "app_id": "APP-101"
+  },
+  {
+   "Title": "CARPETA_PROSPECTOS",
+   "valor": "01_PROSPECTOS",
+   "descripcion": "Carpeta de prospectos dentro de la biblioteca comercial",
+   "app_id": "APP-101"
+  },
+  {
+   "Title": "DATOS_BANCARIOS",
+   "valor": "Cuenta corriente Bancolombia — Ideas Control Equipos y Soluciones N.º 053 732 341 25",
+   "descripcion": "Datos bancarios para el PDF",
+   "app_id": "APP-101"
+  }
+ ],
+ "SYS_Microapps": [
+  {
+   "Title": "APP-001",
+   "nombre": "Diagnóstico de madurez en T&A",
+   "carpeta_actual": "DiagnosticoMadurezTyA",
+   "tipo": "PUBLICA",
+   "proposito": "Diagnóstico de madurez en tiempo y asistencia; capta leads y entrega puntaje.",
+   "estado": "CONSTRUIDA",
+   "plataforma": "HTML en GitHub de IC + recepción de datos (ver nota)"
+  },
+  {
+   "Title": "APP-002",
+   "nombre": "Madurez WFM",
+   "carpeta_actual": "MadurezWFM",
+   "tipo": "PUBLICA",
+   "proposito": "Diagnóstico de madurez en gestión de la fuerza laboral.",
+   "estado": "CONSTRUIDA",
+   "plataforma": "Ídem"
+  },
+  {
+   "Title": "APP-003",
+   "nombre": "Autoevaluación",
+   "carpeta_actual": "Autoevaluacion",
+   "tipo": "PUBLICA",
+   "proposito": "Por confirmar: tema de la autoevaluación.",
+   "estado": "CONSTRUIDA",
+   "plataforma": "Ídem"
+  },
+  {
+   "Title": "APP-004",
+   "nombre": "Calculadora de horas extra",
+   "carpeta_actual": "Calculo HE",
+   "tipo": "PUBLICA",
+   "proposito": "Cálculo de horas extra y recargos.",
+   "estado": "CONSTRUIDA",
+   "plataforma": "Ídem"
+  },
+  {
+   "Title": "APP-005",
+   "nombre": "Costo del ausentismo",
+   "carpeta_actual": "CostoDelAusentismo",
+   "tipo": "PUBLICA",
+   "proposito": "Estima el costo del ausentismo para la empresa.",
+   "estado": "CONSTRUIDA",
+   "plataforma": "Ídem"
+  },
+  {
+   "Title": "APP-006",
+   "nombre": "Calculadora de ROI",
+   "carpeta_actual": "ROI",
+   "tipo": "PUBLICA",
+   "proposito": "Retorno de inversión de una solución de T&A.",
+   "estado": "CONSTRUIDA",
+   "plataforma": "Ídem"
+  },
+  {
+   "Title": "APP-007",
+   "nombre": "Riesgo laboral",
+   "carpeta_actual": "RiesgoLaboral",
+   "tipo": "PUBLICA",
+   "proposito": "Evaluación de riesgo laboral asociado al control de asistencia.",
+   "estado": "CONSTRUIDA",
+   "plataforma": "Ídem"
+  },
+  {
+   "Title": "APP-008",
+   "nombre": "Políticas de asistencia",
+   "carpeta_actual": "PoliticasAsistencia",
+   "tipo": "PUBLICA",
+   "proposito": "Evaluación o generador de políticas de asistencia.",
+   "estado": "CONSTRUIDA",
+   "plataforma": "Ídem"
+  },
+  {
+   "Title": "APP-009",
+   "nombre": "Confiabilidad y trazabilidad",
+   "carpeta_actual": "Confiabilidad_y_Trazabilidad",
+   "tipo": "PUBLICA",
+   "proposito": "Evaluación de confiabilidad y trazabilidad de los registros de asistencia.",
+   "estado": "CONSTRUIDA",
+   "plataforma": "Ídem"
+  },
+  {
+   "Title": "APP-101",
+   "nombre": "Comercial (empresas y cotizaciones)",
+   "carpeta_actual": "BD-Comercial",
+   "tipo": "INTERNA",
+   "proposito": "Empresas, sucursales, contactos, productos, precios, inventario y cotizaciones con PDF.",
+   "estado": "EN_CONSTRUCCION",
+   "plataforma": "HTML (GitHub) + Microsoft Graph + listas de SharePoint",
+   "url": "https://www.mykadosh.com/ideascontrol/Comercial/"
+  },
+  {
+   "Title": "APP-102",
+   "nombre": "Soporte técnico (tickets)",
+   "carpeta_actual": "Soporte Tecnico",
+   "tipo": "INTERNA",
+   "proposito": "Gestión de tickets de soporte, implementaciones y seguimiento de recursos.",
+   "estado": "CONSTRUIDA",
+   "plataforma": "Power Apps + listas de SharePoint + Power Automate"
+  },
+  {
+   "Title": "APP-103",
+   "nombre": "Núcleo de datos",
+   "carpeta_actual": "BaseDeDatos",
+   "tipo": "INTERNA",
+   "proposito": "Por confirmar. Propuesta: el núcleo compartido (SYS_ y MAE_) que usan todas las apps internas.",
+   "estado": "POR_CONFIRMAR",
+   "plataforma": "Listas de SharePoint"
+  },
+  {
+   "Title": "APP-104",
+   "nombre": "Encuestas CSAT / NPS",
+   "carpeta_actual": "—",
+   "tipo": "INTERNA",
+   "proposito": "CSAT después de cada servicio; NPS cada 3 o 6 meses.",
+   "estado": "PLANEADA",
+   "plataforma": "Microsoft Forms + Power Automate"
+  },
+  {
+   "Title": "APP-105",
+   "nombre": "Gestión documental",
+   "carpeta_actual": "ICManuales/gestion-documental",
+   "tipo": "INTERNA",
+   "proposito": "Portal de consulta de la documentación maestra.",
+   "estado": "CONSTRUIDA",
+   "plataforma": "Biblioteca 00_DOCUMENTACION_MAESTRA (SharePoint)"
+  },
+  {
+   "Title": "APP-201",
+   "nombre": "TimeVision",
+   "carpeta_actual": "TimeVision",
+   "tipo": "PRODUCTO",
+   "proposito": "Toma datos de Myintelli y presenta tableros para análisis y decisiones del cliente.",
+   "estado": "CONSTRUIDA",
+   "plataforma": "Repositorio propio (producto)"
+  }
+ ],
+ "SYS_Secuencias": [
+  {
+   "Title": "MOT",
+   "ultimo_numero": 8
+  },
+  {
+   "Title": "EMP",
+   "ultimo_numero": 0
+  },
+  {
+   "Title": "SUC",
+   "ultimo_numero": 0
+  },
+  {
+   "Title": "CON",
+   "ultimo_numero": 0
+  },
+  {
+   "Title": "PRD",
+   "ultimo_numero": 0
+  },
+  {
+   "Title": "PRE",
+   "ultimo_numero": 0
+  },
+  {
+   "Title": "DIS",
+   "ultimo_numero": 0
+  },
+  {
+   "Title": "PDI",
+   "ultimo_numero": 0
+  },
+  {
+   "Title": "INV",
+   "ultimo_numero": 0
+  },
+  {
+   "Title": "COT",
+   "ultimo_numero": 0
+  },
+  {
+   "Title": "DET",
+   "ultimo_numero": 0
+  },
+  {
+   "Title": "CCO",
+   "ultimo_numero": 0
+  },
+  {
+   "Title": "USR",
+   "ultimo_numero": 0
+  },
+  {
+   "Title": "DLG",
+   "ultimo_numero": 0
+  },
+  {
+   "Title": "EVT",
+   "ultimo_numero": 0
+  },
+  {
+   "Title": "CLI",
+   "ultimo_numero": 0
+  }
+ ]
+};
+// ====== CONFIGURACIÓN ======
+const CFG = {
+  clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
+  tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
+  host: 'ideascontrolsas.sharepoint.com',
+  sitePath: '/sites/ICApps',
+  scopes: ['User.Read', 'Sites.Manage.All', 'Sites.ReadWrite.All'],
+  // Debe coincidir EXACTAMENTE con una URI registrada en Entra ID (con o sin www, según cómo se abrió la página)
+  redirectUri: (typeof location !== 'undefined' ? location.origin : '') + '/ideascontrol/Comercial/Instalador/'
+};
+const GRAPH = 'https://graph.microsoft.com/v1.0';
+
+// ====== UTILIDADES DE INTERFAZ ======
+const $ = (id) => document.getElementById(id);
+function log(msg, tipo) {
+  const el = document.createElement('div');
+  el.className = 'log-line ' + (tipo || 'info');
+  const icon = { ok: '✅', warn: '⚠️', err: '❌', info: '•', title: '' }[tipo || 'info'];
+  el.textContent = (icon ? icon + ' ' : '') + msg;
+  $('log').appendChild(el);
+  $('log').scrollTop = $('log').scrollHeight;
+}
+function progreso(actual, total, texto) {
+  const pct = total ? Math.round(actual * 100 / total) : 0;
+  $('bar').style.width = pct + '%';
+  $('barText').textContent = texto || (pct + '%');
+}
+function estadoPaso(n, estado) { const el = $('paso' + n); if (el) el.dataset.estado = estado; }
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// ====== AUTENTICACIÓN (MSAL) ======
+let msalApp = null, cuenta = null;
+async function iniciarMsal() {
+  msalApp = new msal.PublicClientApplication({
+    auth: { clientId: CFG.clientId, authority: 'https://login.microsoftonline.com/' + CFG.tenantId, redirectUri: CFG.redirectUri },
+    cache: { cacheLocation: 'sessionStorage' }
+  });
+  await msalApp.initialize();
+  const resp = await msalApp.handleRedirectPromise();
+  if (resp && resp.account) msalApp.setActiveAccount(resp.account);
+  cuenta = msalApp.getActiveAccount() || msalApp.getAllAccounts()[0] || null;
+  if (cuenta) msalApp.setActiveAccount(cuenta);
+}
+function iniciarSesion() { return msalApp.loginRedirect({ scopes: CFG.scopes, prompt: 'select_account' }); }
+function cerrarSesion() { return msalApp.logoutRedirect({ account: cuenta, postLogoutRedirectUri: CFG.redirectUri }); }
+async function token() {
+  try {
+    const r = await msalApp.acquireTokenSilent({ scopes: CFG.scopes, account: cuenta });
+    return r.accessToken;
+  } catch (e) {
+    if (e instanceof msal.InteractionRequiredAuthError) { await msalApp.acquireTokenRedirect({ scopes: CFG.scopes, account: cuenta }); }
+    throw e;
+  }
+}
+
+// ====== MICROSOFT GRAPH ======
+async function graph(method, path, body, extraHeaders) {
+  for (let intento = 1; intento <= 6; intento++) {
+    const headers = Object.assign({ Authorization: 'Bearer ' + await token(), 'Content-Type': 'application/json' }, extraHeaders || {});
+    const res = await fetch(path.startsWith('http') ? path : GRAPH + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    if (res.status === 429 || res.status === 503 || res.status === 504) {
+      const espera = Number(res.headers.get('Retry-After') || 2 * intento);
+      log('Microsoft pidió esperar ' + espera + ' s (límite de solicitudes)…', 'warn');
+      await sleep(espera * 1000); continue;
+    }
+    const txt = await res.text();
+    const data = txt ? JSON.parse(txt) : {};
+    if (!res.ok) {
+      const err = new Error((data.error && data.error.message) || ('HTTP ' + res.status));
+      err.status = res.status; err.code = data.error && data.error.code; throw err;
+    }
+    return data;
+  }
+  throw new Error('Demasiados reintentos con Microsoft Graph.');
+}
+async function graphAll(path) {
+  let url = path, out = [];
+  while (url) { const d = await graph('GET', url); out = out.concat(d.value || []); url = d['@odata.nextLink'] || null; }
+  return out;
+}
+
+// ====== CONSTRUCCIÓN DE COLUMNAS ======
+function columna(c) {
+  const [name, t, choices, idx] = c;
+  const def = { name, displayName: name };
+  if (t === 't') def.text = {};
+  else if (t === 'm') def.text = { allowMultipleLines: true, linesForEditing: 6, textType: 'plain' };
+  else if (t === 'n') def.number = { decimalPlaces: 'automatic' };
+  else if (t === 'b') def.boolean = {};
+  else if (t === 'd') def.dateTime = { format: 'dateOnly' };
+  else if (t === 'dt') def.dateTime = { format: 'dateTime' };
+  else if (t === 'c') def.choice = { choices, displayAs: 'dropDownMenu', allowTextEntry: false };
+  if (idx) def.indexed = true;
+  return def;
+}
+// Fechas "solo día": se envían a las 12:00 UTC para que no cambien de día por la zona horaria.
+function prepararCampos(lista, fields) {
+  const tipos = {}; lista.cols.forEach((c) => { tipos[c[0]] = c[1]; });
+  const out = {};
+  Object.keys(fields).forEach((k) => {
+    let v = fields[k];
+    if (v === '' || v === null || v === undefined) return;
+    if (tipos[k] === 'd' && /^\d{4}-\d{2}-\d{2}$/.test(v)) v = v + 'T12:00:00Z';
+    out[k] = v;
+  });
+  return out;
+}
+
+// ====== PASOS ======
+let sitio = null, listasExistentes = {};
+
+async function verificarSitio() {
+  estadoPaso(2, 'run');
+  log('Buscando el sitio ' + CFG.host + CFG.sitePath + '…', 'title');
+  sitio = await graph('GET', '/sites/' + CFG.host + ':' + CFG.sitePath + '?$select=id,displayName,webUrl');
+  log('Sitio encontrado: "' + sitio.displayName + '" (' + sitio.webUrl + ')', 'ok');
+  const listas = await graphAll('/sites/' + sitio.id + '/lists?$select=id,displayName&$top=200');
+  listasExistentes = {}; listas.forEach((l) => { listasExistentes[l.displayName] = l.id; });
+  const ya = LISTAS.filter((l) => listasExistentes[l.n]).map((l) => l.n);
+  log(ya.length ? 'Ya existen ' + ya.length + ' de ' + LISTAS.length + ' listas: ' + ya.join(', ') : 'Ninguna de las ' + LISTAS.length + ' listas existe todavía.', 'info');
+  estadoPaso(2, 'ok');
+  $('btnCrear').disabled = false;
+}
+
+async function crearOActualizarLista(def) {
+  let id = listasExistentes[def.n];
+  if (!id) {
+    const body = { displayName: def.n, description: def.d, list: { template: 'genericList' }, columns: def.cols.map(columna) };
+    const l = await graph('POST', '/sites/' + sitio.id + '/lists', body);
+    id = l.id; listasExistentes[def.n] = id;
+    log(def.n + ': lista creada con ' + def.cols.length + ' columnas', 'ok');
+  } else {
+    const cols = await graphAll('/sites/' + sitio.id + '/lists/' + id + '/columns?$select=name');
+    const nombres = cols.map((c) => c.name);
+    const faltan = def.cols.filter((c) => nombres.indexOf(c[0]) < 0);
+    for (const c of faltan) await graph('POST', '/sites/' + sitio.id + '/lists/' + id + '/columns', columna(c));
+    log(def.n + ': ya existía' + (faltan.length ? '; se agregaron ' + faltan.length + ' columnas (' + faltan.map((c) => c[0]).join(', ') + ')' : '; columnas completas'), faltan.length ? 'warn' : 'ok');
+  }
+  // La columna Título guarda el ID de negocio: se renombra para que se entienda en SharePoint.
+  try {
+    const t = await graph('GET', '/sites/' + sitio.id + '/lists/' + id + "/columns?$filter=name eq 'Title'&$select=id,displayName");
+    const col = t.value && t.value[0];
+    if (col && col.displayName !== def.title) await graph('PATCH', '/sites/' + sitio.id + '/lists/' + id + '/columns/' + col.id, { displayName: def.title });
+  } catch (e) { log(def.n + ': no se pudo renombrar la columna Título (no afecta el funcionamiento)', 'warn'); }
+  return id;
+}
+
+async function itemsDeLista(nombre) {
+  return graphAll('/sites/' + sitio.id + '/lists/' + listasExistentes[nombre] + '/items?$expand=fields&$top=500');
+}
+async function crearItem(nombre, fields) {
+  const def = LISTAS.find((l) => l.n === nombre);
+  return graph('POST', '/sites/' + sitio.id + '/lists/' + listasExistentes[nombre] + '/items', { fields: prepararCampos(def, fields) });
+}
+
+async function cargarSemillas() {
+  for (const nombre of Object.keys(SEMILLAS)) {
+    const existentes = await itemsDeLista(nombre);
+    const titulos = existentes.map((i) => i.fields.Title);
+    const nuevos = SEMILLAS[nombre].filter((r) => titulos.indexOf(r.Title) < 0);
+    for (const r of nuevos) await crearItem(nombre, r);
+    log(nombre + ': ' + (nuevos.length ? nuevos.length + ' registros cargados' : 'datos iniciales ya estaban'), 'ok');
+  }
+}
+
+// Incrementa una secuencia con control de concurrencia (If-Match). Devuelve el nuevo número.
+async function siguiente(clave) {
+  const lid = listasExistentes['SYS_Secuencias'];
+  for (let i = 0; i < 8; i++) {
+    const r = await graph('GET', '/sites/' + sitio.id + '/lists/' + lid + "/items?$expand=fields&$filter=fields/Title eq '" + clave + "'", null, { Prefer: 'HonorNonIndexedQueriesWarningMayFailRandomly' });
+    const it = r.value && r.value[0];
+    if (!it) { await crearItem('SYS_Secuencias', { Title: clave, ultimo_numero: 1 }); return 1; }
+    const n = Number(it.fields.ultimo_numero || 0) + 1;
+    try {
+      await graph('PATCH', '/sites/' + sitio.id + '/lists/' + lid + '/items/' + it.id + '/fields', { ultimo_numero: n }, { 'If-Match': it['@odata.etag'] || it.eTag || '*' });
+      return n;
+    } catch (e) { if (e.status === 412) { await sleep(300 + Math.random() * 500); continue; } throw e; }
+  }
+  throw new Error('No se pudo obtener el consecutivo de ' + clave);
+}
+
+async function registrarAdministrador() {
+  if (!$('chkAdmin').checked) return;
+  const yo = await graph('GET', '/me?$select=displayName,mail,userPrincipalName,jobTitle,mobilePhone');
+  const email = String(yo.mail || yo.userPrincipalName || '').toLowerCase();
+  const usuarios = await itemsDeLista('SYS_Usuarios');
+  if (usuarios.some((u) => String(u.fields.email || '').toLowerCase() === email)) { log('SYS_Usuarios: ' + email + ' ya estaba registrado', 'ok'); return; }
+  const ini = ($('txtIniciales').value || '').toUpperCase().trim();
+  if (!/^[A-Z]{3}$/.test(ini)) throw new Error('Las iniciales deben ser 3 letras (A-Z).');
+  if (usuarios.some((u) => String(u.fields.iniciales || '').toUpperCase() === ini)) throw new Error('Las iniciales ' + ini + ' ya están en uso.');
+  const n = await siguiente('USR');
+  const id = 'USR-' + String(n).padStart(6, '0');
+  await crearItem('SYS_Usuarios', { Title: id, nombre: yo.displayName, email, iniciales: ini, cargo: yo.jobTitle || '', celular: yo.mobilePhone || '', rol: 'ADMIN', estado: 'ACTIVO' });
+  log('SYS_Usuarios: ' + yo.displayName + ' registrado como ADMIN (' + id + ', ' + ini + ')', 'ok');
+}
+
+async function crearEstructura() {
+  $('btnCrear').disabled = true; estadoPaso(3, 'run');
+  const total = LISTAS.length + 2; let i = 0;
+  try {
+    log('Creando listas…', 'title');
+    for (const def of LISTAS) { progreso(i, total, def.n); await crearOActualizarLista(def); i++; progreso(i, total); }
+    log('Cargando datos iniciales…', 'title');
+    progreso(i, total, 'Datos iniciales'); await cargarSemillas(); i++;
+    progreso(i, total, 'Usuario administrador'); await registrarAdministrador(); i++;
+    progreso(total, total, 'Terminado');
+    log('Estructura lista. ' + LISTAS.length + ' listas en ' + sitio.webUrl, 'ok');
+    estadoPaso(3, 'ok');
+    $('fin').hidden = false;
+    $('linkSitio').href = sitio.webUrl + '/_layouts/15/viewlsts.aspx';
+  } catch (e) {
+    log('Error: ' + explicar(e), 'err'); estadoPaso(3, 'err'); $('btnCrear').disabled = false;
+    log('Puede volver a hacer clic en "Crear estructura": el instalador continúa donde quedó, sin duplicar.', 'info');
+  }
+}
+
+function explicar(e) {
+  const m = String(e && e.message || e);
+  if (/AADSTS65001|consent|90094|admin approval/i.test(m)) return 'Falta el consentimiento del administrador de Microsoft 365 para los permisos de la app. ' + m;
+  if (e.status === 403) return 'Acceso denegado (403): su usuario no tiene permiso para crear listas en IC Apps (debe ser propietario del sitio), o falta conceder los permisos de API. ' + m;
+  if (e.status === 404) return 'No se encontró el sitio o la lista (404). Verifique la dirección del sitio. ' + m;
+  if (/redirect_uri|AADSTS50011/i.test(m)) return 'La dirección de esta página no coincide con las URI registradas en Entra ID. Dirección actual: ' + CFG.redirectUri;
+  return m;
+}
+
+// ====== ARRANQUE ======
+async function arrancar() {
+  try {
+    await iniciarMsal();
+  } catch (e) { log('Error al iniciar sesión: ' + explicar(e), 'err'); }
+  if (!cuenta) { estadoPaso(1, 'pend'); $('btnLogin').hidden = false; return; }
+  estadoPaso(1, 'ok');
+  $('usuario').textContent = cuenta.name + ' · ' + cuenta.username;
+  $('btnLogout').hidden = false; $('btnLogin').hidden = true;
+  const primerNombre = String(cuenta.name || '').normalize('NFD').replace(/[̀-ͯ]/g, '').split(/\s+/);
+  $('txtIniciales').value = ((primerNombre[0] || '').slice(0, 2) + (primerNombre[1] || primerNombre[0] || '').slice(0, 1)).toUpperCase();
+  try { await verificarSitio(); } catch (e) { estadoPaso(2, 'err'); log('Error: ' + explicar(e), 'err'); }
+}
+if (typeof window !== 'undefined' && !window.__TEST__) {
+  window.addEventListener('DOMContentLoaded', () => {
+    $('btnLogin').onclick = () => iniciarSesion();
+    $('btnLogout').onclick = () => cerrarSesion();
+    $('btnCrear').onclick = () => crearEstructura();
+    $('lblListas').textContent = LISTAS.length;
+    arrancar();
+  });
+}
+
+</script>
 </body>
 </html>
