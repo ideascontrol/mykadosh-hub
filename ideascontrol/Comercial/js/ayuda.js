@@ -16,7 +16,7 @@
   const porId = (id) => A().ARTICULOS.find((a) => a.id === id);
   const nombreCat = (c) => (A().CATEGORIAS.find((x) => x[0] === c) || [c, c])[1];
   const ICO = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>';
-  const ICO_BUSCAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>';
+  const ICO_BUSCAR = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>';
 
   // ---------- Artículo de la pantalla actual ----------
   function idDeContexto(ruta) {
@@ -83,6 +83,12 @@
     document.body.classList.add('ic-ay-abierta');
     panel.hidden = false; requestAnimationFrame(() => panel.classList.add('visible'));
     mostrarInicio(id || idDeContexto());
+    // Si el navegador tiene una hoja de estilos vieja (sin los estilos de la ayuda), se avisa en vez de mostrarla desarmada
+    if (getComputedStyle(panel).position !== 'fixed') {
+      panel.hidden = true; document.body.classList.remove('ic-ay-abierta');
+      U.aviso('La ayuda necesita la versión nueva de los estilos (shared/css/ic.css). Recargue con Ctrl + F5; si sigue igual, ese archivo no se actualizó en GitHub.', 'warn', 10000);
+      return;
+    }
     setTimeout(() => { const i = panel.querySelector('#ayQ'); if (i && window.innerWidth > 760) i.focus(); }, 60);
   }
   function cerrar() {
