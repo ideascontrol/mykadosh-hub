@@ -12,6 +12,7 @@ const ICONOS = {
   cotizaciones: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h10a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H9"/><path d="M4 8h9M4 12h9M4 16h9"/></svg>',
   empresas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-5h6v5M9 10h.01M15 10h.01M12 10h.01"/></svg>',
   productos: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8M12 13v8"/></svg>',
+  ayuda: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>',
   tablero: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   actividad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>',
   carga: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>',
@@ -31,6 +32,7 @@ const MENU = [
     { ruta: 'productos', titulo: 'Productos y precios', texto: 'Catálogo con foto, ficha técnica, precios e inventario.', icono: 'productos', etapa: 1, color: 'teal' }
   ] },
   { grupo: 'Herramientas', items: [
+    { ruta: 'ayuda', titulo: 'Ayuda', texto: 'Cómo se hace cada cosa en la app: guías paso a paso y preguntas frecuentes.', icono: 'ayuda', etapa: 2, color: 'dorado' },
     { ruta: 'actividad', titulo: 'Actividad reciente', texto: 'Quién creó o modificó información y cuándo.', icono: 'actividad', etapa: 1, color: 'dorado' },
     { ruta: 'carga', titulo: 'Carga masiva', texto: 'Plantillas de Excel para cargar empresas y productos.', icono: 'carga', etapa: 1, color: 'dorado', admin: true },
     { ruta: 'admin', titulo: 'Administración', texto: 'Usuarios, condiciones comerciales y parámetros de la cotización.', icono: 'admin', etapa: 1, color: 'dorado', admin: true }
@@ -47,10 +49,12 @@ function pintarEncabezado() {
     '<div class="ic-user">' +
       '<div class="datos"><b>' + IC.ui.esc(u.nombre) + '</b><span>' + (u.es_admin ? 'Administrador' : 'Comercial') + ' · ' + IC.ui.esc(u.iniciales) + '</span></div>' +
       '<div class="ic-avatar" title="' + IC.ui.esc(u.email) + '">' + IC.ui.esc(u.iniciales || IC.ui.fmt.iniciales(u.nombre)) + '</div>' +
+      (App.ayuda ? App.ayuda.boton() : '') +
       '<button class="ic-btn sec" id="btnSalir">Salir</button>' +
     '</div>';
   document.getElementById('encabezado').hidden = false;
   document.getElementById('btnSalir').onclick = () => IC.auth.salir();
+  const ba = document.getElementById('btnAyuda'); if (ba) ba.onclick = () => App.ayuda.abrir();
 }
 
 // ---------- Menú principal ----------
