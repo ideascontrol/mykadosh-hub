@@ -1,0 +1,64 @@
+IDEAS CONTROL · MICROAPPS · Repositorio completo
+Versión de la Microapp Comercial (APP-101): 0.4.0 · Etapa 2
+Fecha del paquete: 18 de octubre de 2026 (incluye Ayuda e Interacciones y pendientes)
+
+Este .zip reemplaza a todos los paquetes anteriores (IC_Repo_Etapa1_..., IC_Repo_Etapa2_...).
+Contiene la carpeta "ideascontrol" completa, tal como debe quedar en GitHub.
+Se publica en: https://mykadosh.com/ideascontrol/
+
+ESTRUCTURA
+ideascontrol/
+├─ LEEME.txt                         este archivo
+├─ assets/
+│  └─ ideascontrol.webp              logo (encabezado, PDF, Excel e ícono del navegador)
+├─ shared/                           piezas comunes a todas las microapps
+│  ├─ css/ic.css                     estilos (colores, tablas, formularios, tablero)
+│  └─ js/
+│     ├─ auth.js                     inicio de sesión con Microsoft (MSAL)
+│     ├─ graph.js                    lectura y escritura en las listas de SharePoint
+│     └─ ui.js                       ventanas, avisos, campos y formatos
+└─ Comercial/                        Microapp Comercial (APP-101)
+   ├─ index.html                     página de la app  → mykadosh.com/ideascontrol/Comercial/
+   ├─ Instalador/index.html          crea y actualiza las listas en IC Apps → .../Comercial/Instalador/
+   ├─ plantillas/                    plantillas de carga masiva (empresas y productos)
+   └─ js/
+      ├─ config.js                   versión, sitio IC Apps y datos de la app en Entra ID
+      ├─ app.js                      menú principal, permisos y rutas
+      ├─ empresas.js                 empresas, sedes y contactos
+      ├─ productos.js                catálogo, precios, inventario, compras y fotos
+      ├─ carga.js                    carga masiva desde Excel
+      ├─ textos.js                   datos automáticos de las condiciones ({vigencia}, {IVA}…)
+      ├─ admin.js                    Administración: usuarios, condiciones, parámetros
+      ├─ admin_extra.js              Administración: delegaciones, distribuidores, festivos,
+      │                              consecutivos, registro de actividad, motivos de pérdida,
+      │                              tipificaciones
+      ├─ cot_pdf.js                  PDF de la cotización y archivo en SharePoint
+      ├─ cot_excel.js                exportar una cotización a Excel
+      ├─ cotizaciones.js             crear, editar, revisar y cambiar estado de cotizaciones
+      ├─ interacciones.js            interacciones (llamadas, correos, visitas) y Mis pendientes
+      ├─ reportes.js                 Tablero comercial
+      ├─ ayuda.js                    botón Ayuda (panel) y centro de ayuda (#ayuda)
+      └─ ayuda_contenido.js          textos de la ayuda (se actualiza con el manual)
+
+CÓMO SUBIRLO A GITHUB (reemplazando todo)
+1. Descomprima este .zip en su computador.
+2. En GitHub, abra el repositorio y entre a la carpeta ideascontrol.
+3. Clic en "Add file" › "Upload files".
+4. Arrastre el CONTENIDO de la carpeta descomprimida (assets, shared, Comercial y LEEME.txt),
+   no la carpeta contenedora, para no crear ideascontrol/ideascontrol.
+5. Escriba un mensaje como "Versión 0.4.0 completa" y clic en "Commit changes".
+6. Espere 1 o 2 minutos, abra mykadosh.com/ideascontrol/Comercial/ y recargue con Ctrl + F5.
+   En el encabezado debe decir v0.4.0 · Etapa 2.
+
+DESPUÉS DE SUBIRLO (solo una vez por versión)
+Abra mykadosh.com/ideascontrol/Comercial/Instalador/, inicie sesión y clic en "Crear estructura".
+No borra ni duplica nada: solo agrega listas, columnas y datos iniciales que falten
+(0.3.0: motivos de pérdida, línea de negocio y comentario de pérdida;
+ 0.4.0: listas de interacciones y tipificaciones, y la marca «no contactar» en los contactos).
+
+NO SE INCLUYEN (no van en GitHub)
+- Los datos: viven en las listas de SharePoint del sitio IC Apps.
+- Los PDF de cotizaciones: van al sitio documental Ideas Control.
+- Las fotos de productos: van a la biblioteca Imagenes_Productos de IC Apps.
+- Los manuales: están en Claude (Manual de usuario y Manual técnico). El contenido del
+  manual de usuario también va dentro de la app (botón Ayuda).
