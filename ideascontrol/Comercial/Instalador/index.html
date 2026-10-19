@@ -65,7 +65,7 @@
       <div class="num">3</div>
       <div style="flex:1">
         <h2>Crear estructura</h2>
-        <p>Crea <b id="lblListas">20</b> listas con sus columnas, desplegables e índices, y carga parámetros, condiciones comerciales, festivos, secuencias y el catálogo de microapps.</p>
+        <p>Crea <b id="lblListas">22</b> listas con sus columnas, desplegables e índices, y carga parámetros, condiciones comerciales, festivos, secuencias y el catálogo de microapps.</p>
         <div class="fila" style="margin-bottom:10px">
           <label><input type="checkbox" id="chkAdmin" checked> Registrarme como administrador con iniciales</label>
           <input type="text" id="txtIniciales" maxlength="3">
@@ -115,7 +115,8 @@ const LISTAS = [
     ['empresa_id', 't', null, 1], ['codigo_sucursal', 't', null, 1], ['nombre', 't'], ['ciudad', 't'], ['direccion', 't'], ['telefonos', 't'], ['estado', 'c', ESTADO]] },
   { n: 'MAE_Contactos', title: 'contacto_id', d: 'Contactos de empresas y sedes', cols: [
     ['empresa_id', 't', null, 1], ['sucursal_id', 't'], ['nombres', 't'], ['apellidos', 't'], ['cargo', 't'], ['area', 't'],
-    ['celular', 't'], ['telefono', 't'], ['extension', 't'], ['email', 't', null, 1], ['cumpleanos', 'd'], ['autoriza_datos', 'b'], ['estado', 'c', ESTADO]] },
+    ['celular', 't'], ['telefono', 't'], ['extension', 't'], ['email', 't', null, 1], ['cumpleanos', 'd'], ['autoriza_datos', 'b'], ['estado', 'c', ESTADO],
+    ['no_contactar', 'b'], ['no_contactar_nota', 't']] },
   { n: 'MAE_Productos', title: 'producto_id', d: 'Catálogo de productos y servicios', cols: [
     ['codigo', 't', null, 1], ['codigo_anterior', 't'], ['nombre', 't'], ['tipo', 'c', ['EQUIPO', 'ACCESORIO', 'LICENCIA', 'SERVICIO', 'VIATICOS']],
     ['categoria', 't'], ['descripcion_corta', 'm'], ['ficha_tecnica', 'm'], ['unidad', 'c', ['UND', 'SERVICIO', 'DIA', 'LICENCIA', 'PAQUETE']],
@@ -156,8 +157,19 @@ const LISTAS = [
   // v3 (Tablero): debe ir de última. Si existe, la app sabe que también existen las columnas nuevas de COT_Cotizaciones.
   { n: 'COT_MotivosPerdida', title: 'motivo_id', d: 'Motivos para registrar una cotización perdida', cols: [
     ['nombre', 't'], ['descripcion', 't'], ['pide_comentario', 'b'], ['orden', 'n'], ['estado', 'c', ESTADO]] },
+  // v0.4.0 · Gestión comercial (Fase 1): interacciones y agenda
+  { n: 'COM_Tipificaciones', title: 'tipificacion_id', d: 'Resultados y detalles para registrar interacciones', cols: [
+    ['nivel', 'c', ['RESULTADO', 'DETALLE']], ['aplica', 'c', ['CONTACTO', 'NO_CONTACTO']], ['padre_id', 't'], ['nombre', 't'],
+    ['accion', 'c', ['AGENDAR', 'COTIZAR', 'FINAL', 'NO_CONTACTAR', 'NINGUNA']], ['orden', 'n'], ['estado', 'c', ESTADO]] },
+  { n: 'COM_Interacciones', title: 'interaccion_id', d: 'Llamadas, correos, chats, Teams y visitas con clientes y prospectos', cols: [
+    ['empresa_id', 't', null, 1], ['contacto_id', 't', null, 1], ['cotizacion_id', 't', null, 1], ['comercial_id', 't', null, 1],
+    ['fecha_hora', 'dt', null, 1], ['canal', 'c', ['LLAMADA', 'CORREO', 'WHATSAPP', 'TEAMS', 'VISITA', 'OTRO']], ['direccion', 'c', ['SALIENTE', 'ENTRANTE']],
+    ['contacto_logrado', 'c', ['DECISOR', 'OTRO', 'NO']], ['resultado_id', 't'], ['detalle_id', 't'], ['duracion_min', 'n'], ['notas', 'm'],
+    ['proxima_accion', 't'], ['proxima_fecha', 'dt', null, 1], ['proxima_responsable', 't', null, 1],
+    ['proxima_estado', 'c', ['PENDIENTE', 'HECHA', 'CANCELADA', 'NINGUNA'], 1], ['cerrada_por', 't'], ['fecha_cierre', 'dt']] },
 ];
 const SEMILLAS = {
+ "COM_Tipificaciones": [{"Title": "TIP-01", "nivel": "RESULTADO", "aplica": "CONTACTO", "nombre": "Interesado, quiere más información", "accion": "AGENDAR", "orden": 1, "estado": "ACTIVO"}, {"Title": "TIP-02", "nivel": "RESULTADO", "aplica": "CONTACTO", "nombre": "Pide cotización", "accion": "COTIZAR", "orden": 2, "estado": "ACTIVO"}, {"Title": "TIP-03", "nivel": "RESULTADO", "aplica": "CONTACTO", "nombre": "Pide visita o demostración", "accion": "AGENDAR", "orden": 3, "estado": "ACTIVO"}, {"Title": "TIP-04", "nivel": "RESULTADO", "aplica": "CONTACTO", "nombre": "Volver a llamar", "accion": "AGENDAR", "orden": 4, "estado": "ACTIVO"}, {"Title": "TIP-05", "nivel": "RESULTADO", "aplica": "CONTACTO", "nombre": "Seguimiento a cotización enviada", "accion": "AGENDAR", "orden": 5, "estado": "ACTIVO"}, {"Title": "TIP-06", "nivel": "RESULTADO", "aplica": "CONTACTO", "nombre": "Aprobó: envía orden de compra", "accion": "FINAL", "orden": 6, "estado": "ACTIVO"}, {"Title": "TIP-07", "nivel": "RESULTADO", "aplica": "CONTACTO", "nombre": "Ya tiene proveedor", "accion": "FINAL", "orden": 7, "estado": "ACTIVO"}, {"Title": "TIP-08", "nivel": "RESULTADO", "aplica": "CONTACTO", "nombre": "No le interesa", "accion": "FINAL", "orden": 8, "estado": "ACTIVO"}, {"Title": "TIP-09", "nivel": "RESULTADO", "aplica": "CONTACTO", "nombre": "Soporte o servicio posventa", "accion": "NINGUNA", "orden": 9, "estado": "ACTIVO"}, {"Title": "TIP-10", "nivel": "RESULTADO", "aplica": "CONTACTO", "nombre": "No volver a contactar", "accion": "NO_CONTACTAR", "orden": 10, "estado": "ACTIVO"}, {"Title": "TIP-11", "nivel": "RESULTADO", "aplica": "NO_CONTACTO", "nombre": "No contesta", "accion": "AGENDAR", "orden": 1, "estado": "ACTIVO"}, {"Title": "TIP-12", "nivel": "RESULTADO", "aplica": "NO_CONTACTO", "nombre": "Buzón de voz / mensaje dejado", "accion": "AGENDAR", "orden": 2, "estado": "ACTIVO"}, {"Title": "TIP-13", "nivel": "RESULTADO", "aplica": "NO_CONTACTO", "nombre": "Línea ocupada", "accion": "AGENDAR", "orden": 3, "estado": "ACTIVO"}, {"Title": "TIP-14", "nivel": "RESULTADO", "aplica": "NO_CONTACTO", "nombre": "Dato errado (teléfono o correo)", "accion": "FINAL", "orden": 4, "estado": "ACTIVO"}, {"Title": "TIP-15", "nivel": "DETALLE", "padre_id": "TIP-08", "nombre": "Sin presupuesto", "orden": 1, "estado": "ACTIVO"}, {"Title": "TIP-16", "nivel": "DETALLE", "padre_id": "TIP-08", "nombre": "No es prioridad ahora", "orden": 2, "estado": "ACTIVO"}, {"Title": "TIP-17", "nivel": "DETALLE", "padre_id": "TIP-08", "nombre": "Ya compró", "orden": 3, "estado": "ACTIVO"}, {"Title": "TIP-18", "nivel": "DETALLE", "padre_id": "TIP-07", "nombre": "Contrato vigente con otro proveedor", "orden": 1, "estado": "ACTIVO"}, {"Title": "TIP-19", "nivel": "DETALLE", "padre_id": "TIP-07", "nombre": "Su proveedor tiene mejor precio", "orden": 2, "estado": "ACTIVO"}, {"Title": "TIP-20", "nivel": "DETALLE", "padre_id": "TIP-14", "nombre": "Teléfono equivocado", "orden": 1, "estado": "ACTIVO"}, {"Title": "TIP-21", "nivel": "DETALLE", "padre_id": "TIP-14", "nombre": "El correo rebota", "orden": 2, "estado": "ACTIVO"}, {"Title": "TIP-22", "nivel": "DETALLE", "padre_id": "TIP-14", "nombre": "La persona ya no trabaja allí", "orden": 3, "estado": "ACTIVO"}, {"Title": "TIP-23", "nivel": "DETALLE", "padre_id": "TIP-09", "nombre": "Garantía", "orden": 1, "estado": "ACTIVO"}, {"Title": "TIP-24", "nivel": "DETALLE", "padre_id": "TIP-09", "nombre": "Configuración o capacitación", "orden": 2, "estado": "ACTIVO"}, {"Title": "TIP-25", "nivel": "DETALLE", "padre_id": "TIP-09", "nombre": "Falla técnica", "orden": 3, "estado": "ACTIVO"}],
  "COT_MotivosPerdida": [
   { "Title": "MOT-01", "nombre": "Precio", "descripcion": "El cliente consideró alto el precio", "pide_comentario": false, "orden": 1, "estado": "ACTIVO" },
   { "Title": "MOT-02", "nombre": "Eligió a la competencia", "descripcion": "Compró a otro proveedor", "pide_comentario": true, "orden": 2, "estado": "ACTIVO" },
@@ -635,6 +647,8 @@ const SEMILLAS = {
   }
  ],
  "SYS_Secuencias": [
+  { "Title": "TIP", "ultimo_numero": 25 },
+  { "Title": "INT", "ultimo_numero": 0 },
   {
    "Title": "MOT",
    "ultimo_numero": 8
