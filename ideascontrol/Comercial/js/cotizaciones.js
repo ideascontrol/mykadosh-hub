@@ -160,6 +160,12 @@
       F = { cot: null, empresa_id: '', sucursal_id: '', contacto_id: '', fecha: hoy(), moneda: P.MONEDA_DEFECTO || 'COP', trm: '', linea: 'VENTA_HW',
         titulo_seccion: '', texto_introduccion: '', observaciones: '', lineas: [], conds: [], introTocada: false };
       F.conds = predeterminadas('VENTA_HW');
+      // Viene de una interacción «Pide cotización»: cliente y contacto ya elegidos
+      const pre = App.cotizaciones.prellenar; App.cotizaciones.prellenar = null;
+      if (pre && empresaDe(pre.empresa_id)) {
+        F.empresa_id = pre.empresa_id; F.contacto_id = pre.contacto_id || ''; F.interaccion = pre.interaccion || null;
+        F.texto_introduccion = introPara(empresaDe(pre.empresa_id));
+      }
     }
     c.innerHTML = '<a class="ic-volver" href="' + (cot ? '#cotizaciones/' + esc(cot.Title) : '#cotizaciones') + '">← ' + (cot ? esc(cot.numero_visible) : 'Cotizaciones') + '</a>' +
       '<h1 class="ic-titulo">' + (cot ? 'Editar borrador ' + esc(cot.numero_visible) : 'Nueva cotización') + '</h1>' +
@@ -437,6 +443,7 @@
       id = 'COT-' + pad(await G.siguiente('COT'), 6);
       await G.crear('COT_Cotizaciones', Object.assign({ Title: id, consecutivo, revision: 0, numero_visible: consecutivo, comercial_id: yo(), estado: 'BORRADOR' }, campos));
       await auditar(id, 'CREAR', null, { numero: consecutivo, cliente: e.razon_social, total: t.total });
+      if (F.interaccion && App.interacciones) await App.interacciones.enlazarCotizacion(F.interaccion, id);
     } else {
       id = cot.Title;
       await G.actualizar('COT_Cotizaciones', cot._id, campos, cot._etag);
@@ -542,8 +549,10 @@
         '<div class="ic-bloque" style="grid-column:1 / -1"><div class="cab"><h2>Introducción y condiciones (como salen en el PDF)</h2></div><div class="cuerpo">' +
           (cot.titulo_seccion ? '<p><b>' + esc(cot.titulo_seccion) + '</b></p>' : '') + '<p style="white-space:pre-line">' + esc(cot.texto_introduccion || '') + '</p>' +
           conds.map((x) => '<p><b>' + esc(x.titulo) + ':</b> <span style="white-space:pre-line">' + esc(x.texto) + '</span></p>').join('') + '</div></div>' +
+        (App.interacciones ? '<div class="ic-bloque" style="grid-column:1 / -1" id="zIntCot"></div>' : '') +
       '</div>';
     c.querySelectorAll('[data-acc]').forEach((b) => { b.onclick = () => accion(c, cot, b.dataset.acc, b); });
+    if (App.interacciones) App.interacciones.bloqueCotizacion(U.$('#zIntCot', c), cot);
   }
   const fila = (k, v) => v ? '<dt>' + esc(k) + '</dt><dd>' + esc(v) + '</dd>' : '';
   // Nombre del motivo: el vigente en COT_MotivosPerdida; si es una cotización antigua, el de la lista fija

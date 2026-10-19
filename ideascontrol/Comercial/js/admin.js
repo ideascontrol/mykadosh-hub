@@ -15,6 +15,7 @@
     { ruta: 'condiciones', titulo: 'Condiciones comerciales', texto: 'Textos de pago, garantía, soporte y generales que van en la cotización.', activa: true },
     { ruta: 'parametros', titulo: 'Parámetros', texto: 'IVA, descuento máximo, vigencia y textos del PDF.', activa: true },
     { ruta: 'delegaciones', titulo: 'Delegaciones', texto: 'Permisos de administrador por unos días.', activa: true },
+    { ruta: 'tipificaciones', titulo: 'Tipificaciones', texto: 'Resultados y detalles que se eligen al registrar una interacción.', activa: true },
     { ruta: 'motivos', titulo: 'Motivos de pérdida', texto: 'Opciones para registrar por qué se perdió una cotización.', activa: true },
     { ruta: 'distribuidores', titulo: 'Distribuidores', texto: 'Proveedores y sus NIT.', activa: true },
     { ruta: 'festivos', titulo: 'Festivos', texto: 'Festivos de Colombia para contar días hábiles.', activa: true },

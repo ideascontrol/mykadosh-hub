@@ -207,7 +207,7 @@
       '<div class="ic-ficha-cab"><div class="principal">' + tagEmpresa(e) +
         '<h1>' + esc(e.razon_social) + '</h1>' +
         '<div class="meta"><span>' + esc(e.tipo_id_fiscal) + ' ' + esc(nitTexto(e)) + '</span><span>' + esc(e.ciudad) + (e.pais && e.pais !== 'Colombia' ? ', ' + esc(e.pais) : '') + '</span><span>' + esc(e.Title) + '</span></div></div>' +
-        '<div style="display:flex;gap:8px;flex-wrap:wrap"><a class="ic-btn sec" href="#empresas/' + esc(id) + '/editar">Editar</a>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' + (App.interacciones ? '<button class="ic-btn" id="btnIntEmp">+ Registrar interacción</button>' : '') + '<a class="ic-btn sec" href="#empresas/' + esc(id) + '/editar">Editar</a>' +
         (App.usuario.es_admin ? '<button class="ic-btn ' + (e.estado === 'INACTIVO' ? 'sec' : 'peligro') + '" id="btnEstado">' + (e.estado === 'INACTIVO' ? 'Reactivar' : 'Desactivar') + '</button>' : '') +
         '</div></div>' +
       '<div class="ic-ficha-grid">' +
@@ -220,7 +220,7 @@
         '<div style="display:flex;flex-direction:column;gap:16px">' +
           '<div class="ic-bloque"><div class="cab"><h2>Contactos (' + contactos.filter((x) => x.estado !== 'INACTIVO').length + ')</h2><button class="ic-btn chico" id="btnContacto">+ Contacto</button></div><div class="cuerpo" id="listaContactos">' +
             (contactos.length ? contactos.map((x) => '<div class="ic-item" data-id="' + esc(x.Title) + '" style="' + (x.estado === 'INACTIVO' ? 'opacity:.5' : '') + '"><div class="ic-avatar">' + esc(U.fmt.iniciales((x.nombres || '') + ' ' + (x.apellidos || ''))) + '</div><div>' +
-              '<div class="titulo">' + esc((x.nombres || '') + ' ' + (x.apellidos || '')) + (x.estado === 'INACTIVO' ? ' · inactivo' : '') + '</div>' +
+              '<div class="titulo">' + esc((x.nombres || '') + ' ' + (x.apellidos || '')) + (x.estado === 'INACTIVO' ? ' · inactivo' : '') + (x.no_contactar ? ' <span class="ic-tag e-perdida" title="' + esc(x.no_contactar_nota || '') + '">No contactar</span>' : '') + '</div>' +
               '<div class="sec">' + esc([x.cargo, x.area].filter(Boolean).join(' · ')) + '</div>' +
               '<div class="sec">' + esc([x.celular, x.email].filter(Boolean).join(' · ')) + '</div>' +
               (x.sucursal_id ? '<div class="sec">Sede: ' + esc((sedes.find((s) => s.Title === x.sucursal_id) || {}).nombre || x.sucursal_id) + '</div>' : '') +
@@ -234,8 +234,14 @@
             '</div></div>').join('') : '<div class="ic-vacio" style="padding:18px">La sede principal es la dirección de la empresa. Agregue sedes adicionales si las tiene.</div>') +
           '</div></div>' +
         '</div>' +
-      '</div>';
+      '</div>' +
+      (App.interacciones ? '<div class="ic-bloque" style="margin-top:16px" id="zActividad"></div>' : '');
 
+    if (App.interacciones) {
+      const za = U.$('#zActividad', c);
+      App.interacciones.lineaEmpresa(za, e);
+      U.$('#btnIntEmp', c).onclick = () => App.interacciones.registrar({ empresa_id: id, alGuardar: () => App.interacciones.lineaEmpresa(za, e) });
+    }
     U.$('#btnContacto', c).onclick = () => formContacto(e, null, sedes);
     U.$('#btnSede', c).onclick = () => formSede(e, null);
     U.$('#listaContactos', c).querySelectorAll('.ic-item').forEach((it) => { it.onclick = () => formContacto(e, contactos.find((x) => x.Title === it.dataset.id), sedes); });

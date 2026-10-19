@@ -1,7 +1,7 @@
 /* =====================================================================
    APP-101 · Comercial — Administración (2): delegaciones, distribuidores,
    festivos, consecutivos, registro de actividad y motivos de pérdida.
-   Rutas: #admin/delegaciones · #admin/distribuidores · #admin/festivos · #admin/consecutivos · #admin/registro · #admin/motivos
+   Rutas: #admin/delegaciones · #admin/distribuidores · #admin/festivos · #admin/consecutivos · #admin/registro · #admin/motivos · #admin/tipificaciones
    Se registran en App.adminSecciones; el enrutador está en admin.js.
    ===================================================================== */
 (function () {
@@ -445,6 +445,89 @@
               await A().auditar('MOTIVO_PERDIDA', d.Title, campos.estado === 'INACTIVO' && d.estado !== 'INACTIVO' ? 'DESACTIVAR' : 'ACTUALIZAR', df.antes, df.despues);
             }
             U.cerrarModal(); await App.adminSecciones.motivos(c); U.aviso(nuevo ? 'Motivo creado' : 'Cambios guardados', 'ok');
+          } catch (e) { U.aviso(U.mensajeError(e), 'err', 7000); }
+        });
+      };
+    });
+  }
+
+  // =====================================================================
+  // TIPIFICACIONES (COM_Tipificaciones)
+  // Nivel 1 (¿hubo contacto?) es fijo. Aquí se manejan el nivel 2 (Resultado,
+  // con su acción) y el nivel 3 (Detalle, opcional, dentro de un resultado).
+  // No se borran: se desactivan, para conservar el historial de interacciones.
+  // =====================================================================
+  const ACC_TIP = [['AGENDAR', 'Exige próxima acción'], ['COTIZAR', 'Ofrece crear la cotización'], ['FINAL', 'Cierra el seguimiento'], ['NO_CONTACTAR', 'Marca «no volver a contactar»'], ['NINGUNA', 'Sin acción especial']];
+  let tips = [], usoTips = {};
+  App.adminSecciones.tipificaciones = async function vista(c) {
+    let r;
+    try { r = await Promise.all([G.items('COM_Tipificaciones'), G.items('COM_Interacciones', { top: 5000 })]); }
+    catch (e) {
+      c.innerHTML = A().cabecera('Tipificaciones', 'Resultados que se eligen al registrar una interacción.') +
+        '<div class="ic-form"><b>Faltan las listas de interacciones en IC Apps.</b><p>Abra el Instalador (mykadosh.com/ideascontrol/Comercial/Instalador/), inicie sesión y haga clic en «Crear estructura». No borra ni duplica nada.</p></div>';
+      return;
+    }
+    tips = r[0].sort((a, b) => (Number(a.orden) || 99) - (Number(b.orden) || 99) || String(a.nombre).localeCompare(String(b.nombre), 'es'));
+    usoTips = {}; r[1].forEach((x) => { [x.resultado_id, x.detalle_id].forEach((k) => { if (k) usoTips[k] = (usoTips[k] || 0) + 1; }); });
+    const tabla = (aplica, titulo) => {
+      const rs = tips.filter((t) => t.nivel === 'RESULTADO' && t.aplica === aplica);
+      return '<h3 style="margin:18px 0 8px">' + titulo + '</h3><div class="ic-tabla-caja"><table class="ic-tabla"><thead><tr><th style="width:56px">Orden</th><th>Resultado y sus detalles</th><th style="width:200px">Qué pasa al elegirlo</th><th style="width:90px;text-align:right">Usos</th><th style="width:90px">Estado</th></tr></thead><tbody>' +
+        rs.map((t) => {
+          const ds = tips.filter((d) => d.nivel === 'DETALLE' && d.padre_id === t.Title);
+          return '<tr data-id="' + esc(t.Title) + '"><td>' + esc(t.orden || '') + '</td><td><b>' + esc(t.nombre) + '</b><span class="sec">' + (ds.length ? 'Detalles: ' + ds.map((d) => '<a href="#" data-det="' + esc(d.Title) + '"' + (d.estado === 'INACTIVO' ? ' style="text-decoration:line-through"' : '') + '>' + esc(d.nombre) + '</a>').join(', ') + ' · ' : '') +
+            '<a href="#" data-nuevo-det="' + esc(t.Title) + '">+ detalle</a></span></td><td>' + esc((ACC_TIP.find((a) => a[0] === t.accion) || ['', ''])[1]) + '</td><td style="text-align:right">' + (usoTips[t.Title] || 0) + '</td>' +
+            '<td><span class="ic-tag ' + (t.estado === 'INACTIVO' ? 'inactivo' : 'cliente') + '">' + (t.estado === 'INACTIVO' ? 'Inactivo' : 'Activo') + '</span></td></tr>';
+        }).join('') + '</tbody></table></div>';
+    };
+    c.innerHTML = A().cabecera('Tipificaciones', 'Lo que el comercial elige al registrar una llamada, correo o visita. Alimentan Mis pendientes y el tablero.', '<button class="ic-btn" id="btnNuevo">+ Nuevo resultado</button>') +
+      '<div class="ic-form" style="margin-bottom:6px"><b>Nivel 1 · ¿Logró hablar o tener respuesta?</b> (fijo): Sí, con quien decide · Sí, con otra persona · No hubo contacto.<br><span class="ic-conteo">Según la respuesta, el comercial ve los resultados «con contacto» o «sin contacto».</span></div>' +
+      tabla('CONTACTO', 'Resultados cuando hubo contacto') + tabla('NO_CONTACTO', 'Resultados cuando no hubo contacto') +
+      '<p class="ic-conteo" style="margin-top:12px">No se borran: si ya no se usa, desactívelo. Las interacciones anteriores conservan su resultado. «Exige próxima acción» obliga a agendar el siguiente paso; «Marca no volver a contactar» bloquea al contacto y cancela sus pendientes.</p>';
+    U.$('#btnNuevo', c).onclick = () => formTip(c, null, 'RESULTADO');
+    c.querySelectorAll('tr[data-id]').forEach((tr) => { tr.onclick = (e) => { if (e.target.closest('a')) return; formTip(c, tips.find((t) => t.Title === tr.dataset.id)); }; });
+    c.querySelectorAll('[data-det]').forEach((a) => { a.onclick = (e) => { e.preventDefault(); formTip(c, tips.find((t) => t.Title === a.dataset.det)); }; });
+    c.querySelectorAll('[data-nuevo-det]').forEach((a) => { a.onclick = (e) => { e.preventDefault(); formTip(c, null, 'DETALLE', a.dataset.nuevoDet); }; });
+  };
+  function formTip(c, d, nivel, padre) {
+    const nuevo = !d; nivel = d ? d.nivel : nivel;
+    const hermanos = tips.filter((t) => t.nivel === nivel && (nivel === 'DETALLE' ? t.padre_id === (d ? d.padre_id : padre) : true));
+    d = d || { estado: 'ACTIVO', nivel, padre_id: padre || '', aplica: 'CONTACTO', accion: 'AGENDAR', orden: hermanos.reduce((mx, t) => Math.max(mx, Number(t.orden) || 0), 0) + 1 };
+    const padreT = tips.find((t) => t.Title === d.padre_id);
+    const esRes = nivel === 'RESULTADO';
+    U.modal((nuevo ? 'Nuevo ' : 'Editar ') + (esRes ? 'resultado' : 'detalle de «' + (padreT ? padreT.nombre : '') + '»'), '<form class="ic-form" id="fTip" novalidate><div class="ic-campos">' +
+      U.campo({ name: 'nombre', label: esRes ? 'Resultado (lo que ve el comercial)' : 'Detalle', valor: d.nombre, req: true, c: 'c9', max: 60 }) +
+      U.campo({ name: 'orden', label: 'Orden', valor: d.orden, c: 'c3', modo: 'numeric' }) +
+      (esRes ? U.campo({ name: 'aplica', label: 'Se muestra cuando…', t: 'select', op: [['CONTACTO', 'Hubo contacto'], ['NO_CONTACTO', 'No hubo contacto']], valor: d.aplica, vacio: false, c: 'c6' }) +
+        U.campo({ name: 'accion', label: 'Qué pasa al elegirlo', t: 'select', op: ACC_TIP, valor: d.accion, vacio: false, c: 'c6' }) : '') +
+      (nuevo ? '' : U.campo({ name: 'estado', label: 'Estado', t: 'select', op: [['ACTIVO', 'Activo'], ['INACTIVO', 'Inactivo (ya no aparece para elegir)']], valor: d.estado || 'ACTIVO', vacio: false, c: 'c12' })) +
+      '</div>' + (!nuevo && usoTips[d.Title] ? '<p class="ic-conteo">Lo usan ' + usoTips[d.Title] + ' interacción(es). Si cambia el nombre, se ve con el nombre nuevo en todas.</p>' : '') +
+      '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="bC">Cancelar</button><button class="ic-btn" id="bG">' + (nuevo ? 'Crear' : 'Guardar cambios') + '</button></div></form>', (m) => {
+      U.$('#bC', m).onclick = U.cerrarModal;
+      U.$('#fTip', m).onsubmit = async (ev) => {
+        ev.preventDefault();
+        const v = U.leerForm(ev.target), err = {};
+        if (!v.nombre) err.nombre = 'Obligatorio';
+        else { const dup = tips.find((x) => x.Title !== d.Title && x.nivel === nivel && (esRes ? x.aplica === v.aplica : x.padre_id === d.padre_id) && U.norm(x.nombre) === U.norm(v.nombre)); if (dup) err.nombre = 'Ya existe (' + dup.Title + ')'; }
+        if (v.orden && !/^\d{1,3}$/.test(v.orden)) err.orden = 'Número';
+        if (!U.marcarErrores(ev.target, err)) return;
+        const campos = { nombre: v.nombre, orden: v.orden ? Number(v.orden) : 99 };
+        if (esRes) Object.assign(campos, { aplica: v.aplica, accion: v.accion });
+        if (!nuevo) campos.estado = v.estado;
+        await U.conCarga(U.$('#bG', m), async () => {
+          try {
+            if (nuevo) {
+              const id = await nuevoId('TIP', 'TIP-', 2, tips);
+              Object.assign(campos, { nivel, padre_id: esRes ? '' : d.padre_id });
+              await G.crear('COM_Tipificaciones', Object.assign({ Title: id, estado: 'ACTIVO' }, campos));
+              await A().auditar('TIPIFICACION', id, 'CREAR', null, campos);
+            } else {
+              const df = A().diferencias(d, campos);
+              if (!df.hay) { U.cerrarModal(); U.aviso('No hay cambios', 'ok'); return; }
+              await G.actualizar('COM_Tipificaciones', d._id, campos, d._etag);
+              await A().auditar('TIPIFICACION', d.Title, campos.estado === 'INACTIVO' && d.estado !== 'INACTIVO' ? 'DESACTIVAR' : 'ACTUALIZAR', df.antes, df.despues);
+            }
+            if (App.interacciones) App.interacciones.datos.cargado = 0;
+            U.cerrarModal(); await App.adminSecciones.tipificaciones(c); U.aviso(nuevo ? 'Creado' : 'Cambios guardados', 'ok');
           } catch (e) { U.aviso(U.mensajeError(e), 'err', 7000); }
         });
       };

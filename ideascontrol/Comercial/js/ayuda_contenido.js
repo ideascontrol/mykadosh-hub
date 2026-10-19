@@ -11,11 +11,12 @@
    pantalla actualiza los dos.
    ===================================================================== */
 window.IC_AYUDA = {
-  version: '0.3.0',
-  actualizado: '2026-10-17',
+  version: '0.4.0',
+  actualizado: '2026-10-18',
   CATEGORIAS: [
     ['inicio', 'Primeros pasos'],
     ['cotizaciones', 'Cotizaciones'],
+    ['gestion', 'Interacciones y pendientes'],
     ['tablero', 'Tablero comercial'],
     ['empresas', 'Empresas y contactos'],
     ['productos', 'Productos y precios'],
@@ -32,6 +33,8 @@ window.IC_AYUDA = {
     ['cotizaciones/*', 'cot-ficha'],
     ['cotizaciones', 'cot-lista'],
     ['tablero', 'tab-leer'],
+    ['agenda', 'int-agenda'],
+    ['admin/tipificaciones', 'adm-tipificaciones'],
     ['empresas/nueva', 'emp-crear'],
     ['empresas/*', 'emp-ficha'],
     ['empresas', 'emp-buscar'],
@@ -52,24 +55,25 @@ window.IC_AYUDA = {
     ['admin', 'adm-resumen']
   ],
   // Artículos que se sugieren cuando la persona abre la Ayuda
-  DESTACADOS: ['cot-crear', 'cot-editar', 'cot-estados', 'tab-seguimiento', 'emp-crear', 'faq'],
+  DESTACADOS: ['int-registrar', 'int-agenda', 'cot-crear', 'cot-editar', 'cot-estados', 'tab-seguimiento', 'emp-crear', 'faq'],
 
   ARTICULOS: [
   // ===================================================================
   // PRIMEROS PASOS
   // ===================================================================
-  { id: 'novedades', cat: 'inicio', titulo: 'Novedades de la versión 0.3.0', resumen: 'Lo nuevo: tablero comercial, motivos de pérdida, editar cotizaciones con PDF y esta ayuda.',
+  { id: 'novedades', cat: 'inicio', titulo: 'Novedades de la versión 0.4.0', resumen: 'Nuevo: registrar llamadas, correos y visitas, y la agenda Mis pendientes.',
     claves: 'nuevo cambios version actualizacion que hay de nuevo',
     html: `
-<p><b>Versión 0.3.0 · octubre de 2026</b></p>
+<p><b>Versión 0.4.0 · octubre de 2026</b></p>
 <ul>
-<li><b>Tablero comercial</b>: cotizado, ganado, tasa de cierre, embudo, seguimiento pendiente y motivos de pérdida. <a href="#ayuda/tab-leer">Ver cómo leerlo</a>.</li>
-<li><b>Editar una cotización que ya tiene PDF</b>: si aún no la envió, se reabre con el mismo número; si ya la envió, se crea una revisión. <a href="#ayuda/cot-editar">Ver cómo</a>.</li>
-<li><b>Motivos de pérdida</b> con lista de opciones y comentario. <a href="#ayuda/cot-perdida">Ver cómo</a>.</li>
-<li>La cotización guarda su <b>línea de negocio</b> (sirve para filtrar el tablero).</li>
-<li>El PDF ya no deja títulos solos al final de una hoja.</li>
-<li><b>Ayuda dentro de la app</b>: el botón <b class="bt">? Ayuda</b> arriba a la derecha abre la explicación de la pantalla en la que está.</li>
-</ul>` },
+<li><b>Registrar interacciones</b>: cada llamada, correo, WhatsApp, Teams o visita queda en la ficha de la empresa. <a href="#ayuda/int-registrar">Ver cómo</a>.</li>
+<li><b>Mis pendientes</b>: la agenda del día con lo vencido, lo de hoy y lo próximo. <a href="#ayuda/int-agenda">Ver cómo</a>.</li>
+<li><b>Actividad</b> en la ficha de la empresa: interacciones y cotizaciones en orden. <a href="#ayuda/int-linea">Ver más</a>.</li>
+<li>«Pide cotización» abre la cotización con el cliente ya cargado.</li>
+<li>«No volver a contactar» marca al contacto y cancela sus pendientes.</li>
+<li>El tablero muestra la <b>actividad comercial</b> y el cumplimiento de la agenda.</li>
+</ul>
+<p><b>Versión 0.3.x</b>: tablero comercial, motivos de pérdida, editar cotizaciones con PDF, ayuda dentro de la app.</p>` },
 
   { id: 'ayuda', cat: 'inicio', titulo: 'Cómo usar esta ayuda', resumen: 'El botón Ayuda muestra la explicación de la pantalla en la que está.',
     claves: 'ayuda manual instrucciones como se usa buscar',
@@ -105,7 +109,7 @@ window.IC_AYUDA = {
     html: `
 <p>Arriba están los <b>indicadores</b>: empresas registradas, clientes, productos activos y cotizaciones. Debajo, las <b>tarjetas</b> de los módulos. Cada persona ve las tarjetas de su rol.</p>
 <ul>
-<li><b>Comercial</b>: Nueva cotización, Cotizaciones y Tablero comercial.</li>
+<li><b>Comercial</b>: Nueva cotización, Cotizaciones, Mis pendientes y Tablero comercial.</li>
 <li><b>Datos maestros</b>: Empresas y contactos, Productos y precios.</li>
 <li><b>Herramientas</b>: Actividad reciente, Carga masiva y Administración (las dos últimas, solo administradores).</li>
 </ul>
@@ -291,6 +295,76 @@ window.IC_AYUDA = {
 </ul>` },
 
   // ===================================================================
+  // INTERACCIONES Y PENDIENTES
+  // ===================================================================
+  { id: 'int-registrar', cat: 'gestion', titulo: 'Registrar una interacción', resumen: 'Anotar una llamada, correo, WhatsApp, Teams o visita y agendar el siguiente paso.',
+    claves: 'registrar llamada correo whatsapp chat visita teams interaccion actividad gestion contacto seguimiento anotar',
+    html: `
+<p>Use <b class="bt">+ Registrar interacción</b> en la ficha de la empresa, en la ficha de una cotización o en Mis pendientes.</p>
+<ol class="pasos">
+<li><b>Contacto</b>: elija con quién habló. Debajo aparecen sus enlaces para llamar, escribir por WhatsApp o enviar correo.</li>
+<li><b>Canal</b>: llamada, correo, WhatsApp / chat, Teams o visita. <b>Quién inició</b>: nosotros (saliente) o el cliente (entrante).</li>
+<li><b>Fecha y hora</b>: viene con la hora actual; cámbiela si registra algo que pasó antes. En llamadas, Teams y visitas puede anotar la <b>duración</b>.</li>
+<li><b>¿Logró hablar o tener respuesta?</b> Sí con quien decide, sí con otra persona, o no hubo contacto.</li>
+<li><b>Resultado</b> (y detalle si aplica). <a href="#ayuda/int-tipificacion">Cómo elegirlo</a>.</li>
+<li><b>Notas</b>: qué se habló, qué pidió, qué se comprometió.</li>
+<li><b>Próxima acción</b>: qué hay que hacer, cuándo y quién. Es obligatoria cuando el resultado lo pide (por ejemplo, «Volver a llamar»).</li>
+</ol>
+<div class="tip">Registre apenas cuelga: toma menos de un minuto y nada se olvida.</div>` },
+
+  { id: 'int-tipificacion', cat: 'gestion', titulo: 'Cómo elegir el resultado', resumen: 'Los tres niveles y qué pasa con cada resultado.',
+    claves: 'resultado tipificacion detalle volver a llamar no contesta pide cotizacion final no le interesa',
+    html: `
+<p>Se elige en tres niveles:</p>
+<ol class="pasos">
+<li><b>¿Hubo contacto?</b> Según la respuesta, la app muestra los resultados con contacto o sin contacto.</li>
+<li><b>Resultado</b>: lo que pasó.</li>
+<li><b>Detalle</b> (opcional): solo en algunos resultados, por ejemplo «No le interesa › Sin presupuesto».</li>
+</ol>
+<table class="ic-ayuda-tabla"><thead><tr><th>Tipo de resultado</th><th>Ejemplos</th><th>Qué pasa</th></tr></thead><tbody>
+<tr><td>Sigue el seguimiento</td><td>Interesado, Pide visita, Volver a llamar, Seguimiento a cotización, No contesta, Buzón</td><td>Debe agendar la próxima acción</td></tr>
+<tr><td>Pide cotización</td><td>Pide cotización</td><td>Al guardar le ofrece crear la cotización con el cliente cargado; queda enlazada</td></tr>
+<tr><td>Cierra el seguimiento</td><td>Aprobó, Ya tiene proveedor, No le interesa, Dato errado</td><td>La próxima acción es opcional</td></tr>
+<tr><td>No volver a contactar</td><td>No volver a contactar</td><td>Marca al contacto y cancela sus pendientes. <a href="#ayuda/int-nocontactar">Ver más</a></td></tr>
+</tbody></table>
+<p>La lista la mantiene el administrador en Administración › Tipificaciones.</p>` },
+
+  { id: 'int-agenda', cat: 'gestion', titulo: 'Mis pendientes', resumen: 'La agenda del día: registrar el resultado, reprogramar o cancelar.',
+    claves: 'agenda pendientes tareas hoy vencidos recordatorio reprogramar cancelar seguimiento',
+    html: `
+<p>Menú › <b>Mis pendientes</b>. Muestra las próximas acciones que usted agendó (o que le asignaron), en cuatro pestañas: <b>Vencidos</b>, <b>Hoy</b>, <b>Próximos 7 días</b> y <b>Más adelante</b>. La tarjeta del menú muestra en rojo cuántos tiene para hoy o vencidos.</p>
+<p>Cada pendiente trae la empresa, el contacto con sus enlaces para llamar o escribir, y lo que pasó la última vez.</p>
+<ul>
+<li><b class="bt">Registrar resultado</b>: cuando ya lo hizo. Registra la nueva interacción y el pendiente queda <b>hecho</b>.</li>
+<li><b class="bt">Reprogramar</b>: cambia la fecha (queda anotado en las notas).</li>
+<li><b class="bt">Cancelar</b>: si ya no aplica; pide el motivo.</li>
+</ul>
+<p>El administrador puede ver la agenda de cada comercial o de todo el equipo.</p>
+<div class="tip">Empiece el día por la pestaña Vencidos. El tablero mide qué tanto de la agenda se cumple a tiempo.</div>` },
+
+  { id: 'int-linea', cat: 'gestion', titulo: 'La actividad de una empresa', resumen: 'Línea de tiempo con interacciones y cotizaciones en la ficha de la empresa.',
+    claves: 'actividad historial linea de tiempo empresa ficha historia cliente',
+    html: `
+<p>En la ficha de cada empresa, el bloque <b>Actividad</b> muestra todo lo que ha pasado con ella, del más reciente al más antiguo:</p>
+<ul>
+<li>Los <b>pendientes</b> abiertos arriba, con el botón para registrar el resultado.</li>
+<li>Cada <b>interacción</b>: canal, contacto, quién la hizo, resultado, notas y su próxima acción.</li>
+<li>Las <b>cotizaciones</b>: creada, enviada, ganada o perdida.</li>
+</ul>
+<p>Filtre con <b>Todo</b>, <b>Interacciones</b> o <b>Cotizaciones</b>. En la ficha de una cotización también aparecen las interacciones registradas para ella.</p>` },
+
+  { id: 'int-nocontactar', cat: 'gestion', titulo: 'No volver a contactar', resumen: 'Qué pasa cuando un contacto pide no ser llamado.',
+    claves: 'no contactar no llamar habeas datos bloqueo exclusion',
+    html: `
+<p>Si una persona pide no ser contactada, registre la interacción con el resultado <b>No volver a contactar</b> y escriba en las notas lo que dijo.</p>
+<ul>
+<li>El contacto queda marcado con la etiqueta <span class="ic-tag e-perdida">No contactar</span> en la ficha de la empresa.</li>
+<li>Sus pendientes abiertos se cancelan.</li>
+<li>Al elegirlo de nuevo en una interacción, la app avisa. Registre solo si fue esa persona quien se comunicó.</li>
+</ul>
+<div class="ojo">Respete esta decisión: hace parte de la protección de datos personales.</div>` },
+
+  // ===================================================================
   // TABLERO
   // ===================================================================
   { id: 'tab-leer', cat: 'tablero', titulo: 'Leer el tablero comercial', resumen: 'Indicadores, embudo, motivos de pérdida y resumen por comercial.',
@@ -326,6 +400,18 @@ window.IC_AYUDA = {
 </tbody></table>
 <p>Haga clic en una fila para abrir la cotización. Los días (5 y 3) los ajusta el administrador en Parámetros.</p>
 <div class="tip">Revíselo cada mañana: es la forma más rápida de que ninguna cotización se quede sin seguimiento.</div>` },
+
+  { id: 'tab-actividad', cat: 'tablero', titulo: 'Actividad comercial en el tablero', resumen: 'Interacciones por canal y comercial, contacto logrado y cumplimiento de la agenda.',
+    claves: 'actividad llamadas por dia productividad agenda cumplimiento contacto logrado',
+    html: `
+<p>El bloque <b>Actividad comercial</b> del tablero usa el mismo periodo y comercial elegidos arriba.</p>
+<ul>
+<li><b>Interacciones</b>: cuántas se registraron, por canal y por comercial.</li>
+<li><b>Contacto logrado</b>: porcentaje en que sí se habló o hubo respuesta.</li>
+<li><b>Agenda a tiempo</b>: de las próximas acciones con fecha en el periodo (hasta hoy), cuántas se hicieron ese día o antes.</li>
+<li><b>Vencidos</b>: pendientes con fecha pasada que siguen sin hacer.</li>
+</ul>
+<p>Exportar a Excel incluye la hoja <b>Actividad</b>.</p>` },
 
   { id: 'tab-calculo', cat: 'tablero', titulo: 'Cómo se calcula el tablero', resumen: 'Qué cuenta, qué no cuenta y por qué un número puede no cuadrar.',
     claves: 'calculo formula no cuadra numeros iva dolares trm reemplazada',
@@ -451,7 +537,7 @@ window.IC_AYUDA = {
   // ===================================================================
   // ADMINISTRACIÓN
   // ===================================================================
-  { id: 'adm-resumen', cat: 'admin', admin: true, titulo: 'Secciones de Administración', resumen: 'Qué se configura en cada una de las 9 secciones.',
+  { id: 'adm-resumen', cat: 'admin', admin: true, titulo: 'Secciones de Administración', resumen: 'Qué se configura en cada una de las 10 secciones.',
     claves: 'administracion configuracion secciones admin',
     html: `
 <table class="ic-ayuda-tabla"><thead><tr><th>Sección</th><th>Para qué sirve</th></tr></thead><tbody>
@@ -459,6 +545,7 @@ window.IC_AYUDA = {
 <tr><td><a href="#ayuda/adm-condiciones">Condiciones comerciales</a></td><td>Textos de pago, garantía, soporte y generales</td></tr>
 <tr><td><a href="#ayuda/adm-parametros">Parámetros</a></td><td>IVA, descuento máximo, vigencia, días de alerta y textos del PDF</td></tr>
 <tr><td><a href="#ayuda/adm-motivos">Motivos de pérdida</a></td><td>Opciones al marcar una cotización como perdida</td></tr>
+<tr><td><a href="#ayuda/adm-tipificaciones">Tipificaciones</a></td><td>Resultados al registrar una interacción</td></tr>
 <tr><td><a href="#ayuda/adm-delegaciones">Delegaciones</a></td><td>Permisos de administrador por unos días</td></tr>
 <tr><td><a href="#ayuda/adm-otras">Distribuidores, festivos, consecutivos y registro</a></td><td>Proveedores, días hábiles, numeración y quién cambió qué</td></tr>
 </tbody></table>
@@ -492,6 +579,16 @@ window.IC_AYUDA = {
 <li><b>Alerta antes del vencimiento</b> y <b>Seguimiento sin respuesta</b>: los días que usa el tablero.</li>
 <li>Antes de guardar se muestra qué cambia. Un parámetro usado en una condición no puede quedar vacío.</li>
 <li>Aplican a las cotizaciones nuevas; las emitidas no cambian.</li>
+</ul>` },
+
+  { id: 'adm-tipificaciones', cat: 'admin', admin: true, titulo: 'Tipificaciones', resumen: 'Resultados y detalles que se eligen al registrar una interacción.',
+    claves: 'tipificaciones resultados detalles interacciones configurar accion',
+    html: `
+<ul>
+<li>El primer nivel (¿hubo contacto?) es fijo.</li>
+<li><b class="bt">+ Nuevo resultado</b>: nombre, si se muestra con o sin contacto, orden y <b>qué pasa al elegirlo</b>: exige próxima acción, ofrece crear la cotización, cierra el seguimiento, marca «no volver a contactar» o sin acción.</li>
+<li><b>+ detalle</b> en cada resultado agrega opciones del tercer nivel.</li>
+<li>No se borran: se desactivan. Las interacciones anteriores conservan su resultado; si cambia un nombre, se ve con el nombre nuevo.</li>
 </ul>` },
 
   { id: 'adm-motivos', cat: 'admin', admin: true, titulo: 'Motivos de pérdida', resumen: 'Crear, ordenar y desactivar motivos; comentario obligatorio.',

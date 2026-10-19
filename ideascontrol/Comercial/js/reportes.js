@@ -123,12 +123,19 @@
     return { d, h, etiqueta, k, embudo, seg, dSeg, dVen, motivos, comentarios, comerciales, sinTrm, sinLinea: filtro.linea ? 0 : todas.filter((c) => !c.linea_negocio && c.estado !== 'BORRADOR').length };
   }
 
+  // Actividad comercial (interacciones y agenda) con los mismos filtros de periodo y comercial
+  function calcularActividad(R) {
+    if (!App.interacciones) return null;
+    const adm = App.usuario.es_admin, yo = App.usuario.usuario_id;
+    return App.interacciones.actividad(R.d, R.h, (id) => adm ? (!filtro.comercial || id === filtro.comercial) : id === yo);
+  }
+
   // =====================================================================
   // VISTA
   // =====================================================================
   App.vistas['tablero'] = async function (c) {
     c.innerHTML = '<div class="ic-form" style="text-align:center"><div class="ic-spinner"></div>Cargando el tablero…</div>';
-    try { await C().cargar(); } catch (e) {
+    try { await Promise.all([C().cargar(), App.interacciones ? App.interacciones.cargar() : null]); } catch (e) {
       c.innerHTML = '<a href="#" class="ic-volver">← Menú principal</a><div class="ic-form"><b>No se pudo cargar la información.</b><p>' + esc(U.mensajeError(e)) + '</p><button class="ic-btn" onclick="location.reload()">Reintentar</button></div>'; return;
     }
     const adm = App.usuario.es_admin;
@@ -155,6 +162,27 @@
   // Barra horizontal (un solo color: la longitud es el dato; el número va escrito al lado)
   const barra = (v, max, tip) => '<div class="ic-hbar" title="' + esc(tip) + '"><span style="width:' + (max > 0 ? Math.max(v > 0 ? 2 : 0, Math.round(v / max * 100)) : 0) + '%"></span></div>';
   const enlace = (c) => '<a href="#cotizaciones/' + esc(c.Title) + '"><b>' + esc(c.numero_visible) + '</b></a>';
+
+  function bloqueActividad(A, adm) {
+    if (!A) return '';
+    if (!A.listo) return '<div class="ic-bloque" style="margin-top:16px"><div class="cab"><h2>Actividad comercial</h2></div><div class="cuerpo"><p class="ic-conteo">Falta ejecutar el Instalador para crear las listas de interacciones.</p></div></div>';
+    const canales = A.CANALES.filter(([k]) => A.porComercial.some((x) => x[k]));
+    return '<div class="ic-bloque" style="margin-top:16px"><div class="cab"><h2>Actividad comercial</h2><span class="ic-conteo">Interacciones registradas y cumplimiento de la agenda</span></div><div class="cuerpo">' +
+      '<div class="ic-act-kpis">' +
+        '<div><b>' + A.total + '</b><span>interacciones</span></div>' +
+        '<div><b>' + pct(A.logrados, A.total) + '</b><span>con contacto logrado</span></div>' +
+        '<div><b>' + pct(A.aTiempo, A.due) + '</b><span>agenda cumplida a tiempo (' + A.aTiempo + ' de ' + A.due + ')</span></div>' +
+        '<div><b class="' + (A.vencidos ? 'rojo' : '') + '">' + A.vencidos + '</b><span>pendientes vencidos sin hacer</span></div>' +
+      '</div>' +
+      (!A.porComercial.length ? '<div class="ic-vacio">Sin interacciones en el periodo.</div>' :
+      '<div style="overflow-x:auto"><table class="ic-tabla"><thead><tr><th>' + (adm ? 'Comercial' : '') + '</th>' + canales.map(([, n]) => '<th style="text-align:right">' + esc(n) + '</th>').join('') +
+        '<th style="text-align:right">Total</th><th style="text-align:right">Contacto logrado</th><th style="text-align:right">Agenda a tiempo</th><th style="text-align:right">Vencidos</th></tr></thead><tbody>' +
+        A.porComercial.map((x) => '<tr style="cursor:default"><td><b>' + esc(x.nombre) + '</b></td>' + canales.map(([k]) => '<td style="text-align:right">' + (x[k] || '—') + '</td>').join('') +
+          '<td style="text-align:right"><b>' + x.total + '</b></td><td style="text-align:right">' + pct(x.logrados, x.total) + '</td><td style="text-align:right">' + pct(x.aTiempo, x.due) + '</td><td style="text-align:right' + (x.vencidos ? ';color:#B42318;font-weight:700' : '') + '">' + x.vencidos + '</td></tr>').join('') +
+        '</tbody></table></div>') +
+      '<p class="ic-conteo" style="margin-top:8px">Agenda a tiempo: próximas acciones con fecha en el periodo (hasta hoy) que se hicieron ese día o antes. <a href="#agenda">Ir a Mis pendientes</a>.</p>' +
+      '</div></div>';
+  }
 
   function pintar(c) {
     const R = calcular(), k = R.k, adm = App.usuario.es_admin;
@@ -209,6 +237,7 @@
           (adm ? '<td class="ocultar-movil">' + esc(inicialesUsuario(x.c.comercial_id) || nombreUsuario(x.c.comercial_id)) + '</td>' : '') + '<td class="ocultar-movil">' + fechaC(fl(x.c.fecha_vencimiento)) + '</td>' +
           '<td style="text-align:right;white-space:nowrap">' + (valor(x.c) === null ? 'US$ sin TRM' : corto(valor(x.c))) + '</td><td style="text-align:right"><b>' + x.n + '</b></td></tr>').join('') + '</tbody></table></div>') +
       '</div></div>' +
+      bloqueActividad(calcularActividad(R), adm) +
       // 5. Comerciales
       '<div class="ic-bloque" style="margin-top:16px"><div class="cab"><h2>' + (adm ? 'Comerciales' : 'Su resumen') + '</h2><span class="ic-conteo">' + esc(R.etiqueta) + '</span></div><div class="cuerpo" style="padding:0;overflow-x:auto">' +
         (!R.comerciales.length ? '<div class="ic-vacio" style="margin:14px">Sin movimiento.</div>' :
@@ -269,6 +298,11 @@
       // Comerciales
       const r5 = hoja('Comerciales', 'Resumen por comercial', [['c', 'Comercial', 26], ['nE', 'Cotizaciones', 12], ['vE', 'Cotizado', 16, MON], ['nG', 'Ganadas', 10], ['vG', 'Ganado', 16, MON], ['nP', 'Perdidas', 10], ['t', 'Tasa de cierre', 12], ['tk', 'Ticket prom.', 16, MON], ['dc', 'Días de cierre', 12], ['nA', 'Abiertas', 10], ['vA', 'Abierto hoy', 16, MON]]);
       agregar(r5, R.comerciales.map((x) => ({ c: x.nombre, nE: x.nE, vE: x.vE, nG: x.nG, vG: x.vG, nP: x.nP, t: x.tasa, tk: x.ticket, dc: x.diasCierre, nA: x.nA, vA: x.vA })));
+      const A = calcularActividad(R);
+      if (A && A.listo) {
+        const r6 = hoja('Actividad', 'Actividad comercial', [['c', 'Comercial', 26]].concat(A.CANALES.map(([k, n]) => [k, n, 12])).concat([['t', 'Total', 10], ['l', 'Con contacto', 12], ['d', 'Pendientes con fecha', 14], ['a', 'Hechos a tiempo', 14], ['v', 'Vencidos', 10]]));
+        agregar(r6, A.porComercial.map((x) => Object.assign({ c: x.nombre, t: x.total, l: x.logrados, d: x.due, a: x.aTiempo, v: x.vencidos }, Object.fromEntries(A.CANALES.map(([k]) => [k, x[k]])))));
+      }
       const buf = await wb.xlsx.writeBuffer();
       const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
       a.download = 'Tablero_Comercial_' + R.d + '_a_' + R.h + '.xlsx'; document.body.appendChild(a); a.click(); a.remove();
