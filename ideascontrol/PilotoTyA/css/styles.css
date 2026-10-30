@@ -1,22 +1,32 @@
 /* Landing Tiempo y Asistencia · Ideas Control */
 :root {
-  --blue: #17365D;      /* Azul corporativo */
-  --blue-d: #0F2742;
-  --teal: #00968F;      /* Turquesa: iconos, barras, textos grandes */
-  --teal-t: #007C77;    /* Turquesa para textos pequeños (contraste AA) */
-  --teal-bg: #E0F3F1;
-  --gold: #C9A227;
-  --ink: #263746;       /* Gris oscuro para textos */
-  --ink-2: #5B6B7A;
+  /* Paleta tomada de la presentación B2B de Ideas Control */
+  --navy: #0B2945;      /* fondo oscuro principal */
+  --navy-2: #0E3960;    /* fondo oscuro medio */
+  --navy-3: #0E5F7A;    /* final del degradado */
+  --card-dark: #133B5E; /* tarjetas sobre fondo oscuro */
+  --blue: #0E3960;      /* botones y enlaces sobre fondo claro */
+  --blue-d: #0B2945;
+  --sky: #1FA3E0;       /* acento azul */
+  --teal: #1BB0A8;      /* acento turquesa */
+  --teal-t: #0F7F86;    /* turquesa para textos pequeños sobre blanco */
+  --teal-bg: #E2F5F3;
+  --green: #8CC57A;     /* acento verde */
+  --gold: #E0B93A;      /* acento dorado / llamados */
+  --ink: #182E40;
+  --ink-2: #4E6072;
+  --on-dark: #C9D6E3;   /* texto secundario sobre oscuro */
   --line: #DCE3EA;
   --bg: #FFFFFF;
-  --bg-2: #F3F6F9;      /* Gris muy claro */
+  --bg-2: #F3F6F9;
   --err: #B42318;
   --err-bg: #FEF3F2;
   --ok: #0F7B5F;
   --radius: 14px;
-  --shadow: 0 10px 30px rgba(23, 54, 93, .08), 0 2px 6px rgba(23, 54, 93, .05);
-  --font: "Montserrat", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --shadow: 0 10px 30px rgba(11, 41, 69, .10), 0 2px 6px rgba(11, 41, 69, .06);
+  --font: "Nunito Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-h: "Encode Sans Semi Expanded", "Nunito Sans", system-ui, sans-serif;
+  --brand-bar: linear-gradient(90deg, #0E76BB 0%, #1285A2 33%, #479A7B 66%, #DEB93B 100%);
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -171,12 +181,80 @@ input:focus, select:focus { border-color: var(--blue); outline: 3px solid rgba(0
 .footer__links a { color: var(--ink-2); }
 .footer__legal { grid-column: 1 / -1; font-size: .82rem; color: var(--ink-2); margin: 0; }
 
+
+/* ===================== Tema presentación B2B ===================== */
+h1, h2, h3 { font-family: var(--font-h); letter-spacing: -.005em; }
+.topbar::before { content: ""; display: block; height: 4px; background: var(--brand-bar); }
+
+/* Hero oscuro con degradado */
+.hero { background: radial-gradient(1200px 600px at 85% 20%, rgba(27,176,168,.18), transparent 60%), linear-gradient(135deg, var(--navy) 0%, var(--navy-2) 55%, var(--navy-3) 100%); color: #fff; padding: 80px 0 88px; }
+.hero__print { opacity: .55; width: 560px; right: -60px; top: -10px; }
+.hero .eyebrow { color: var(--gold); }
+.hero h1 { color: #fff; }
+.hero .hl { background: none; -webkit-background-clip: initial; background-clip: initial; color: var(--gold); }
+.hero .lead { color: var(--on-dark); }
+.hero .btn--primary { background: var(--gold); color: var(--navy); }
+.hero .btn--primary:hover { background: #F0CC55; color: var(--navy); }
+.hero .btn--ghost { color: #fff; border-color: rgba(255,255,255,.7); }
+.hero .btn--ghost:hover { background: rgba(255,255,255,.1); }
+.hero :focus-visible { outline-color: var(--gold); }
+.chips { list-style: none; padding: 0; margin: 26px 0 0; display: flex; flex-wrap: wrap; gap: 10px; }
+.chips li { font-size: .85rem; font-weight: 700; padding: 6px 14px; border-radius: 999px; }
+.chips li:nth-child(1) { background: var(--teal); color: var(--navy); }
+.chips li:nth-child(2) { background: var(--sky); color: var(--navy); }
+.chips li:nth-child(3) { background: var(--green); color: var(--navy); }
+.chips li:nth-child(4) { background: var(--gold); color: var(--navy); }
+
+/* La solución: íconos de colores y cierre dorado */
+.pillars li:nth-child(1) .pillars__ic { background: #E1F2FB; color: #0E6FA0; }
+.pillars li:nth-child(2) .pillars__ic { background: #E2F5F3; color: #0F7F86; }
+.pillars li:nth-child(3) .pillars__ic { background: #EAF5E6; color: #3F7F2E; }
+.pillars li:nth-child(4) .pillars__ic { background: #FBF3DC; color: #8A6A0B; }
+.closing { display: grid; grid-template-columns: 44px 1fr; gap: 16px; align-items: center; background: var(--gold); border: 0; border-radius: var(--radius); padding: 26px 30px; box-shadow: var(--shadow); }
+.closing__ic { width: 44px; height: 44px; color: var(--navy); }
+.closing p { color: var(--navy); font-size: clamp(1.1rem, 2.2vw, 1.45rem); }
+.closing__b { background: none; -webkit-background-clip: initial; background-clip: initial; color: var(--navy); font-weight: 700 !important; }
+
+/* Beneficios sobre fondo oscuro */
+.section--dark { background: linear-gradient(180deg, var(--navy) 0%, #0B2D4B 100%); color: #fff; }
+.section--dark .eyebrow { color: var(--gold); }
+.section--dark h2 { color: #fff; }
+.section--dark .benefits li { background: var(--card-dark); border: 0; border-left: 5px solid var(--sky); border-radius: var(--radius); }
+.section--dark .benefits li:nth-child(2) { border-left-color: var(--teal); }
+.section--dark .benefits li:nth-child(3) { border-left-color: var(--green); }
+.section--dark .benefits li:nth-child(4) { border-left-color: var(--gold); }
+.section--dark .benefits__k { color: var(--gold); opacity: 1; }
+.section--dark .benefits h3 { color: #fff; }
+.section--dark .benefits p { color: var(--on-dark); }
+
+/* Cómo funciona: tarjetas con borde superior de color */
+.steps li { border-top: 4px solid var(--sky); box-shadow: var(--shadow); }
+.steps li:nth-child(2) { border-top-color: var(--teal); }
+.steps li:nth-child(3) { border-top-color: var(--gold); }
+.steps li::before { background: #0E76BB; }
+.steps li:nth-child(2)::before { background: var(--teal-t); }
+.steps li:nth-child(3)::before { background: var(--gold); color: var(--navy); }
+
+/* Contacto */
+#registro { background: var(--bg-2); }
+.card { border-top: 4px solid transparent; border-image: var(--brand-bar) 1; border-image-slice: 1; }
+.card { border-image: none; position: relative; overflow: hidden; }
+.card::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 5px; background: var(--brand-bar); }
+
+/* Pie oscuro */
+.footer { background: var(--navy); border-top: 0; color: var(--on-dark); position: relative; }
+.footer::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--brand-bar); }
+.footer__logo { background: #fff; padding: 8px 12px; border-radius: 10px; height: 50px; }
+.footer__links a { color: #fff; }
+.footer__legal { color: var(--on-dark); }
+
 /* Tablet */
 @media (max-width: 980px) {
   .hero__in, .cond, .reg { grid-template-columns: 1fr; gap: 32px; }
   .benefits { grid-template-columns: repeat(2, 1fr); }
   .steps { grid-template-columns: 1fr; }
   .pillars { grid-template-columns: 1fr; }
+  .hero__print { opacity: .35; }
   .pillars li:nth-child(2) { border-top: 0; }
   .hero__print { width: 380px; right: -140px; }
 }
@@ -195,7 +273,10 @@ input:focus, select:focus { border-color: var(--blue); outline: 3px solid rgba(0
   .benefits, .terms { grid-template-columns: 1fr; }
   .pillars li { grid-template-columns: 42px 1fr; gap: 14px; padding: 22px 0; }
   .pillars__ic { width: 42px; height: 42px; }
-  .closing { padding: 22px 20px; }
+  .closing { padding: 20px 18px; grid-template-columns: 34px 1fr; gap: 12px; }
+  .closing__ic { width: 34px; height: 34px; }
+  .hero { padding: 52px 0 60px; }
+  .footer__logo { height: 44px; }
   .card { padding: 22px 18px; border-radius: 14px; }
   .row { grid-template-columns: 1fr; gap: 0; }
   .footer__in { grid-template-columns: 1fr; }
