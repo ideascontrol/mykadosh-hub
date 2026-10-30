@@ -1,5 +1,5 @@
 /* ==========================================================================
-   CONFIGURACIÓN DE LA LANDING — Soluciones de Time & Attendance · Ideas Control
+   CONFIGURACIÓN DE LA LANDING — Soluciones de Tiempo y Asistencia · Ideas Control
    Este es el ÚNICO archivo que Ideas Control debe editar antes de publicar.
    Aquí NO van credenciales ni secretos: la URL del Web App de Apps Script
    es pública por diseño (el backend valida y protege la escritura).
