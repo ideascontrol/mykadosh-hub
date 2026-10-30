@@ -95,7 +95,7 @@
     pais: function () { return V.validateCountry($('pais').value, countryNames); },
     acepta: function () {
       return $('acepta').checked ? { ok: true, value: true }
-        : { ok: false, msg: 'Debes autorizar el tratamiento de datos y aceptar los términos para enviar la solicitud.' };
+        : { ok: false, msg: 'Debes autorizar el tratamiento de tus datos para enviar la solicitud.' };
     }
   };
 
@@ -122,7 +122,7 @@
     btn.disabled = on;
     btn.classList.toggle('is-loading', on);
     btn.setAttribute('aria-busy', on ? 'true' : 'false');
-    btn.querySelector('.btn__txt').textContent = on ? 'Enviando…' : 'Solicitar información del piloto';
+    btn.querySelector('.btn__txt').textContent = on ? 'Enviando…' : 'Quiero conocer la solución';
     statusBox.textContent = on ? 'Enviando tu solicitud…' : '';
   }
   function showAlert(msg) {

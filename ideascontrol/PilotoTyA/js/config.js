@@ -1,5 +1,5 @@
 /* ==========================================================================
-   CONFIGURACIÓN DE LA LANDING — Piloto biométrico 15 días · Ideas Control
+   CONFIGURACIÓN DE LA LANDING — Soluciones de Time & Attendance · Ideas Control
    Este es el ÚNICO archivo que Ideas Control debe editar antes de publicar.
    Aquí NO van credenciales ni secretos: la URL del Web App de Apps Script
    es pública por diseño (el backend valida y protege la escritura).
@@ -11,7 +11,7 @@ window.IC_CONFIG = {
 
   /* Versión vigente de las políticas. DEBE coincidir con la propiedad
      POLICY_VERSION del backend; si no coincide, el backend rechaza el registro. */
-  POLICY_VERSION: 'PIL-BIO-2026-10-v1',
+  POLICY_VERSION: 'TYA-LEAD-2026-10-v2',
 
   /* Dominios de correo personal que se rechazan (lista explícita y editable).
      Mantenerla IGUAL a la propiedad BLOCKED_DOMAINS del backend. */

@@ -75,6 +75,9 @@ a:hover { color: var(--blue-d); }
 .facts li:nth-child(4) .facts__n { color: var(--gold); }
 .facts__l { font-size: .88rem; color: var(--ink-2); line-height: 1.4; }
 
+.hero__in--solo { grid-template-columns: minmax(0, 760px); }
+.hero__in--solo .hero__copy { max-width: 760px; }
+
 /* Secciones */
 .section { padding: 72px 0; }
 .section--tint { background: var(--bg-2); }
@@ -92,6 +95,15 @@ a:hover { color: var(--blue-d); }
 .terms > div { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
 .terms dt { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--teal); font-weight: 700; }
 .terms dd { margin: 4px 0 0; font-weight: 600; font-size: .95rem; }
+
+/* Cómo funciona */
+.steps { list-style: none; margin: 32px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; counter-reset: s; }
+.steps li { counter-increment: s; position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 24px 20px 22px 76px; }
+.steps li::before { content: counter(s); position: absolute; left: 20px; top: 22px; width: 40px; height: 40px; border-radius: 50%; background: var(--blue); color: #fff; font-weight: 800; display: grid; place-items: center; }
+.steps li:nth-child(2)::before { background: var(--teal); }
+.steps li:nth-child(3)::before { background: var(--gold); }
+.steps h3 { margin-bottom: .3em; }
+.steps p { color: var(--ink-2); font-size: .95rem; margin: 0; }
 
 /* Registro */
 .reg { display: grid; grid-template-columns: 1fr 1.25fr; gap: 48px; align-items: start; }
@@ -147,6 +159,7 @@ input:focus, select:focus { border-color: var(--blue); outline: 3px solid rgba(1
 @media (max-width: 980px) {
   .hero__in, .cond, .reg { grid-template-columns: 1fr; gap: 32px; }
   .benefits { grid-template-columns: repeat(2, 1fr); }
+  .steps { grid-template-columns: 1fr; }
   .hero__print { width: 380px; right: -140px; }
 }
 /* Móvil */

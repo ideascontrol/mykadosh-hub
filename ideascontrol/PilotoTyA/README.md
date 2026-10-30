@@ -1,4 +1,4 @@
-# Landing — Piloto biométrico 15 días sin costo · Ideas Control
+# Landing — Soluciones de Time & Attendance · Ideas Control
 
 Landing de captación de prospectos B2B. HTML/CSS/JS sin frameworks, sin cookies ni píxeles de seguimiento.
 Backend: Google Apps Script (Aplicación web) → Google Sheets `BD_Campana_Piloto_WFM`, pestaña `LEADS`.
@@ -36,7 +36,7 @@ ideascontrol/
 | Propiedad | Obligatoria | Valor |
 |---|---|---|
 | `SHEET_ID` | Sí | ID del archivo del paso 1 |
-| `POLICY_VERSION` | Sí | `PIL-BIO-2026-10-v1` (igual a `js/config.js`) |
+| `POLICY_VERSION` | Sí | `TYA-LEAD-2026-10-v2` (igual a `js/config.js`) |
 | `SHEET_NAME` | No | `LEADS` (predeterminado) |
 | `BLOCKED_DOMAINS` | No | lista separada por comas; si no se define se usa la lista por defecto |
 | `RATE_GLOBAL_PER_MIN` | No | 20 |
