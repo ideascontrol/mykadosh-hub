@@ -13,11 +13,6 @@ window.IC_CONFIG = {
      POLICY_VERSION del backend; si no coincide, el backend rechaza el registro. */
   POLICY_VERSION: 'PIL-BIO-2026-10-v1',
 
-  /* Enlaces a los documentos legales. Reemplazar por la URL de la política
-     oficial aprobada (1106-MAN-GER) cuando esté publicada. */
-  PRIVACY_URL: 'aviso-privacidad.html',
-  TERMS_URL: 'terminos-piloto.html',
-
   /* Dominios de correo personal que se rechazan (lista explícita y editable).
      Mantenerla IGUAL a la propiedad BLOCKED_DOMAINS del backend. */
   BLOCKED_EMAIL_DOMAINS: [

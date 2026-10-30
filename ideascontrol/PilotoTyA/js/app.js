@@ -45,9 +45,6 @@
     return out;
   }
 
-  /* ---------- Enlaces legales configurables ---------- */
-  ['privacy-link', 'privacy-link-foot'].forEach(function (id) { if ($(id) && CFG.PRIVACY_URL) $(id).href = CFG.PRIVACY_URL; });
-  ['terms-link', 'terms-link-foot', 'terms-link-cond'].forEach(function (id) { if ($(id) && CFG.TERMS_URL) $(id).href = CFG.TERMS_URL; });
   $('year').textContent = new Date().getFullYear();
 
   /* ---------- Selects ---------- */

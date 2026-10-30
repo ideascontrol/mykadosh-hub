@@ -10,9 +10,7 @@ ideascontrol/
 ├── assets/ideascontrol.webp            ← logo compartido (ya existe en el repo)
 └── PilotoTyA/
     ├── index.html                      ← landing
-    ├── terminos-piloto.html            ← BORRADOR: términos del piloto
-    ├── aviso-privacidad.html           ← BORRADOR: aviso de privacidad
-    ├── css/styles.css · css/legal.css
+    ├── css/styles.css
     ├── js/config.js                    ← ÚNICO archivo a editar antes de publicar
     ├── js/countries.js                 ← 245 países: nombre, prefijo y longitudes de teléfono
     ├── js/validation.js                ← validaciones del cliente
@@ -57,7 +55,6 @@ ideascontrol/
 En `js/config.js`:
 - `ENDPOINT_URL`: la URL `/exec` del paso 2.5. Mientras esté vacía, el formulario muestra un error y **no simula éxito**.
 - `POLICY_VERSION`: igual a la propiedad del backend. Si se cambia el texto de las políticas, suba la versión en **ambos** lados.
-- `PRIVACY_URL` / `TERMS_URL`: reemplazar por los documentos aprobados.
 - `BLOCKED_EMAIL_DOMAINS`: mantener igual a `BLOCKED_DOMAINS` del backend.
 - `CLOSE_AFTER_SECONDS` / `CLOSE_REDIRECT_URL`: cierre de la landing tras guardar.
 
@@ -115,9 +112,9 @@ Automáticas (`node --test tests/backend.test.js` y `node --test --test-concurre
 
 1. Cuenta Google corporativa propietaria del archivo y el **ID** de `BD_Campana_Piloto_WFM`.
 2. La **URL `/exec`** del despliegue → `ENDPOINT_URL`.
-3. **Texto de autorización de datos** de la casilla aprobado por el área responsable (borrador en `index.html`). Aceptar los términos del piloto **no** sustituye la autorización de tratamiento de datos; por eso la casilla incluye ambas de forma expresa.
-4. **Política de Tratamiento de Datos** oficial publicada (URL) → `PRIVACY_URL`; completar el aviso de privacidad: NIT, domicilio, correo de protección de datos, plazo de conservación.
-5. **Términos y condiciones del piloto** aprobados (completar los textos entre corchetes de `terminos-piloto.html`).
+3. **Texto de autorización de datos** de la casilla aprobado por el área responsable (en `index.html`). Aceptar los términos del piloto **no** sustituye la autorización de tratamiento de datos; por eso la casilla incluye ambas de forma expresa.
+4. **Política de Tratamiento de Datos Personales y Aviso de Privacidad** publicados en www.ideascontrol.com: la landing los menciona como texto (sin enlace), así que deben estar visibles en ese sitio.
+5. **Condiciones del piloto**: la landing no enlaza a términos externos; las condiciones que se aceptan son las de la sección «Condiciones del piloto» de la página.
 6. **Versión de las políticas** definitiva (`POLICY_VERSION` en ambos lados).
 7. Datos corporativos para el pie de página (teléfono, correo, dirección) **verificados en el sitio oficial**; hoy el pie solo muestra razón social y enlaces.
 8. Lista final de dominios personales bloqueados.
