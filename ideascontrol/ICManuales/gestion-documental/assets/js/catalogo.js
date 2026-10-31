@@ -94,7 +94,8 @@ window.GD_CATALOGO = {
        "tipo": "MAN",
        "estado": "publicado",
        "version": "1.0",
-       "fecha": "Octubre 2026",
+       "fecha": "Octubre 2025",
+       "revision": "Octubre 2026",
        "responsable": "Gerencia General",
        "resumen": "Principios, valores y normas de conducta de Ideas Control y de quienes actúan en su nombre: compromisos con las personas, con clientes, proveedores y aliados, integridad y transparencia, manejo de la información y la tecnología, responsabilidad social y ambiental, y gestión del código.",
        "temas": [
@@ -138,7 +139,8 @@ window.GD_CATALOGO = {
        "tipo": "MAN",
        "estado": "publicado",
        "version": "1.0",
-       "fecha": "Octubre 2026",
+       "fecha": "Octubre 2025",
+       "revision": "Octubre 2026",
        "responsable": "Gerencia General",
        "resumen": "Cómo Ideas Control recolecta, usa, circula y suprime datos personales (habeas data, Ley 1581 de 2012): responsable del tratamiento, finalidades, autorización y aviso de privacidad, derechos de los titulares, procedimiento de consultas y reclamos, deberes y seguridad de los datos.",
        "temas": [
@@ -182,7 +184,8 @@ window.GD_CATALOGO = {
        "tipo": "MAN",
        "estado": "publicado",
        "version": "1.0",
-       "fecha": "Octubre 2026",
+       "fecha": "Octubre 2025",
+       "revision": "Octubre 2026",
        "responsable": "Gerencia General",
        "resumen": "Reglas para asignar, usar, cuidar, controlar, devolver y dar de baja los recursos tecnológicos de Ideas Control: equipos y dispositivos, cuentas, correo, internet y comunicaciones, software e información, trabajo remoto, control y prohibiciones.",
        "temas": [
@@ -222,7 +225,8 @@ window.GD_CATALOGO = {
        "tipo": "MAN",
        "estado": "publicado",
        "version": "1.0",
-       "fecha": "Octubre 2026",
+       "fecha": "Octubre 2025",
+       "revision": "Octubre 2026",
        "responsable": "Gerencia General",
        "resumen": "Condiciones para trabajar por fuera de las instalaciones mediante teletrabajo, trabajo remoto o trabajo en casa: elegibilidad y procedimiento, condiciones de trabajo, desconexión laboral, reversibilidad, terminación y cumplimiento.",
        "temas": [
