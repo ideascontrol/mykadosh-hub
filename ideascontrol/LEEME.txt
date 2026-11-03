@@ -1,4 +1,5 @@
 IDEAS CONTROL · MICROAPPS · Repositorio completo
+Nuevo (3 nov 2026): Portal de microapps (APP-100) y Programación de Operaciones (APP-106) v0.1.0 · Etapa 1
 Versión de la Microapp Comercial (APP-101): 0.4.0 · Etapa 2
 Fecha del paquete: 18 de octubre de 2026 (incluye Ayuda e Interacciones y pendientes)
 
@@ -62,3 +63,47 @@ NO SE INCLUYEN (no van en GitHub)
 - Las fotos de productos: van a la biblioteca Imagenes_Productos de IC Apps.
 - Los manuales: están en Claude (Manual de usuario y Manual técnico). El contenido del
   manual de usuario también va dentro de la app (botón Ayuda).
+
+=====================================================================
+NUEVO · 3 de noviembre de 2026
+=====================================================================
+├─ Portal/                           APP-100 · Portal de microapps → mykadosh.com/ideascontrol/Portal/
+│  ├─ index.html                     menú principal (un solo inicio de sesión para todas las apps internas)
+│  └─ js/config.js                   lista de apps del menú (para agregar una app: sumar una entrada)
+│     js/portal.js                   inicio de sesión, accesos y franja «Hoy en operación»
+└─ Programacion/                     APP-106 · Programación de Operaciones → mykadosh.com/ideascontrol/Programacion/
+   ├─ index.html                     reemplaza el Excel 2506-MAN-OPE_Programador_de_Operaciones.xlsx
+   ├─ Instalador/index.html          crea las listas OPE_ en IC Apps e importa el Excel actual
+   ├─ css/ope.css                    calendario, semana, impresión
+   └─ js/
+      ├─ config.js                   versión, sitio IC Apps, Entra ID
+      ├─ datos.js                    listas, fechas y REGLAS de validación (las mismas del Excel)
+      ├─ app.js                      arranque, roles y menú
+      ├─ actividades.js              formulario, lista, reprogramar, cancelar, conflictos, mi agenda
+      ├─ vistas.js                   agenda (calendario), programación semanal, rotación, carga
+      ├─ admin.js                    técnicos y habilidades, tipos, accesos, festivos
+      └─ politicas.js                políticas de programación y ayuda
+
+LISTAS NUEVAS EN IC APPS (las crea el instalador)
+- OPE_Tecnicos      técnicos, vinculación, correo y matriz de habilidades
+- OPE_Tipos         tipos de actividad, días preferentes, máx. equipos por técnico-día
+- OPE_Actividades   cada actividad programada (antes: hoja Entradas)
+- SYS_Accesos       rol de cada usuario por microapp (ADMIN, EDITOR, CONSULTA)
+Se reutilizan (fuente única): SYS_Festivos, SYS_Secuencias, SYS_Auditoria, SYS_Microapps y MAE_Empresas (clientes de Comercial).
+
+ANTES DE USARLAS (una sola vez) · Entra ID › App registrations › la app de Comercial › Authentication › Single-page application
+Agregue estas URI de redirección (con y sin www):
+  https://mykadosh.com/ideascontrol/Portal/
+  https://www.mykadosh.com/ideascontrol/Portal/
+  https://mykadosh.com/ideascontrol/Programacion/
+  https://www.mykadosh.com/ideascontrol/Programacion/
+  https://mykadosh.com/ideascontrol/Programacion/Instalador/
+  https://www.mykadosh.com/ideascontrol/Programacion/Instalador/
+No hay permisos nuevos: son los mismos de Comercial (User.Read, Sites.ReadWrite.All; Sites.Manage.All solo el instalador).
+
+INSTALACIÓN DE LA PROGRAMACIÓN
+1. Suba las carpetas Portal y Programacion a ideascontrol/ en GitHub.
+2. Abra mykadosh.com/ideascontrol/Programacion/Instalador/, inicie sesión y clic en «Crear estructura».
+3. (Opcional) En el paso 4 seleccione el Excel 2506-MAN-OPE y clic en «Importar actividades». Repetirlo no duplica.
+4. En la app › Administración › Técnicos registre el correo de cada técnico (para que vean su agenda) y en Accesos
+   agregue a quien programe (Programador) o consulte. Todos deben ser miembros del sitio IC Apps.

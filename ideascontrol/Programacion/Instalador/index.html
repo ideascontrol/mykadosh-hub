@@ -1,0 +1,817 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Instalador · Programación de Operaciones</title>
+<link rel="icon" href="/ideascontrol/assets/ideascontrol.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --azul:#0E76BC; --teal:#159090; --dorado:#C9A227; --tinta:#1d2b36; --gris:#5b6770; --fondo:#f4f7fa; --borde:#dbe3ea; --ok:#1f8a4c; --err:#c0392b; --warn:#b7791f; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:Inter,Arial,sans-serif; background:var(--fondo); color:var(--tinta); }
+  header { background:#fff; border-bottom:3px solid var(--dorado); padding:14px 20px; display:flex; align-items:center; gap:14px; }
+  header img { height:40px; }
+  header h1 { font-size:18px; margin:0; color:var(--azul); }
+  header p { margin:2px 0 0; font-size:13px; color:var(--gris); }
+  main { max-width:860px; margin:24px auto; padding:0 16px; }
+  .card { background:#fff; border:1px solid var(--borde); border-radius:10px; padding:20px; margin-bottom:16px; }
+  .paso { display:flex; gap:14px; align-items:flex-start; padding:12px 0; border-bottom:1px solid var(--borde); }
+  .paso:last-child { border-bottom:0; }
+  .num { flex:0 0 32px; height:32px; border-radius:50%; background:var(--borde); color:var(--gris); display:grid; place-items:center; font-weight:700; }
+  .paso[data-estado=ok] .num { background:var(--ok); color:#fff; }
+  .paso[data-estado=run] .num { background:var(--azul); color:#fff; }
+  .paso[data-estado=err] .num { background:var(--err); color:#fff; }
+  .paso h2 { font-size:15px; margin:4px 0 4px; }
+  .paso p { margin:0 0 8px; font-size:13px; color:var(--gris); line-height:1.5; }
+  button { font:inherit; font-weight:600; border:0; border-radius:8px; padding:10px 18px; cursor:pointer; background:var(--azul); color:#fff; }
+  button.sec { background:#fff; color:var(--azul); border:1px solid var(--azul); }
+  button:disabled { background:#b8c4cd; cursor:not-allowed; }
+  .fila { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .barra { height:10px; background:var(--borde); border-radius:6px; overflow:hidden; margin-top:12px; }
+  #bar { height:100%; width:0; background:linear-gradient(90deg,var(--azul),var(--teal)); transition:width .3s; }
+  #barText { font-size:12px; color:var(--gris); margin-top:4px; }
+  #log { background:#0f1a22; color:#d7e3ea; font:12px/1.6 ui-monospace,Consolas,monospace; border-radius:8px; padding:12px; height:300px; overflow:auto; white-space:pre-wrap; }
+  .log-line.ok { color:#7fe0a5; } .log-line.err { color:#ff9b8f; } .log-line.warn { color:#f5d27a; } .log-line.title { color:#8cc8f0; font-weight:700; margin-top:6px; }
+  #usuario { font-size:13px; color:var(--ok); font-weight:600; }
+  #fin { border-left:4px solid var(--ok); }
+  #fin a { color:var(--azul); font-weight:600; }
+  @media (max-width:600px){ header{flex-wrap:wrap;} }
+</style>
+</head>
+<body>
+<header>
+  <img src="/ideascontrol/assets/ideascontrol.webp" alt="Ideas Control" onerror="this.style.display='none'">
+  <div><h1>Instalador IC Apps · APP-106 Programación de Operaciones</h1><p>Crea las listas de SharePoint, carga técnicos y tipos, y (opcional) importa el Excel actual. Puede repetirse sin duplicar.</p></div>
+</header>
+<main>
+  <div class="card">
+    <div class="paso" id="paso1" data-estado="pend">
+      <div class="num">1</div>
+      <div>
+        <h2>Iniciar sesión con Microsoft</h2>
+        <p>Use su cuenta de Ideas Control. Debe ser propietario del sitio IC Apps.</p>
+        <div class="fila"><button id="btnLogin" hidden>Iniciar sesión</button><span id="usuario"></span><button id="btnLogout" class="sec" hidden>Cerrar sesión</button></div>
+      </div>
+    </div>
+    <div class="paso" id="paso2" data-estado="pend">
+      <div class="num">2</div>
+      <div><h2>Verificar el sitio IC Apps</h2><p>Se revisa automáticamente al iniciar sesión.</p></div>
+    </div>
+    <div class="paso" id="paso3" data-estado="pend">
+      <div class="num">3</div>
+      <div style="flex:1">
+        <h2>Crear estructura</h2>
+        <p>Crea o completa <b id="lblListas"></b> listas (OPE_Tecnicos, OPE_Tipos, OPE_Actividades, SYS_Accesos y las SYS_ compartidas), carga los 8 técnicos con su matriz de habilidades, los 12 tipos de actividad y los festivos que falten, registra la app en el catálogo de microapps y lo registra a usted como Director de Operaciones.</p>
+        <button id="btnCrear" disabled>Crear estructura</button>
+        <div class="barra"><div id="bar"></div></div><div id="barText"></div>
+      </div>
+    </div>
+    <div class="paso" id="paso4" data-estado="pend">
+      <div class="num">4</div>
+      <div style="flex:1">
+        <h2>Importar el Excel actual (opcional)</h2>
+        <p>Seleccione <b>2506-MAN-OPE_Programador_de_Operaciones.xlsx</b>. Se leen las filas de la hoja <b>Entradas</b> y se crean como actividades. Si lo vuelve a importar, las filas ya importadas no se duplican (se comparan fecha, técnico, tipo, cliente, hora y ticket). Importe la versión final del Excel y desde ese momento programe solo en la app.</p>
+        <div class="fila"><input type="file" id="archivo" accept=".xlsx" disabled><button id="btnImportar" disabled>Importar actividades</button></div>
+      </div>
+    </div>
+  </div>
+  <div class="card" id="fin" hidden>
+    <b>Listo.</b> Abra la app en <a href="/ideascontrol/Programacion/">mykadosh.com/ideascontrol/Programacion/</a> o el portal en <a href="/ideascontrol/Portal/">mykadosh.com/ideascontrol/Portal/</a>. Las listas quedan en <a id="linkSitio" target="_blank" rel="noopener">el contenido del sitio IC Apps</a>.
+  </div>
+  <div class="card"><div id="log"></div></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@3.30.0/lib/msal-browser.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+// ====== DEFINICIÓN DE LISTAS (IC Apps · APP-106 Programación de Operaciones) ======
+// Tipos: t=texto · m=texto multilínea · n=número · b=sí/no · d=fecha · dt=fecha y hora · c=opción [choices]
+// i=1 → columna indexada. La columna Title de cada lista guarda el ID de negocio.
+// Las SYS_ son compartidas con la app Comercial: si ya existen, no se tocan (solo se agregan columnas que falten).
+const ESTADO = ['ACTIVO', 'INACTIVO'];
+const LISTAS = [
+  { n: 'SYS_Microapps', title: 'app_id', d: 'Catálogo de microapps de Ideas Control', cols: [
+    ['nombre', 't'], ['tipo', 'c', ['PUBLICA', 'INTERNA', 'PRODUCTO']], ['proposito', 'm'],
+    ['estado', 'c', ['CONSTRUIDA', 'EN_CONSTRUCCION', 'PLANEADA', 'POR_CONFIRMAR', 'RETIRADA']],
+    ['plataforma', 't'], ['carpeta_actual', 't'], ['url', 't']] },
+  { n: 'SYS_Secuencias', title: 'clave', d: 'Numeración de IDs y consecutivos (no editar a mano)', cols: [
+    ['ultimo_numero', 'n']] },
+  { n: 'SYS_Festivos', title: 'fecha_texto', d: 'Festivos de Colombia', cols: [
+    ['fecha', 'd', null, 1], ['descripcion', 't']] },
+  { n: 'SYS_Auditoria', title: 'evento_id', d: 'Eventos relevantes de las microapps', cols: [
+    ['fecha_hora', 'dt', null, 1], ['usuario_id', 't', null, 1], ['app_id', 't'], ['entidad', 't', null, 1], ['registro_id', 't', null, 1],
+    ['accion', 'c', ['CREAR', 'ACTUALIZAR', 'DESACTIVAR', 'CAMBIO_ESTADO', 'APROBAR', 'REVISION', 'ANULAR', 'GENERAR_PDF']],
+    ['antes', 'm'], ['despues', 'm']] },
+  { n: 'SYS_Accesos', title: 'acceso_id', d: 'Acceso de usuarios por microapp (rol por app)', cols: [
+    ['email', 't', null, 1], ['nombre', 't'], ['app_id', 't', null, 1], ['rol', 'c', ['ADMIN', 'EDITOR', 'CONSULTA']], ['estado', 'c', ESTADO, 1]] },
+  { n: 'OPE_Tipos', title: 'codigo', d: 'Tipos de actividad, días preferentes y capacidad', cols: [
+    ['nombre', 't'], ['dias_preferentes', 't'], ['max_equipos', 'n'], ['descripcion', 'm'], ['color', 't'], ['orden', 'n'], ['estado', 'c', ESTADO]] },
+  { n: 'OPE_Tecnicos', title: 'tecnico_id', d: 'Técnicos, vinculación y matriz de habilidades', cols: [
+    ['nombre', 't'], ['iniciales', 't'], ['vinculacion', 'c', ['IDEAS_CONTROL', 'TECNICO_CAMPO']], ['email', 't', null, 1], ['celular', 't'],
+    ['habilidades', 't'], ['horario_especial', 'm'], ['orden', 'n'], ['estado', 'c', ESTADO]] },
+  { n: 'OPE_Actividades', title: 'actividad_id', d: 'Programación de técnicos: instalaciones, mantenimientos, soporte, turnos de oficina, ausencias', cols: [
+    ['fecha', 'd', null, 1], ['tecnico_id', 't', null, 1], ['tipo', 't', null, 1], ['cliente', 't'], ['empresa_id', 't'], ['ciudad', 't'],
+    ['equipos', 'n'], ['hora_inicio', 't'], ['ticket_os', 't'],
+    ['estado', 'c', ['PROGRAMADO', 'CONFIRMADO', 'EJECUTADO', 'REPROGRAMADO', 'CANCELADO'], 1],
+    ['observaciones', 'm'], ['reprograma_de', 't'], ['autorizado', 'b'], ['motivo_cambio', 't'], ['origen', 't', null, 1]] }
+];
+// Datos iniciales tomados de la hoja «Listas» del Excel 2506-MAN-OPE. Solo se cargan los que no existan (por Title).
+const SEMILLAS = {
+ "OPE_Tipos": [
+  {
+   "Title": "INS",
+   "nombre": "Instalación",
+   "dias_preferentes": "1;3;5",
+   "descripcion": "Instalación de equipos biométricos. Días preferentes: lunes, miércoles y viernes. Máximo 3 equipos por técnico-día según la distancia.",
+   "orden": 1,
+   "color": "#0E76BC",
+   "estado": "ACTIVO",
+   "max_equipos": 3
+  },
+  {
+   "Title": "MTO",
+   "nombre": "Mantenimiento",
+   "dias_preferentes": "2;4",
+   "descripcion": "Mantenimiento de equipos biométricos. Días preferentes: martes y jueves. Máximo 4 equipos por técnico-día según la distancia.",
+   "orden": 2,
+   "color": "#159090",
+   "estado": "ACTIVO",
+   "max_equipos": 4
+  },
+  {
+   "Title": "SPR",
+   "nombre": "Soporte presencial",
+   "dias_preferentes": "1;2;3;4;5",
+   "descripcion": "Visita de soporte en sitio, de software o hardware.",
+   "orden": 3,
+   "color": "#7A4FB0",
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "SVS",
+   "nombre": "Soporte virtual software",
+   "dias_preferentes": "1;2;3;4;5",
+   "descripcion": "Soporte remoto de software (aplicaciones, configuración, integraciones).",
+   "orden": 4,
+   "color": "#4F6D84",
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "SVH",
+   "nombre": "Soporte virtual hardware",
+   "dias_preferentes": "1;2;3;4;5",
+   "descripcion": "Soporte remoto de equipos biométricos y hardware.",
+   "orden": 5,
+   "color": "#8A6D0F",
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "IMP",
+   "nombre": "Implementación",
+   "dias_preferentes": "1;2;3;4;5",
+   "descripcion": "Implementación de las apps, en sitio o remota. La realiza Andrés Bernal.",
+   "orden": 6,
+   "color": "#C25A1C",
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "DES",
+   "nombre": "Desarrollo",
+   "dias_preferentes": "1;2;3;4;5",
+   "descripcion": "Desarrollos y ajustes de software.",
+   "orden": 7,
+   "color": "#5B4B8A",
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "OFI",
+   "nombre": "Oficina",
+   "dias_preferentes": "1;2;3;4;5",
+   "descripcion": "Técnico de turno en oficina (rotación diaria entre técnicos de Ideas Control, manual 2506-MAN-OPE).",
+   "orden": 8,
+   "color": "#1D2B36",
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "CAP",
+   "nombre": "Capacitación",
+   "dias_preferentes": "1;2;3;4;5",
+   "descripcion": "Capacitación a cliente o formación interna fuera del turno de oficina.",
+   "orden": 9,
+   "color": "#2E8B57",
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "INV",
+   "nombre": "Inventario",
+   "dias_preferentes": "1;2;3;4;5",
+   "descripcion": "Inventario de equipos, repuestos y herramientas en la oficina. Se programa con más de 1 técnico; no es tarea del técnico de turno.",
+   "orden": 10,
+   "color": "#A0522D",
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "OTR",
+   "nombre": "Otros",
+   "dias_preferentes": "1;2;3;4;5;6;7",
+   "descripcion": "Otras actividades que no entran en las definiciones previas. Describa la actividad en Observaciones.",
+   "orden": 11,
+   "color": "#6B7780",
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "AUS",
+   "nombre": "Ausencia",
+   "dias_preferentes": "1;2;3;4;5;6;7",
+   "descripcion": "Vacaciones, incapacidad o permiso: el técnico no está disponible.",
+   "orden": 12,
+   "color": "#9AA5AE",
+   "estado": "ACTIVO"
+  }
+ ],
+ "OPE_Tecnicos": [
+  {
+   "Title": "TEC-01",
+   "nombre": "Juan Pablo Morales",
+   "iniciales": "JP",
+   "vinculacion": "IDEAS_CONTROL",
+   "habilidades": "INS;MTO;SPR;SVS;SVH;OFI;CAP;INV;OTR;AUS",
+   "orden": 1,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "TEC-02",
+   "nombre": "David Loaiza",
+   "iniciales": "DL",
+   "vinculacion": "IDEAS_CONTROL",
+   "habilidades": "INS;MTO;SPR;SVS;SVH;OFI;CAP;INV;OTR;AUS",
+   "orden": 2,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "TEC-03",
+   "nombre": "Leonardo Ramírez",
+   "iniciales": "LR",
+   "vinculacion": "IDEAS_CONTROL",
+   "habilidades": "INS;MTO;SPR;SVS;SVH;OFI;CAP;INV;OTR;AUS",
+   "orden": 3,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "TEC-04",
+   "nombre": "Andrés Bernal",
+   "iniciales": "AB",
+   "vinculacion": "IDEAS_CONTROL",
+   "habilidades": "SVS;IMP;DES;OFI;CAP;INV;OTR;AUS",
+   "orden": 4,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "TEC-05",
+   "nombre": "Elkin Pulgarín",
+   "iniciales": "EP",
+   "vinculacion": "TECNICO_CAMPO",
+   "habilidades": "INS;MTO;SPR;OTR;AUS",
+   "orden": 5,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "TEC-06",
+   "nombre": "HerYaison",
+   "iniciales": "HY",
+   "vinculacion": "TECNICO_CAMPO",
+   "habilidades": "INS;MTO;SPR;OTR;AUS",
+   "orden": 6,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "TEC-07",
+   "nombre": "Johana Herrera",
+   "iniciales": "JH",
+   "vinculacion": "TECNICO_CAMPO",
+   "habilidades": "INS;MTO;SPR;OTR;AUS",
+   "orden": 7,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "TEC-08",
+   "nombre": "Nelson Yesid Supelano",
+   "iniciales": "NS",
+   "vinculacion": "TECNICO_CAMPO",
+   "habilidades": "INS;MTO;SPR;OTR;AUS",
+   "orden": 8,
+   "estado": "ACTIVO"
+  }
+ ],
+ "SYS_Festivos": [
+  {
+   "Title": "2026-01-01",
+   "fecha": "2026-01-01",
+   "descripcion": "Año Nuevo"
+  },
+  {
+   "Title": "2026-01-12",
+   "fecha": "2026-01-12",
+   "descripcion": "Reyes Magos"
+  },
+  {
+   "Title": "2026-03-23",
+   "fecha": "2026-03-23",
+   "descripcion": "San José"
+  },
+  {
+   "Title": "2026-04-02",
+   "fecha": "2026-04-02",
+   "descripcion": "Jueves Santo"
+  },
+  {
+   "Title": "2026-04-03",
+   "fecha": "2026-04-03",
+   "descripcion": "Viernes Santo"
+  },
+  {
+   "Title": "2026-05-01",
+   "fecha": "2026-05-01",
+   "descripcion": "Día del Trabajo"
+  },
+  {
+   "Title": "2026-05-18",
+   "fecha": "2026-05-18",
+   "descripcion": "Ascensión"
+  },
+  {
+   "Title": "2026-06-08",
+   "fecha": "2026-06-08",
+   "descripcion": "Corpus Christi"
+  },
+  {
+   "Title": "2026-06-15",
+   "fecha": "2026-06-15",
+   "descripcion": "Sagrado Corazón"
+  },
+  {
+   "Title": "2026-06-29",
+   "fecha": "2026-06-29",
+   "descripcion": "San Pedro y San Pablo"
+  },
+  {
+   "Title": "2026-07-20",
+   "fecha": "2026-07-20",
+   "descripcion": "Independencia"
+  },
+  {
+   "Title": "2026-08-07",
+   "fecha": "2026-08-07",
+   "descripcion": "Batalla de Boyacá"
+  },
+  {
+   "Title": "2026-08-17",
+   "fecha": "2026-08-17",
+   "descripcion": "Asunción de la Virgen"
+  },
+  {
+   "Title": "2026-10-12",
+   "fecha": "2026-10-12",
+   "descripcion": "Día de la Raza"
+  },
+  {
+   "Title": "2026-11-02",
+   "fecha": "2026-11-02",
+   "descripcion": "Todos los Santos"
+  },
+  {
+   "Title": "2026-11-16",
+   "fecha": "2026-11-16",
+   "descripcion": "Independencia de Cartagena"
+  },
+  {
+   "Title": "2026-12-08",
+   "fecha": "2026-12-08",
+   "descripcion": "Inmaculada Concepción"
+  },
+  {
+   "Title": "2026-12-25",
+   "fecha": "2026-12-25",
+   "descripcion": "Navidad"
+  },
+  {
+   "Title": "2027-01-01",
+   "fecha": "2027-01-01",
+   "descripcion": "Año Nuevo"
+  },
+  {
+   "Title": "2027-01-11",
+   "fecha": "2027-01-11",
+   "descripcion": "Reyes Magos"
+  },
+  {
+   "Title": "2027-03-22",
+   "fecha": "2027-03-22",
+   "descripcion": "San José"
+  },
+  {
+   "Title": "2027-03-25",
+   "fecha": "2027-03-25",
+   "descripcion": "Jueves Santo"
+  },
+  {
+   "Title": "2027-03-26",
+   "fecha": "2027-03-26",
+   "descripcion": "Viernes Santo"
+  },
+  {
+   "Title": "2027-05-01",
+   "fecha": "2027-05-01",
+   "descripcion": "Día del Trabajo"
+  },
+  {
+   "Title": "2027-05-10",
+   "fecha": "2027-05-10",
+   "descripcion": "Ascensión"
+  },
+  {
+   "Title": "2027-05-31",
+   "fecha": "2027-05-31",
+   "descripcion": "Corpus Christi"
+  },
+  {
+   "Title": "2027-06-07",
+   "fecha": "2027-06-07",
+   "descripcion": "Sagrado Corazón"
+  },
+  {
+   "Title": "2027-07-05",
+   "fecha": "2027-07-05",
+   "descripcion": "San Pedro y San Pablo"
+  },
+  {
+   "Title": "2027-07-20",
+   "fecha": "2027-07-20",
+   "descripcion": "Independencia"
+  },
+  {
+   "Title": "2027-08-07",
+   "fecha": "2027-08-07",
+   "descripcion": "Batalla de Boyacá"
+  },
+  {
+   "Title": "2027-08-16",
+   "fecha": "2027-08-16",
+   "descripcion": "Asunción de la Virgen"
+  },
+  {
+   "Title": "2027-10-18",
+   "fecha": "2027-10-18",
+   "descripcion": "Día de la Raza"
+  },
+  {
+   "Title": "2027-11-01",
+   "fecha": "2027-11-01",
+   "descripcion": "Todos los Santos"
+  },
+  {
+   "Title": "2027-11-15",
+   "fecha": "2027-11-15",
+   "descripcion": "Independencia de Cartagena"
+  },
+  {
+   "Title": "2027-12-08",
+   "fecha": "2027-12-08",
+   "descripcion": "Inmaculada Concepción"
+  },
+  {
+   "Title": "2027-12-25",
+   "fecha": "2027-12-25",
+   "descripcion": "Navidad"
+  }
+ ]
+}
+;
+SEMILLAS.SYS_Secuencias = [{ Title: 'PRG', ultimo_numero: 0 }, { Title: 'TEC', ultimo_numero: SEMILLAS.OPE_Tecnicos.length }, { Title: 'ACC', ultimo_numero: 0 }, { Title: 'EVT', ultimo_numero: 0 }];
+SEMILLAS.SYS_Microapps = [
+  { Title: 'APP-100', nombre: 'Portal de microapps', tipo: 'INTERNA', proposito: 'Menú principal: entrada única a las microapps internas de Ideas Control.', estado: 'CONSTRUIDA',
+    plataforma: 'HTML (GitHub) + Microsoft Graph', carpeta_actual: 'Portal', url: 'https://www.mykadosh.com/ideascontrol/Portal/' },
+  { Title: 'APP-106', nombre: 'Programación de Operaciones', tipo: 'INTERNA', proposito: 'Agenda y programación de técnicos: instalaciones, mantenimientos, soporte, rotación de oficina (2506-MAN-OPE).', estado: 'EN_CONSTRUCCION',
+    plataforma: 'HTML (GitHub) + Microsoft Graph + listas de SharePoint', carpeta_actual: 'Programacion', url: 'https://www.mykadosh.com/ideascontrol/Programacion/' }
+];
+// URL que se completa en el catálogo si está vacía
+const URL_FALTANTE = { 'APP-105': 'https://www.mykadosh.com/ideascontrol/ICManuales/gestion-documental/index.html', 'APP-101': 'https://www.mykadosh.com/ideascontrol/Comercial/' };
+
+// ====== CONFIGURACIÓN ======
+const CFG = {
+  clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
+  tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
+  host: 'ideascontrolsas.sharepoint.com',
+  sitePath: '/sites/ICApps',
+  scopes: ['User.Read', 'Sites.Manage.All', 'Sites.ReadWrite.All'],
+  // Debe coincidir EXACTAMENTE con una URI registrada en Entra ID (con o sin www, según cómo se abrió la página)
+  redirectUri: (typeof location !== 'undefined' ? location.origin : '') + '/ideascontrol/Programacion/Instalador/'
+};
+const GRAPH = 'https://graph.microsoft.com/v1.0';
+
+// ====== UTILIDADES DE INTERFAZ ======
+const $ = (id) => document.getElementById(id);
+function log(msg, tipo) {
+  const el = document.createElement('div');
+  el.className = 'log-line ' + (tipo || 'info');
+  const icon = { ok: '✅', warn: '⚠️', err: '❌', info: '•', title: '' }[tipo || 'info'];
+  el.textContent = (icon ? icon + ' ' : '') + msg;
+  $('log').appendChild(el);
+  $('log').scrollTop = $('log').scrollHeight;
+}
+function progreso(actual, total, texto) {
+  const pct = total ? Math.round(actual * 100 / total) : 0;
+  $('bar').style.width = pct + '%';
+  $('barText').textContent = texto || (pct + '%');
+}
+function estadoPaso(n, estado) { const el = $('paso' + n); if (el) el.dataset.estado = estado; }
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+
+// ====== AUTENTICACIÓN (MSAL) ======
+let msalApp = null, cuenta = null;
+async function iniciarMsal() {
+  msalApp = new msal.PublicClientApplication({
+    auth: { clientId: CFG.clientId, authority: 'https://login.microsoftonline.com/' + CFG.tenantId, redirectUri: CFG.redirectUri },
+    cache: { cacheLocation: 'sessionStorage' }
+  });
+  await msalApp.initialize();
+  const resp = await msalApp.handleRedirectPromise();
+  if (resp && resp.account) msalApp.setActiveAccount(resp.account);
+  cuenta = msalApp.getActiveAccount() || msalApp.getAllAccounts()[0] || null;
+  if (cuenta) msalApp.setActiveAccount(cuenta);
+}
+function iniciarSesion() { return msalApp.loginRedirect({ scopes: CFG.scopes, prompt: 'select_account' }); }
+function cerrarSesion() { return msalApp.logoutRedirect({ account: cuenta, postLogoutRedirectUri: CFG.redirectUri }); }
+async function token() {
+  try {
+    const r = await msalApp.acquireTokenSilent({ scopes: CFG.scopes, account: cuenta });
+    return r.accessToken;
+  } catch (e) {
+    if (e instanceof msal.InteractionRequiredAuthError) { await msalApp.acquireTokenRedirect({ scopes: CFG.scopes, account: cuenta }); }
+    throw e;
+  }
+}
+
+// ====== MICROSOFT GRAPH ======
+async function graph(method, path, body, extraHeaders) {
+  for (let intento = 1; intento <= 6; intento++) {
+    const headers = Object.assign({ Authorization: 'Bearer ' + await token(), 'Content-Type': 'application/json' }, extraHeaders || {});
+    const res = await fetch(path.startsWith('http') ? path : GRAPH + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    if (res.status === 429 || res.status === 503 || res.status === 504) {
+      const espera = Number(res.headers.get('Retry-After') || 2 * intento);
+      log('Microsoft pidió esperar ' + espera + ' s (límite de solicitudes)…', 'warn');
+      await sleep(espera * 1000); continue;
+    }
+    const txt = await res.text();
+    const data = txt ? JSON.parse(txt) : {};
+    if (!res.ok) {
+      const err = new Error((data.error && data.error.message) || ('HTTP ' + res.status));
+      err.status = res.status; err.code = data.error && data.error.code; throw err;
+    }
+    return data;
+  }
+  throw new Error('Demasiados reintentos con Microsoft Graph.');
+}
+async function graphAll(path) {
+  let url = path, out = [];
+  while (url) { const d = await graph('GET', url); out = out.concat(d.value || []); url = d['@odata.nextLink'] || null; }
+  return out;
+}
+
+// ====== CONSTRUCCIÓN DE COLUMNAS ======
+function columna(c) {
+  const [name, t, choices, idx] = c;
+  const def = { name, displayName: name };
+  if (t === 't') def.text = {};
+  else if (t === 'm') def.text = { allowMultipleLines: true, linesForEditing: 6, textType: 'plain' };
+  else if (t === 'n') def.number = { decimalPlaces: 'automatic' };
+  else if (t === 'b') def.boolean = {};
+  else if (t === 'd') def.dateTime = { format: 'dateOnly' };
+  else if (t === 'dt') def.dateTime = { format: 'dateTime' };
+  else if (t === 'c') def.choice = { choices, displayAs: 'dropDownMenu', allowTextEntry: false };
+  if (idx) def.indexed = true;
+  return def;
+}
+// Fechas "solo día": se envían a las 12:00 UTC para que no cambien de día por la zona horaria.
+function prepararCampos(lista, fields) {
+  const tipos = {}; lista.cols.forEach((c) => { tipos[c[0]] = c[1]; });
+  const out = {};
+  Object.keys(fields).forEach((k) => {
+    let v = fields[k];
+    if (v === '' || v === null || v === undefined) return;
+    if (tipos[k] === 'd' && /^\d{4}-\d{2}-\d{2}$/.test(v)) v = v + 'T12:00:00Z';
+    out[k] = v;
+  });
+  return out;
+}
+
+// ====== PASOS ======
+let sitio = null, listasExistentes = {};
+
+async function verificarSitio() {
+  estadoPaso(2, 'run');
+  log('Buscando el sitio ' + CFG.host + CFG.sitePath + '…', 'title');
+  sitio = await graph('GET', '/sites/' + CFG.host + ':' + CFG.sitePath + '?$select=id,displayName,webUrl');
+  log('Sitio encontrado: "' + sitio.displayName + '" (' + sitio.webUrl + ')', 'ok');
+  const listas = await graphAll('/sites/' + sitio.id + '/lists?$select=id,displayName&$top=200');
+  listasExistentes = {}; listas.forEach((l) => { listasExistentes[l.displayName] = l.id; });
+  const ya = LISTAS.filter((l) => listasExistentes[l.n]).map((l) => l.n);
+  log(ya.length ? 'Ya existen ' + ya.length + ' de ' + LISTAS.length + ' listas: ' + ya.join(', ') : 'Ninguna de las ' + LISTAS.length + ' listas existe todavía.', 'info');
+  estadoPaso(2, 'ok');
+  $('btnCrear').disabled = false;
+  if (listasExistentes.OPE_Actividades && listasExistentes.OPE_Tecnicos) { $('archivo').disabled = false; }
+}
+
+async function crearOActualizarLista(def) {
+  let id = listasExistentes[def.n];
+  if (!id) {
+    const body = { displayName: def.n, description: def.d, list: { template: 'genericList' }, columns: def.cols.map(columna) };
+    const l = await graph('POST', '/sites/' + sitio.id + '/lists', body);
+    id = l.id; listasExistentes[def.n] = id;
+    log(def.n + ': lista creada con ' + def.cols.length + ' columnas', 'ok');
+  } else {
+    const cols = await graphAll('/sites/' + sitio.id + '/lists/' + id + '/columns?$select=name');
+    const nombres = cols.map((c) => c.name);
+    const faltan = def.cols.filter((c) => nombres.indexOf(c[0]) < 0);
+    for (const c of faltan) await graph('POST', '/sites/' + sitio.id + '/lists/' + id + '/columns', columna(c));
+    log(def.n + ': ya existía' + (faltan.length ? '; se agregaron ' + faltan.length + ' columnas (' + faltan.map((c) => c[0]).join(', ') + ')' : '; columnas completas'), faltan.length ? 'warn' : 'ok');
+  }
+  try {
+    const t = await graph('GET', '/sites/' + sitio.id + '/lists/' + id + "/columns?$filter=name eq 'Title'&$select=id,displayName");
+    const col = t.value && t.value[0];
+    if (col && col.displayName !== def.title) await graph('PATCH', '/sites/' + sitio.id + '/lists/' + id + '/columns/' + col.id, { displayName: def.title });
+  } catch (e) { log(def.n + ': no se pudo renombrar la columna Título (no afecta el funcionamiento)', 'warn'); }
+  return id;
+}
+
+async function itemsDeLista(nombre) {
+  return graphAll('/sites/' + sitio.id + '/lists/' + listasExistentes[nombre] + '/items?$expand=fields&$top=999');
+}
+async function crearItem(nombre, fields) {
+  const def = LISTAS.find((l) => l.n === nombre);
+  return graph('POST', '/sites/' + sitio.id + '/lists/' + listasExistentes[nombre] + '/items', { fields: prepararCampos(def, fields) });
+}
+
+async function cargarSemillas() {
+  for (const nombre of Object.keys(SEMILLAS)) {
+    const existentes = await itemsDeLista(nombre);
+    const titulos = existentes.map((i) => i.fields.Title);
+    const nuevos = SEMILLAS[nombre].filter((r) => titulos.indexOf(r.Title) < 0);
+    for (const r of nuevos) await crearItem(nombre, r);
+    log(nombre + ': ' + (nuevos.length ? nuevos.length + ' registros cargados' : 'datos iniciales ya estaban'), 'ok');
+  }
+  // Catálogo: completa las URL que falten (no cambia las que ya existen)
+  const apps = await itemsDeLista('SYS_Microapps');
+  for (const id of Object.keys(URL_FALTANTE)) {
+    const it = apps.find((a) => a.fields.Title === id);
+    if (it && !it.fields.url) {
+      await graph('PATCH', '/sites/' + sitio.id + '/lists/' + listasExistentes.SYS_Microapps + '/items/' + it.id + '/fields', { url: URL_FALTANTE[id] });
+      log('SYS_Microapps: ' + id + ' ahora tiene su dirección (' + URL_FALTANTE[id] + ')', 'ok');
+    }
+  }
+}
+
+// Reserva un bloque de números de una secuencia con control de concurrencia. Devuelve el primero.
+async function reservar(clave, cantidad) {
+  const lid = listasExistentes['SYS_Secuencias'];
+  for (let i = 0; i < 8; i++) {
+    const r = await graph('GET', '/sites/' + sitio.id + '/lists/' + lid + "/items?$expand=fields&$filter=fields/Title eq '" + clave + "'", null, { Prefer: 'HonorNonIndexedQueriesWarningMayFailRandomly' });
+    const it = r.value && r.value[0];
+    if (!it) { await crearItem('SYS_Secuencias', { Title: clave, ultimo_numero: cantidad }); return 1; }
+    const actual = Number(it.fields.ultimo_numero || 0);
+    try {
+      await graph('PATCH', '/sites/' + sitio.id + '/lists/' + lid + '/items/' + it.id + '/fields', { ultimo_numero: actual + cantidad }, { 'If-Match': it['@odata.etag'] || it.eTag || '*' });
+      return actual + 1;
+    } catch (e) { if (e.status === 412) { await sleep(300 + Math.random() * 500); continue; } throw e; }
+  }
+  throw new Error('No se pudo obtener el consecutivo de ' + clave);
+}
+
+async function registrarDirector() {
+  const yo = await graph('GET', '/me?$select=displayName,mail,userPrincipalName');
+  const email = String(yo.mail || yo.userPrincipalName || '').toLowerCase();
+  const acc = await itemsDeLista('SYS_Accesos');
+  if (acc.some((a) => String(a.fields.email || '').toLowerCase() === email && a.fields.app_id === 'APP-106')) { log('SYS_Accesos: ' + email + ' ya tenía acceso a APP-106', 'ok'); return; }
+  const n = await reservar('ACC', 1);
+  await crearItem('SYS_Accesos', { Title: 'ACC-' + String(n).padStart(4, '0'), email, nombre: yo.displayName, app_id: 'APP-106', rol: 'ADMIN', estado: 'ACTIVO' });
+  log('SYS_Accesos: ' + yo.displayName + ' registrado como Director de Operaciones (ADMIN) de APP-106', 'ok');
+}
+
+async function crearEstructura() {
+  $('btnCrear').disabled = true; estadoPaso(3, 'run');
+  const total = LISTAS.length + 2; let i = 0;
+  try {
+    log('Creando listas…', 'title');
+    for (const def of LISTAS) { progreso(i, total, def.n); await crearOActualizarLista(def); i++; progreso(i, total); }
+    log('Cargando datos iniciales…', 'title');
+    progreso(i, total, 'Datos iniciales'); await cargarSemillas(); i++;
+    progreso(i, total, 'Director de Operaciones'); await registrarDirector(); i++;
+    progreso(total, total, 'Terminado');
+    log('Estructura lista en ' + sitio.webUrl, 'ok');
+    estadoPaso(3, 'ok');
+    $('fin').hidden = false; $('archivo').disabled = false;
+    $('linkSitio').href = sitio.webUrl + '/_layouts/15/viewlsts.aspx';
+  } catch (e) {
+    log('Error: ' + explicar(e), 'err'); estadoPaso(3, 'err'); $('btnCrear').disabled = false;
+    log('Puede volver a hacer clic en "Crear estructura": el instalador continúa donde quedó, sin duplicar.', 'info');
+  }
+}
+
+// ====== IMPORTAR EL EXCEL (hoja Entradas) ======
+function serialAFecha(v) {
+  if (typeof v === 'number') return new Date(Date.UTC(1899, 11, 30) + Math.round(v * 86400000)).toISOString().slice(0, 10);
+  const s = String(v || '').trim(); const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/); if (m) return m[0];
+  const m2 = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if (m2) return m2[3] + '-' + m2[2].padStart(2, '0') + '-' + m2[1].padStart(2, '0');
+  return '';
+}
+function serialAHora(v) {
+  if (v === '' || v === null || v === undefined) return '';
+  if (typeof v === 'number') { const min = Math.round((v % 1) * 1440); return String(Math.floor(min / 60)).padStart(2, '0') + ':' + String(min % 60).padStart(2, '0'); }
+  const m = String(v).match(/(\d{1,2}):(\d{2})/); return m ? m[1].padStart(2, '0') + ':' + m[2] : '';
+}
+async function importar() {
+  const f = $('archivo').files[0]; if (!f) return;
+  $('btnImportar').disabled = true; estadoPaso(4, 'run');
+  try {
+    log('Leyendo ' + f.name + '…', 'title');
+    const wb = XLSX.read(await f.arrayBuffer(), { type: 'array' });
+    const ws = wb.Sheets['Entradas'];
+    if (!ws) throw new Error('El archivo no tiene la hoja «Entradas».');
+    const filas = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, defval: '' });
+    const cab = filas[3].map((x) => norm(x));                       // fila 4 = encabezados
+    const col = (nombre) => cab.indexOf(norm(nombre));
+    const C = { cliente: col('Cliente'), ciudad: col('Ciudad / Sede'), tec: col('Técnico'), fecha: col('Fecha'), tipo: col('Tipo'), equipos: col('Equipos'), hora: col('Hora inicio'), ticket: col('Ticket / OS'), estado: col('Estado'), obs: col('Observaciones') };
+    if (C.fecha < 0 || C.tipo < 0) throw new Error('No se encontraron las columnas Fecha y Tipo en la fila 4 de Entradas.');
+    const tecnicos = (await itemsDeLista('OPE_Tecnicos')).map((i) => i.fields);
+    const tipos = (await itemsDeLista('OPE_Tipos')).map((i) => i.fields);
+    // Evita duplicar al reimportar: se compara el contenido (fecha, técnico, tipo, cliente, hora, ticket) de lo ya importado.
+    const clave = (a) => [String(a.fecha || '').slice(0, 10), a.tecnico_id || '', a.tipo || '', norm(a.cliente), a.hora_inicio || '', norm(a.ticket_os)].join('|');
+    const yaImportadas = {};
+    (await itemsDeLista('OPE_Actividades')).map((i) => i.fields).filter((a) => /^EXCEL/.test(a.origen || '')).forEach((a) => { const k = clave(a); yaImportadas[k] = (yaImportadas[k] || 0) + 1; });
+    const nuevas = [], avisos = [];
+    for (let r = 4; r < filas.length; r++) {
+      const x = filas[r]; const fecha = serialAFecha(x[C.fecha]); if (!fecha) continue;
+      const origen = 'EXCEL · Entradas fila ' + (r + 1);
+      const nTec = String(x[C.tec] || '').trim(), nTipo = String(x[C.tipo] || '').trim();
+      const t = tecnicos.find((y) => norm(y.nombre) === norm(nTec));
+      const tp = tipos.find((y) => norm(y.nombre) === norm(nTipo));
+      if (nTec && !t) avisos.push('Fila ' + (r + 1) + ': técnico «' + nTec + '» no existe en OPE_Tecnicos (queda sin técnico)');
+      if (!tp) { avisos.push('Fila ' + (r + 1) + ': tipo «' + nTipo + '» no existe en OPE_Tipos (fila omitida)'); continue; }
+      const est = norm(x[C.estado]).toUpperCase() || 'PROGRAMADO';
+      nuevas.push({ fecha, tecnico_id: t ? t.Title : '', tipo: tp.Title, cliente: String(x[C.cliente] || '').trim(), ciudad: String(x[C.ciudad] || '').trim(),
+        equipos: x[C.equipos] === '' ? '' : Number(x[C.equipos]), hora_inicio: serialAHora(x[C.hora]), ticket_os: String(x[C.ticket] || '').trim(),
+        estado: ['PROGRAMADO', 'CONFIRMADO', 'EJECUTADO', 'REPROGRAMADO', 'CANCELADO'].indexOf(est) >= 0 ? est : 'PROGRAMADO',
+        observaciones: String(x[C.obs] || '').trim(), origen });
+      const k = clave(nuevas[nuevas.length - 1]);
+      if (yaImportadas[k] > 0) { yaImportadas[k]--; nuevas.pop(); }   // ya estaba importada
+    }
+    avisos.forEach((a) => log(a, 'warn'));
+    if (!nuevas.length) { log('No hay filas nuevas para importar.', 'ok'); estadoPaso(4, 'ok'); $('btnImportar').disabled = false; return; }
+    log('Se importarán ' + nuevas.length + ' actividades…', 'info');
+    const primero = await reservar('PRG', nuevas.length);
+    for (let i = 0; i < nuevas.length; i++) {
+      progreso(i, nuevas.length, 'Importando ' + (i + 1) + ' de ' + nuevas.length);
+      await crearItem('OPE_Actividades', Object.assign({ Title: 'PRG-' + String(primero + i).padStart(6, '0') }, nuevas[i]));
+    }
+    progreso(1, 1, 'Importación terminada');
+    log(nuevas.length + ' actividades importadas (PRG-' + String(primero).padStart(6, '0') + ' a PRG-' + String(primero + nuevas.length - 1).padStart(6, '0') + ')', 'ok');
+    estadoPaso(4, 'ok'); $('fin').hidden = false;
+  } catch (e) { log('Error: ' + explicar(e), 'err'); estadoPaso(4, 'err'); }
+  $('btnImportar').disabled = false;
+}
+
+function explicar(e) {
+  const m = String(e && e.message || e);
+  if (/AADSTS65001|consent|90094|admin approval/i.test(m)) return 'Falta el consentimiento del administrador de Microsoft 365 para los permisos de la app. ' + m;
+  if (e.status === 403) return 'Acceso denegado (403): su usuario no tiene permiso para crear listas en IC Apps (debe ser propietario del sitio), o falta conceder los permisos de API. ' + m;
+  if (e.status === 404) return 'No se encontró el sitio o la lista (404). Verifique la dirección del sitio. ' + m;
+  if (/redirect_uri|AADSTS50011/i.test(m)) return 'La dirección de esta página no coincide con las URI registradas en Entra ID. Dirección actual: ' + CFG.redirectUri;
+  return m;
+}
+
+// ====== ARRANQUE ======
+async function arrancar() {
+  try { await iniciarMsal(); } catch (e) { log('Error al iniciar sesión: ' + explicar(e), 'err'); }
+  if (!cuenta) { estadoPaso(1, 'pend'); $('btnLogin').hidden = false; return; }
+  estadoPaso(1, 'ok');
+  $('usuario').textContent = cuenta.name + ' · ' + cuenta.username;
+  $('btnLogout').hidden = false; $('btnLogin').hidden = true;
+  try { await verificarSitio(); } catch (e) { estadoPaso(2, 'err'); log('Error: ' + explicar(e), 'err'); }
+}
+if (typeof window !== 'undefined' && !window.__TEST__) {
+  window.addEventListener('DOMContentLoaded', () => {
+    $('btnLogin').onclick = () => iniciarSesion();
+    $('btnLogout').onclick = () => cerrarSesion();
+    $('btnCrear').onclick = () => crearEstructura();
+    $('btnImportar').onclick = () => importar();
+    $('archivo').onchange = () => { $('btnImportar').disabled = !$('archivo').files.length; };
+    $('lblListas').textContent = LISTAS.length;
+    arrancar();
+  });
+}
+</script>
+</body>
+</html>
