@@ -139,6 +139,9 @@
     U.pantalla(raiz, { logo: CFG.logo, cargando: true, titulo: 'Cargando…', texto: 'Conectando con Microsoft 365' });
     try {
       cuenta = await IC.auth.iniciar(CFG.auth);
+      // Apps que inician sesión a través del Portal (p. ej. Gestión documental): volver a ellas
+      let volverUrl = null; try { volverUrl = sessionStorage.getItem('ic_volver_url'); } catch (e) { /* sin almacenamiento */ }
+      if (cuenta && volverUrl && volverUrl.indexOf(location.origin + '/ideascontrol/') === 0) { sessionStorage.removeItem('ic_volver_url'); location.replace(volverUrl); return; }
       if (!cuenta) {
         U.pantalla(raiz, { logo: CFG.logo, titulo: 'Portal de microapps', texto: 'Ingrese una sola vez con su cuenta de Microsoft de Ideas Control y abra desde aquí todas las microapps.', boton: 'Iniciar sesión', alClic: () => IC.auth.entrar() });
         return;
