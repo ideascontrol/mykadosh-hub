@@ -811,6 +811,12 @@ const GRAPH = 'https://graph.microsoft.com/v1.0';
 
 // ====== UTILIDADES DE INTERFAZ ======
 const $ = (id) => document.getElementById(id);
+function logEnlace(msg, url, tipo) {
+  const el = document.createElement('div'); el.className = 'log-line ' + (tipo || 'ok');
+  el.textContent = ({ ok: '✅ ', warn: '⚠️ ', info: '• ' }[tipo || 'ok'] || '') + msg + ' ';
+  if (url) { const a = document.createElement('a'); a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'abrir ↗'; a.style.color = '#7cc4ff'; el.appendChild(a); }
+  $('log').appendChild(el); $('log').scrollTop = $('log').scrollHeight;
+}
 function log(msg, tipo) {
   const el = document.createElement('div');
   el.className = 'log-line ' + (tipo || 'info');
@@ -1287,6 +1293,7 @@ async function moverGD() {
         }
       }
     } else log('Biblioteca ' + drive.name + ' encontrada', 'ok');
+    drives.forEach((d) => logEnlace('Biblioteca del sitio: ' + d.name + (d.id === drive.id ? '  ← aquí se suben' : ''), d.webUrl, 'info'));
     const lista = await graph('GET', '/drives/' + drive.id + '/list?$select=id');
     const colsSP = await graphAll('/sites/' + sitioGD.id + '/lists/' + lista.id + '/columns?$select=name,displayName,readOnly,hidden');
     const real = {};   // si la columna ya existía con otro nombre interno (p. ej. «Área»), se usa esa
@@ -1316,7 +1323,7 @@ async function moverGD() {
       if (!pdf) { log(d.codigo + ': no está en el ZIP (se omite)', 'warn'); n++; continue; }
       const it = await subirArchivo(drive.id, carpeta + limpiarNombre(d.codigo + ' - ' + d.titulo) + '.pdf', new Blob([await pdf.async('arraybuffer')], { type: 'application/pdf' }));
       if (it) await ponerDatos(it, d, 'Consulta (PDF)');
-      n++; log(d.codigo + ' · ' + d.titulo + ' (v' + d.version + ')', 'ok');
+      n++; logEnlace(d.codigo + ' · ' + d.titulo + ' (v' + d.version + ')', it && it.webUrl);
       if (d.plantilla) {
         const w = zip.file('plantillas/' + d.plantilla);
         if (w) {
@@ -1337,7 +1344,14 @@ async function moverGD() {
       log('Portal: la tarjeta Gestión documental abre ahora ' + drive.webUrl, 'ok');
     } catch (e) { log('No se pudo actualizar la tarjeta del Portal: ' + explicar(e), 'warn'); }
     progreso(1, 1, 'Gestión documental en SharePoint');
-    log('Listo: ' + GD_DOCS.length + ' documentos en ' + drive.webUrl, 'ok');
+    // Comprobación: cuántos archivos quedaron realmente en cada carpeta
+    for (const b of [...new Set(GD_DOCS.map((d) => d.bloque + ' ' + limpiarNombre(d.area)))]) {
+      try {
+        const h = await graphAll('/drives/' + drive.id + '/root:/' + (base + b).split('/').map(encodeURIComponent).join('/') + ':/children?$select=name,file,webUrl');
+        logEnlace('En SharePoint, carpeta "' + b + '": ' + h.filter((x) => x.file).length + ' archivos', (h[0] && h[0].webUrl || '').replace(/\/[^/]*$/, ''), 'info');
+      } catch (e) { log('No se pudo revisar la carpeta ' + b + ': ' + explicar(e), 'warn'); }
+    }
+    logEnlace('Listo: ' + GD_DOCS.length + ' documentos en ' + drive.name, drive.webUrl);
     estadoPaso(6, 'ok');
   } catch (e) { log('Error: ' + explicar(e), 'err'); estadoPaso(6, 'err'); }
   $('btnGD').disabled = false;
