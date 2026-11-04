@@ -304,7 +304,7 @@
       '<div class="ope-sal-cab"><b>Clientes</b><span><button type="button" class="ic-btn sec chico" data-t="1">Todos</button> <button type="button" class="ic-btn sec chico" data-t="0">Ninguno</button></span></div>' +
       '<div class="ope-sal-lista">' + claves.map((k) => '<label class="ic-check"><input type="checkbox" data-cli="' + esc(k) + '"' + (clis[k].interna ? '' : ' checked') + '> <span>' + esc(clis[k].nombre) + ' <small>(' + clis[k].n + ')</small></span></label>').join('') + '</div>' +
       '<div class="ic-campos" style="margin-top:12px">' +
-      '<div class="ic-campo c12"><label class="ic-check"><input type="checkbox" name="pagina" checked> <span>Imprimir cada cliente en una página aparte (para enviarle su programación)</span></label></div>' +
+      '<div class="ic-campo c12"><label class="ic-check"><input type="checkbox" name="pagina" checked> <span>Imprimir cada cliente en una página aparte (para enviarle su programación). Sin marcar: un solo listado de todos los clientes en orden de fecha</span></label></div>' +
       '<div class="ic-campo c12"><label class="ic-check"><input type="checkbox" name="obs"> <span>Incluir observaciones</span></label></div>' +
       '<div class="ic-campo c12"><label class="ic-check"><input type="checkbox" name="validacion"> <span>Incluir validación (⚠ / ✔) — solo para uso interno</span></label></div></div>' +
       '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="sNo">Cancelar</button><button type="button" class="ic-btn sec" id="sXls">Excel</button><button type="button" class="ic-btn" id="sImp">Imprimir / PDF</button></div></form>',
@@ -325,22 +325,28 @@
     lista.forEach((a) => { const k = claveCli(a); (grupos[k] = grupos[k] || { nombre: a.cliente || '(sin cliente)', acts: [] }).acts.push(a); });
     const claves = Object.keys(grupos).sort((a, b) => grupos[a].nombre.localeCompare(grupos[b].nombre));
     const logo = location.origin + CFG.logo;
+    // Un solo informe en orden de fecha (con columna Cliente) o una página por cliente; siempre de la fecha más antigua a la más reciente
+    const unaTabla = claves.length > 1 && !op.pagina;
     const filaHtml = (a) => {
       const v = Ope.activa(a) ? Ope.validar(a) : { errores: [], avisos: [] };
       return '<tr class="' + (Ope.activa(a) ? '' : 'anulada') + '"><td>' + esc(Ope.textoFecha(a.fecha)) + '</td><td>' + esc(Ope.DIAS[Ope.dow(a.fecha) - 1]) + '</td>' +
-        '<td>' + esc(a.sitio || '—') + '</td><td>' + esc(a.ciudad || '') + '</td><td>' + esc(Ope.nombreTipo(a.tipo)) + '</td><td>' + esc(Ope.nombreTec(a.tecnico_id)) + '</td>' +
-        '<td class="n">' + esc(Ope.usaEquipos(a.tipo) && a.equipos !== '' ? a.equipos : '') + '</td><td>' + esc(a.hora_inicio || '') + '</td><td>' + esc(a.ticket_os || '') + '</td><td>' + esc(Ope.nombreEstado(a.estado)) + '</td>' +
+        (unaTabla ? '<td>' + esc(a.cliente || '(sin cliente)') + '</td>' : '') + '<td>' + esc(a.sitio || '—') + '</td><td>' + esc(a.ciudad || '') + '</td><td>' + esc(Ope.nombreTipo(a.tipo)) + '</td><td>' + esc(Ope.nombreTec(a.tecnico_id)) + '</td>' +
+        '<td class="n">' + esc(Ope.usaEquipos(a.tipo) && a.equipos !== '' ? a.equipos : '') + '</td><td class="h">' + esc(a.hora_inicio || '') + '</td><td>' + esc(a.ticket_os || '') + '</td><td>' + esc(Ope.nombreEstado(a.estado)) + '</td>' +
         (op.obs ? '<td class="obs">' + esc(a.observaciones || '') + '</td>' : '') +
         (op.validacion ? '<td class="obs">' + (v.errores.length ? '⚠ ' + esc(v.errores.join('; ')) : v.avisos.length ? 'ℹ ' + esc(v.avisos.join('; ')) : '✔') + '</td>' : '') + '</tr>';
     };
-    const cab = '<tr><th>Fecha</th><th>Día</th><th>Sitio / cliente final</th><th>Ciudad</th><th>Tipo</th><th>Técnico</th><th class="n">Eq.</th><th>Hora</th><th>Ticket / OS</th><th>Estado</th>' + (op.obs ? '<th>Observaciones</th>' : '') + (op.validacion ? '<th>Validación</th>' : '') + '</tr>';
+    const cab = '<tr><th>Fecha</th><th>Día</th>' + (unaTabla ? '<th>Cliente</th>' : '') + '<th>Sitio / cliente final</th><th>Ciudad</th><th>Tipo</th><th>Técnico</th><th class="n">Eq.</th><th>Hora</th><th>Ticket / OS</th><th>Estado</th>' + (op.obs ? '<th>Observaciones</th>' : '') + (op.validacion ? '<th>Validación</th>' : '') + '</tr>';
     const encabezado = (titulo) => '<div class="cab"><img src="' + logo + '" alt="Ideas Control"><div><h1>' + esc(titulo) + '</h1><p>Programación de servicios · ' + esc(Ope.textoFecha(f.desde)) + ' al ' + esc(Ope.textoFecha(f.hasta)) + '</p></div></div>';
     let cuerpo = '';
     if (claves.length > 1 && !op.pagina) {
       cuerpo += encabezado('Programación de servicios') + '<table class="res"><thead><tr><th>Cliente</th><th class="n">Actividades</th><th class="n">Ejecutadas</th><th class="n">Equipos</th></tr></thead><tbody>' +
         claves.map((k) => { const g = grupos[k].acts.filter(Ope.activa); return '<tr><td>' + esc(grupos[k].nombre) + '</td><td class="n">' + g.length + '</td><td class="n">' + g.filter((a) => a.estado === 'EJECUTADO').length + '</td><td class="n">' + g.filter((a) => Ope.usaEquipos(a.tipo)).reduce((s, a) => s + (Number(a.equipos) || 0), 0) + '</td></tr>'; }).join('') + '</tbody></table>';
     }
-    claves.forEach((k, i) => {
+    if (unaTabla) {
+      const vig = lista.filter(Ope.activa);
+      cuerpo += '<h2>Detalle por fecha</h2><p class="tot">' + vig.length + ' actividades vigentes · ' + vig.filter((a) => a.estado === 'EJECUTADO').length + ' ejecutada(s)</p>' +
+        '<table><thead>' + cab + '</thead><tbody>' + lista.slice().sort(Ope.orden).map(filaHtml).join('') + '</tbody></table>';
+    } else claves.forEach((k, i) => {
       const g = grupos[k], vig = g.acts.filter(Ope.activa);
       const eq = vig.filter((a) => Ope.usaEquipos(a.tipo)).reduce((s, a) => s + (Number(a.equipos) || 0), 0);
       cuerpo += '<section class="' + (op.pagina && i > 0 ? 'salto' : '') + '">' + (op.pagina || claves.length === 1 ? encabezado(g.nombre) : '<h2>' + esc(g.nombre) + '</h2>') +
@@ -354,7 +360,7 @@
       '.cab{display:flex;align-items:center;gap:16px;border-bottom:3px solid #C9A227;padding-bottom:10px;margin-bottom:12px}.cab img{height:40px}.cab h1{font-size:18px;margin:0;color:#0E76BC}.cab p{margin:2px 0 0;color:#5B6770}' +
       'h2{font-size:15px;color:#0E76BC;margin:18px 0 4px}.tot{margin:0 0 6px;color:#5B6770}' +
       'table{width:100%;border-collapse:collapse;margin-bottom:10px}th{background:#EEF4F9;text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:#0A5A90;padding:6px;border-bottom:1px solid #C9D6E2}' +
-      'td{padding:5px 6px;border-bottom:1px solid #E6ECF1;vertical-align:top}td:nth-child(-n+2),td:nth-child(8){white-space:nowrap}.n{text-align:center}.obs{max-width:260px}tr.anulada td{color:#9AA5AE;text-decoration:line-through}' +
+      'td{padding:5px 6px;border-bottom:1px solid #E6ECF1;vertical-align:top}td:nth-child(-n+2),td.h{white-space:nowrap}.n{text-align:center}.obs{max-width:260px}tr.anulada td{color:#9AA5AE;text-decoration:line-through}' +
       'table.res{max-width:640px}.salto{break-before:page}thead{display:table-header-group}tr{break-inside:avoid}' +
       '.pie{margin-top:14px;color:#8A96A0;font-size:10px}.barra{position:fixed;top:0;right:0;padding:10px}.barra button{font:inherit;font-weight:600;padding:8px 14px;border:0;border-radius:8px;background:#0E76BC;color:#fff;cursor:pointer}' +
       '@media print{.barra{display:none}}</style></head><body><div class="barra"><button onclick="window.print()">Imprimir / Guardar PDF</button></div>' + cuerpo +
