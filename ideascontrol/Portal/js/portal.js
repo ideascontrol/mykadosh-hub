@@ -38,7 +38,8 @@
     const apps = APPS.map((a) => {
       const c = catalogo[a.id] || {};
       const url = c.url || a.url;
-      return Object.assign({}, a, { url, activa: !!url && !a.pronto });
+      const datos = /sharepoint\.com/i.test(url || '') ? 'SHAREPOINT' : a.datos;   // p. ej. Gestión documental ya movida a SharePoint
+      return Object.assign({}, a, { url, datos, nota: datos === a.datos ? a.nota : '', activa: !!url && !a.pronto });
     }).filter((a) => !(a.acceso && acceso[a.acceso] === false) && !(a.soloOficina && !oficina));
     const grupos = [];
     apps.forEach((a) => { if (grupos.indexOf(a.grupo) < 0) grupos.push(a.grupo); });

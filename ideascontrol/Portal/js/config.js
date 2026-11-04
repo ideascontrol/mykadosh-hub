@@ -4,7 +4,7 @@
    está en la lista SYS_Microapps (columna url), esa tiene prioridad.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-100', nombre: 'Portal de microapps', version: '0.1.3' },
+  app: { id: 'APP-100', nombre: 'Portal de microapps', version: '0.1.4' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
