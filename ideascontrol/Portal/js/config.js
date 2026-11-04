@@ -4,7 +4,7 @@
    está en la lista SYS_Microapps (columna url), esa tiene prioridad.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-100', nombre: 'Portal de microapps', version: '0.1.4' },
+  app: { id: 'APP-100', nombre: 'Portal de microapps', version: '0.1.5' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -48,9 +48,6 @@ window.APPS = [
 window.PUBLICAS = [
   { nombre: 'Diagnóstico de madurez en T&A', url: '/ideascontrol/DiagnosticoMadurezTyA/' },
   { nombre: 'Piloto de Tiempo & Asistencia', url: '/ideascontrol/PilotoTyA/' },
-  { nombre: 'Calculadora de ROI', url: '/ideascontrol/CalculadoraROI/' },
   { nombre: 'Costo de la hora ausente', url: '/ideascontrol/CostoHoraAusente/' },
-  { nombre: 'Diagnóstico de políticas de asistencia', url: '/ideascontrol/DiagnosticoPoliticasAsistencia/' },
-  { nombre: 'Confiabilidad y trazabilidad', url: '/ideascontrol/Confiabilidad-Trazabilidad/' },
   { nombre: 'TimeVision', url: '/ideascontrol/TimeVision/' }
 ];
