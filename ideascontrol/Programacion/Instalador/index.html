@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
-<title>Instalador · Programación de Operaciones</title>
+<title>Instalador · Programación y Novedades</title>
 <link rel="icon" href="/ideascontrol/assets/ideascontrol.webp">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
@@ -49,7 +49,7 @@
 <body>
 <header>
   <img src="/ideascontrol/assets/ideascontrol.webp" alt="Ideas Control" onerror="this.style.display='none'">
-  <div><h1>Instalador IC Apps · APP-106 Programación de Operaciones</h1><p>Crea las listas de SharePoint, carga técnicos y tipos, importa el Excel y da permisos a los técnicos. Puede repetirse sin duplicar.</p></div>
+  <div><h1>Instalador IC Apps · APP-106 Programación de Operaciones · APP-107 Novedades del personal</h1><p>Crea las listas de SharePoint, carga técnicos y tipos, importa el Excel y da permisos a los técnicos. Puede repetirse sin duplicar.</p></div>
 </header>
 <main>
   <div class="card">
@@ -69,7 +69,7 @@
       <div class="num">3</div>
       <div style="flex:1">
         <h2>Crear estructura</h2>
-        <p>Crea o completa <b id="lblListas"></b> listas (OPE_Tecnicos, OPE_Tipos, OPE_Actividades, SYS_Accesos y las SYS_ compartidas), carga los 8 técnicos con su matriz de habilidades, los 12 tipos de actividad y los festivos que falten, registra la app en el catálogo de microapps y lo registra a usted como Director de Operaciones.</p>
+        <p>Crea o completa <b id="lblListas"></b> listas (OPE_Tecnicos, OPE_Tipos, OPE_Actividades, NOV_Solicitudes, NOV_Faltas, SYS_Accesos y las SYS_ compartidas), carga los 8 técnicos con su matriz de habilidades, los 12 tipos de actividad y los festivos que falten, registra la app en el catálogo de microapps y lo registra a usted como Director de Operaciones.</p>
         <button id="btnCrear" disabled>Crear estructura</button>
         <div class="barra"><div id="bar"></div></div><div id="barText"></div>
       </div>
@@ -88,7 +88,7 @@
       <div class="num">5</div>
       <div style="flex:1">
         <h2>Permisos de los técnicos</h2>
-        <p>Los técnicos <b>no</b> se agregan como miembros del sitio IC Apps (verían también los datos de Comercial). Este paso crea el grupo de SharePoint <b>«IC Apps Tecnicos»</b>, le da permiso <b>solo</b> sobre las listas de la Programación (y las compartidas que necesita), guarda el correo de cada técnico y lo agrega al grupo. Para un técnico nuevo: escriba su correo aquí y vuelva a clic en «Aplicar permisos».</p>
+        <p>Los técnicos <b>no</b> se agregan como miembros del sitio IC Apps (verían también los datos de Comercial). Este paso crea el grupo de SharePoint <b>«IC Apps Tecnicos»</b>, le da permiso <b>solo</b> sobre las listas de la Programación y de Novedades (cada técnico ve solo sus solicitudes), deja <b>Faltas</b> visible solo para usted, guarda el correo de cada técnico y lo agrega al grupo. Para un técnico nuevo: escriba su correo aquí y vuelva a clic en «Aplicar permisos».</p>
         <p><b>Requisito (una vez):</b> en Entra ID › la app › Permisos de API, el permiso <b>SharePoint › AllSites.FullControl</b> (delegado) con consentimiento del administrador.</p>
         <div id="tablaTec" style="margin:8px 0 12px"></div>
         <button id="btnPermisos" disabled>Aplicar permisos</button>
@@ -132,7 +132,18 @@ const LISTAS = [
     ['fecha', 'd', null, 1], ['tecnico_id', 't', null, 1], ['tipo', 't', null, 1], ['cliente', 't'], ['empresa_id', 't'], ['ciudad', 't'],
     ['equipos', 'n'], ['hora_inicio', 't'], ['ticket_os', 't'],
     ['estado', 'c', ['PROGRAMADO', 'CONFIRMADO', 'EJECUTADO', 'REPROGRAMADO', 'CANCELADO'], 1],
-    ['observaciones', 'm'], ['reprograma_de', 't'], ['autorizado', 'b'], ['motivo_cambio', 't'], ['origen', 't', null, 1]] }
+    ['observaciones', 'm'], ['reprograma_de', 't'], ['autorizado', 'b'], ['motivo_cambio', 't'], ['origen', 't', null, 1]] },
+  // APP-107 · Novedades del personal
+  { n: 'NOV_Solicitudes', title: 'novedad_id', d: 'Permisos, vacaciones, licencias, incapacidades y cambios de horario del personal de Operaciones', cols: [
+    ['tecnico_id', 't', null, 1], ['tipo', 'c', ['PERMISO', 'VACACIONES', 'LICENCIA', 'INCAPACIDAD', 'CAMBIO_HORARIO']], ['subtipo', 't'], ['modalidad', 'c', ['DIAS', 'HORAS']],
+    ['fecha_inicio', 'd', null, 1], ['fecha_fin', 'd'], ['hora_inicio', 't'], ['hora_fin', 't'], ['dias_habiles', 'n'], ['motivo', 'm'],
+    ['estado', 'c', ['SOLICITADA', 'APROBADA', 'RECHAZADA', 'ANULADA'], 1], ['respuesta', 'm'], ['resuelto_por', 't'], ['fecha_respuesta', 'dt'],
+    ['actividades', 'm'], ['solicitante', 't'], ['registrado_por', 't']] },
+  { n: 'NOV_Faltas', title: 'falta_id', d: 'Faltas del personal (confidencial: solo Dirección de Operaciones)', cols: [
+    ['tecnico_id', 't', null, 1], ['fecha', 'd', null, 1],
+    ['tipo_falta', 'c', ['RETARDO', 'INASISTENCIA', 'AUSENCIA_SIN_TRAMITE', 'PROCEDIMIENTO', 'PROGRAMACION', 'RECURSOS', 'TRATO', 'OTRA']],
+    ['gravedad', 'c', ['LEVE', 'GRAVE', 'GRAVISIMA']], ['descripcion', 'm'], ['referencia', 't'],
+    ['accion', 'c', ['REGISTRO', 'LLAMADO_VERBAL', 'LLAMADO_ESCRITO', 'DESCARGOS', 'SANCION']], ['seguimiento', 'm'], ['estado', 'c', ['ABIERTA', 'CERRADA']], ['registrado_por', 't']] }
 ];
 // Datos iniciales tomados de la hoja «Listas» del Excel 2506-MAN-OPE. Solo se cargan los que no existan (por Title).
 const SEMILLAS = {
@@ -506,12 +517,14 @@ const SEMILLAS = {
  ]
 }
 ;
-SEMILLAS.SYS_Secuencias = [{ Title: 'PRG', ultimo_numero: 0 }, { Title: 'TEC', ultimo_numero: SEMILLAS.OPE_Tecnicos.length }, { Title: 'ACC', ultimo_numero: 0 }, { Title: 'EVT', ultimo_numero: 0 }];
+SEMILLAS.SYS_Secuencias = [{ Title: 'PRG', ultimo_numero: 0 }, { Title: 'TEC', ultimo_numero: SEMILLAS.OPE_Tecnicos.length }, { Title: 'ACC', ultimo_numero: 0 }, { Title: 'EVT', ultimo_numero: 0 }, { Title: 'NOV', ultimo_numero: 0 }, { Title: 'FAL', ultimo_numero: 0 }];
 SEMILLAS.SYS_Microapps = [
   { Title: 'APP-100', nombre: 'Portal de microapps', tipo: 'INTERNA', proposito: 'Menú principal: entrada única a las microapps internas de Ideas Control.', estado: 'CONSTRUIDA',
     plataforma: 'HTML (GitHub) + Microsoft Graph', carpeta_actual: 'Portal', url: 'https://www.mykadosh.com/ideascontrol/Portal/' },
   { Title: 'APP-106', nombre: 'Programación de Operaciones', tipo: 'INTERNA', proposito: 'Agenda y programación de técnicos: instalaciones, mantenimientos, soporte, rotación de oficina (2506-MAN-OPE).', estado: 'EN_CONSTRUCCION',
-    plataforma: 'HTML (GitHub) + Microsoft Graph + listas de SharePoint', carpeta_actual: 'Programacion', url: 'https://www.mykadosh.com/ideascontrol/Programacion/' }
+    plataforma: 'HTML (GitHub) + Microsoft Graph + listas de SharePoint', carpeta_actual: 'Programacion', url: 'https://www.mykadosh.com/ideascontrol/Programacion/' },
+  { Title: 'APP-107', nombre: 'Novedades del personal', tipo: 'INTERNA', proposito: 'Permisos, vacaciones, licencias, incapacidades, cambios de horario y faltas del personal de Operaciones (solo vía Dirección de Operaciones).', estado: 'EN_CONSTRUCCION',
+    plataforma: 'HTML (GitHub) + Microsoft Graph + listas de SharePoint', carpeta_actual: 'Novedades', url: 'https://www.mykadosh.com/ideascontrol/Novedades/' }
 ];
 // URL que se completa en el catálogo si está vacía
 const URL_FALTANTE = { 'APP-105': 'https://www.mykadosh.com/ideascontrol/ICManuales/gestion-documental/index.html', 'APP-101': 'https://www.mykadosh.com/ideascontrol/Comercial/' };
@@ -583,9 +596,9 @@ async function tokenSP() {
     throw e;
   }
 }
-async function sp(method, ruta, body) {
+async function sp(method, ruta, body, extra) {
   for (let intento = 1; intento <= 6; intento++) {
-    const headers = { Authorization: 'Bearer ' + await tokenSP(), Accept: 'application/json;odata=nometadata' };
+    const headers = Object.assign({ Authorization: 'Bearer ' + await tokenSP(), Accept: 'application/json;odata=nometadata' }, extra || {});
     if (body) headers['Content-Type'] = 'application/json;odata=verbose';
     const res = await fetch(CFG.spWeb + '/_api/' + ruta, { method, headers, body: body ? JSON.stringify(body) : undefined });
     if (res.status === 429 || res.status === 503) { await sleep(1000 * Number(res.headers.get('Retry-After') || 2 * intento)); continue; }
@@ -741,13 +754,17 @@ async function reservar(clave, cantidad) {
 }
 
 async function registrarDirector() {
+  await registrarAcceso('APP-106');
+  await registrarAcceso('APP-107');
+}
+async function registrarAcceso(app) {
   const yo = await graph('GET', '/me?$select=displayName,mail,userPrincipalName');
   const email = String(yo.mail || yo.userPrincipalName || '').toLowerCase();
   const acc = await itemsDeLista('SYS_Accesos');
-  if (acc.some((a) => String(a.fields.email || '').toLowerCase() === email && a.fields.app_id === 'APP-106')) { log('SYS_Accesos: ' + email + ' ya tenía acceso a APP-106', 'ok'); return; }
+  if (acc.some((a) => String(a.fields.email || '').toLowerCase() === email && a.fields.app_id === app)) { log('SYS_Accesos: ' + email + ' ya tenía acceso a ' + app, 'ok'); return; }
   const n = await reservar('ACC', 1);
-  await crearItem('SYS_Accesos', { Title: 'ACC-' + String(n).padStart(4, '0'), email, nombre: yo.displayName, app_id: 'APP-106', rol: 'ADMIN', estado: 'ACTIVO' });
-  log('SYS_Accesos: ' + yo.displayName + ' registrado como Director de Operaciones (ADMIN) de APP-106', 'ok');
+  await crearItem('SYS_Accesos', { Title: 'ACC-' + String(n).padStart(4, '0'), email, nombre: yo.displayName, app_id: app, rol: 'ADMIN', estado: 'ACTIVO' });
+  log('SYS_Accesos: ' + yo.displayName + ' registrado como Dirección de Operaciones (ADMIN) de ' + app, 'ok');
 }
 
 async function crearEstructura() {
@@ -838,7 +855,8 @@ async function importar() {
 // Contribuir = leer y editar elementos · Leer = solo consulta
 const PERMISOS_TECNICOS = [
   ['OPE_Actividades', 3], ['SYS_Auditoria', 3], ['SYS_Secuencias', 3],
-  ['OPE_Tecnicos', 2], ['OPE_Tipos', 2], ['SYS_Festivos', 2], ['SYS_Accesos', 2], ['SYS_Microapps', 2]
+  ['OPE_Tecnicos', 2], ['OPE_Tipos', 2], ['SYS_Festivos', 2], ['SYS_Accesos', 2], ['SYS_Microapps', 2],
+  ['NOV_Solicitudes', 3]        // además: cada técnico solo ve y edita sus propias solicitudes
 ];
 let tecnicosLista = [];
 async function pintarTecnicos() {
@@ -880,6 +898,24 @@ async function aplicarPermisos() {
       const ya = asignados.indexOf(grupo.Id) >= 0;
       if (!ya) await sp('POST', base + '/roleassignments/addroleassignment(principalid=' + grupo.Id + ',roledefid=' + roles[tipo].Id + ')');
       log(lista + ': ' + (tipo === 3 ? 'puede editar' : 'solo lectura') + ' (' + roles[tipo].Name + ')' + (ya ? ' — ya estaba' : ''), 'ok');
+    }
+    // 2b. NOV_Solicitudes: cada usuario solo lee y edita lo que él creó (la Dirección, como propietaria, ve todo)
+    try {
+      await sp('POST', "web/lists/getbytitle('NOV_Solicitudes')", { __metadata: { type: 'SP.List' }, ReadSecurity: 2, WriteSecurity: 2 }, { 'X-HTTP-Method': 'MERGE', 'IF-MATCH': '*' });
+      log('NOV_Solicitudes: cada técnico solo ve y edita sus propias solicitudes', 'ok');
+    } catch (e) { log('NOV_Solicitudes: no se pudo restringir a «solo sus elementos» (' + e.message + '). Hágalo a mano: lista › Configuración › Configuración avanzada › Acceso a elementos: «Leer elementos creados por el usuario» y «Crear y editar elementos creados por el usuario».', 'warn'); }
+    // 2c. NOV_Faltas: confidencial. Deja de heredar sin copiar permisos y solo queda quien ejecuta este paso (Dirección)
+    {
+      const base = "web/lists/getbytitle('NOV_Faltas')";
+      const l = await sp('GET', base + '?$select=HasUniqueRoleAssignments');
+      const yo = await sp('GET', 'web/currentuser?$select=Id,Title');
+      if (!l.HasUniqueRoleAssignments) {
+        await sp('POST', base + '/breakroleinheritance(copyRoleAssignments=false,clearSubscopes=true)');
+        const control = await sp('GET', 'web/roledefinitions/getbytype(5)?$select=Id');
+        const asignados = ((await sp('GET', base + '/roleassignments?$select=PrincipalId')).value || []).map((x) => x.PrincipalId);
+        if (asignados.indexOf(yo.Id) < 0) await sp('POST', base + '/roleassignments/addroleassignment(principalid=' + yo.Id + ',roledefid=' + control.Id + ')');
+        log('NOV_Faltas: permisos únicos — solo ' + yo.Title + ' (Dirección) puede abrirla', 'ok');
+      } else log('NOV_Faltas: ya tenía permisos únicos (no se cambiaron)', 'ok');
     }
     // 3. Correos: se guardan en OPE_Tecnicos y se agregan al grupo
     const yaEnGrupo = ((await sp('GET', 'web/sitegroups(' + grupo.Id + ')/users?$select=Email')).value || []).map((u) => String(u.Email || '').toLowerCase());

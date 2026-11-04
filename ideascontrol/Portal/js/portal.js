@@ -11,12 +11,14 @@
     comercial: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M12 12v6M9 15h6"/></svg>',
     docs: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5M8 7h8M8 11h6"/></svg>',
     encuesta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 6.5 7 .9-5.2 4.8 1.4 7L12 17.8 5.8 21.2l1.4-7L2 9.4l7-.9z"/></svg>',
+    novedad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M16 11l2 2 4-4"/></svg>',
     sitio: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>'
   };
   const DATOS = { SHAREPOINT: ['SharePoint', 'sp'], GITHUB: ['GitHub · público', 'gh'], POWERAPPS: ['Power Apps', 'pa'] };
 
   let cuenta = null, acceso = {}, catalogo = {}, hoy = null;
   const ventanas = {};
+  let pendientes = 0;
 
   function encabezado() {
     const nombre = cuenta.name || cuenta.username;
@@ -51,7 +53,7 @@
         html += '<a class="ic-card ' + (a.color || '') + (a.activa ? '' : ' deshabilitada') + '" ' + (a.activa ? 'href="' + esc(a.url) + '"' + (externa ? ' target="_blank" rel="noopener"' : ' data-app="' + esc(a.id) + '"') : '') + '>' +
           (a.pronto ? '<span class="ic-badge">Próximamente</span>' : !a.activa ? '<span class="ic-badge">Sin dirección</span>' : '') +
           '<div class="icono">' + ICO[a.icono] + '</div><h3>' + esc(a.nombre) + '</h3><p>' + esc(a.texto) + '</p>' +
-          '<div class="pt-meta"><span class="pt-datos ' + d[1] + '">' + esc(d[0]) + '</span>' + (typeof acc === 'string' ? '<span class="pt-rol">' + esc(acc) + '</span>' : '') + '<span class="pt-id">' + esc(a.id) + '</span></div>' +
+          '<div class="pt-meta"><span class="pt-datos ' + d[1] + '">' + esc(d[0]) + '</span>' + (typeof acc === 'string' ? '<span class="pt-rol">' + esc(acc) + '</span>' : '') + (a.id === 'APP-107' && pendientes ? '<span class="pt-pend">' + pendientes + ' por aprobar</span>' : '') + '<span class="pt-id">' + esc(a.id) + '</span></div>' +
           (a.nota && (!a.activa || a.datos === 'GITHUB') ? '<p class="pt-nota">' + esc(a.nota) + '</p>' : '') +
           '</a>';
       });
@@ -78,8 +80,8 @@
   // Personal de oficina = tiene acceso a Comercial o un rol distinto de Técnico en la Programación.
   // Mientras se verifican los accesos (undefined) se muestra todo.
   function esOficina() {
-    if (acceso.APP101 === undefined && acceso.APP106 === undefined) return true;
-    return !!acceso.APP101 || (!!acceso.APP106 && acceso.APP106 !== 'Técnico');
+    if (acceso.APP101 === undefined && acceso.APP106 === undefined && acceso.APP107 === undefined) return true;
+    return !!acceso.APP101 || (!!acceso.APP106 && acceso.APP106 !== 'Técnico') || (!!acceso.APP107 && acceso.APP107 !== 'Técnico');
   }
 
   // Lecturas opcionales: si alguna falla, el portal igual muestra el menú
@@ -93,13 +95,19 @@
         acceso.APP101 = u ? (u.rol === 'ADMIN' ? 'Administrador' : 'Comercial') : false;
       }).catch(() => { acceso.APP101 = false; }),   // sin permiso sobre la lista = sin acceso a Comercial
       Promise.all([
-        IC.graph.items('SYS_Accesos', { filtro: "fields/app_id eq 'APP-106'" }).catch(() => []),
+        IC.graph.items('SYS_Accesos').catch(() => []),
         IC.graph.items('OPE_Tecnicos').catch(() => [])
       ]).then(([acc, tec]) => {
-        const a = acc.find((x) => String(x.email || '').toLowerCase() === email && x.estado !== 'INACTIVO');
+        const mios = acc.filter((x) => String(x.email || '').toLowerCase() === email && x.estado !== 'INACTIVO');
+        const a = mios.find((x) => x.app_id === 'APP-106'), a7 = mios.find((x) => x.app_id === 'APP-107') || a;
         const t = tec.find((x) => String(x.email || '').toLowerCase() === email && x.estado !== 'INACTIVO');
         acceso.APP106 = a ? ({ ADMIN: 'Director de Operaciones', EDITOR: 'Programador', CONSULTA: 'Consulta' }[a.rol] || a.rol) : t ? 'Técnico' : false;
-        if (acceso.APP106) return hoyEnOperacion(tec);
+        // Novedades: Dirección (ADMIN) aprueba; los demás roles consultan; los técnicos solicitan
+        acceso.APP107 = a7 ? (a7.rol === 'ADMIN' ? 'Dirección' : 'Consulta') : t ? 'Técnico' : false;
+        const extra = [];
+        if (acceso.APP107 === 'Dirección') extra.push(IC.graph.items('NOV_Solicitudes', { filtro: "fields/estado eq 'SOLICITADA'" }).then((r) => { pendientes = r.length; }).catch(() => {}));
+        if (acceso.APP106) extra.push(hoyEnOperacion(tec));
+        return Promise.all(extra);
       }).catch(() => {})
     ];
     await Promise.all(tareas);

@@ -183,7 +183,7 @@ window.Ope = (function () {
         entidad, registro_id: registro, accion, antes: antes ? JSON.stringify(antes) : '', despues: despues ? JSON.stringify(despues) : '' });
     } catch (e) { console.warn('Auditoría no registrada', e); }
   }
-  const CAMPOS_ACT = ['fecha', 'tecnico_id', 'tipo', 'cliente', 'empresa_id', 'ciudad', 'equipos', 'hora_inicio', 'ticket_os', 'estado', 'observaciones', 'reprograma_de', 'autorizado', 'motivo_cambio'];
+  const CAMPOS_ACT = ['fecha', 'tecnico_id', 'tipo', 'cliente', 'empresa_id', 'ciudad', 'equipos', 'hora_inicio', 'ticket_os', 'estado', 'observaciones', 'reprograma_de', 'autorizado', 'motivo_cambio', 'origen'];
   function soloCampos(o) { const r = {}; CAMPOS_ACT.forEach((k) => { if (o[k] !== undefined) r[k] = o[k]; }); return r; }
 
   async function crearActividad(a) {

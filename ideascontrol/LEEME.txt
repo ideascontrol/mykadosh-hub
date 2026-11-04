@@ -107,3 +107,16 @@ INSTALACIÓN DE LA PROGRAMACIÓN
 3. (Opcional) En el paso 4 seleccione el Excel 2506-MAN-OPE y clic en «Importar actividades». Repetirlo no duplica.
 4. En la app › Administración › Técnicos registre el correo de cada técnico (para que vean su agenda) y en Accesos
    agregue a quien programe (Programador) o consulte. Todos deben ser miembros del sitio IC Apps.
+
+=====================================================================
+NUEVO · 3 de noviembre de 2026 (noche) · APP-107 Novedades del personal
+=====================================================================
+Novedades/ → mykadosh.com/ideascontrol/Novedades/
+- Técnicos: solicitan permisos (días u horas), vacaciones, licencias, incapacidades y cambios de horario; ven sus solicitudes.
+- Dirección (ADMIN): bandeja de aprobación con el impacto en la programación; al aprobar, el técnico queda en
+  Ausencia (AUS) en OPE_Actividades por cada día hábil; al anular, esas ausencias se cancelan. Faltas: solo Dirección.
+- Consulta (Gerencia): solicitudes y calendario de ausencias (sin faltas).
+Listas nuevas (las crea el mismo instalador de la Programación): NOV_Solicitudes, NOV_Faltas.
+Permisos (paso 5): técnicos pueden crear en NOV_Solicitudes y solo ven las suyas; NOV_Faltas con permisos únicos (solo Dirección).
+URI de redirección adicionales en Entra ID: https://mykadosh.com/ideascontrol/Novedades/ y https://www.mykadosh.com/ideascontrol/Novedades/
+Navegación: el Portal abre cada app en pestaña nueva; el botón «← Portal» (shared/js/volver.js) cierra la pestaña y vuelve.
