@@ -131,3 +131,8 @@
   .ope-semana th, .ope-semana td { min-width: 0; padding: 6px; }
   .ope-semana td.sinofi, .ope-semana tr.ofi td, .ope-tipo { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* Exportar / imprimir */
+.ope-sal-cab { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.ope-sal-lista { max-height: 260px; overflow: auto; border: 1px solid var(--ic-borde); border-radius: 8px; padding: 8px 12px; display: grid; gap: 6px; }
+.ope-sal-lista small { color: var(--ic-gris); }

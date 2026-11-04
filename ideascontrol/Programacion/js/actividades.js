@@ -234,7 +234,7 @@
       .map((e) => '<option value="' + e[0] + '"' + (filtros.estado === e[0] ? ' selected' : '') + '>' + esc(e[1]) + '</option>').join('');
     c.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a>' +
       '<div class="ic-barra"><div style="flex:1"><h1 class="ic-titulo">Actividades</h1><p class="ic-subtitulo" style="margin:0">Único lugar para registrar actividades. La validación se calcula sola.</p></div>' +
-      '<button class="ic-btn sec" id="bExportar" title="Descarga en Excel las actividades del rango y los filtros elegidos">Exportar a Excel</button>' +
+      '<button class="ic-btn sec" id="bExportar" title="Excel o impresión / PDF de las actividades del rango, por cliente">Exportar / Imprimir</button>' +
       (App.puedeEditar() ? '<button class="ic-btn sec" id="bAsignar" title="Asigna el cliente que contrata a las actividades filtradas">Asignar cliente…</button><button class="ic-btn" id="bNueva">+ Nueva actividad</button>' : '') + '</div>' +
       '<div class="ic-filtros">' +
         '<label class="ope-lbl">Desde <input type="date" id="fDesde" value="' + filtros.desde + '"></label>' +
@@ -247,7 +247,7 @@
         '<label class="ic-check"><input type="checkbox" id="fAl"' + (filtros.alertas ? ' checked' : '') + '> <span>Solo con ⚠</span></label>' +
       '</div><p class="ic-conteo" id="conteo"></p><div id="tabla"><div class="ic-vacio">Cargando…</div></div>';
     const bN = c.querySelector('#bNueva'); if (bN) bN.onclick = () => App.nuevaActividad({}, pintar);
-    c.querySelector('#bExportar').onclick = () => exportar(listaActual, filtros, c.querySelector('#bExportar'));
+    c.querySelector('#bExportar').onclick = () => elegirSalida(listaActual, filtros);
     const bA = c.querySelector('#bAsignar'); if (bA) bA.onclick = () => asignarCliente(listaActual, pintar);
     const leer = () => {
       filtros.desde = c.querySelector('#fDesde').value || filtros.desde; filtros.hasta = c.querySelector('#fHasta').value || filtros.hasta;
@@ -293,6 +293,79 @@
       document.head.appendChild(sc);
     });
   }
+  // ---------- Elegir clientes y formato (Excel o impresión) ----------
+  const claveCli = (a) => U.norm(a.cliente || '') || '(sin cliente)';
+  function elegirSalida(lista, f) {
+    if (!lista.length) { U.aviso('No hay actividades con estos filtros.', 'warn'); return; }
+    const clis = {};
+    lista.forEach((a) => { const k = claveCli(a); if (!clis[k]) clis[k] = { nombre: a.cliente || '(sin cliente)', n: 0, interna: a.tipo === 'OFI' || a.tipo === 'AUS' }; clis[k].n++; if (a.tipo !== 'OFI' && a.tipo !== 'AUS') clis[k].interna = false; });
+    const claves = Object.keys(clis).sort((a, b) => clis[a].interna - clis[b].interna || clis[a].nombre.localeCompare(clis[b].nombre));
+    U.modal('Exportar o imprimir', '<form class="ic-form" id="fSal"><p style="margin-top:0">Actividades del <b>' + esc(Ope.textoFecha(f.desde)) + '</b> al <b>' + esc(Ope.textoFecha(f.hasta)) + '</b> con los filtros de la lista.</p>' +
+      '<div class="ope-sal-cab"><b>Clientes</b><span><button type="button" class="ic-btn sec chico" data-t="1">Todos</button> <button type="button" class="ic-btn sec chico" data-t="0">Ninguno</button></span></div>' +
+      '<div class="ope-sal-lista">' + claves.map((k) => '<label class="ic-check"><input type="checkbox" data-cli="' + esc(k) + '"' + (clis[k].interna ? '' : ' checked') + '> <span>' + esc(clis[k].nombre) + ' <small>(' + clis[k].n + ')</small></span></label>').join('') + '</div>' +
+      '<div class="ic-campos" style="margin-top:12px">' +
+      '<div class="ic-campo c12"><label class="ic-check"><input type="checkbox" name="pagina" checked> <span>Imprimir cada cliente en una página aparte (para enviarle su programación)</span></label></div>' +
+      '<div class="ic-campo c12"><label class="ic-check"><input type="checkbox" name="obs"> <span>Incluir observaciones</span></label></div>' +
+      '<div class="ic-campo c12"><label class="ic-check"><input type="checkbox" name="validacion"> <span>Incluir validación (⚠ / ✔) — solo para uso interno</span></label></div></div>' +
+      '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="sNo">Cancelar</button><button type="button" class="ic-btn sec" id="sXls">Excel</button><button type="button" class="ic-btn" id="sImp">Imprimir / PDF</button></div></form>',
+    (cu) => {
+      const f2 = cu.querySelector('#fSal');
+      cu.querySelectorAll('[data-t]').forEach((b) => { b.onclick = () => cu.querySelectorAll('[data-cli]').forEach((x) => { x.checked = b.dataset.t === '1'; }); });
+      cu.querySelector('#sNo').onclick = U.cerrarModal;
+      const elegidos = () => { const sel = new Set(Array.from(cu.querySelectorAll('[data-cli]')).filter((x) => x.checked).map((x) => x.dataset.cli)); return lista.filter((a) => sel.has(claveCli(a))); };
+      const op = () => U.leerForm(f2);
+      cu.querySelector('#sXls').onclick = () => { const l = elegidos(); if (!l.length) { U.aviso('Elija al menos un cliente.', 'warn'); return; } exportar(l, f, cu.querySelector('#sXls')); };
+      cu.querySelector('#sImp').onclick = () => { const l = elegidos(); if (!l.length) { U.aviso('Elija al menos un cliente.', 'warn'); return; } imprimir(l, f, op()); };
+    });
+  }
+
+  // ---------- Informe para imprimir o guardar como PDF ----------
+  function imprimir(lista, f, op) {
+    const grupos = {};
+    lista.forEach((a) => { const k = claveCli(a); (grupos[k] = grupos[k] || { nombre: a.cliente || '(sin cliente)', acts: [] }).acts.push(a); });
+    const claves = Object.keys(grupos).sort((a, b) => grupos[a].nombre.localeCompare(grupos[b].nombre));
+    const logo = location.origin + CFG.logo;
+    const filaHtml = (a) => {
+      const v = Ope.activa(a) ? Ope.validar(a) : { errores: [], avisos: [] };
+      return '<tr class="' + (Ope.activa(a) ? '' : 'anulada') + '"><td>' + esc(Ope.textoFecha(a.fecha)) + '</td><td>' + esc(Ope.DIAS[Ope.dow(a.fecha) - 1]) + '</td>' +
+        '<td>' + esc(a.sitio || '—') + '</td><td>' + esc(a.ciudad || '') + '</td><td>' + esc(Ope.nombreTipo(a.tipo)) + '</td><td>' + esc(Ope.nombreTec(a.tecnico_id)) + '</td>' +
+        '<td class="n">' + esc(Ope.usaEquipos(a.tipo) && a.equipos !== '' ? a.equipos : '') + '</td><td>' + esc(a.hora_inicio || '') + '</td><td>' + esc(a.ticket_os || '') + '</td><td>' + esc(Ope.nombreEstado(a.estado)) + '</td>' +
+        (op.obs ? '<td class="obs">' + esc(a.observaciones || '') + '</td>' : '') +
+        (op.validacion ? '<td class="obs">' + (v.errores.length ? '⚠ ' + esc(v.errores.join('; ')) : v.avisos.length ? 'ℹ ' + esc(v.avisos.join('; ')) : '✔') + '</td>' : '') + '</tr>';
+    };
+    const cab = '<tr><th>Fecha</th><th>Día</th><th>Sitio / cliente final</th><th>Ciudad</th><th>Tipo</th><th>Técnico</th><th class="n">Eq.</th><th>Hora</th><th>Ticket / OS</th><th>Estado</th>' + (op.obs ? '<th>Observaciones</th>' : '') + (op.validacion ? '<th>Validación</th>' : '') + '</tr>';
+    const encabezado = (titulo) => '<div class="cab"><img src="' + logo + '" alt="Ideas Control"><div><h1>' + esc(titulo) + '</h1><p>Programación de servicios · ' + esc(Ope.textoFecha(f.desde)) + ' al ' + esc(Ope.textoFecha(f.hasta)) + '</p></div></div>';
+    let cuerpo = '';
+    if (claves.length > 1 && !op.pagina) {
+      cuerpo += encabezado('Programación de servicios') + '<table class="res"><thead><tr><th>Cliente</th><th class="n">Actividades</th><th class="n">Ejecutadas</th><th class="n">Equipos</th></tr></thead><tbody>' +
+        claves.map((k) => { const g = grupos[k].acts.filter(Ope.activa); return '<tr><td>' + esc(grupos[k].nombre) + '</td><td class="n">' + g.length + '</td><td class="n">' + g.filter((a) => a.estado === 'EJECUTADO').length + '</td><td class="n">' + g.filter((a) => Ope.usaEquipos(a.tipo)).reduce((s, a) => s + (Number(a.equipos) || 0), 0) + '</td></tr>'; }).join('') + '</tbody></table>';
+    }
+    claves.forEach((k, i) => {
+      const g = grupos[k], vig = g.acts.filter(Ope.activa);
+      const eq = vig.filter((a) => Ope.usaEquipos(a.tipo)).reduce((s, a) => s + (Number(a.equipos) || 0), 0);
+      cuerpo += '<section class="' + (op.pagina && i > 0 ? 'salto' : '') + '">' + (op.pagina || claves.length === 1 ? encabezado(g.nombre) : '<h2>' + esc(g.nombre) + '</h2>') +
+        '<p class="tot">' + vig.length + ' actividad' + (vig.length === 1 ? '' : 'es') + ' vigente' + (vig.length === 1 ? '' : 's') + (eq ? ' · ' + eq + ' equipo' + (eq === 1 ? '' : 's') : '') + ' · ' + vig.filter((a) => a.estado === 'EJECUTADO').length + ' ejecutada(s)' +
+        (g.acts.length > vig.length ? ' · ' + (g.acts.length - vig.length) + ' cancelada(s) o reprogramada(s)' : '') + '</p>' +
+        '<table><thead>' + cab + '</thead><tbody>' + g.acts.slice().sort(Ope.orden).map(filaHtml).join('') + '</tbody></table></section>';
+    });
+    const html = '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Programación ' + esc(f.desde) + ' a ' + esc(f.hasta) + '</title>' +
+      '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"><style>' +
+      '@page{size:landscape;margin:12mm}*{box-sizing:border-box}body{font-family:Inter,Arial,sans-serif;color:#1D2B36;margin:0;font-size:11.5px}' +
+      '.cab{display:flex;align-items:center;gap:16px;border-bottom:3px solid #C9A227;padding-bottom:10px;margin-bottom:12px}.cab img{height:40px}.cab h1{font-size:18px;margin:0;color:#0E76BC}.cab p{margin:2px 0 0;color:#5B6770}' +
+      'h2{font-size:15px;color:#0E76BC;margin:18px 0 4px}.tot{margin:0 0 6px;color:#5B6770}' +
+      'table{width:100%;border-collapse:collapse;margin-bottom:10px}th{background:#EEF4F9;text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:#0A5A90;padding:6px;border-bottom:1px solid #C9D6E2}' +
+      'td{padding:5px 6px;border-bottom:1px solid #E6ECF1;vertical-align:top}td:nth-child(-n+2),td:nth-child(8){white-space:nowrap}.n{text-align:center}.obs{max-width:260px}tr.anulada td{color:#9AA5AE;text-decoration:line-through}' +
+      'table.res{max-width:640px}.salto{break-before:page}thead{display:table-header-group}tr{break-inside:avoid}' +
+      '.pie{margin-top:14px;color:#8A96A0;font-size:10px}.barra{position:fixed;top:0;right:0;padding:10px}.barra button{font:inherit;font-weight:600;padding:8px 14px;border:0;border-radius:8px;background:#0E76BC;color:#fff;cursor:pointer}' +
+      '@media print{.barra{display:none}}</style></head><body><div class="barra"><button onclick="window.print()">Imprimir / Guardar PDF</button></div>' + cuerpo +
+      '<p class="pie">Ideas Control Equipos y Soluciones S.A.S. · Generado ' + esc(new Date().toLocaleString('es-CO')) + ' por ' + esc(App.usuario.nombre) + '</p>' +
+      '<script>window.addEventListener("load",function(){setTimeout(function(){window.print()},400)})<\/script></body></html>';
+    const w = window.open('', '_blank');
+    if (!w) { U.aviso('El navegador bloqueó la ventana de impresión. Permita ventanas emergentes para mykadosh.com.', 'warn', 8000); return; }
+    w.document.open(); w.document.write(html); w.document.close();
+    U.cerrarModal();
+  }
+
   async function exportar(lista, f, boton) {
     if (!lista.length) { U.aviso('No hay actividades para exportar con estos filtros.', 'warn'); return; }
     const txt = boton.textContent; boton.disabled = true; boton.textContent = 'Generando…';

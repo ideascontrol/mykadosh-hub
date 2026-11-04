@@ -525,9 +525,17 @@ const SEMILLAS = {
  ]
 }
 ;
-// Desarrollo de Talento: programa «Comunicaciones de servicio» con sus 12 piezas y 4 resúmenes, en BORRADOR
+// Desarrollo de Talento: pieza de bienvenida (publicada) y programa «Comunicaciones de servicio» con 12 piezas y 4 resúmenes en BORRADOR
 Object.assign(SEMILLAS, {
  "TAL_Programas": [
+  {
+   "Title": "TP-00",
+   "nombre": "Desarrollo de Talento",
+   "descripcion": "Mensajes generales del espacio de formación de Ideas Control.",
+   "audiencia": "TODOS",
+   "orden": 0,
+   "estado": "ACTIVO"
+  },
   {
    "Title": "TP-01",
    "nombre": "Comunicaciones de servicio",
@@ -538,6 +546,19 @@ Object.assign(SEMILLAS, {
   }
  ],
  "TAL_Piezas": [
+  {
+   "Title": "PZ-BIENV",
+   "programa_id": "TP-00",
+   "tipo": "TIP",
+   "etiqueta": "BIENVENIDA",
+   "orden": 0,
+   "titular": "Crecer también deja huella",
+   "mensaje": "Cada semana, una idea práctica para hacer aún mejor lo que ya hacemos bien",
+   "copy": "Hoy arranca Desarrollo de Talento, el espacio de formación de Ideas Control para todo el equipo: técnicos, comercial y administración. Aquí encontrarás piezas cortas, con una idea clave y una acción para aplicar el mismo día.\n\nEl primer programa, Comunicaciones de servicio, empieza el lunes 9 de noviembre: lunes, miércoles y viernes a las 8:10 a. m., y un resumen los viernes a las 4:00 p. m. 📌 Cuando leas cada pieza, marca «Entendido».",
+   "accion": "Entra al Portal › Desarrollo de Talento los lunes, miércoles y viernes, lee la pieza del día y marca «Entendido».",
+   "fecha_publicacion": "2026-11-04T17:00:00Z",
+   "estado": "PROGRAMADA"
+  },
   {
    "Title": "PZ-00001",
    "programa_id": "TP-01",
@@ -748,7 +769,7 @@ Object.assign(SEMILLAS, {
   }
  ]
 });
-SEMILLAS.SYS_Secuencias = [{ Title: 'PRG', ultimo_numero: 0 }, { Title: 'TEC', ultimo_numero: SEMILLAS.OPE_Tecnicos.length }, { Title: 'ACC', ultimo_numero: 0 }, { Title: 'EVT', ultimo_numero: 0 }, { Title: 'NOV', ultimo_numero: 0 }, { Title: 'FAL', ultimo_numero: 0 }, { Title: 'TAL', ultimo_numero: SEMILLAS.TAL_Piezas.length }, { Title: 'TPR', ultimo_numero: SEMILLAS.TAL_Programas.length }];
+SEMILLAS.SYS_Secuencias = [{ Title: 'PRG', ultimo_numero: 0 }, { Title: 'TEC', ultimo_numero: SEMILLAS.OPE_Tecnicos.length }, { Title: 'ACC', ultimo_numero: 0 }, { Title: 'EVT', ultimo_numero: 0 }, { Title: 'NOV', ultimo_numero: 0 }, { Title: 'FAL', ultimo_numero: 0 }, { Title: 'TAL', ultimo_numero: 16 }, { Title: 'TPR', ultimo_numero: 1 }];
 SEMILLAS.SYS_Microapps = [
   { Title: 'APP-100', nombre: 'Portal de microapps', tipo: 'INTERNA', proposito: 'Menú principal: entrada única a las microapps internas de Ideas Control.', estado: 'CONSTRUIDA',
     plataforma: 'HTML (GitHub) + Microsoft Graph', carpeta_actual: 'Portal', url: 'https://www.mykadosh.com/ideascontrol/Portal/' },

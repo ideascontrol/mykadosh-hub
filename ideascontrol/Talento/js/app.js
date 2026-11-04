@@ -162,20 +162,25 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
     const nueva = !p;
     p = p || { programa_id: App.filtroProg || (App.programas[0] && App.programas[0].Title), tipo: 'TIP', estado: 'BORRADOR' };
     const fp = partes(p.fecha_publicacion);
-    const html = '<div class="tal-editor"><form class="ic-form" id="fP" autocomplete="off"><div class="ic-campos">' +
+    const html = '<div class="tal-editor"><form class="ic-form" id="fP" autocomplete="off">' +
+      '<fieldset><legend>1 · El post</legend><div class="ic-campos">' +
+      U.campo({ name: 'titular', label: 'Titular', valor: p.titular, req: true, c: 'c12' }) +
+      '<div class="ic-campo c12" id="cMsj"><label for="f_mensaje">Idea clave</label><textarea id="f_mensaje" name="mensaje" rows="2">' + esc(p.mensaje || '') + '</textarea></div>' +
+      '<div class="ic-campo c12" id="cItems"><label for="f_items">Ideas del resumen (una por línea)</label><textarea id="f_items" name="items" rows="3">' + esc(p.items || '') + '</textarea></div>' +
+      U.campo({ name: 'etiqueta', label: 'Etiqueta de la cápsula', valor: p.etiqueta, c: 'c8', ph: 'TIP 01 · RESUMEN SEMANA 1' }) +
+      U.campo({ name: 'tam_titular', label: 'Tamaño del titular', valor: p.tam_titular, c: 'c4', modo: 'numeric', ph: 'Automático' }) +
+      '</div></fieldset>' +
+      '<fieldset><legend>2 · El texto que lo acompaña</legend><div class="ic-campos">' +
+      U.campo({ name: 'copy', label: 'Copy', t: 'textarea', valor: p.copy, c: 'c12', filas: 4 }) +
+      U.campo({ name: 'accion', label: 'Para aplicar hoy', t: 'textarea', valor: p.accion, c: 'c12', filas: 2 }) +
+      '</div></fieldset>' +
+      '<fieldset><legend>3 · Publicación</legend><div class="ic-campos">' +
       U.campo({ name: 'programa_id', label: 'Programa', t: 'select', op: App.programas.map((x) => [x.Title, x.nombre]), valor: p.programa_id, req: true, c: 'c8' }) +
       U.campo({ name: 'tipo', label: 'Tipo', t: 'select', op: [['TIP', 'Pieza'], ['RESUMEN', 'Resumen']], valor: p.tipo, vacio: false, c: 'c4' }) +
-      U.campo({ name: 'etiqueta', label: 'Etiqueta de la cápsula', valor: p.etiqueta, c: 'c6', ph: 'TIP 01 · RESUMEN SEMANA 1' }) +
-      U.campo({ name: 'orden', label: 'N° de orden', valor: p.orden, c: 'c3', modo: 'numeric' }) +
-      U.campo({ name: 'tam_titular', label: 'Tamaño titular', valor: p.tam_titular, c: 'c3', modo: 'numeric', ph: 'auto' }) +
-      U.campo({ name: 'titular', label: 'Titular', valor: p.titular, req: true, c: 'c12' }) +
-      '<div class="ic-campo c12" id="cMsj"><label for="f_mensaje">Idea clave (mensaje gráfico)</label><textarea id="f_mensaje" name="mensaje" rows="2">' + esc(p.mensaje || '') + '</textarea></div>' +
-      '<div class="ic-campo c12" id="cItems"><label for="f_items">Ideas del resumen (una por línea)</label><textarea id="f_items" name="items" rows="3">' + esc(p.items || '') + '</textarea></div>' +
-      U.campo({ name: 'copy', label: 'Copy (texto que acompaña la imagen)', t: 'textarea', valor: p.copy, c: 'c12', filas: 4 }) +
-      U.campo({ name: 'accion', label: 'Para aplicar hoy (acción esperada)', t: 'textarea', valor: p.accion, c: 'c12', filas: 2 }) +
-      U.campo({ name: 'fecha', label: 'Fecha de publicación', t: 'date', valor: fp.f, c: 'c6' }) +
-      U.campo({ name: 'hora', label: 'Hora', t: 'time', valor: fp.h || CFG.horaPieza, c: 'c6' }) +
-      '</div><p class="ope-nota">Estado: <b>' + esc(estadoVisible(p)) + '</b>' + (p.Title ? ' · ' + esc(p.Title) : '') + (p._modificado ? ' · modificada ' + esc(U.fmt.fechaHora(p._modificado)) + ' por ' + esc(p._editor) : '') + '</p>' +
+      U.campo({ name: 'fecha', label: 'Fecha', t: 'date', valor: fp.f, c: 'c4' }) +
+      U.campo({ name: 'hora', label: 'Hora', t: 'time', valor: fp.h || CFG.horaPieza, c: 'c4' }) +
+      U.campo({ name: 'orden', label: 'N° de orden', valor: p.orden, c: 'c4', modo: 'numeric' }) +
+      '</div></fieldset><p class="ope-nota">Estado: <b>' + esc(estadoVisible(p)) + '</b>' + (p.Title ? ' · ' + esc(p.Title) : '') + (p._modificado ? ' · modificada ' + esc(U.fmt.fechaHora(p._modificado)) + ' por ' + esc(p._editor) : '') + '</p>' +
       '<div class="ic-acciones">' +
       (!nueva && p.estado !== 'ARCHIVADA' ? '<button type="button" class="ic-btn sec peligro-txt" data-e="ARCHIVADA">Archivar</button>' : '') +
       '<span style="flex:1"></span><button type="button" class="ic-btn sec" id="pPng">Descargar PNG</button>' +

@@ -57,62 +57,90 @@ window.Post = (function () {
   async function dibujar(p, canvas) {
     await preparar();
     const cv = canvas || document.createElement('canvas'); cv.width = W; cv.height = H;
-    const ctx = cv.getContext('2d'), resumen = p.tipo === 'RESUMEN', alto = resumen ? 800 : 820;
+    const ctx = cv.getContext('2d'), resumen = p.tipo === 'RESUMEN';
+    const PIE = 1200;                                   // línea del pie
     ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
-    // Bloque azul
-    const g = ctx.createLinearGradient(0, 0, W * 0.75, alto * 1.25);
+
+    // 1. Medir el titular: ocupa todo el ancho, máximo 3 líneas (se reduce solo)
+    let tam = Number(p.tam_titular) || (resumen ? 88 : 100), ls;
+    do { fuente(ctx, 800, tam); ls = lineas(ctx, p.titular, W - 2 * M); if (ls.length > 3) tam -= 6; } while (ls.length > 3 && tam > 52);
+    const yTit = 196, lhT = tam * 1.08;
+    const yLinea = yTit + ls.length * lhT + 34;
+    const alto = Math.max(500, Math.min(720, yLinea + 12 + 76));   // el bloque azul se ajusta al titular
+
+    // 2. Bloque azul con la huella como detalle en la esquina
+    const g = ctx.createLinearGradient(0, 0, W * 0.8, alto * 1.3);
     g.addColorStop(0, C.azul); g.addColorStop(0.7, C.azulOsc); g.addColorStop(1, C.azulMas);
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, alto);
-    ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, alto); ctx.clip(); huella(ctx, 870, 570); ctx.restore();
-    // Etiqueta + cápsula
+    ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, alto); ctx.clip(); ctx.globalAlpha = 0.85; huella(ctx, W - 70, alto + 40); ctx.restore();
+
+    // 3. Etiqueta del programa + cápsula dorada
     ctx.textBaseline = 'middle';
-    fuente(ctx, 700, 26); espaciado(ctx, 0.14, 26); ctx.fillStyle = '#fff';
+    fuente(ctx, 700, 26); espaciado(ctx, 0.14, 26); ctx.fillStyle = 'rgba(255,255,255,.92)';
     const prog = String(p.programa || 'Comunicaciones de servicio').toUpperCase();
-    ctx.fillText(prog, M, 110);
+    ctx.fillText(prog, M, 104);
     const xCap = M + ctx.measureText(prog).width + 22;
     fuente(ctx, 800, 26); espaciado(ctx, 0.08, 26);
     const et = String(p.etiqueta || '').toUpperCase(), wCap = ctx.measureText(et).width + 40;
-    if (et) { ctx.fillStyle = C.dorado; redondeado(ctx, xCap, 85, wCap, 50, 25); ctx.fill(); ctx.fillStyle = C.tinta; ctx.fillText(et, xCap + 20, 111); }
+    if (et) { ctx.fillStyle = C.dorado; redondeado(ctx, xCap, 79, wCap, 50, 25); ctx.fill(); ctx.fillStyle = C.tinta; ctx.fillText(et, xCap + 20, 105); }
     espaciado(ctx, 0, 10);
-    // Titular (se reduce solo si no cabe en 4 líneas)
-    let tam = Number(p.tam_titular) || (resumen ? 92 : 104), ls;
-    do { fuente(ctx, 800, tam); ls = lineas(ctx, p.titular, W - M - 150); if (ls.length > 4) tam -= 6; } while (ls.length > 4 && tam > 50);
-    ctx.fillStyle = '#fff'; ctx.textBaseline = 'alphabetic';
-    const yTit = resumen ? 230 : 250;
-    ls.forEach((l, i) => ctx.fillText(l, M, yTit + tam * 0.86 + i * tam * 1.04));
-    ctx.fillStyle = C.dorado; redondeado(ctx, M, resumen ? 720 : 730, 150, 12, 6); ctx.fill();
-    // Cuerpo
+
+    // 4. Titular y línea dorada debajo
+    fuente(ctx, 800, tam); ctx.fillStyle = '#fff'; ctx.textBaseline = 'alphabetic';
+    ls.forEach((l, i) => ctx.fillText(l, M, yTit + tam * 0.86 + i * lhT));
+    ctx.fillStyle = C.dorado; redondeado(ctx, M, yLinea, 150, 12, 6); ctx.fill();
+
+    // 5. Cuerpo: una tarjeta centrada en el espacio blanco
+    const zonaIni = alto, zonaFin = PIE, ancho = W - 2 * M, pad = 56;
     if (resumen) {
       const items = (p.items || []).filter(Boolean).slice(0, 5);
+      let tt = 40, filas;
+      const medir = () => { fuente(ctx, 700, tt); filas = items.map((t) => lineas(ctx, t, ancho - pad * 2 - 96)); };
+      medir();
+      const altoItems = () => filas.reduce((s, f) => s + Math.max(64, f.length * tt * 1.22), 0) + (items.length - 1) * 26;
+      while (altoItems() + pad * 2 + 52 > zonaFin - zonaIni - 70 && tt > 26) { tt -= 2; medir(); }
+      const hCard = altoItems() + pad * 2 + 52, yCard = zonaIni + (zonaFin - zonaIni - hCard) / 2;
+      ctx.fillStyle = '#F1F7F7'; redondeado(ctx, M, yCard, ancho, hCard, 26); ctx.fill();
+      ctx.fillStyle = C.teal; redondeado(ctx, M, yCard, 12, hCard, 6); ctx.fill();
+      fuente(ctx, 800, 24); espaciado(ctx, 0.16, 24); ctx.fillStyle = C.teal; ctx.textBaseline = 'alphabetic';
+      ctx.fillText('LAS IDEAS DE LA SEMANA', M + pad, yCard + pad + 18); espaciado(ctx, 0, 10);
+      let y = yCard + pad + 52;
       items.forEach((t, i) => {
-        const y = 870 + i * 80 + 29;
-        ctx.fillStyle = C.teal; ctx.beginPath(); ctx.arc(M + 29 + 40, y, 29, 0, Math.PI * 2); ctx.fill();
-        fuente(ctx, 700, 28); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(String((Number(p.desde) || 0) + i + 1), M + 69, y + 1);
-        ctx.textAlign = 'left'; let tt = 34; fuente(ctx, 700, tt);
-        while (ctx.measureText(t).width > W - M - 150 - 60 && tt > 22) { tt -= 2; fuente(ctx, 700, tt); }
-        ctx.fillStyle = C.tinta; ctx.fillText(t, M + 120, y + 1);
+        const h = Math.max(64, filas[i].length * tt * 1.22);
+        ctx.fillStyle = C.teal; ctx.beginPath(); ctx.arc(M + pad + 32, y + h / 2, 32, 0, Math.PI * 2); ctx.fill();
+        fuente(ctx, 800, 30); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(String((Number(p.desde) || 0) + i + 1), M + pad + 32, y + h / 2 + 1);
+        ctx.textAlign = 'left'; fuente(ctx, 700, tt); ctx.fillStyle = C.tinta;
+        const y0 = y + h / 2 - (filas[i].length - 1) * tt * 1.22 / 2;
+        filas[i].forEach((l, k) => ctx.fillText(l, M + pad + 96, y0 + k * tt * 1.22 + 1));
+        y += h + 26;
       });
     } else {
+      fuente(ctx, 800, 90); const wq = ctx.measureText('“').width + 10;
+      let tq = 58, lq;
+      const medir = () => { fuente(ctx, 600, tq); lq = lineas(ctx, p.mensaje, ancho - pad * 2, wq); };
+      medir();
+      while ((lq.length > 5 || lq.length * tq * 1.3 + pad * 2 + 56 > zonaFin - zonaIni - 70) && tq > 34) { tq -= 3; medir(); }
+      const lh = tq * 1.3, hCard = 56 + lq.length * lh + pad * 2 - 10, yCard = zonaIni + (zonaFin - zonaIni - hCard) / 2;
+      ctx.fillStyle = '#F1F7F7'; redondeado(ctx, M, yCard, ancho, hCard, 26); ctx.fill();
+      ctx.fillStyle = C.teal; redondeado(ctx, M, yCard, 12, hCard, 6); ctx.fill();
       ctx.textBaseline = 'alphabetic';
-      fuente(ctx, 800, 24); espaciado(ctx, 0.16, 24); ctx.fillStyle = C.teal; ctx.fillText('IDEA CLAVE', M, 912); espaciado(ctx, 0, 10);
-      fuente(ctx, 800, 80); const wq = ctx.measureText('“').width + 8;
-      let tq = 50; fuente(ctx, 600, tq); let lq = lineas(ctx, p.mensaje, W - 2 * M, wq);
-      while (lq.length > 4 && tq > 34) { tq -= 4; fuente(ctx, 600, tq); lq = lineas(ctx, p.mensaje, W - 2 * M, wq); }
-      const lh = tq * 1.28, y0 = 935 + tq * 0.9;
+      fuente(ctx, 800, 24); espaciado(ctx, 0.16, 24); ctx.fillStyle = C.teal; ctx.fillText('IDEA CLAVE', M + pad, yCard + pad + 18); espaciado(ctx, 0, 10);
+      const y0 = yCard + pad + 56 + tq * 0.82;
       lq.forEach((l, i) => {
-        let x = M;
-        if (i === 0) { fuente(ctx, 800, 80); ctx.fillStyle = C.teal; ctx.fillText('“', M, y0 + 22); x += wq; }
+        let x = M + pad;
+        if (i === 0) { fuente(ctx, 800, 90); ctx.fillStyle = C.teal; ctx.fillText('“', x, y0 + 26); x += wq; }
         fuente(ctx, 600, tq); ctx.fillStyle = C.tinta; ctx.fillText(l, x, y0 + i * lh);
-        if (i === lq.length - 1) { const w = ctx.measureText(l).width; fuente(ctx, 800, 80); ctx.fillStyle = C.teal; ctx.fillText('”', x + w + 6, y0 + i * lh + 22); }
+        if (i === lq.length - 1) { const w = ctx.measureText(l).width; fuente(ctx, 800, 90); ctx.fillStyle = C.teal; ctx.fillText('”', x + w + 8, y0 + i * lh + 26); }
       });
     }
-    // Pie
-    ctx.fillStyle = C.linea; ctx.fillRect(0, 1200, W, 2);
-    if (logo && logo.naturalWidth) { const h = 86, w = logo.naturalWidth * h / logo.naturalHeight; ctx.drawImage(logo, M, 1232, w, h); }
+
+    // 6. Pie
+    ctx.fillStyle = C.linea; ctx.fillRect(0, PIE, W, 2);
+    if (logo && logo.naturalWidth) { const h = 90, w = logo.naturalWidth * h / logo.naturalHeight; ctx.drawImage(logo, M, PIE + 30, w, h); }
     ctx.textAlign = 'right'; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = C.gris;
-    fuente(ctx, 600, 22); espaciado(ctx, 0.06, 22);
-    ctx.fillText('DESARROLLO DE TALENTO', W - M, 1270); ctx.fillText('Cada contacto deja una huella', W - M, 1298);
+    fuente(ctx, 700, 22); espaciado(ctx, 0.08, 22); ctx.fillText('DESARROLLO DE TALENTO', W - M, PIE + 68);
+    fuente(ctx, 600, 22); espaciado(ctx, 0.02, 22); ctx.fillText('Cada contacto deja una huella', W - M, PIE + 98);
     espaciado(ctx, 0, 10); ctx.textAlign = 'left';
     return cv;
   }
