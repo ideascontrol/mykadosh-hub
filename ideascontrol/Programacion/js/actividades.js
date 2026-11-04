@@ -306,7 +306,7 @@
       '<div class="ic-campos" style="margin-top:12px">' +
       '<div class="ic-campo c12"><label class="ic-check"><input type="checkbox" name="pagina" checked> <span>Imprimir cada cliente en una página aparte (para enviarle su programación). Sin marcar: un solo listado de todos los clientes en orden de fecha</span></label></div>' +
       '<div class="ic-campo c12"><label class="ic-check"><input type="checkbox" name="obs"> <span>Incluir observaciones</span></label></div>' +
-      '<div class="ic-campo c12"><label class="ic-check"><input type="checkbox" name="validacion"> <span>Incluir validación (⚠ / ✔) — solo para uso interno</span></label></div></div>' +
+      '<div class="ic-campo c12"><label class="ic-check"><input type="checkbox" name="validacion" checked> <span>Incluir validación (⚠ conflicto · ℹ aviso · ✔ sin novedad). Desmárquela si el PDF es para enviar al cliente</span></label></div></div>' +
       '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="sNo">Cancelar</button><button type="button" class="ic-btn sec" id="sXls">Excel</button><button type="button" class="ic-btn" id="sImp">Imprimir / PDF</button></div></form>',
     (cu) => {
       const f2 = cu.querySelector('#fSal');
