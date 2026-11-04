@@ -16,6 +16,7 @@
   const DATOS = { SHAREPOINT: ['SharePoint', 'sp'], GITHUB: ['GitHub · público', 'gh'], POWERAPPS: ['Power Apps', 'pa'] };
 
   let cuenta = null, acceso = {}, catalogo = {}, hoy = null;
+  const ventanas = {};
 
   function encabezado() {
     const nombre = cuenta.name || cuenta.username;
@@ -30,11 +31,12 @@
   function saludo() { const h = new Date().getHours(); return h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches'; }
 
   function pintar(raiz) {
+    const oficina = esOficina();
     const apps = APPS.map((a) => {
       const c = catalogo[a.id] || {};
       const url = c.url || a.url;
       return Object.assign({}, a, { url, activa: !!url && !a.pronto });
-    });
+    }).filter((a) => !(a.acceso && acceso[a.acceso] === false) && !(a.soloOficina && !oficina));
     const grupos = [];
     apps.forEach((a) => { if (grupos.indexOf(a.grupo) < 0) grupos.push(a.grupo); });
     let html = '<h1 class="ic-titulo">' + saludo() + ', ' + esc(String(cuenta.name || '').split(' ')[0]) + '</h1>' +
@@ -46,21 +48,38 @@
         const d = DATOS[a.datos] || ['', ''];
         const acc = a.acceso ? acceso[a.acceso] : null;     // undefined = verificando · false = sin acceso · texto = rol
         const externa = a.datos === 'POWERAPPS' || /^https?:/.test(a.url || '') && !/mykadosh\.com/.test(a.url);
-        html += '<a class="ic-card ' + (a.color || '') + (a.activa ? '' : ' deshabilitada') + (acc === false ? ' pt-sin' : '') + '" ' + (a.activa ? 'href="' + esc(a.url) + '"' + (externa ? ' target="_blank" rel="noopener"' : '') : '') + '>' +
-          (a.pronto ? '<span class="ic-badge">Próximamente</span>' : !a.activa ? '<span class="ic-badge">Sin dirección</span>' : acc === false ? '<span class="ic-badge">Sin acceso</span>' : '') +
+        html += '<a class="ic-card ' + (a.color || '') + (a.activa ? '' : ' deshabilitada') + '" ' + (a.activa ? 'href="' + esc(a.url) + '"' + (externa ? ' target="_blank" rel="noopener"' : ' data-app="' + esc(a.id) + '"') : '') + '>' +
+          (a.pronto ? '<span class="ic-badge">Próximamente</span>' : !a.activa ? '<span class="ic-badge">Sin dirección</span>' : '') +
           '<div class="icono">' + ICO[a.icono] + '</div><h3>' + esc(a.nombre) + '</h3><p>' + esc(a.texto) + '</p>' +
           '<div class="pt-meta"><span class="pt-datos ' + d[1] + '">' + esc(d[0]) + '</span>' + (typeof acc === 'string' ? '<span class="pt-rol">' + esc(acc) + '</span>' : '') + '<span class="pt-id">' + esc(a.id) + '</span></div>' +
           (a.nota && (!a.activa || a.datos === 'GITHUB') ? '<p class="pt-nota">' + esc(a.nota) + '</p>' : '') +
-          (acc === false ? '<p class="pt-nota">Su cuenta no está habilitada en esta app. Pida acceso al responsable.</p>' : '') + '</a>';
+          '</a>';
       });
       html += '</div>';
     });
-    html += '<div class="ic-seccion">Sitios de SharePoint</div><div class="ic-grid">' + CFG.sitios.map((s) =>
+    if (oficina) html += '<div class="ic-seccion">Sitios de SharePoint</div><div class="ic-grid">' + CFG.sitios.map((s) =>
       '<a class="ic-card" href="' + esc(s.url) + '" target="_blank" rel="noopener"><div class="icono">' + ICO.sitio + '</div><h3>' + esc(s.nombre) + '</h3><p>' + esc(s.texto) + '</p></a>').join('') + '</div>';
-    html += '<div class="ic-seccion">Herramientas para clientes (públicas)</div><div class="pt-publicas">' +
+    if (oficina) html += '<div class="ic-seccion">Herramientas para clientes (públicas)</div><div class="pt-publicas">' +
       PUBLICAS.map((p) => '<a href="' + esc(p.url) + '" target="_blank" rel="noopener">' + esc(p.nombre) + ' ↗</a>').join('') + '</div>';
     html += '<div class="ic-pie">' + CFG.app.id + ' · v' + CFG.app.version + ' · Las apps internas guardan sus datos en SharePoint (IC Apps) con la cuenta de Microsoft 365 de cada usuario.</div>';
     raiz.innerHTML = html;
+    // Cada app interna se abre en su propia pestaña; si ya está abierta, se vuelve a ella
+    raiz.querySelectorAll('a[data-app]').forEach((el) => {
+      el.addEventListener('click', (ev) => {
+        if (ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.button !== 0) return;
+        ev.preventDefault();
+        const id = el.dataset.app, v = ventanas[id];
+        if (v && !v.closed) { try { v.focus(); return; } catch (e) { } }
+        ventanas[id] = window.open(el.getAttribute('href'), 'ic_' + id);
+        if (!ventanas[id]) location.href = el.getAttribute('href');   // bloqueador de ventanas: se abre aquí
+      });
+    });
+  }
+  // Personal de oficina = tiene acceso a Comercial o un rol distinto de Técnico en la Programación.
+  // Mientras se verifican los accesos (undefined) se muestra todo.
+  function esOficina() {
+    if (acceso.APP101 === undefined && acceso.APP106 === undefined) return true;
+    return !!acceso.APP101 || (!!acceso.APP106 && acceso.APP106 !== 'Técnico');
   }
 
   // Lecturas opcionales: si alguna falla, el portal igual muestra el menú
@@ -72,7 +91,7 @@
       IC.graph.items('SYS_Usuarios').then((r) => {
         const u = r.find((x) => String(x.email || '').toLowerCase() === email && x.estado === 'ACTIVO');
         acceso.APP101 = u ? (u.rol === 'ADMIN' ? 'Administrador' : 'Comercial') : false;
-      }).catch(() => { acceso.APP101 = undefined; }),
+      }).catch(() => { acceso.APP101 = false; }),   // sin permiso sobre la lista = sin acceso a Comercial
       Promise.all([
         IC.graph.items('SYS_Accesos', { filtro: "fields/app_id eq 'APP-106'" }).catch(() => []),
         IC.graph.items('OPE_Tecnicos').catch(() => [])

@@ -52,7 +52,7 @@ function pintarEncabezado() {
     '<div class="app-nombre"><b>' + esc(CFG.app.nombre) + '</b><span>' + CFG.app.id + ' · v' + CFG.app.version + '</span></div>' +
     '<div class="espacio"></div>' +
     '<div class="ic-user">' +
-      '<a class="ic-btn sec chico" href="' + CFG.portal + '" title="Volver al portal de microapps">Portal</a>' +
+      IC.portal.boton() +
       '<div class="datos"><b>' + esc(u.nombre) + '</b><span>' + esc(ROLES[u.rol] || u.rol) + '</span></div>' +
       '<div class="ic-avatar" title="' + esc(u.email) + '">' + esc(u.iniciales) + '</div>' +
       '<button class="ic-btn sec chico" id="btnSalir">Salir</button>' +

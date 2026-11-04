@@ -38,13 +38,18 @@
   #usuario { font-size:13px; color:var(--ok); font-weight:600; }
   #fin { border-left:4px solid var(--ok); }
   #fin a { color:var(--azul); font-weight:600; }
+  table.tec { width:100%; border-collapse:collapse; font-size:13px; }
+  table.tec th { text-align:left; color:var(--gris); font-weight:600; padding:6px 8px; border-bottom:1px solid var(--borde); }
+  table.tec td { padding:5px 8px; border-bottom:1px solid var(--borde); }
+  table.tec input { font:inherit; width:100%; padding:6px 8px; border:1px solid var(--borde); border-radius:6px; }
+  .en-grupo { color:var(--ok); font-weight:600; white-space:nowrap; }
   @media (max-width:600px){ header{flex-wrap:wrap;} }
 </style>
 </head>
 <body>
 <header>
   <img src="/ideascontrol/assets/ideascontrol.webp" alt="Ideas Control" onerror="this.style.display='none'">
-  <div><h1>Instalador IC Apps · APP-106 Programación de Operaciones</h1><p>Crea las listas de SharePoint, carga técnicos y tipos, y (opcional) importa el Excel actual. Puede repetirse sin duplicar.</p></div>
+  <div><h1>Instalador IC Apps · APP-106 Programación de Operaciones</h1><p>Crea las listas de SharePoint, carga técnicos y tipos, importa el Excel y da permisos a los técnicos. Puede repetirse sin duplicar.</p></div>
 </header>
 <main>
   <div class="card">
@@ -75,6 +80,18 @@
         <h2>Importar el Excel actual (opcional)</h2>
         <p>Seleccione <b>2506-MAN-OPE_Programador_de_Operaciones.xlsx</b>. Se leen las filas de la hoja <b>Entradas</b> y se crean como actividades. Si lo vuelve a importar, las filas ya importadas no se duplican (se comparan fecha, técnico, tipo, cliente, hora y ticket). Importe la versión final del Excel y desde ese momento programe solo en la app.</p>
         <div class="fila"><input type="file" id="archivo" accept=".xlsx" disabled><button id="btnImportar" disabled>Importar actividades</button></div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="paso" id="paso5" data-estado="pend">
+      <div class="num">5</div>
+      <div style="flex:1">
+        <h2>Permisos de los técnicos</h2>
+        <p>Los técnicos <b>no</b> se agregan como miembros del sitio IC Apps (verían también los datos de Comercial). Este paso crea el grupo de SharePoint <b>«IC Apps Tecnicos»</b>, le da permiso <b>solo</b> sobre las listas de la Programación (y las compartidas que necesita), guarda el correo de cada técnico y lo agrega al grupo. Para un técnico nuevo: escriba su correo aquí y vuelva a clic en «Aplicar permisos».</p>
+        <p><b>Requisito (una vez):</b> en Entra ID › la app › Permisos de API, el permiso <b>SharePoint › AllSites.FullControl</b> (delegado) con consentimiento del administrador.</p>
+        <div id="tablaTec" style="margin:8px 0 12px"></div>
+        <button id="btnPermisos" disabled>Aplicar permisos</button>
       </div>
     </div>
   </div>
@@ -507,6 +524,9 @@ const CFG = {
   sitePath: '/sites/ICApps',
   scopes: ['User.Read', 'Sites.Manage.All', 'Sites.ReadWrite.All'],
   // Debe coincidir EXACTAMENTE con una URI registrada en Entra ID (con o sin www, según cómo se abrió la página)
+  spWeb: 'https://ideascontrolsas.sharepoint.com/sites/ICApps',
+  spScopes: ['https://ideascontrolsas.sharepoint.com/AllSites.FullControl'],
+  grupoTecnicos: 'IC Apps Tecnicos',
   redirectUri: (typeof location !== 'undefined' ? location.origin : '') + '/ideascontrol/Programacion/Instalador/'
 };
 const GRAPH = 'https://graph.microsoft.com/v1.0';
@@ -553,6 +573,36 @@ async function token() {
     if (e instanceof msal.InteractionRequiredAuthError) { await msalApp.acquireTokenRedirect({ scopes: CFG.scopes, account: cuenta }); }
     throw e;
   }
+}
+
+// ====== SHAREPOINT (API REST, para permisos) ======
+async function tokenSP() {
+  try { return (await msalApp.acquireTokenSilent({ scopes: CFG.spScopes, account: cuenta })).accessToken; }
+  catch (e) {
+    if (e instanceof msal.InteractionRequiredAuthError) { sessionStorage.setItem('inst_paso5', '1'); await msalApp.acquireTokenRedirect({ scopes: CFG.spScopes, account: cuenta }); }
+    throw e;
+  }
+}
+async function sp(method, ruta, body) {
+  for (let intento = 1; intento <= 6; intento++) {
+    const headers = { Authorization: 'Bearer ' + await tokenSP(), Accept: 'application/json;odata=nometadata' };
+    if (body) headers['Content-Type'] = 'application/json;odata=verbose';
+    const res = await fetch(CFG.spWeb + '/_api/' + ruta, { method, headers, body: body ? JSON.stringify(body) : undefined });
+    if (res.status === 429 || res.status === 503) { await sleep(1000 * Number(res.headers.get('Retry-After') || 2 * intento)); continue; }
+    const txt = await res.text();
+    let data = {}; try { data = txt ? JSON.parse(txt) : {}; } catch (e) { data = {}; }
+    if (!res.ok) {
+      const m = data['odata.error'] && data['odata.error'].message && data['odata.error'].message.value;
+      const err = new Error(m || ('SharePoint respondió ' + res.status)); err.status = res.status; throw err;
+    }
+    return data;
+  }
+  throw new Error('SharePoint no respondió a tiempo.');
+}
+const lit = (t) => "'" + String(t).replace(/'/g, "''") + "'";
+async function buscarGrupo() {
+  const r = await sp('GET', 'web/sitegroups?$select=Id,Title&$filter=Title eq ' + encodeURIComponent(lit(CFG.grupoTecnicos)));
+  return (r.value || [])[0] || null;
 }
 
 // ====== MICROSOFT GRAPH ======
@@ -713,6 +763,7 @@ async function crearEstructura() {
     log('Estructura lista en ' + sitio.webUrl, 'ok');
     estadoPaso(3, 'ok');
     $('fin').hidden = false; $('archivo').disabled = false;
+    await pintarTecnicos();
     $('linkSitio').href = sitio.webUrl + '/_layouts/15/viewlsts.aspx';
   } catch (e) {
     log('Error: ' + explicar(e), 'err'); estadoPaso(3, 'err'); $('btnCrear').disabled = false;
@@ -783,6 +834,87 @@ async function importar() {
   $('btnImportar').disabled = false;
 }
 
+// ====== PASO 5: PERMISOS DE LOS TÉCNICOS ======
+// Contribuir = leer y editar elementos · Leer = solo consulta
+const PERMISOS_TECNICOS = [
+  ['OPE_Actividades', 3], ['SYS_Auditoria', 3], ['SYS_Secuencias', 3],
+  ['OPE_Tecnicos', 2], ['OPE_Tipos', 2], ['SYS_Festivos', 2], ['SYS_Accesos', 2], ['SYS_Microapps', 2]
+];
+let tecnicosLista = [];
+async function pintarTecnicos() {
+  if (!listasExistentes.OPE_Tecnicos) { $('tablaTec').innerHTML = '<p>Primero cree la estructura (paso 3).</p>'; return; }
+  tecnicosLista = (await itemsDeLista('OPE_Tecnicos')).filter((i) => i.fields.estado !== 'INACTIVO')
+    .sort((a, b) => (Number(a.fields.orden) || 99) - (Number(b.fields.orden) || 99));
+  let enGrupo = [];
+  try {
+    const gr = await buscarGrupo();
+    if (gr) { const g = await sp('GET', 'web/sitegroups(' + gr.Id + ')/users?$select=Email'); enGrupo = (g.value || []).map((u) => String(u.Email || '').toLowerCase()); }
+  } catch (e) { /* falta el permiso de SharePoint: se informa al aplicar */ }
+  $('tablaTec').innerHTML = '<table class="tec"><thead><tr><th>Técnico</th><th>Vinculación</th><th style="width:50%">Correo de Microsoft 365 (de Ideas Control)</th><th></th></tr></thead><tbody>' +
+    tecnicosLista.map((t) => {
+      const em = String(t.fields.email || '').toLowerCase();
+      return '<tr><td>' + t.fields.nombre + '</td><td>' + (t.fields.vinculacion === 'TECNICO_CAMPO' ? 'Técnico de campo' : 'Ideas Control') + '</td>' +
+        '<td><input type="email" data-id="' + t.id + '" value="' + em + '" placeholder="nombre@ideascontrol.com"></td><td>' + (em && enGrupo.indexOf(em) >= 0 ? '<span class="en-grupo">✔ en el grupo</span>' : '') + '</td></tr>';
+    }).join('') + '</tbody></table>';
+  $('btnPermisos').disabled = false;
+}
+async function aplicarPermisos() {
+  $('btnPermisos').disabled = true; estadoPaso(5, 'run');
+  try {
+    log('Permisos de los técnicos…', 'title');
+    // 1. Grupo de SharePoint
+    let grupo = await buscarGrupo();
+    if (grupo) log('Grupo «' + CFG.grupoTecnicos + '» ya existía', 'ok');
+    else {
+      grupo = await sp('POST', 'web/sitegroups', { __metadata: { type: 'SP.Group' }, Title: CFG.grupoTecnicos, Description: 'Técnicos de Ideas Control: acceso solo a la Programación de Operaciones (APP-106)' });
+      log('Grupo «' + CFG.grupoTecnicos + '» creado', 'ok');
+    }
+    // 2. Permiso del grupo en cada lista (la lista deja de heredar los permisos del sitio, conservando los actuales)
+    const roles = {};
+    for (const tipo of [2, 3]) roles[tipo] = (await sp('GET', 'web/roledefinitions/getbytype(' + tipo + ')?$select=Id,Name'));
+    for (const [lista, tipo] of PERMISOS_TECNICOS) {
+      const base = 'web/lists/getbytitle(' + lit(lista) + ')';
+      const l = await sp('GET', base + '?$select=HasUniqueRoleAssignments');
+      if (!l.HasUniqueRoleAssignments) await sp('POST', base + '/breakroleinheritance(copyRoleAssignments=true,clearSubscopes=true)');
+      const asignados = ((await sp('GET', base + '/roleassignments?$select=PrincipalId')).value || []).map((x) => x.PrincipalId);
+      const ya = asignados.indexOf(grupo.Id) >= 0;
+      if (!ya) await sp('POST', base + '/roleassignments/addroleassignment(principalid=' + grupo.Id + ',roledefid=' + roles[tipo].Id + ')');
+      log(lista + ': ' + (tipo === 3 ? 'puede editar' : 'solo lectura') + ' (' + roles[tipo].Name + ')' + (ya ? ' — ya estaba' : ''), 'ok');
+    }
+    // 3. Correos: se guardan en OPE_Tecnicos y se agregan al grupo
+    const yaEnGrupo = ((await sp('GET', 'web/sitegroups(' + grupo.Id + ')/users?$select=Email')).value || []).map((u) => String(u.Email || '').toLowerCase());
+    const inputs = Array.from(document.querySelectorAll('#tablaTec input[data-id]'));
+    for (const inp of inputs) {
+      const t = tecnicosLista.find((x) => x.id === inp.dataset.id); const em = inp.value.trim().toLowerCase();
+      if (em && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) { log(t.fields.nombre + ': el correo «' + em + '» no es válido', 'warn'); continue; }
+      let ok = true;
+      if (em && yaEnGrupo.indexOf(em) >= 0) log(t.fields.nombre + ': ya estaba en el grupo', 'ok');
+      else if (em) {
+        try {
+          await sp('POST', 'web/sitegroups(' + grupo.Id + ')/users', { __metadata: { type: 'SP.User' }, LoginName: 'i:0#.f|membership|' + em });
+          log(t.fields.nombre + ': agregado al grupo (' + em + ')', 'ok');
+        } catch (e) { ok = false; log(t.fields.nombre + ': no se pudo agregar ' + em + ' — ' + e.message + ' (¿la cuenta existe en Microsoft 365 de IC?). No se guardó el correo.', 'warn'); }
+      }
+      // El correo se guarda solo si la cuenta quedó en el grupo (así el técnico puede entrar como Técnico)
+      if (ok && em !== String(t.fields.email || '').toLowerCase()) {
+        await graph('PATCH', '/sites/' + sitio.id + '/lists/' + listasExistentes.OPE_Tecnicos + '/items/' + t.id + '/fields', { email: em || null });
+        log(t.fields.nombre + ': correo ' + (em ? 'guardado' : 'quitado') + ' en OPE_Tecnicos', 'ok');
+      }
+    }
+    log('Listo. Los técnicos del grupo entran al Portal y a la Programación con su cuenta; no ven Comercial.', 'ok');
+    log('Para quitar a alguien: SharePoint › IC Apps › Configuración › Permisos del sitio › grupo «' + CFG.grupoTecnicos + '».', 'info');
+    estadoPaso(5, 'ok');
+    await pintarTecnicos();
+  } catch (e) {
+    estadoPaso(5, 'err');
+    const m = String(e.message || e);
+    if (/AADSTS65001|consent|AADSTS650057|invalid_resource|AADSTS500011/i.test(m)) log('Error: falta el permiso SharePoint › AllSites.FullControl en Entra ID, con consentimiento del administrador. ' + m, 'err');
+    else if (e.status === 401 || e.status === 403) log('Error: SharePoint negó el acceso (' + e.status + '). Debe ser propietario del sitio IC Apps y tener concedido el permiso AllSites.FullControl. ' + m, 'err');
+    else log('Error: ' + explicar(e), 'err');
+  }
+  $('btnPermisos').disabled = false;
+}
+
 function explicar(e) {
   const m = String(e && e.message || e);
   if (/AADSTS65001|consent|90094|admin approval/i.test(m)) return 'Falta el consentimiento del administrador de Microsoft 365 para los permisos de la app. ' + m;
@@ -799,7 +931,9 @@ async function arrancar() {
   estadoPaso(1, 'ok');
   $('usuario').textContent = cuenta.name + ' · ' + cuenta.username;
   $('btnLogout').hidden = false; $('btnLogin').hidden = true;
-  try { await verificarSitio(); } catch (e) { estadoPaso(2, 'err'); log('Error: ' + explicar(e), 'err'); }
+  try { await verificarSitio(); } catch (e) { estadoPaso(2, 'err'); log('Error: ' + explicar(e), 'err'); return; }
+  try { await pintarTecnicos(); } catch (e) { log('Técnicos: ' + explicar(e), 'warn'); }
+  if (sessionStorage.getItem('inst_paso5')) { sessionStorage.removeItem('inst_paso5'); log('Permiso de SharePoint concedido. Clic de nuevo en «Aplicar permisos».', 'info'); }
 }
 if (typeof window !== 'undefined' && !window.__TEST__) {
   window.addEventListener('DOMContentLoaded', () => {
@@ -807,6 +941,7 @@ if (typeof window !== 'undefined' && !window.__TEST__) {
     $('btnLogout').onclick = () => cerrarSesion();
     $('btnCrear').onclick = () => crearEstructura();
     $('btnImportar').onclick = () => importar();
+    $('btnPermisos').onclick = () => aplicarPermisos();
     $('archivo').onchange = () => { $('btnImportar').disabled = !$('archivo').files.length; };
     $('lblListas').textContent = LISTAS.length;
     arrancar();

@@ -76,7 +76,7 @@
     return `<header class="top"><div class="wrap">
       <a class="logo" href="${B}index.html" aria-label="Inicio"><img src="${B}assets/img/ideascontrol.webp" alt="Ideas Control Equipos y Soluciones S.A.S."></a>
       <div class="sistema"><b>Gestión Documental</b><span>${esc(subtitulo || 'Sistema de documentación interna')}</span></div>
-      <div class="usuario"><span>${esc(usuario?.nombre || '')}</span><i>${esc(ini)}</i><button type="button" class="salir" onclick="GDAuth.cerrarSesion()" title="Cerrar sesión">Salir</button></div>
+      <div class="usuario">${/^ic_/.test(window.name || '') ? '<button type="button" class="salir" onclick="GD.volverPortal()" title="Cerrar esta pestaña y volver al portal de microapps">← Portal</button>' : ''}<span>${esc(usuario?.nombre || '')}</span><i>${esc(ini)}</i><button type="button" class="salir" onclick="GDAuth.cerrarSesion()" title="Cerrar sesión">Salir</button></div>
     </div></header>`;
   }
   function pie() {
@@ -286,6 +286,14 @@
     });
   }
 
-  window.GD = { iniciarPortal, iniciarArea, iniciarDocumento, encabezadoSimple: (u, sub) => document.body.insertAdjacentHTML('afterbegin', encabezado(u, sub || 'Gestión Operativa')) };
+  // Volver al portal de microapps: cierra esta pestaña si se abrió desde el Portal
+  function volverPortal() {
+    const PORTAL = '/ideascontrol/Portal/';
+    let abierto = false;
+    try { abierto = !!(window.opener && !window.opener.closed && window.opener.location.pathname.indexOf(PORTAL) === 0); } catch (e) { }
+    if (abierto) { try { window.opener.focus(); } catch (e) { } window.close(); setTimeout(() => { location.href = PORTAL; }, 400); }
+    else location.href = PORTAL;
+  }
+  window.GD = { volverPortal, iniciarPortal, iniciarArea, iniciarDocumento, encabezadoSimple: (u, sub) => document.body.insertAdjacentHTML('afterbegin', encabezado(u, sub || 'Gestión Operativa')) };
   document.body.insertAdjacentHTML('beforeend', pie());
 })();

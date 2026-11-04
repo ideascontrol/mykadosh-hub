@@ -49,6 +49,7 @@ function pintarEncabezado() {
     '<div class="app-nombre"><b>Microapp ' + IC.ui.esc(CFG.app.nombre) + '</b><span>' + CFG.app.id + ' · v' + CFG.app.version + '</span></div>' +
     '<div class="espacio"></div>' +
     '<div class="ic-user">' +
+      (IC.portal ? IC.portal.boton() : '') +
       '<div class="datos"><b>' + IC.ui.esc(u.nombre) + '</b><span>' + (u.es_admin ? 'Administrador' : 'Comercial') + ' · ' + IC.ui.esc(u.iniciales) + '</span></div>' +
       '<div class="ic-avatar" title="' + IC.ui.esc(u.email) + '">' + IC.ui.esc(u.iniciales || IC.ui.fmt.iniciales(u.nombre)) + '</div>' +
       (App.ayuda ? App.ayuda.boton() : '') +

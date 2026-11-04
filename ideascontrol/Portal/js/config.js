@@ -4,7 +4,7 @@
    está en la lista SYS_Microapps (columna url), esa tiene prioridad.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-100', nombre: 'Portal de microapps', version: '0.1.0' },
+  app: { id: 'APP-100', nombre: 'Portal de microapps', version: '0.1.1' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -19,14 +19,15 @@ window.CFG = {
   ]
 };
 
-// datos: SHAREPOINT | GITHUB | POWERAPPS · acceso: como se verifica el permiso del usuario
+// datos: SHAREPOINT | GITHUB | POWERAPPS · acceso: cómo se verifica el permiso del usuario
+// soloOficina: no se muestra a los técnicos (quienes solo tienen acceso como Técnico a la Programación)
 window.APPS = [
   { grupo: 'Operaciones', id: 'APP-106', nombre: 'Programación de Operaciones', icono: 'agenda', color: '',
     texto: 'Agenda de técnicos: instalaciones, mantenimientos, soporte, rotación de oficina y programación semanal.',
     url: '/ideascontrol/Programacion/', datos: 'SHAREPOINT', acceso: 'APP106' },
   { grupo: 'Operaciones', id: 'APP-102', nombre: 'Soporte técnico (tickets)', icono: 'ticket', color: '',
     texto: 'Gestión de tickets de soporte, implementaciones y seguimiento de recursos.',
-    url: '', datos: 'POWERAPPS', nota: 'Registre su dirección en SYS_Microapps (APP-102 › url) para activarla aquí.' },
+    url: '', datos: 'POWERAPPS', soloOficina: true, nota: 'Registre su dirección en SYS_Microapps (APP-102 › url) para activarla aquí.' },
   { grupo: 'Comercial', id: 'APP-101', nombre: 'Comercial', icono: 'comercial', color: 'teal',
     texto: 'Empresas y contactos, productos y precios, cotizaciones con PDF, interacciones y tablero comercial.',
     url: '/ideascontrol/Comercial/', datos: 'SHAREPOINT', acceso: 'APP101' },
@@ -34,7 +35,7 @@ window.APPS = [
     texto: 'Manuales, procedimientos, instructivos, formatos y políticas vigentes de Ideas Control.',
     url: '/ideascontrol/ICManuales/gestion-documental/index.html', datos: 'GITHUB', nota: 'Hoy se publica en GitHub (público). Pasará a SharePoint.' },
   { grupo: 'Próximamente', id: 'APP-104', nombre: 'Encuestas CSAT / NPS', icono: 'encuesta', color: '',
-    texto: 'CSAT después de cada servicio; NPS cada 3 o 6 meses.', url: '', datos: 'SHAREPOINT', pronto: true }
+    texto: 'CSAT después de cada servicio; NPS cada 3 o 6 meses.', url: '', datos: 'SHAREPOINT', pronto: true, soloOficina: true }
 ];
 
 // Herramientas públicas para clientes (no piden inicio de sesión)
