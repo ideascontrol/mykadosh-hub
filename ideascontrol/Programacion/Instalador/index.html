@@ -1315,6 +1315,8 @@ async function moverGD() {
       const final = {}; Object.keys(campos).forEach((k) => { final[real[k] || k] = campos[k]; });
       try { await graph('PATCH', '/sites/' + sitioGD.id + '/lists/' + lista.id + '/items/' + li.id + '/fields', final); }
       catch (e) { log(d.codigo + ': archivo subido, pero sin todos sus datos (' + explicar(e) + ')', 'warn'); }
+      // Si la biblioteca exige «desproteger», el archivo nuevo queda desprotegido y nadie más lo ve: se protege (publica) aquí
+      try { await graph('POST', '/drives/' + drive.id + '/items/' + item.id + '/checkin', { comment: 'Carga desde Gestión documental' }); } catch (e) { /* no estaba desprotegido */ }
     };
     for (const d of GD_DOCS) {
       const carpeta = base + d.bloque + ' ' + limpiarNombre(d.area) + '/';
