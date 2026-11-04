@@ -589,10 +589,12 @@ async function token() {
 }
 
 // ====== SHAREPOINT (API REST, para permisos) ======
+// Solo se pide el permiso de SharePoint al hacer clic en «Aplicar permisos» (paso 5), nunca al abrir la página.
+let spInteractivo = false;
 async function tokenSP() {
   try { return (await msalApp.acquireTokenSilent({ scopes: CFG.spScopes, account: cuenta })).accessToken; }
   catch (e) {
-    if (e instanceof msal.InteractionRequiredAuthError) { sessionStorage.setItem('inst_paso5', '1'); await msalApp.acquireTokenRedirect({ scopes: CFG.spScopes, account: cuenta }); }
+    if (spInteractivo && e instanceof msal.InteractionRequiredAuthError) { sessionStorage.setItem('inst_paso5', '1'); await msalApp.acquireTokenRedirect({ scopes: CFG.spScopes, account: cuenta }); }
     throw e;
   }
 }
@@ -877,7 +879,7 @@ async function pintarTecnicos() {
   $('btnPermisos').disabled = false;
 }
 async function aplicarPermisos() {
-  $('btnPermisos').disabled = true; estadoPaso(5, 'run');
+  $('btnPermisos').disabled = true; estadoPaso(5, 'run'); spInteractivo = true;
   try {
     log('Permisos de los técnicos…', 'title');
     // 1. Grupo de SharePoint
