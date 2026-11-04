@@ -1337,14 +1337,6 @@ async function moverGD() {
       }
       progreso(n, total);
     }
-    // El Portal abre ahora la biblioteca de SharePoint
-    try {
-      const apps = await itemsDeLista('SYS_Microapps');
-      const it = apps.find((a) => a.fields.Title === 'APP-105');
-      const campos = { url: drive.webUrl, plataforma: 'SharePoint · sitio Ideas Control · ' + GD.biblioteca, estado: 'CONSTRUIDA' };
-      if (it) await graph('PATCH', '/sites/' + sitio.id + '/lists/' + listasExistentes.SYS_Microapps + '/items/' + it.id + '/fields', campos);
-      log('Portal: la tarjeta Gestión documental abre ahora ' + drive.webUrl, 'ok');
-    } catch (e) { log('No se pudo actualizar la tarjeta del Portal: ' + explicar(e), 'warn'); }
     progreso(1, 1, 'Gestión documental en SharePoint');
     // Comprobación: cuántos archivos quedaron realmente en cada carpeta
     for (const b of [...new Set(GD_DOCS.map((d) => d.bloque + ' ' + limpiarNombre(d.area)))]) {
