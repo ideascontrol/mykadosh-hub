@@ -306,7 +306,7 @@
       '<div class="ic-campos" style="margin-top:12px">' +
       '<div class="ic-campo c12"><label class="ic-check"><input type="checkbox" name="pagina" checked> <span>Imprimir cada cliente en una página aparte (para enviarle su programación). Sin marcar: un solo listado de todos los clientes en orden de fecha</span></label></div>' +
       '<div class="ic-campo c12"><label class="ic-check"><input type="checkbox" name="obs"> <span>Incluir observaciones</span></label></div>' +
-      '<div class="ic-campo c12"><label class="ic-check"><input type="checkbox" name="validacion" checked> <span>Incluir validación (⚠ conflicto · ℹ aviso · ✔ sin novedad). Desmárquela si el PDF es para enviar al cliente</span></label></div></div>' +
+      '</div>' +
       '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="sNo">Cancelar</button><button type="button" class="ic-btn sec" id="sXls">Excel</button><button type="button" class="ic-btn" id="sImp">Imprimir / PDF</button></div></form>',
     (cu) => {
       const f2 = cu.querySelector('#fSal');
@@ -328,14 +328,13 @@
     // Un solo informe en orden de fecha (con columna Cliente) o una página por cliente; siempre de la fecha más antigua a la más reciente
     const unaTabla = claves.length > 1 && !op.pagina;
     const filaHtml = (a) => {
-      const v = Ope.activa(a) ? Ope.validar(a) : { errores: [], avisos: [] };
       return '<tr class="' + (Ope.activa(a) ? '' : 'anulada') + '"><td>' + esc(Ope.textoFecha(a.fecha)) + '</td><td>' + esc(Ope.DIAS[Ope.dow(a.fecha) - 1]) + '</td>' +
         (unaTabla ? '<td>' + esc(a.cliente || '(sin cliente)') + '</td>' : '') + '<td>' + esc(a.sitio || '—') + '</td><td>' + esc(a.ciudad || '') + '</td><td>' + esc(Ope.nombreTipo(a.tipo)) + '</td><td>' + esc(Ope.nombreTec(a.tecnico_id)) + '</td>' +
         '<td class="n">' + esc(Ope.usaEquipos(a.tipo) && a.equipos !== '' ? a.equipos : '') + '</td><td class="h">' + esc(a.hora_inicio || '') + '</td><td>' + esc(a.ticket_os || '') + '</td><td>' + esc(Ope.nombreEstado(a.estado)) + '</td>' +
         (op.obs ? '<td class="obs">' + esc(a.observaciones || '') + '</td>' : '') +
-        (op.validacion ? '<td class="obs">' + (v.errores.length ? '⚠ ' + esc(v.errores.join('; ')) : v.avisos.length ? 'ℹ ' + esc(v.avisos.join('; ')) : '✔') + '</td>' : '') + '</tr>';
+        '</tr>';
     };
-    const cab = '<tr><th>Fecha</th><th>Día</th>' + (unaTabla ? '<th>Cliente</th>' : '') + '<th>Sitio / cliente final</th><th>Ciudad</th><th>Tipo</th><th>Técnico</th><th class="n">Eq.</th><th>Hora</th><th>Ticket / OS</th><th>Estado</th>' + (op.obs ? '<th>Observaciones</th>' : '') + (op.validacion ? '<th>Validación</th>' : '') + '</tr>';
+    const cab = '<tr><th>Fecha</th><th>Día</th>' + (unaTabla ? '<th>Cliente</th>' : '') + '<th>Sitio / cliente final</th><th>Ciudad</th><th>Tipo</th><th>Técnico</th><th class="n">Eq.</th><th>Hora</th><th>Ticket / OS</th><th>Estado</th>' + (op.obs ? '<th>Observaciones</th>' : '') + '</tr>';
     const encabezado = (titulo) => '<div class="cab"><img src="' + logo + '" alt="Ideas Control"><div><h1>' + esc(titulo) + '</h1><p>Programación de servicios · ' + esc(Ope.textoFecha(f.desde)) + ' al ' + esc(Ope.textoFecha(f.hasta)) + '</p></div></div>';
     let cuerpo = '';
     if (claves.length > 1 && !op.pagina) {
@@ -380,19 +379,18 @@
       // Fecha como número de serie de Excel (sin zona horaria, para que no cambie de día)
       const fecha = (s) => { const [y, m, d] = s.split('-').map(Number); return (Date.UTC(y, m - 1, d) - Date.UTC(1899, 11, 30)) / 864e5; };
       const filas = lista.map((a) => {
-        const v = Ope.activa(a) ? Ope.validar(a) : { errores: [], avisos: [] }, t = Ope.tec(a.tecnico_id);
+        const t = Ope.tec(a.tecnico_id);
         return {
           'N°': a.Title, 'Fecha': fecha(a.fecha), 'Día': Ope.DIAS[Ope.dow(a.fecha) - 1], 'Técnico': Ope.nombreTec(a.tecnico_id),
           'Vinculación': t ? (t.vinculacion === 'TECNICO_CAMPO' ? 'Técnico de campo' : 'Ideas Control') : '', 'Tipo': Ope.nombreTipo(a.tipo), 'Cód.': a.tipo,
           'Cliente (contrata)': a.cliente || '', 'Sitio / cliente final': a.sitio || '', 'Ciudad': a.ciudad || '',
           'Equipos': a.equipos === '' || a.equipos === undefined ? '' : Number(a.equipos), 'Hora inicio': a.hora_inicio || '', 'Ticket / OS': a.ticket_os || '',
-          'Estado': Ope.nombreEstado(a.estado), 'Validación': !Ope.activa(a) ? '— ' + Ope.nombreEstado(a.estado) : v.errores.length ? '⚠ ' + v.errores.join('; ') : v.avisos.length ? 'ℹ ' + v.avisos.join('; ') : '✔ OK',
-          'Observaciones': a.observaciones || '', 'Reprograma de': a.reprograma_de || '', 'Motivo del cambio': a.motivo_cambio || ''
+          'Estado': Ope.nombreEstado(a.estado), 'Observaciones': a.observaciones || '', 'Reprograma de': a.reprograma_de || '', 'Motivo del cambio': a.motivo_cambio || ''
         };
       });
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(filas);
-      ws['!cols'] = [10, 11, 10, 20, 14, 18, 6, 26, 30, 14, 8, 10, 14, 12, 40, 40, 12, 24].map((w) => ({ wch: w }));
+      ws['!cols'] = [10, 11, 10, 20, 14, 18, 6, 26, 30, 14, 8, 10, 14, 12, 40, 12, 24].map((w) => ({ wch: w }));
       Object.keys(ws).forEach((k) => { if (/^B\d+$/.test(k) && k !== 'B1') ws[k].z = 'dd/mm/yyyy'; });
       ws['!autofilter'] = { ref: ws['!ref'] };
       XLSX.utils.book_append_sheet(wb, ws, 'Actividades');
