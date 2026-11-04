@@ -4,7 +4,7 @@
    está en la lista SYS_Microapps (columna url), esa tiene prioridad.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-100', nombre: 'Portal de microapps', version: '0.1.2' },
+  app: { id: 'APP-100', nombre: 'Portal de microapps', version: '0.1.3' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -28,6 +28,9 @@ window.APPS = [
   { grupo: 'Operaciones', id: 'APP-107', nombre: 'Novedades del personal', icono: 'novedad', color: 'teal',
     texto: 'Permisos, vacaciones, licencias, incapacidades y cambios de horario. Se tramitan solo con la Dirección de Operaciones.',
     url: '/ideascontrol/Novedades/', datos: 'SHAREPOINT', acceso: 'APP107' },
+  { grupo: 'Desarrollo de Talento', id: 'APP-108', nombre: 'Desarrollo de Talento', icono: 'talento', color: 'dorado',
+    texto: 'Una idea práctica para aplicar hoy: piezas de los programas de formación del personal de IC.',
+    url: '/ideascontrol/Talento/', datos: 'SHAREPOINT', acceso: 'APP108' },
   { grupo: 'Operaciones', id: 'APP-102', nombre: 'Soporte técnico (tickets)', icono: 'ticket', color: '',
     texto: 'Gestión de tickets de soporte, implementaciones y seguimiento de recursos.',
     url: '', datos: 'POWERAPPS', soloOficina: true, nota: 'Registre su dirección en SYS_Microapps (APP-102 › url) para activarla aquí.' },

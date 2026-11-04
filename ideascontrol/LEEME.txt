@@ -120,3 +120,14 @@ Listas nuevas (las crea el mismo instalador de la Programación): NOV_Solicitude
 Permisos (paso 5): técnicos pueden crear en NOV_Solicitudes y solo ven las suyas; NOV_Faltas con permisos únicos (solo Dirección).
 URI de redirección adicionales en Entra ID: https://mykadosh.com/ideascontrol/Novedades/ y https://www.mykadosh.com/ideascontrol/Novedades/
 Navegación: el Portal abre cada app en pestaña nueva; el botón «← Portal» (shared/js/volver.js) cierra la pestaña y vuelve.
+
+=====================================================================
+NUEVO · 4 de noviembre de 2026 · APP-108 Desarrollo de Talento
+=====================================================================
+Talento/ → mykadosh.com/ideascontrol/Talento/
+- Muro para todo el personal: la pieza del día (post + copy + «Para aplicar hoy»), botón «Entendido», descargar imagen y copiar texto.
+- Administración: piezas (editor con vista previa del post, borrador/programada/archivada, «Programar borradores»), lecturas y programas.
+- Los posts (1080 × 1350) se dibujan en el navegador con la plantilla de marca (js/post.js); no se guardan imágenes.
+Listas nuevas (mismo instalador): TAL_Programas, TAL_Piezas, TAL_Lecturas. Semillas: «Comunicaciones de servicio», 12 piezas + 4 resúmenes en BORRADOR.
+URI de redirección en Entra ID: https://mykadosh.com/ideascontrol/Talento/ y https://www.mykadosh.com/ideascontrol/Talento/
+Programación v0.1.3: exportar a Excel por rango; cliente (contrata) vs. sitio / cliente final; columna «sitio» en OPE_Actividades.

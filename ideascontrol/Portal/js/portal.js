@@ -12,6 +12,7 @@
     docs: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5M8 7h8M8 11h6"/></svg>',
     encuesta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3 6.5 7 .9-5.2 4.8 1.4 7L12 17.8 5.8 21.2l1.4-7L2 9.4l7-.9z"/></svg>',
     novedad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="7" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M16 11l2 2 4-4"/></svg>',
+    talento: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/></svg>',
     sitio: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>'
   };
   const DATOS = { SHAREPOINT: ['SharePoint', 'sp'], GITHUB: ['GitHub · público', 'gh'], POWERAPPS: ['Power Apps', 'pa'] };
@@ -104,6 +105,8 @@
         acceso.APP106 = a ? ({ ADMIN: 'Director de Operaciones', EDITOR: 'Programador', CONSULTA: 'Consulta' }[a.rol] || a.rol) : t ? 'Técnico' : false;
         // Novedades: Dirección (ADMIN) aprueba; los demás roles consultan; los técnicos solicitan
         acceso.APP107 = a7 ? (a7.rol === 'ADMIN' ? 'Dirección' : 'Consulta') : t ? 'Técnico' : false;
+        const a8 = mios.find((x) => x.app_id === 'APP-108') || a;
+        acceso.APP108 = a8 && a8.rol === 'ADMIN' ? 'Administrador' : 'Personal IC';   // Talento: todo el personal la ve
         const extra = [];
         if (acceso.APP107 === 'Dirección') extra.push(IC.graph.items('NOV_Solicitudes', { filtro: "fields/estado eq 'SOLICITADA'" }).then((r) => { pendientes = r.length; }).catch(() => {}));
         if (acceso.APP106) extra.push(hoyEnOperacion(tec));

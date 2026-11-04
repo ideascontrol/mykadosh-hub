@@ -49,7 +49,7 @@
 <body>
 <header>
   <img src="/ideascontrol/assets/ideascontrol.webp" alt="Ideas Control" onerror="this.style.display='none'">
-  <div><h1>Instalador IC Apps · APP-106 Programación de Operaciones · APP-107 Novedades del personal</h1><p>Crea las listas de SharePoint, carga técnicos y tipos, importa el Excel y da permisos a los técnicos. Puede repetirse sin duplicar.</p></div>
+  <div><h1>Instalador IC Apps · Programación (APP-106) · Novedades (APP-107) · Desarrollo de Talento (APP-108)</h1><p>Crea las listas de SharePoint, carga técnicos y tipos, importa el Excel y da permisos a los técnicos. Puede repetirse sin duplicar.</p></div>
 </header>
 <main>
   <div class="card">
@@ -69,7 +69,7 @@
       <div class="num">3</div>
       <div style="flex:1">
         <h2>Crear estructura</h2>
-        <p>Crea o completa <b id="lblListas"></b> listas (OPE_Tecnicos, OPE_Tipos, OPE_Actividades, NOV_Solicitudes, NOV_Faltas, SYS_Accesos y las SYS_ compartidas), carga los 8 técnicos con su matriz de habilidades, los 12 tipos de actividad y los festivos que falten, registra la app en el catálogo de microapps y lo registra a usted como Director de Operaciones.</p>
+        <p>Crea o completa <b id="lblListas"></b> listas (OPE_, NOV_, TAL_, SYS_Accesos y las SYS_ compartidas), carga las piezas de «Comunicaciones de servicio» en borrador, carga los 8 técnicos con su matriz de habilidades, los 12 tipos de actividad y los festivos que falten, registra la app en el catálogo de microapps y lo registra a usted como Director de Operaciones.</p>
         <button id="btnCrear" disabled>Crear estructura</button>
         <div class="barra"><div id="bar"></div></div><div id="barText"></div>
       </div>
@@ -143,7 +143,15 @@ const LISTAS = [
     ['tecnico_id', 't', null, 1], ['fecha', 'd', null, 1],
     ['tipo_falta', 'c', ['RETARDO', 'INASISTENCIA', 'AUSENCIA_SIN_TRAMITE', 'PROCEDIMIENTO', 'PROGRAMACION', 'RECURSOS', 'TRATO', 'OTRA']],
     ['gravedad', 'c', ['LEVE', 'GRAVE', 'GRAVISIMA']], ['descripcion', 'm'], ['referencia', 't'],
-    ['accion', 'c', ['REGISTRO', 'LLAMADO_VERBAL', 'LLAMADO_ESCRITO', 'DESCARGOS', 'SANCION']], ['seguimiento', 'm'], ['estado', 'c', ['ABIERTA', 'CERRADA']], ['registrado_por', 't']] }
+    ['accion', 'c', ['REGISTRO', 'LLAMADO_VERBAL', 'LLAMADO_ESCRITO', 'DESCARGOS', 'SANCION']], ['seguimiento', 'm'], ['estado', 'c', ['ABIERTA', 'CERRADA']], ['registrado_por', 't']] },
+  // APP-108 · Desarrollo de Talento
+  { n: 'TAL_Programas', title: 'programa_id', d: 'Programas de microaprendizaje para el personal de IC', cols: [
+    ['nombre', 't'], ['descripcion', 'm'], ['audiencia', 'c', ['TODOS', 'TECNICOS']], ['orden', 'n'], ['estado', 'c', ESTADO]] },
+  { n: 'TAL_Piezas', title: 'pieza_id', d: 'Piezas (posts) de cada programa: textos, fecha de publicación y estado', cols: [
+    ['programa_id', 't', null, 1], ['tipo', 'c', ['TIP', 'RESUMEN']], ['etiqueta', 't'], ['orden', 'n'], ['titular', 't'], ['mensaje', 'm'], ['items', 'm'], ['desde_numero', 'n'],
+    ['copy', 'm'], ['accion', 'm'], ['tam_titular', 'n'], ['fecha_publicacion', 'dt', null, 1], ['estado', 'c', ['BORRADOR', 'PROGRAMADA', 'ARCHIVADA'], 1]] },
+  { n: 'TAL_Lecturas', title: 'lectura_id', d: 'Quién marcó «Entendido» en cada pieza', cols: [
+    ['pieza_id', 't', null, 1], ['programa_id', 't'], ['email', 't', null, 1], ['nombre', 't'], ['fecha_hora', 'dt']] }
 ];
 // Datos iniciales tomados de la hoja «Listas» del Excel 2506-MAN-OPE. Solo se cargan los que no existan (por Title).
 const SEMILLAS = {
@@ -517,14 +525,239 @@ const SEMILLAS = {
  ]
 }
 ;
-SEMILLAS.SYS_Secuencias = [{ Title: 'PRG', ultimo_numero: 0 }, { Title: 'TEC', ultimo_numero: SEMILLAS.OPE_Tecnicos.length }, { Title: 'ACC', ultimo_numero: 0 }, { Title: 'EVT', ultimo_numero: 0 }, { Title: 'NOV', ultimo_numero: 0 }, { Title: 'FAL', ultimo_numero: 0 }];
+// Desarrollo de Talento: programa «Comunicaciones de servicio» con sus 12 piezas y 4 resúmenes, en BORRADOR
+Object.assign(SEMILLAS, {
+ "TAL_Programas": [
+  {
+   "Title": "TP-01",
+   "nombre": "Comunicaciones de servicio",
+   "descripcion": "Microaprendizaje para todo el personal de IC: comunicarse con el cliente de forma clara, oportuna y profesional en todos los canales. Lunes, miércoles y viernes 8:10 a. m.; resumen el viernes 4:00 p. m.",
+   "audiencia": "TODOS",
+   "orden": 1,
+   "estado": "ACTIVO"
+  }
+ ],
+ "TAL_Piezas": [
+  {
+   "Title": "PZ-00001",
+   "programa_id": "TP-01",
+   "tipo": "TIP",
+   "etiqueta": "TIP 01",
+   "orden": 1,
+   "titular": "Tu saludo es la primera huella",
+   "mensaje": "El cliente decide cómo le vas a ir en los primeros 10 segundos",
+   "copy": "Cada llamada, mensaje o visita empieza igual: saluda, di tu nombre y que hablas de Ideas Control. Parece obvio, pero es lo que el cliente recuerda primero. 📌 Hoy, presenta cada contacto así: «Buenos días, habla [nombre] de Ideas Control».",
+   "accion": "Saludar, identificarse con nombre y empresa, y preguntar en qué se puede ayudar en todo primer contacto.",
+   "fecha_publicacion": "2026-11-09T13:10:00Z",
+   "estado": "BORRADOR"
+  },
+  {
+   "Title": "PZ-00002",
+   "programa_id": "TP-01",
+   "tipo": "TIP",
+   "etiqueta": "TIP 02",
+   "orden": 2,
+   "titular": "Responder rápido también es servicio",
+   "mensaje": "Un ‘recibido, ya lo reviso’ vale más que una respuesta perfecta tarde",
+   "copy": "Si no puedes resolver ya, al menos confirma que recibiste el mensaje y di cuándo vuelves con una respuesta. El cliente tolera esperar; lo que no tolera es no saber. 📌 Hoy, responde cada mensaje con un «recibido» y una hora estimada.",
+   "accion": "Confirmar recepción de llamadas perdidas, WhatsApp y correos lo antes posible, con un tiempo estimado de respuesta.",
+   "fecha_publicacion": "2026-11-11T13:10:00Z",
+   "estado": "BORRADOR"
+  },
+  {
+   "Title": "PZ-00003",
+   "programa_id": "TP-01",
+   "tipo": "TIP",
+   "etiqueta": "TIP 03",
+   "orden": 3,
+   "titular": "Escucha para entender, no para responder",
+   "mensaje": "La solución empieza en lo que el cliente dice, no en lo que tú supones",
+   "copy": "Deja que el cliente termine antes de proponer algo. Toma nota de los datos clave: quién, dónde, qué equipo, desde cuándo y qué necesita. Muchas visitas repetidas nacen de una llamada mal escuchada.",
+   "accion": "No interrumpir; registrar cliente, sede, equipo o sistema, síntoma y urgencia antes de proponer una solución.",
+   "fecha_publicacion": "2026-11-13T13:10:00Z",
+   "estado": "BORRADOR"
+  },
+  {
+   "Title": "PZ-00004",
+   "programa_id": "TP-01",
+   "tipo": "RESUMEN",
+   "etiqueta": "RESUMEN SEMANA 1",
+   "orden": 4,
+   "titular": "Lo que aprendimos esta semana",
+   "items": "Tu saludo es la primera huella\nResponder rápido también es servicio\nEscucha para entender, no para responder",
+   "desde_numero": 0,
+   "copy": "Esta semana hablamos de cómo empieza todo servicio: saludar e identificarse, confirmar que recibimos el mensaje y escuchar antes de proponer. 📌 Para pensar: ¿cómo se sintió tu último cliente en los primeros 10 segundos?",
+   "fecha_publicacion": "2026-11-13T21:00:00Z",
+   "estado": "BORRADOR"
+  },
+  {
+   "Title": "PZ-00005",
+   "programa_id": "TP-01",
+   "tipo": "TIP",
+   "etiqueta": "TIP 04",
+   "orden": 5,
+   "titular": "Repite antes de actuar",
+   "mensaje": "‘Entonces, lo que necesita es…’ evita la mitad de los errores",
+   "copy": "Antes de colgar o de cerrar el chat, resume en una frase lo que entendiste y lo que vas a hacer. Si el cliente dice «sí, exacto», vas bien. Si corrige algo, acabas de evitar un reproceso. ✔",
+   "accion": "Cerrar cada conversación resumiendo la solicitud y el siguiente paso, y pedir la confirmación del cliente.",
+   "fecha_publicacion": "2026-11-17T13:10:00Z",
+   "estado": "BORRADOR"
+  },
+  {
+   "Title": "PZ-00006",
+   "programa_id": "TP-01",
+   "tipo": "TIP",
+   "etiqueta": "TIP 05",
+   "orden": 6,
+   "titular": "Avisa antes de que te pregunten",
+   "mensaje": "Un retraso avisado es un compromiso cumplido",
+   "copy": "Si vas a llegar tarde o el trabajo tomará más tiempo, avísale al cliente antes de que tenga que llamarte. Di qué pasó, la nueva hora y qué sigue. 📌 La confianza también se construye con malas noticias bien dadas.",
+   "accion": "Avisar cualquier cambio de hora, fecha o alcance apenas se sepa, con la causa, el nuevo plazo y el siguiente paso.",
+   "fecha_publicacion": "2026-11-18T13:10:00Z",
+   "estado": "BORRADOR"
+  },
+  {
+   "Title": "PZ-00007",
+   "programa_id": "TP-01",
+   "tipo": "TIP",
+   "etiqueta": "TIP 06",
+   "orden": 7,
+   "titular": "El silencio también comunica",
+   "mensaje": "Si no informas, el cliente imagina lo peor",
+   "copy": "Un caso abierto sin noticias se siente como un caso olvidado. Si un tema está en espera (repuesto, proveedor, aprobación), informa el avance aunque sea para decir «seguimos en ello». Mejor un mensaje corto que un cliente llamando molesto.",
+   "accion": "Dar avances periódicos a todo caso en espera y registrarlos en el ticket.",
+   "fecha_publicacion": "2026-11-20T13:10:00Z",
+   "estado": "BORRADOR"
+  },
+  {
+   "Title": "PZ-00008",
+   "programa_id": "TP-01",
+   "tipo": "RESUMEN",
+   "etiqueta": "RESUMEN SEMANA 2",
+   "orden": 8,
+   "titular": "Lo que aprendimos esta semana",
+   "items": "Repite antes de actuar\nAvisa antes de que te pregunten\nEl silencio también comunica",
+   "desde_numero": 3,
+   "copy": "Esta semana vimos que entender bien y mantener informado al cliente evita reprocesos y llamadas molestas: resume lo que entendiste, avisa los cambios a tiempo y da avances de lo que está en espera. 📌 Para pensar: ¿tienes hoy algún caso esperando una noticia tuya?",
+   "fecha_publicacion": "2026-11-20T21:00:00Z",
+   "estado": "BORRADOR"
+  },
+  {
+   "Title": "PZ-00009",
+   "programa_id": "TP-01",
+   "tipo": "TIP",
+   "etiqueta": "TIP 07",
+   "orden": 9,
+   "titular": "Habla en el idioma del cliente",
+   "mensaje": "Si el cliente no lo entendió, no se lo explicaste",
+   "copy": "«El biométrico perdió la sincronización con el servidor» puede ser «el equipo dejó de enviar las marcaciones; ya lo reconectamos y no se perdieron datos». Explica qué pasó, qué hiciste y qué debe saber. Sin siglas ni jerga.",
+   "accion": "Explicar diagnósticos y soluciones en palabras sencillas: qué pasó, qué se hizo y qué debe tener en cuenta el usuario.",
+   "fecha_publicacion": "2026-11-23T13:10:00Z",
+   "estado": "BORRADOR"
+  },
+  {
+   "Title": "PZ-00010",
+   "programa_id": "TP-01",
+   "tipo": "TIP",
+   "etiqueta": "TIP 08",
+   "orden": 10,
+   "titular": "Promete solo lo que puedes cumplir",
+   "mensaje": "Un ‘mañana a las 10’ cumplido vale más que un ‘ya mismo’ incumplido",
+   "copy": "Antes de dar una fecha, revisa la programación o consulta con quien corresponda. Un compromiso claro tiene tres partes: qué se va a hacer, quién lo hace y cuándo. Si no sabes, di «te confirmo hoy antes de las 4», y cumple eso.",
+   "accion": "Dar compromisos con qué, quién y cuándo, verificados contra la programación; no prometer fechas sin validarlas.",
+   "fecha_publicacion": "2026-11-25T13:10:00Z",
+   "estado": "BORRADOR"
+  },
+  {
+   "Title": "PZ-00011",
+   "programa_id": "TP-01",
+   "tipo": "TIP",
+   "etiqueta": "TIP 09",
+   "orden": 11,
+   "titular": "Una mala noticia bien dada cuida la relación",
+   "mensaje": "Di la verdad pronto, con la solución en la mano",
+   "copy": "«No se puede», «se demora» o «cuesta más» se dicen mejor con tres pasos: la situación real, por qué pasó y qué alternativa ofrecemos. Nunca la escondas ni la dejes para después: el cliente se entera igual, pero sin la solución.",
+   "accion": "Comunicar malas noticias con situación, causa y alternativa; escalar a la Dirección cuando afecte el contrato o el costo.",
+   "fecha_publicacion": "2026-11-27T13:10:00Z",
+   "estado": "BORRADOR"
+  },
+  {
+   "Title": "PZ-00012",
+   "programa_id": "TP-01",
+   "tipo": "RESUMEN",
+   "etiqueta": "RESUMEN SEMANA 3",
+   "orden": 12,
+   "titular": "Lo que aprendimos esta semana",
+   "items": "Habla en el idioma del cliente\nPromete solo lo que puedes cumplir\nUna mala noticia bien dada cuida la relación",
+   "desde_numero": 6,
+   "copy": "Esta semana el tema fue la claridad: explicar sin jerga, comprometernos con qué, quién y cuándo, y dar las malas noticias a tiempo y con una alternativa. 📌 Para pensar: ¿qué compromiso tienes abierto y cuándo lo vas a cumplir?",
+   "fecha_publicacion": "2026-11-27T21:00:00Z",
+   "estado": "BORRADOR"
+  },
+  {
+   "Title": "PZ-00013",
+   "programa_id": "TP-01",
+   "tipo": "TIP",
+   "etiqueta": "TIP 10",
+   "orden": 13,
+   "titular": "Una queja es una oportunidad con tiempo límite",
+   "mensaje": "El cliente que se queja todavía quiere seguir con nosotros",
+   "copy": "Cuando un cliente se queja, escucha sin defenderte, reconoce lo que sintió y di qué vas a hacer y cuándo. No es personal: es información para mejorar. 📌 Toda queja se registra y se informa a la Dirección de Operaciones.",
+   "accion": "Escuchar, reconocer, comprometer una acción con plazo, registrar la queja y reportarla a la Dirección.",
+   "fecha_publicacion": "2026-11-30T13:10:00Z",
+   "estado": "BORRADOR"
+  },
+  {
+   "Title": "PZ-00014",
+   "programa_id": "TP-01",
+   "tipo": "TIP",
+   "etiqueta": "TIP 11",
+   "orden": 14,
+   "titular": "Cierra confirmando, no suponiendo",
+   "mensaje": "El servicio termina cuando el cliente confirma que funciona",
+   "copy": "Antes de dar un caso por cerrado, confirma con el cliente que quedó resuelto, deja claro qué se hizo y cuéntale que recibirá una breve encuesta de satisfacción. Su respuesta nos dice cómo vamos. ✔",
+   "accion": "Confirmar la solución con el cliente, registrar el cierre en el ticket e invitar a responder la encuesta CSAT.",
+   "fecha_publicacion": "2026-12-02T13:10:00Z",
+   "estado": "BORRADOR"
+  },
+  {
+   "Title": "PZ-00015",
+   "programa_id": "TP-01",
+   "tipo": "TIP",
+   "etiqueta": "TIP 12",
+   "orden": 15,
+   "titular": "Lo que escribes también habla de IC",
+   "mensaje": "Cada correo y cada WhatsApp lleva nuestra firma",
+   "copy": "Un mensaje al cliente representa a toda la empresa: saludo, frases completas, buena ortografía, sin audios largos ni stickers, y tu firma con nombre y cargo. Reléelo antes de enviarlo: 10 segundos que cuidan la imagen de IC.",
+   "accion": "Escribir a clientes con saludo, ortografía revisada y firma; usar audios solo si el cliente los prefiere.",
+   "fecha_publicacion": "2026-12-04T13:10:00Z",
+   "estado": "BORRADOR"
+  },
+  {
+   "Title": "PZ-00016",
+   "programa_id": "TP-01",
+   "tipo": "RESUMEN",
+   "etiqueta": "RESUMEN SEMANA 4",
+   "orden": 16,
+   "titular": "Lo que aprendimos esta semana",
+   "items": "Una queja es una oportunidad con tiempo límite\nCierra confirmando, no suponiendo\nLo que escribes también habla de IC",
+   "desde_numero": 9,
+   "copy": "Cerramos el ciclo con cómo terminar bien: recibir las quejas sin defendernos, confirmar con el cliente que todo quedó resuelto y cuidar cada mensaje escrito. Gracias por estas 4 semanas. 📌 Para pensar: ¿cuál de las 12 ideas vas a seguir aplicando?",
+   "fecha_publicacion": "2026-12-04T21:00:00Z",
+   "estado": "BORRADOR"
+  }
+ ]
+});
+SEMILLAS.SYS_Secuencias = [{ Title: 'PRG', ultimo_numero: 0 }, { Title: 'TEC', ultimo_numero: SEMILLAS.OPE_Tecnicos.length }, { Title: 'ACC', ultimo_numero: 0 }, { Title: 'EVT', ultimo_numero: 0 }, { Title: 'NOV', ultimo_numero: 0 }, { Title: 'FAL', ultimo_numero: 0 }, { Title: 'TAL', ultimo_numero: SEMILLAS.TAL_Piezas.length }, { Title: 'TPR', ultimo_numero: SEMILLAS.TAL_Programas.length }];
 SEMILLAS.SYS_Microapps = [
   { Title: 'APP-100', nombre: 'Portal de microapps', tipo: 'INTERNA', proposito: 'Menú principal: entrada única a las microapps internas de Ideas Control.', estado: 'CONSTRUIDA',
     plataforma: 'HTML (GitHub) + Microsoft Graph', carpeta_actual: 'Portal', url: 'https://www.mykadosh.com/ideascontrol/Portal/' },
   { Title: 'APP-106', nombre: 'Programación de Operaciones', tipo: 'INTERNA', proposito: 'Agenda y programación de técnicos: instalaciones, mantenimientos, soporte, rotación de oficina (2506-MAN-OPE).', estado: 'EN_CONSTRUCCION',
     plataforma: 'HTML (GitHub) + Microsoft Graph + listas de SharePoint', carpeta_actual: 'Programacion', url: 'https://www.mykadosh.com/ideascontrol/Programacion/' },
   { Title: 'APP-107', nombre: 'Novedades del personal', tipo: 'INTERNA', proposito: 'Permisos, vacaciones, licencias, incapacidades, cambios de horario y faltas del personal de Operaciones (solo vía Dirección de Operaciones).', estado: 'EN_CONSTRUCCION',
-    plataforma: 'HTML (GitHub) + Microsoft Graph + listas de SharePoint', carpeta_actual: 'Novedades', url: 'https://www.mykadosh.com/ideascontrol/Novedades/' }
+    plataforma: 'HTML (GitHub) + Microsoft Graph + listas de SharePoint', carpeta_actual: 'Novedades', url: 'https://www.mykadosh.com/ideascontrol/Novedades/' },
+  { Title: 'APP-108', nombre: 'Desarrollo de Talento', tipo: 'INTERNA', proposito: 'Programas de microaprendizaje para el personal de IC (posts con copy, lecturas «Entendido»).', estado: 'EN_CONSTRUCCION',
+    plataforma: 'HTML (GitHub) + Microsoft Graph + listas de SharePoint', carpeta_actual: 'Talento', url: 'https://www.mykadosh.com/ideascontrol/Talento/' }
 ];
 // URL que se completa en el catálogo si está vacía
 const URL_FALTANTE = { 'APP-105': 'https://www.mykadosh.com/ideascontrol/ICManuales/gestion-documental/index.html', 'APP-101': 'https://www.mykadosh.com/ideascontrol/Comercial/' };
@@ -758,6 +991,7 @@ async function reservar(clave, cantidad) {
 async function registrarDirector() {
   await registrarAcceso('APP-106');
   await registrarAcceso('APP-107');
+  await registrarAcceso('APP-108');
 }
 async function registrarAcceso(app) {
   const yo = await graph('GET', '/me?$select=displayName,mail,userPrincipalName');
@@ -858,7 +1092,8 @@ async function importar() {
 const PERMISOS_TECNICOS = [
   ['OPE_Actividades', 3], ['SYS_Auditoria', 3], ['SYS_Secuencias', 3],
   ['OPE_Tecnicos', 2], ['OPE_Tipos', 2], ['SYS_Festivos', 2], ['SYS_Accesos', 2], ['SYS_Microapps', 2],
-  ['NOV_Solicitudes', 3]        // además: cada técnico solo ve y edita sus propias solicitudes
+  ['NOV_Solicitudes', 3],       // además: cada técnico solo ve y edita sus propias solicitudes
+  ['TAL_Programas', 2], ['TAL_Piezas', 2], ['TAL_Lecturas', 3]
 ];
 let tecnicosLista = [];
 async function pintarTecnicos() {
@@ -906,6 +1141,10 @@ async function aplicarPermisos() {
       await sp('POST', "web/lists/getbytitle('NOV_Solicitudes')", { __metadata: { type: 'SP.List' }, ReadSecurity: 2, WriteSecurity: 2 }, { 'X-HTTP-Method': 'MERGE', 'IF-MATCH': '*' });
       log('NOV_Solicitudes: cada técnico solo ve y edita sus propias solicitudes', 'ok');
     } catch (e) { log('NOV_Solicitudes: no se pudo restringir a «solo sus elementos» (' + e.message + '). Hágalo a mano: lista › Configuración › Configuración avanzada › Acceso a elementos: «Leer elementos creados por el usuario» y «Crear y editar elementos creados por el usuario».', 'warn'); }
+    try {
+      await sp('POST', "web/lists/getbytitle('TAL_Lecturas')", { __metadata: { type: 'SP.List' }, ReadSecurity: 2, WriteSecurity: 2 }, { 'X-HTTP-Method': 'MERGE', 'IF-MATCH': '*' });
+      log('TAL_Lecturas: cada persona solo ve sus propias lecturas (la Dirección ve todas)', 'ok');
+    } catch (e) { log('TAL_Lecturas: no se pudo restringir a «solo sus elementos» (' + e.message + ').', 'warn'); }
     // 2c. NOV_Faltas: confidencial. Deja de heredar sin copiar permisos y solo queda quien ejecuta este paso (Dirección)
     {
       const base = "web/lists/getbytitle('NOV_Faltas')";
