@@ -304,7 +304,7 @@
       '<div class="ope-sal-cab"><b>Clientes</b><span><button type="button" class="ic-btn sec chico" data-t="1">Todos</button> <button type="button" class="ic-btn sec chico" data-t="0">Ninguno</button></span></div>' +
       '<div class="ope-sal-lista">' + claves.map((k) => '<label class="ic-check"><input type="checkbox" data-cli="' + esc(k) + '"' + (clis[k].interna ? '' : ' checked') + '> <span>' + esc(clis[k].nombre) + ' <small>(' + clis[k].n + ')</small></span></label>').join('') + '</div>' +
       '<div class="ic-campos" style="margin-top:12px">' +
-      '<div class="ic-campo c12"><label class="ic-check"><input type="checkbox" name="pagina" checked> <span>Imprimir cada cliente en una página aparte (para enviarle su programación). Sin marcar: un solo listado de todos los clientes en orden de fecha</span></label></div>' +
+      '<div class="ic-campo c12"><label class="ic-check"><input type="checkbox" name="pagina"> <span>Cada cliente en una página aparte (para enviarle su programación). Sin marcar: todo de corrido, en orden de fecha</span></label></div>' +
       '<div class="ic-campo c12"><label class="ic-check"><input type="checkbox" name="obs"> <span>Incluir observaciones</span></label></div>' +
       '</div>' +
       '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="sNo">Cancelar</button><button type="button" class="ic-btn sec" id="sXls">Excel</button><button type="button" class="ic-btn" id="sImp">Imprimir / PDF</button></div></form>',
@@ -327,14 +327,15 @@
     const logo = location.origin + CFG.logo;
     // Un solo informe en orden de fecha (con columna Cliente) o una página por cliente; siempre de la fecha más antigua a la más reciente
     const unaTabla = claves.length > 1 && !op.pagina;
-    const filaHtml = (a) => {
-      return '<tr class="' + (Ope.activa(a) ? '' : 'anulada') + '"><td>' + esc(Ope.textoFecha(a.fecha)) + '</td><td>' + esc(Ope.DIAS[Ope.dow(a.fecha) - 1]) + '</td>' +
-        (unaTabla ? '<td>' + esc(a.cliente || '(sin cliente)') + '</td>' : '') + '<td>' + esc(a.sitio || '—') + '</td><td>' + esc(a.ciudad || '') + '</td><td>' + esc(Ope.nombreTipo(a.tipo)) + '</td><td>' + esc(Ope.nombreTec(a.tecnico_id)) + '</td>' +
-        '<td class="n">' + esc(Ope.usaEquipos(a.tipo) && a.equipos !== '' ? a.equipos : '') + '</td><td class="h">' + esc(a.hora_inicio || '') + '</td><td>' + esc(a.ticket_os || '') + '</td><td>' + esc(Ope.nombreEstado(a.estado)) + '</td>' +
-        (op.obs ? '<td class="obs">' + esc(a.observaciones || '') + '</td>' : '') +
-        '</tr>';
-    };
-    const cab = '<tr><th>Fecha</th><th>Día</th>' + (unaTabla ? '<th>Cliente</th>' : '') + '<th>Sitio / cliente final</th><th>Ciudad</th><th>Tipo</th><th>Técnico</th><th class="n">Eq.</th><th>Hora</th><th>Ticket / OS</th><th>Estado</th>' + (op.obs ? '<th>Observaciones</th>' : '') + '</tr>';
+    // Vertical, de corrido y sin desbordar: columnas con ancho fijo y texto que se ajusta
+    const filaHtml = (a) => '<tr class="' + (Ope.activa(a) ? '' : 'anulada') + '">' +
+      '<td><b>' + esc(Ope.DIAS[Ope.dow(a.fecha) - 1].slice(0, 3)) + '</b> ' + esc(Ope.textoFecha(a.fecha)) + '</td>' +
+      '<td>' + esc(a.cliente || '(sin cliente)') + (a.sitio ? '<small>' + esc(a.sitio) + '</small>' : '') + '</td>' +
+      '<td>' + esc(a.ciudad || '') + '</td><td>' + esc(Ope.nombreTipo(a.tipo)) + '</td><td>' + esc(Ope.nombreTec(a.tecnico_id)) + '</td>' +
+      '<td class="n">' + esc(Ope.usaEquipos(a.tipo) && a.equipos !== '' ? a.equipos : '') + '</td><td>' + esc(a.hora_inicio || '') + '</td><td>' + esc(a.ticket_os || '') + '</td><td>' + esc(Ope.nombreEstado(a.estado)) + '</td>' +
+      (op.obs ? '<td>' + esc(a.observaciones || '') + '</td>' : '') + '</tr>';
+    const anchos = op.obs ? [13, 17, 8, 10, 12, 4, 6, 8, 9, 13] : [14, 21, 10, 11, 14, 4, 6, 10, 10];
+    const cab = '<colgroup>' + anchos.map((w) => '<col style="width:' + w + '%">').join('') + '</colgroup><thead><tr><th>Fecha</th><th>Cliente / sitio</th><th>Ciudad</th><th>Tipo</th><th>Técnico</th><th class="n">Eq.</th><th>Hora</th><th>Ticket / OS</th><th>Estado</th>' + (op.obs ? '<th>Observaciones</th>' : '') + '</tr></thead>';
     const encabezado = (titulo) => '<div class="cab"><img src="' + logo + '" alt="Ideas Control"><div><h1>' + esc(titulo) + '</h1><p>Programación de servicios · ' + esc(Ope.textoFecha(f.desde)) + ' al ' + esc(Ope.textoFecha(f.hasta)) + '</p></div></div>';
     let cuerpo = '';
     if (claves.length > 1 && !op.pagina) {
@@ -344,22 +345,22 @@
     if (unaTabla) {
       const vig = lista.filter(Ope.activa);
       cuerpo += '<h2>Detalle por fecha</h2><p class="tot">' + vig.length + ' actividades vigentes · ' + vig.filter((a) => a.estado === 'EJECUTADO').length + ' ejecutada(s)</p>' +
-        '<table><thead>' + cab + '</thead><tbody>' + lista.slice().sort(Ope.orden).map(filaHtml).join('') + '</tbody></table>';
+        '<table class="det">' + cab + '<tbody>' + lista.slice().sort(Ope.orden).map(filaHtml).join('') + '</tbody></table>';
     } else claves.forEach((k, i) => {
       const g = grupos[k], vig = g.acts.filter(Ope.activa);
       const eq = vig.filter((a) => Ope.usaEquipos(a.tipo)).reduce((s, a) => s + (Number(a.equipos) || 0), 0);
       cuerpo += '<section class="' + (op.pagina && i > 0 ? 'salto' : '') + '">' + (op.pagina || claves.length === 1 ? encabezado(g.nombre) : '<h2>' + esc(g.nombre) + '</h2>') +
         '<p class="tot">' + vig.length + ' actividad' + (vig.length === 1 ? '' : 'es') + ' vigente' + (vig.length === 1 ? '' : 's') + (eq ? ' · ' + eq + ' equipo' + (eq === 1 ? '' : 's') : '') + ' · ' + vig.filter((a) => a.estado === 'EJECUTADO').length + ' ejecutada(s)' +
         (g.acts.length > vig.length ? ' · ' + (g.acts.length - vig.length) + ' cancelada(s) o reprogramada(s)' : '') + '</p>' +
-        '<table><thead>' + cab + '</thead><tbody>' + g.acts.slice().sort(Ope.orden).map(filaHtml).join('') + '</tbody></table></section>';
+        '<table class="det">' + cab + '<tbody>' + g.acts.slice().sort(Ope.orden).map(filaHtml).join('') + '</tbody></table></section>';
     });
     const html = '<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Programación ' + esc(f.desde) + ' a ' + esc(f.hasta) + '</title>' +
       '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"><style>' +
-      '@page{size:landscape;margin:12mm}*{box-sizing:border-box}body{font-family:Inter,Arial,sans-serif;color:#1D2B36;margin:0;font-size:11.5px}' +
+      '@page{size:A4 portrait;margin:12mm 10mm}*{box-sizing:border-box}body{font-family:Inter,Arial,sans-serif;color:#1D2B36;margin:0;font-size:10px}' +
       '.cab{display:flex;align-items:center;gap:16px;border-bottom:3px solid #C9A227;padding-bottom:10px;margin-bottom:12px}.cab img{height:40px}.cab h1{font-size:18px;margin:0;color:#0E76BC}.cab p{margin:2px 0 0;color:#5B6770}' +
       'h2{font-size:15px;color:#0E76BC;margin:18px 0 4px}.tot{margin:0 0 6px;color:#5B6770}' +
-      'table{width:100%;border-collapse:collapse;margin-bottom:10px}th{background:#EEF4F9;text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;color:#0A5A90;padding:6px;border-bottom:1px solid #C9D6E2}' +
-      'td{padding:5px 6px;border-bottom:1px solid #E6ECF1;vertical-align:top}td:nth-child(-n+2),td.h{white-space:nowrap}.n{text-align:center}.obs{max-width:260px}tr.anulada td{color:#9AA5AE;text-decoration:line-through}' +
+      'table{width:100%;border-collapse:collapse;margin-bottom:10px}table.det{table-layout:fixed}th{background:#EEF4F9;text-align:left;font-size:8.5px;text-transform:uppercase;letter-spacing:.02em;color:#0A5A90;padding:5px 4px;border-bottom:1px solid #C9D6E2}' +
+      'td{padding:4px;border-bottom:1px solid #E6ECF1;vertical-align:top;overflow-wrap:anywhere;word-break:normal}td:first-child{white-space:nowrap}td small{display:block;color:#5B6770;font-size:9px;margin-top:1px}.n{text-align:center}tr.anulada td{color:#9AA5AE;text-decoration:line-through}' +
       'table.res{max-width:640px}.salto{break-before:page}thead{display:table-header-group}tr{break-inside:avoid}' +
       '.pie{margin-top:14px;color:#8A96A0;font-size:10px}.barra{position:fixed;top:0;right:0;padding:10px}.barra button{font:inherit;font-weight:600;padding:8px 14px;border:0;border-radius:8px;background:#0E76BC;color:#fff;cursor:pointer}' +
       '@media print{.barra{display:none}}</style></head><body><div class="barra"><button onclick="window.print()">Imprimir / Guardar PDF</button></div>' + cuerpo +
