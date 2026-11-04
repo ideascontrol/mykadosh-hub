@@ -1260,30 +1260,53 @@ async function moverGD() {
     const zip = await JSZip.loadAsync(await f.arrayBuffer());
     const sitioGD = await graph('GET', '/sites/' + CFG.host + ':' + GD.sitio + '?$select=id,displayName,webUrl');
     log('Sitio: ' + sitioGD.displayName + ' (' + sitioGD.webUrl + ')', 'ok');
-    // Biblioteca: la de ese nombre; si no existe, la carpeta del mismo nombre en Documentos; si tampoco, se crea la biblioteca
+    // Biblioteca: se busca por nombre sin importar tildes, mayúsculas, espacios o guiones
+    const norm = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const objetivo = norm(GD.biblioteca);
     const drives = await graphAll('/sites/' + sitioGD.id + '/drives?$select=id,name,webUrl');
-    let drive = drives.find((d) => d.name === GD.biblioteca), base = '';
+    let drive = drives.find((d) => norm(d.name) === objetivo || norm(decodeURIComponent(String(d.webUrl || '').split('/').pop())) === objetivo), base = '';
+    if (!drive) {
+      const listas = await graphAll('/sites/' + sitioGD.id + '/lists?$select=id,name,displayName,webUrl,list');
+      const l = listas.find((x) => norm(x.displayName) === objetivo || norm(x.name) === objetivo);
+      if (l && l.list && l.list.template === 'documentLibrary') drive = await graph('GET', '/sites/' + sitioGD.id + '/lists/' + l.id + '/drive?$select=id,name,webUrl');
+      else if (l) throw new Error('En el sitio Ideas Control ya existe "' + l.displayName + '", pero no es una biblioteca de documentos.');
+    }
     if (!drive) {
       const docsDrive = await graph('GET', '/sites/' + sitioGD.id + '/drive?$select=id,name,webUrl');
-      let carpeta = null; try { carpeta = await graph('GET', '/drives/' + docsDrive.id + '/root:/' + GD.biblioteca + '?$select=id,webUrl'); } catch (e) { if (e.status !== 404) throw e; }
-      if (carpeta) { drive = docsDrive; base = GD.biblioteca + '/'; drive.webUrl = carpeta.webUrl; log('Se usará la carpeta ' + GD.biblioteca + ' de la biblioteca ' + docsDrive.name, 'ok'); }
+      const hijos = await graphAll('/drives/' + docsDrive.id + '/root/children?$select=id,name,webUrl,folder');
+      const carpeta = hijos.find((h) => h.folder && norm(h.name) === objetivo);
+      if (carpeta) { drive = docsDrive; base = carpeta.name + '/'; drive.webUrl = carpeta.webUrl; log('Se usará la carpeta ' + carpeta.name + ' de la biblioteca ' + docsDrive.name, 'ok'); }
       else {
-        const l = await graph('POST', '/sites/' + sitioGD.id + '/lists', { displayName: GD.biblioteca, list: { template: 'documentLibrary' } });
-        drive = await graph('GET', '/sites/' + sitioGD.id + '/lists/' + l.id + '/drive?$select=id,name,webUrl');
-        log('Biblioteca ' + GD.biblioteca + ' creada', 'ok');
+        try {
+          const l = await graph('POST', '/sites/' + sitioGD.id + '/lists', { displayName: GD.biblioteca, list: { template: 'documentLibrary' } });
+          drive = await graph('GET', '/sites/' + sitioGD.id + '/lists/' + l.id + '/drive?$select=id,name,webUrl');
+          log('Biblioteca ' + GD.biblioteca + ' creada', 'ok');
+        } catch (e) {
+          log('Bibliotecas del sitio: ' + drives.map((d) => d.name).join(' · '), 'warn');
+          throw e;
+        }
       }
-    } else log('Biblioteca ' + GD.biblioteca + ' encontrada', 'ok');
+    } else log('Biblioteca ' + drive.name + ' encontrada', 'ok');
     const lista = await graph('GET', '/drives/' + drive.id + '/list?$select=id');
-    const cols = (await graphAll('/sites/' + sitioGD.id + '/lists/' + lista.id + '/columns?$select=name')).map((c) => c.name);
-    const faltan = GD_COLS.filter((c) => cols.indexOf(c[0]) < 0);
-    for (const c of faltan) await graph('POST', '/sites/' + sitioGD.id + '/lists/' + lista.id + '/columns', columna(c));
-    log('Columnas de datos: ' + (faltan.length ? faltan.length + ' creadas' : 'ya estaban'), 'ok');
+    const colsSP = await graphAll('/sites/' + sitioGD.id + '/lists/' + lista.id + '/columns?$select=name,displayName');
+    const real = {};   // si la columna ya existía con otro nombre interno (p. ej. «Área»), se usa esa
+    GD_COLS.forEach((c) => { const x = colsSP.find((k) => k.name === c[0]) || colsSP.find((k) => norm(k.displayName) === norm(c[0])); if (x) real[c[0]] = x.name; });
+    const yaEsta = (n) => !!real[n];
+    let creadas = 0;
+    for (const c of GD_COLS.filter((c) => !yaEsta(c[0]))) {
+      try { await graph('POST', '/sites/' + sitioGD.id + '/lists/' + lista.id + '/columns', columna(c)); creadas++; }
+      catch (e) { log('Columna ' + c[0] + ': ' + explicar(e) + ' (se continúa)', 'warn'); }
+    }
+    log('Columnas de datos: ' + (creadas ? creadas + ' creadas' : 'ya estaban'), 'ok');
     let n = 0; const total = GD_DOCS.length + GD_DOCS.filter((d) => d.plantilla).length;
     const ponerDatos = async (item, d, formato) => {
       const li = await graph('GET', '/drives/' + drive.id + '/items/' + item.id + '/listItem?$select=id');
-      await graph('PATCH', '/sites/' + sitioGD.id + '/lists/' + lista.id + '/items/' + li.id + '/fields', {
+      const campos = {
         Title: d.titulo, Codigo: d.codigo, Tipo: d.tipo, Area: d.area, Grupo: d.grupo, Version_doc: d.version, Emision: d.fecha, Ultima_revision: d.revision || '',
-        Responsable: d.responsable, Resumen: d.resumen, Formato: formato, Estado_documento: 'Vigente' });
+        Responsable: d.responsable, Resumen: d.resumen, Formato: formato, Estado_documento: 'Vigente' };
+      const final = {}; Object.keys(campos).forEach((k) => { final[real[k] || k] = campos[k]; });
+      try { await graph('PATCH', '/sites/' + sitioGD.id + '/lists/' + lista.id + '/items/' + li.id + '/fields', final); }
+      catch (e) { log(d.codigo + ': archivo subido, pero sin todos sus datos (' + explicar(e) + ')', 'warn'); }
     };
     for (const d of GD_DOCS) {
       const carpeta = base + d.bloque + ' ' + limpiarNombre(d.area) + '/';
