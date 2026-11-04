@@ -153,7 +153,7 @@ window.Ope = (function () {
     const t = tec(a.tecnico_id);
     if (a.tipo === 'OFI' && !a.tecnico_id) return 'OFI · sin técnico';
     return (t ? t.iniciales : '??') + ' · ' + (a.tipo || '?') + (usaEquipos(a.tipo) && Number(a.equipos) > 1 ? ' ×' + a.equipos : '') +
-      (a.cliente && a.tipo !== 'OFI' && a.tipo !== 'AUS' ? ' · ' + String(a.cliente).slice(0, 18) : '');
+      ((a.sitio || a.cliente) && a.tipo !== 'OFI' && a.tipo !== 'AUS' ? ' · ' + String(a.sitio || a.cliente).slice(0, 18) : '');
   }
 
   // Resumen de un día hábil (rotación de oficina)
@@ -183,14 +183,29 @@ window.Ope = (function () {
         entidad, registro_id: registro, accion, antes: antes ? JSON.stringify(antes) : '', despues: despues ? JSON.stringify(despues) : '' });
     } catch (e) { console.warn('Auditoría no registrada', e); }
   }
-  const CAMPOS_ACT = ['fecha', 'tecnico_id', 'tipo', 'cliente', 'empresa_id', 'ciudad', 'equipos', 'hora_inicio', 'ticket_os', 'estado', 'observaciones', 'reprograma_de', 'autorizado', 'motivo_cambio', 'origen'];
+  const CAMPOS_ACT = ['fecha', 'tecnico_id', 'tipo', 'cliente', 'empresa_id', 'ciudad', 'equipos', 'hora_inicio', 'ticket_os', 'estado', 'observaciones', 'reprograma_de', 'autorizado', 'motivo_cambio', 'origen', 'sitio'];
   function soloCampos(o) { const r = {}; CAMPOS_ACT.forEach((k) => { if (o[k] !== undefined) r[k] = o[k]; }); return r; }
 
+  // Cliente principal = quien contrata y paga (p. ej. Casa Limpia) · sitio = cliente final donde se instala
+  function sitiosConocidos(cliente) {
+    const c = IC.ui.norm(cliente), propios = new Set(), otros = new Set();
+    Object.keys(D.meses).forEach((k) => D.meses[k].forEach((a) => {
+      if (!a.sitio) return;
+      (c && IC.ui.norm(a.cliente) === c ? propios : otros).add(a.sitio);
+    }));
+    return Array.from(propios).sort().concat(Array.from(otros).filter((x) => !propios.has(x)).sort());
+  }
+  // Si falta la columna nueva en SharePoint, se explica qué hacer
+  function explicarColumna(e) {
+    if (/sitio/i.test(String(e && e.message)) && /recogni|reconoc|not found|no existe|does not exist/i.test(String(e.message)))
+      return new Error('Falta actualizar las listas de SharePoint (columna «sitio»). Abra el Instalador (Programacion/Instalador/) y haga clic en «Crear estructura».');
+    return e;
+  }
   async function crearActividad(a) {
     const n = await G.siguiente('PRG');
     const campos = Object.assign(soloCampos(a), { Title: 'PRG-' + pad(n, 6) });
     if (campos.equipos === '') delete campos.equipos;
-    const it = await G.crear('OPE_Actividades', campos);
+    let it; try { it = await G.crear('OPE_Actividades', campos); } catch (e) { throw explicarColumna(e); }
     recordar(it);
     await auditar('ACTIVIDAD', it.Title, 'CREAR', null, campos);
     return it;
@@ -198,7 +213,7 @@ window.Ope = (function () {
   async function actualizarActividad(actual, cambios, accion) {
     const campos = soloCampos(cambios);
     if (campos.equipos === '') campos.equipos = null;
-    await G.actualizar('OPE_Actividades', actual._id, campos, actual._etag);
+    try { await G.actualizar('OPE_Actividades', actual._id, campos, actual._etag); } catch (e) { throw explicarColumna(e); }
     const nuevo = (await G.items('OPE_Actividades', { filtro: "fields/Title eq '" + actual.Title + "'" }))[0];
     if (actual.fecha !== nuevo.fecha) { /* cambió de mes */ }
     recordar(nuevo);
@@ -212,6 +227,6 @@ window.Ope = (function () {
     dia, pad, hoy, aFecha, sumar, dow, lunesDe, ym, finDeMes, esFestivo, esHabil, diasHabilesMes, textoFecha,
     cargarCatalogos, tec, tipo, habilidades, puede, usaEquipos, diasPref, tecnicosActivos, tecnicosIC, nombreTec, nombreTipo, nombreEstado,
     cargarMes, cargarRango, delRango, delDia, activa, buscar, recordar, orden,
-    cargaDia, validar, etiqueta, resumenDia, empresas, auditar, crearActividad, actualizarActividad
+    cargaDia, validar, etiqueta, resumenDia, empresas, sitiosConocidos, auditar, crearActividad, actualizarActividad
   };
 })();

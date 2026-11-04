@@ -22,14 +22,14 @@
   App.tablaActividades = function (lista, conDia) {
     if (!lista.length) return '<div class="ic-tabla-caja"><div class="ic-vacio">No hay actividades con estos filtros.</div></div>';
     return '<div class="ic-tabla-caja ope-scroll"><table class="ic-tabla"><thead><tr>' +
-      '<th>Fecha</th><th>Técnico</th><th>Tipo</th><th>Cliente / ciudad</th><th class="ocultar-movil">Eq.</th><th class="ocultar-movil">Hora</th><th class="ocultar-movil">Ticket / OS</th><th>Estado</th><th>Validación</th></tr></thead><tbody>' +
+      '<th>Fecha</th><th>Técnico</th><th>Tipo</th><th>Sitio / cliente</th><th class="ocultar-movil">Eq.</th><th class="ocultar-movil">Hora</th><th class="ocultar-movil">Ticket / OS</th><th>Estado</th><th>Validación</th></tr></thead><tbody>' +
       lista.map((a) => {
         const v = Ope.activa(a) ? Ope.validar(a) : { errores: [] };
         return '<tr data-id="' + esc(a.Title) + '" class="' + (v.errores.length ? 'ope-fila-err' : '') + (!Ope.activa(a) ? ' inactivo' : '') + '">' +
           '<td><b>' + esc(Ope.textoFecha(a.fecha)) + '</b><span class="sec">' + esc(Ope.DIAS[Ope.dow(a.fecha) - 1]) + (Ope.esFestivo(a.fecha) ? ' · festivo' : '') + '</span></td>' +
           '<td>' + esc(Ope.nombreTec(a.tecnico_id)) + '</td>' +
           '<td>' + App.chipTipo(a.tipo) + '<span class="sec">' + esc(Ope.nombreTipo(a.tipo)) + '</span></td>' +
-          '<td>' + esc(a.cliente || '') + '<span class="sec">' + esc(a.ciudad || '') + '</span></td>' +
+          '<td>' + (a.sitio ? esc(a.sitio) + '<span class="sec">Cliente: ' + esc(a.cliente || '—') + (a.ciudad ? ' · ' + esc(a.ciudad) : '') + '</span>' : esc(a.cliente || '') + '<span class="sec">' + esc(a.ciudad || '') + '</span>') + '</td>' +
           '<td class="ocultar-movil">' + esc(a.equipos === '' ? '' : a.equipos) + '</td>' +
           '<td class="ocultar-movil">' + esc(a.hora_inicio || '') + '</td>' +
           '<td class="ocultar-movil">' + esc(a.ticket_os || '') + '</td>' +
@@ -66,10 +66,12 @@
       U.campo({ name: 'fecha', label: 'Fecha', t: 'date', valor: a.fecha, req: true, c: 'c4' }) +
       U.campo({ name: 'tecnico_id', label: 'Técnico', t: 'select', op: tecOps, valor: a.tecnico_id, c: 'c4', vacio: '— sin técnico —' }) +
       U.campo({ name: 'tipo', label: 'Tipo', t: 'select', op: tipoOps, valor: a.tipo, req: true, c: 'c4' }) +
-      '<div class="ic-campo c8"><label for="f_cliente">Cliente</label><input id="f_cliente" name="cliente" list="dlEmpresas" value="' + esc(a.cliente || '') + '" placeholder="Empresa (de la app Comercial) u «Oficina»">' +
+      '<div class="ic-campo c6"><label for="f_cliente">Cliente (contrata y paga)</label><input id="f_cliente" name="cliente" list="dlEmpresas" value="' + esc(a.cliente || '') + '" placeholder="Ej.: Casa Limpia · o «Oficina»">' +
         '<datalist id="dlEmpresas">' + empresas.map((e) => '<option value="' + esc(e.razon_social) + '">').join('') + '</datalist>' +
         '<span class="ayuda" id="ayEmpresa"></span></div>' +
-      U.campo({ name: 'ciudad', label: 'Ciudad / sede', valor: a.ciudad, c: 'c4', ph: 'Siempre la ciudad', ayuda: 'Escriba siempre la ciudad.' }) +
+      '<div class="ic-campo c6"><label for="f_sitio">Sitio / cliente final (dónde se instala)</label><input id="f_sitio" name="sitio" list="dlSitios" value="' + esc(a.sitio || '') + '" placeholder="Ej.: Clínica Los Nogales · vacío si es el mismo cliente">' +
+        '<datalist id="dlSitios"></datalist><span class="ayuda">Si el servicio es para un cliente de su cliente (p. ej. los clientes de Casa Limpia).</span></div>' +
+      U.campo({ name: 'ciudad', label: 'Ciudad', valor: a.ciudad, c: 'c3', ph: 'Siempre la ciudad' }) +
       '<div class="ic-campo c3" id="cEquipos"><label for="f_equipos">Equipos</label><input id="f_equipos" name="equipos" type="number" min="0" step="1" value="' + esc(a.equipos === undefined ? '' : a.equipos) + '"><span class="ayuda" id="ayCarga"></span></div>' +
       U.campo({ name: 'hora_inicio', label: 'Hora inicio', t: 'time', valor: a.hora_inicio, c: 'c3' }) +
       U.campo({ name: 'ticket_os', label: 'Ticket / OS', valor: a.ticket_os, c: 'c3' }) +
@@ -106,7 +108,8 @@
         const p = leer(), n = ++turno;
         cuerpo.querySelector('#cEquipos').hidden = !Ope.usaEquipos(p.tipo);
         const emp = empresas.find((e) => U.norm(e.razon_social) === U.norm(p.cliente));
-        cuerpo.querySelector('#ayEmpresa').textContent = emp ? '✔ Empresa ' + emp.Title + ' de la app Comercial' : (p.cliente && empresas.length ? 'No coincide con una empresa de la app Comercial (se guarda como texto).' : '');
+        cuerpo.querySelector('#ayEmpresa').textContent = emp ? '✔ Empresa ' + emp.Title + ' de la app Comercial' : (p.cliente && U.norm(p.cliente) !== 'oficina' ? 'No está registrada en la app Comercial (se guarda como texto). Regístrela en Comercial › Empresas para que aparezca en la lista.' : '');
+        cuerpo.querySelector('#dlSitios').innerHTML = Ope.sitiosConocidos(p.cliente).map((x) => '<option value="' + esc(x) + '">').join('');
         if (!p.fecha) return;
         try { await Ope.cargarMes(Ope.ym(p.fecha)); } catch (e) { /* sin conexión: se valida con lo que hay */ }
         if (n !== turno) return;
@@ -221,7 +224,8 @@
   // =====================================================================
   // LISTA DE ACTIVIDADES
   // =====================================================================
-  const filtros = { desde: null, hasta: null, tec: '', tipo: '', estado: 'ACTIVAS', alertas: false, q: '' };
+  const filtros = { desde: null, hasta: null, tec: '', tipo: '', estado: 'ACTIVAS', alertas: false, q: '', cli: '' };
+  let listaActual = [];
   App.vistas.actividades = async function (c) {
     if (!filtros.desde) { filtros.desde = Ope.lunesDe(Ope.hoy()); filtros.hasta = Ope.sumar(filtros.desde, 34); }
     const tecOps = Ope.D.tecnicos.map((t) => '<option value="' + esc(t.Title) + '"' + (filtros.tec === t.Title ? ' selected' : '') + '>' + esc(t.nombre) + '</option>').join('');
@@ -230,21 +234,25 @@
       .map((e) => '<option value="' + e[0] + '"' + (filtros.estado === e[0] ? ' selected' : '') + '>' + esc(e[1]) + '</option>').join('');
     c.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a>' +
       '<div class="ic-barra"><div style="flex:1"><h1 class="ic-titulo">Actividades</h1><p class="ic-subtitulo" style="margin:0">Único lugar para registrar actividades. La validación se calcula sola.</p></div>' +
-      (App.puedeEditar() ? '<button class="ic-btn" id="bNueva">+ Nueva actividad</button>' : '') + '</div>' +
+      '<button class="ic-btn sec" id="bExportar" title="Descarga en Excel las actividades del rango y los filtros elegidos">Exportar a Excel</button>' +
+      (App.puedeEditar() ? '<button class="ic-btn sec" id="bAsignar" title="Asigna el cliente que contrata a las actividades filtradas">Asignar cliente…</button><button class="ic-btn" id="bNueva">+ Nueva actividad</button>' : '') + '</div>' +
       '<div class="ic-filtros">' +
         '<label class="ope-lbl">Desde <input type="date" id="fDesde" value="' + filtros.desde + '"></label>' +
         '<label class="ope-lbl">Hasta <input type="date" id="fHasta" value="' + filtros.hasta + '"></label>' +
         '<select id="fTec"><option value="">Todos los técnicos</option>' + tecOps + '</select>' +
         '<select id="fTipo"><option value="">Todos los tipos</option>' + tipoOps + '</select>' +
         '<select id="fEst">' + estOps + '</select>' +
-        '<input id="fQ" class="ic-buscar" placeholder="Buscar cliente, ciudad o ticket" value="' + esc(filtros.q) + '" style="flex:1 1 200px">' +
+        '<select id="fCli"><option value="">Todos los clientes</option></select>' +
+        '<input id="fQ" class="ic-buscar" placeholder="Buscar cliente, sitio, ciudad o ticket" value="' + esc(filtros.q) + '" style="flex:1 1 200px">' +
         '<label class="ic-check"><input type="checkbox" id="fAl"' + (filtros.alertas ? ' checked' : '') + '> <span>Solo con ⚠</span></label>' +
       '</div><p class="ic-conteo" id="conteo"></p><div id="tabla"><div class="ic-vacio">Cargando…</div></div>';
     const bN = c.querySelector('#bNueva'); if (bN) bN.onclick = () => App.nuevaActividad({}, pintar);
+    c.querySelector('#bExportar').onclick = () => exportar(listaActual, filtros, c.querySelector('#bExportar'));
+    const bA = c.querySelector('#bAsignar'); if (bA) bA.onclick = () => asignarCliente(listaActual, pintar);
     const leer = () => {
       filtros.desde = c.querySelector('#fDesde').value || filtros.desde; filtros.hasta = c.querySelector('#fHasta').value || filtros.hasta;
       filtros.tec = c.querySelector('#fTec').value; filtros.tipo = c.querySelector('#fTipo').value; filtros.estado = c.querySelector('#fEst').value;
-      filtros.q = c.querySelector('#fQ').value; filtros.alertas = c.querySelector('#fAl').checked;
+      filtros.q = c.querySelector('#fQ').value; filtros.alertas = c.querySelector('#fAl').checked; filtros.cli = c.querySelector('#fCli').value;
     };
     async function pintar() {
       leer();
@@ -252,19 +260,132 @@
       try { await Ope.cargarRango(filtros.desde, filtros.hasta); }
       catch (e) { c.querySelector('#tabla').innerHTML = '<div class="ic-alerta">' + esc(U.mensajeError(e)) + '</div>'; return; }
       const q = U.norm(filtros.q);
+      // clientes del rango para el filtro
+      const sel = c.querySelector('#fCli'), clis = {};
+      Ope.delRango(filtros.desde, filtros.hasta).forEach((a) => { if (a.cliente && a.tipo !== 'OFI' && a.tipo !== 'AUS') clis[U.norm(a.cliente)] = a.cliente; });
+      sel.innerHTML = '<option value="">Todos los clientes</option>' + Object.keys(clis).sort().map((k) => '<option value="' + esc(k) + '"' + (k === filtros.cli ? ' selected' : '') + '>' + esc(clis[k]) + '</option>').join('');
+      if (filtros.cli && !clis[filtros.cli]) filtros.cli = '';
       const lista = Ope.delRango(filtros.desde, filtros.hasta).filter((a) =>
         (!filtros.tec || a.tecnico_id === filtros.tec) && (!filtros.tipo || a.tipo === filtros.tipo) &&
         (filtros.estado === '' || (filtros.estado === 'ACTIVAS' ? Ope.activa(a) : a.estado === filtros.estado)) &&
-        (!q || U.norm([a.cliente, a.ciudad, a.ticket_os, a.observaciones, a.Title].join(' ')).indexOf(q) >= 0) &&
+        (!q || U.norm([a.cliente, a.sitio, a.ciudad, a.ticket_os, a.observaciones, a.Title].join(' ')).indexOf(q) >= 0) &&
+        (!filtros.cli || U.norm(a.cliente) === filtros.cli) &&
         (!filtros.alertas || Ope.validar(a).errores.length));
       const nErr = lista.filter((a) => Ope.validar(a).errores.length).length;
       c.querySelector('#conteo').innerHTML = lista.length + ' actividades' + (nErr ? ' · <b class="ope-rojo">' + nErr + ' con conflictos ⚠</b>' : '');
+      listaActual = lista;
       c.querySelector('#tabla').innerHTML = App.tablaActividades(lista);
       App.conectarTabla(c.querySelector('#tabla'), pintar);
     }
     c.querySelectorAll('.ic-filtros input, .ic-filtros select').forEach((el) => { el.addEventListener(el.id === 'fQ' ? 'input' : 'change', pintar); });
     pintar();
   };
+
+  // =====================================================================
+  // EXPORTAR A EXCEL (rango y filtros de la lista)
+  // =====================================================================
+  function cargarXLSX() {
+    if (window.XLSX) return Promise.resolve();
+    return new Promise((ok, mal) => {
+      const sc = document.createElement('script');
+      sc.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      sc.onload = ok; sc.onerror = () => mal(new Error('No se pudo cargar la librería de Excel. Revise la conexión e intente de nuevo.'));
+      document.head.appendChild(sc);
+    });
+  }
+  async function exportar(lista, f, boton) {
+    if (!lista.length) { U.aviso('No hay actividades para exportar con estos filtros.', 'warn'); return; }
+    const txt = boton.textContent; boton.disabled = true; boton.textContent = 'Generando…';
+    try {
+      await cargarXLSX();
+      // Fecha como número de serie de Excel (sin zona horaria, para que no cambie de día)
+      const fecha = (s) => { const [y, m, d] = s.split('-').map(Number); return (Date.UTC(y, m - 1, d) - Date.UTC(1899, 11, 30)) / 864e5; };
+      const filas = lista.map((a) => {
+        const v = Ope.activa(a) ? Ope.validar(a) : { errores: [], avisos: [] }, t = Ope.tec(a.tecnico_id);
+        return {
+          'N°': a.Title, 'Fecha': fecha(a.fecha), 'Día': Ope.DIAS[Ope.dow(a.fecha) - 1], 'Técnico': Ope.nombreTec(a.tecnico_id),
+          'Vinculación': t ? (t.vinculacion === 'TECNICO_CAMPO' ? 'Técnico de campo' : 'Ideas Control') : '', 'Tipo': Ope.nombreTipo(a.tipo), 'Cód.': a.tipo,
+          'Cliente (contrata)': a.cliente || '', 'Sitio / cliente final': a.sitio || '', 'Ciudad': a.ciudad || '',
+          'Equipos': a.equipos === '' || a.equipos === undefined ? '' : Number(a.equipos), 'Hora inicio': a.hora_inicio || '', 'Ticket / OS': a.ticket_os || '',
+          'Estado': Ope.nombreEstado(a.estado), 'Validación': !Ope.activa(a) ? '— ' + Ope.nombreEstado(a.estado) : v.errores.length ? '⚠ ' + v.errores.join('; ') : v.avisos.length ? 'ℹ ' + v.avisos.join('; ') : '✔ OK',
+          'Observaciones': a.observaciones || '', 'Reprograma de': a.reprograma_de || '', 'Motivo del cambio': a.motivo_cambio || ''
+        };
+      });
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(filas);
+      ws['!cols'] = [10, 11, 10, 20, 14, 18, 6, 26, 30, 14, 8, 10, 14, 12, 40, 40, 12, 24].map((w) => ({ wch: w }));
+      Object.keys(ws).forEach((k) => { if (/^B\d+$/.test(k) && k !== 'B1') ws[k].z = 'dd/mm/yyyy'; });
+      ws['!autofilter'] = { ref: ws['!ref'] };
+      XLSX.utils.book_append_sheet(wb, ws, 'Actividades');
+      // Resumen por cliente que contrata (base para la cuenta de cobro)
+      const res = {};
+      lista.filter((a) => Ope.activa(a) && a.tipo !== 'OFI' && a.tipo !== 'AUS').forEach((a) => {
+        const k = (a.cliente || '(sin cliente)') + '|' + a.tipo;
+        const r = res[k] || (res[k] = { 'Cliente (contrata)': a.cliente || '(sin cliente)', 'Tipo': Ope.nombreTipo(a.tipo), 'Actividades': 0, 'Ejecutadas': 0, 'Equipos programados': 0, 'Equipos ejecutados': 0, _s: new Set() });
+        const eq = Ope.usaEquipos(a.tipo) ? (Number(a.equipos) || 0) : 0;
+        r['Actividades']++; r['Equipos programados'] += eq;
+        if (a.estado === 'EJECUTADO') { r['Ejecutadas']++; r['Equipos ejecutados'] += eq; }
+        r._s.add(a.sitio || a.cliente || '');
+      });
+      const resumen = Object.values(res).sort((x, y) => x['Cliente (contrata)'].localeCompare(y['Cliente (contrata)']) || x['Tipo'].localeCompare(y['Tipo']))
+        .map((r) => { const o = Object.assign({}, r, { 'Sitios distintos': r._s.size }); delete o._s; return o; });
+      const ws2 = XLSX.utils.json_to_sheet(resumen.length ? resumen : [{ 'Cliente (contrata)': 'Sin actividades de campo en el rango' }]);
+      ws2['!cols'] = [30, 20, 12, 12, 18, 18, 14].map((w) => ({ wch: w }));
+      XLSX.utils.book_append_sheet(wb, ws2, 'Resumen por cliente');
+      const ws3 = XLSX.utils.aoa_to_sheet([['Programación de Operaciones · Ideas Control Equipos y Soluciones S.A.S.'], ['Rango', Ope.textoFecha(f.desde) + ' a ' + Ope.textoFecha(f.hasta)],
+        ['Técnico', f.tec ? Ope.nombreTec(f.tec) : 'Todos'], ['Tipo', f.tipo ? Ope.nombreTipo(f.tipo) : 'Todos'], ['Estado', f.estado === 'ACTIVAS' ? 'Vigentes (sin canceladas ni reprogramadas)' : f.estado ? Ope.nombreEstado(f.estado) : 'Todos'],
+        ['Cliente', f.cli ? (lista[0] && lista[0].cliente) || f.cli : 'Todos'], ['Búsqueda', f.q || '—'], ['Actividades', lista.length], ['Generado', new Date().toLocaleString('es-CO') + ' por ' + App.usuario.nombre]]);
+      ws3['!cols'] = [{ wch: 14 }, { wch: 60 }];
+      XLSX.utils.book_append_sheet(wb, ws3, 'Filtros');
+      XLSX.writeFile(wb, 'Programacion_IC_' + f.desde + '_a_' + f.hasta + '.xlsx');
+      U.aviso('Archivo descargado (' + lista.length + ' actividades)', 'ok');
+    } catch (e) { U.aviso(U.mensajeError(e), 'err', 7000); }
+    finally { boton.disabled = false; boton.textContent = txt; }
+  }
+
+  // =====================================================================
+  // ASIGNAR CLIENTE QUE CONTRATA A LAS ACTIVIDADES FILTRADAS
+  // (p. ej. las instalaciones de los clientes de Casa Limpia)
+  // =====================================================================
+  async function asignarCliente(lista, alCambiar) {
+    const objetivo = lista.filter((a) => Ope.activa(a) && a.tipo !== 'OFI' && a.tipo !== 'AUS');
+    if (!objetivo.length) { U.aviso('Filtre primero las actividades (fechas, tipo, búsqueda…). No se incluyen oficina ni ausencias.', 'warn'); return; }
+    const empresas = await Ope.empresas();
+    U.modal('Asignar cliente que contrata', '<form class="ic-form" id="fAC"><p style="margin-top:0">Se actualizarán <b>' + objetivo.length + '</b> actividades de la lista filtrada (sin oficina ni ausencias).</p><div class="ic-campos">' +
+      '<div class="ic-campo c12"><label for="f_cli">Cliente (contrata y paga)</label><input id="f_cli" name="cli" list="dlEmp2" placeholder="Ej.: Casa Limpia"><datalist id="dlEmp2">' + empresas.map((e) => '<option value="' + esc(e.razon_social) + '">').join('') + '</datalist><span class="ayuda" id="ayCli"></span></div>' +
+      '<div class="ic-campo c12"><label class="ic-check"><input type="checkbox" name="mover" checked> <span>Pasar el cliente actual a «Sitio / cliente final» (cuando el sitio está vacío)</span></label>' +
+      '<span class="ayuda">Úselo con las actividades importadas del Excel, donde la columna Cliente traía el sitio (Compensar, Colsanitas…).</span></div></div>' +
+      '<div class="ic-tabla-caja" style="max-height:220px;overflow:auto;margin-top:10px"><table class="ic-tabla"><tbody>' +
+      objetivo.slice(0, 60).map((a) => '<tr style="cursor:default"><td>' + esc(Ope.textoFecha(a.fecha)) + '</td><td>' + esc(Ope.nombreTec(a.tecnico_id)) + '</td><td>' + esc(a.cliente || '') + (a.sitio ? ' › ' + esc(a.sitio) : '') + '</td></tr>').join('') +
+      (objetivo.length > 60 ? '<tr><td colspan="3" class="ope-nota">… y ' + (objetivo.length - 60) + ' más</td></tr>' : '') + '</tbody></table></div>' +
+      '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="acNo">Cancelar</button><button class="ic-btn" id="acOk">Actualizar ' + objetivo.length + ' actividades</button></div></form>',
+    (cu) => {
+      const f = cu.querySelector('#fAC');
+      cu.querySelector('#acNo').onclick = U.cerrarModal;
+      f.addEventListener('input', () => {
+        const e = empresas.find((x) => U.norm(x.razon_social) === U.norm(f.cli.value));
+        cu.querySelector('#ayCli').textContent = e ? '✔ Empresa ' + e.Title + ' de la app Comercial' : f.cli.value ? 'No está registrada en la app Comercial (se guarda como texto).' : '';
+      });
+      f.onsubmit = async (ev) => {
+        ev.preventDefault();
+        const v = U.leerForm(f);
+        if (!U.marcarErrores(f, !v.cli ? { cli: 'Escriba el cliente' } : {})) return;
+        const emp = empresas.find((x) => U.norm(x.razon_social) === U.norm(v.cli));
+        const b = cu.querySelector('#acOk'); b.disabled = true;
+        let n = 0;
+        try {
+          for (const a of objetivo) {
+            b.textContent = 'Actualizando ' + (++n) + ' de ' + objetivo.length + '…';
+            const cambios = { cliente: emp ? emp.razon_social : v.cli, empresa_id: emp ? emp.Title : '' };
+            if (v.mover && !a.sitio && a.cliente && U.norm(a.cliente) !== U.norm(cambios.cliente)) cambios.sitio = a.cliente;
+            if (U.norm(a.cliente) === U.norm(cambios.cliente) && a.empresa_id === cambios.empresa_id && !cambios.sitio) continue;
+            await Ope.actualizarActividad(a, cambios);
+          }
+          U.aviso(objetivo.length + ' actividades actualizadas', 'ok'); U.cerrarModal(); alCambiar();
+        } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); b.disabled = false; b.textContent = 'Reintentar'; alCambiar(); }
+      };
+    });
+  }
 
   // =====================================================================
   // CONFLICTOS
@@ -300,7 +421,7 @@
         const del = mias.filter((a) => a.fecha === s);
         if (del.length || (Ope.esHabil(s) && s >= Ope.hoy())) {
           html += '<div class="ope-mia-dia' + (s === Ope.hoy() ? ' hoy' : '') + '"><div class="f"><b>' + esc(Ope.textoFecha(s, true)) + '</b>' + (s === Ope.hoy() ? ' <span class="ic-tag cliente">Hoy</span>' : '') + '</div>' +
-            (del.length ? del.map((a) => '<div class="ope-mia-item" data-id="' + esc(a.Title) + '">' + App.chipTipo(a.tipo) + ' <b>' + esc(Ope.nombreTipo(a.tipo)) + '</b> ' + esc(a.cliente && a.tipo !== 'OFI' ? '· ' + a.cliente : '') +
+            (del.length ? del.map((a) => '<div class="ope-mia-item" data-id="' + esc(a.Title) + '">' + App.chipTipo(a.tipo) + ' <b>' + esc(Ope.nombreTipo(a.tipo)) + '</b> ' + esc((a.sitio || a.cliente) && a.tipo !== 'OFI' ? '· ' + (a.sitio || a.cliente) + (a.sitio && a.cliente ? ' (' + a.cliente + ')' : '') : '') +
               '<span class="sec">' + esc([a.ciudad, a.hora_inicio, a.equipos ? a.equipos + ' equipo(s)' : '', a.ticket_os].filter(Boolean).join(' · ')) + '</span> ' + App.tagEstado(a.estado) + '</div>').join('')
               : (Ope.esHabil(s) ? '<div class="ope-nota">Sin asignar: por política debe estar en la oficina apoyando al técnico de turno.</div>' : '')) + '</div>';
         }
