@@ -190,7 +190,7 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
       '<span style="flex:1"></span><button type="button" class="ic-btn sec" id="pPng">Descargar PNG</button>' +
       (p.estado === 'PROGRAMADA' ? '<button type="button" class="ic-btn sec" data-e="BORRADOR">Volver a borrador</button><button class="ic-btn" data-e="PROGRAMADA">Guardar</button>'
         : '<button type="button" class="ic-btn sec" data-e="BORRADOR">Guardar borrador</button><button type="button" class="ic-btn" data-e="PROGRAMADA">Guardar y programar</button>') +
-      '</div></form><div class="tal-prev"><canvas id="cvE"></canvas><p class="ope-nota" style="text-align:center">Vista previa · 1080 × 1350</p></div></div>';
+      '</div></form><div class="tal-prev"><canvas id="cvE"></canvas></div></div>';
     U.modal(nueva ? 'Nueva pieza' : 'Editar pieza', html, (cu) => {
       cu.closest('.ic-modal').classList.add('ancho');
       const f = cu.querySelector('#fP'), cv = cu.querySelector('#cvE');
