@@ -4,7 +4,7 @@
    Una pieza se ve en el muro cuando está PROGRAMADA y ya pasó su fecha y hora.
    Editan: ADMIN de APP-108 en SYS_Accesos (o, si no existe, ADMIN de APP-106).
    ===================================================================== */
-const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'muro', filtroProg: '' };
+const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'muro', filtroProg: '', filtroMuro: '', filtroLect: '' };   // cada pestaña con su propio filtro
 (function () {
   const U = IC.ui, esc = U.esc, G = IC.graph;
   const ESTADOS = { BORRADOR: 'Borrador', PROGRAMADA: 'Programada', ARCHIVADA: 'Archivada' };
@@ -86,12 +86,12 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
   // MURO (todo el personal)
   // =====================================================================
   function vistaMuro(c) {
-    const pubs = App.piezas.filter(publicada).filter((p) => !App.filtroProg || p.programa_id === App.filtroProg).reverse();
+    const pubs = App.piezas.filter(publicada).filter((p) => !App.filtroMuro || p.programa_id === App.filtroMuro).reverse();
     const hoy = pubs[0];
     const pendientes = pubs.filter((p) => !leida(p)).length;
     let html = '<div class="ic-barra"><div style="flex:1"><h1 class="ic-titulo">' + saludo() + ', ' + esc(String(App.usuario.nombre).split(' ')[0]) + '</h1>' +
       '<p class="ic-subtitulo" style="margin:0">Una idea práctica para aplicar hoy. ' + (pendientes ? '<b>' + pendientes + ' pieza' + (pendientes === 1 ? '' : 's') + ' por leer.</b>' : '¡Vas al día!') + '</p></div>' +
-      (App.programas.length > 1 ? '<select id="fProg"><option value="">Todos los programas</option>' + App.programas.map((p) => '<option value="' + esc(p.Title) + '"' + (p.Title === App.filtroProg ? ' selected' : '') + '>' + esc(p.nombre) + '</option>').join('') + '</select>' : '') + '</div>';
+      (App.programas.length > 1 ? '<select id="fProg"><option value="">Todos los programas</option>' + App.programas.map((p) => '<option value="' + esc(p.Title) + '"' + (p.Title === App.filtroMuro ? ' selected' : '') + '>' + esc(p.nombre) + '</option>').join('') + '</select>' : '') + '</div>';
     if (!hoy) html += '<div class="ic-tabla-caja"><div class="ic-vacio">Todavía no hay piezas publicadas. La primera sale pronto.</div></div>';
     else {
       html += '<div class="tal-hoy"><div class="tal-lienzo"><canvas id="cvHoy"></canvas></div><div class="tal-info">' + fichaPieza(hoy, true) + '</div></div>';
@@ -99,7 +99,7 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
         '<button class="tal-mini' + (leida(p) ? ' leida' : '') + '" data-id="' + esc(p.Title) + '"><img data-mini="' + esc(p.Title) + '" alt="' + esc(p.titular) + '"><span>' + esc(p.etiqueta || '') + ' · ' + esc(fechaTexto(p.fecha_publicacion)) + '</span>' + (leida(p) ? '<i>✔ Entendido</i>' : '<i class="no">Por leer</i>') + '</button>').join('') + '</div>';
     }
     c.innerHTML = html;
-    const f = c.querySelector('#fProg'); if (f) f.onchange = () => { App.filtroProg = f.value; vistaMuro(c); };
+    const f = c.querySelector('#fProg'); if (f) f.onchange = () => { App.filtroMuro = f.value; vistaMuro(c); };
     if (hoy) { Post.dibujar(datosPost(hoy), c.querySelector('#cvHoy')); conectarFicha(c, hoy, () => vistaMuro(c)); }
     c.querySelectorAll('.tal-mini').forEach((b) => { b.onclick = () => abrirPieza(App.piezas.find((x) => x.Title === b.dataset.id), () => vistaMuro(c)); });
     pintarMiniaturas(c);
@@ -250,8 +250,9 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
     audiencia = Object.values(mapa).sort((a, b) => a.nombre.localeCompare(b.nombre));
   }
   function vistaLecturas(c) {
-    const pubs = App.piezas.filter(publicada).filter((p) => !App.filtroProg || p.programa_id === App.filtroProg);
-    c.innerHTML = '<div class="ic-barra"><div style="flex:1"><h1 class="ic-titulo">Lecturas</h1><p class="ic-subtitulo" style="margin:0">Quién marcó «Entendido» en cada pieza publicada. El personal sale de Técnicos (con correo), usuarios de Comercial y accesos de las apps.</p></div></div>' +
+    const pubs = App.piezas.filter(publicada).filter((p) => !App.filtroLect || p.programa_id === App.filtroLect);
+    c.innerHTML = '<div class="ic-barra"><div style="flex:1"><h1 class="ic-titulo">Lecturas</h1><p class="ic-subtitulo" style="margin:0">Quién marcó «Entendido» en cada pieza publicada. El personal sale de Técnicos (con correo), usuarios de Comercial y accesos de las apps.</p></div>' +
+      '<select id="fLect"><option value="">Todos los programas</option>' + App.programas.map((p) => '<option value="' + esc(p.Title) + '"' + (p.Title === App.filtroLect ? ' selected' : '') + '>' + esc(p.nombre) + '</option>').join('') + '</select></div>' +
       (!pubs.length ? '<div class="ic-tabla-caja"><div class="ic-vacio">Aún no hay piezas publicadas.</div></div>' :
       '<div class="ic-tabla-caja ope-scroll"><table class="ic-tabla tal-lect"><thead><tr><th>Persona</th>' + pubs.map((p) => '<th class="num" title="' + esc(p.titular) + '">' + esc((p.etiqueta || '').replace(/^TIP\s*/i, '')) + '</th>').join('') + '<th class="num">Total</th></tr></thead><tbody>' +
       audiencia.map((a) => {
@@ -260,6 +261,7 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
         return '<tr style="cursor:default"><td><b>' + esc(a.nombre) + '</b><span class="sec">' + esc(a.origen) + '</span></td>' + celdas + '<td class="num"><b>' + Math.round(n * 100 / pubs.length) + ' %</b></td></tr>';
       }).join('') + '<tr style="cursor:default" class="tal-tot"><td><b>Leída por</b></td>' + pubs.map((p) => { const n = new Set(App.lecturas.filter((l) => l.pieza_id === p.Title).map((l) => String(l.email).toLowerCase())).size; return '<td class="num"><b>' + (audiencia.length ? Math.round(n * 100 / audiencia.length) + ' %' : n) + '</b></td>'; }).join('') + '<td></td></tr>' +
       '</tbody></table></div>');
+    c.querySelector('#fLect').onchange = (e) => { App.filtroLect = e.target.value; vistaLecturas(c); };
   }
 
   // =====================================================================
@@ -280,7 +282,7 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
       for (const l of lect) await G.eliminar('TAL_Lecturas', l._id);
       for (const x of piezas) await G.eliminar('TAL_Piezas', x._id);
       await G.eliminar('TAL_Programas', p._id);
-      if (App.filtroProg === p.Title) App.filtroProg = '';
+      ['filtroProg', 'filtroMuro', 'filtroLect'].forEach((k) => { if (App[k] === p.Title) App[k] = ''; });
       U.aviso('Programa eliminado con ' + piezas.length + ' piezas', 'ok');
     } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
     await cargar(); vistaProgramas(c);
