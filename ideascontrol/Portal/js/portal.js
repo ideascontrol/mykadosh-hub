@@ -61,7 +61,8 @@
       });
       html += '</div>';
     });
-    if (oficina) html += '<div class="ic-seccion">Sitios de SharePoint</div><div class="ic-grid">' + CFG.sitios.map((s) =>
+    const dueno = (CFG.verSitios || []).indexOf(String(cuenta.username || '').toLowerCase()) >= 0;   // solo la Dirección de Operaciones
+    if (dueno) html += '<div class="ic-seccion">Sitios de SharePoint</div><div class="ic-grid">' + CFG.sitios.map((s) =>
       '<a class="ic-card" href="' + esc(s.url) + '" target="_blank" rel="noopener"><div class="icono">' + ICO.sitio + '</div><h3>' + esc(s.nombre) + '</h3><p>' + esc(s.texto) + '</p></a>').join('') + '</div>';
     if (oficina) html += '<div class="ic-seccion">Herramientas para clientes (públicas)</div><div class="pt-publicas">' +
       PUBLICAS.map((p) => '<a href="' + esc(p.url) + '" target="_blank" rel="noopener">' + esc(p.nombre) + ' ↗</a>').join('') + '</div>';
