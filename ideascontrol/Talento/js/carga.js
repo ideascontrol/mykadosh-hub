@@ -75,9 +75,14 @@ window.TalCarga = (function () {
     }).filter((p) => p.programa || p.titular || p.mensaje);
   }
 
+  // Campos de la pieza que vienen del Excel
+  const NOMBRES = { tipo: 'tipo', etiqueta: 'etiqueta', titular: 'titular', mensaje: 'idea clave', items: 'ideas del resumen', copy: 'copy', accion: 'acción', fecha_publicacion: 'fecha' };
+  const datos = (p) => ({ tipo: p.tipo, etiqueta: p.etiqueta, orden: p.orden, titular: p.titular, mensaje: p.tipo === 'TIP' ? p.mensaje : '', items: p.tipo === 'RESUMEN' ? p.items : '', copy: p.copy, accion: p.accion, fecha_publicacion: p.fecha_publicacion || '' });
+  const publicada = (x) => x.estado === 'PROGRAMADA' && x.fecha_publicacion && new Date(x.fecha_publicacion) <= new Date();
+
   // ---------- Importar ----------
   function importar(alTerminar) {
-    U.modal('Carga masiva de piezas', '<form class="ic-form" id="fImp"><p style="margin-top:0">Llene la plantilla de Excel (una fila por pieza) y súbala aquí. Las piezas quedan en <b>borrador</b>: puede revisarlas y editarlas antes de programarlas.</p>' +
+    U.modal('Carga masiva de piezas', '<form class="ic-form" id="fImp"><p style="margin-top:0">Llene la plantilla de Excel (una fila por pieza) y súbala aquí. Las piezas nuevas quedan en <b>borrador</b>. Si vuelve a subir el archivo corregido, las piezas con el mismo programa y <b>N° de orden</b> se actualizan, sin duplicarse.</p>' +
       '<p><button type="button" class="ic-btn sec chico" id="iPlant">Descargar plantilla de Excel</button></p>' +
       '<div class="ic-campo c12"><label for="iArch">Archivo de Excel</label><input type="file" id="iArch" accept=".xlsx,.xls"></div>' +
       '<div id="iPrev" style="margin-top:12px"></div>' +
@@ -90,19 +95,38 @@ window.TalCarga = (function () {
         if (!f) return;
         try {
           const filas = await leer(f);
-          const existentes = new Set(App.piezas.map((p) => p.programa_id + '|' + clave(p.titular)));
           const progs = {}; filas.forEach((p) => { const k = clave(p.programa); if (!progs[k]) progs[k] = { nombre: p.programa, existe: App.programas.find((x) => clave(x.nombre) === k) }; });
-          filas.forEach((p) => { const g = progs[clave(p.programa)]; p.repetida = !!(g.existe && existentes.has(g.existe.Title + '|' + clave(p.titular))); });
-          const validas = filas.filter((p) => !p.error && !p.repetida), malas = filas.filter((p) => p.error), rep = filas.filter((p) => p.repetida);
-          plan = { filas: validas, progs };
-          const nuevos = Object.values(progs).filter((g) => !g.existe);
+          // Una pieza se reconoce por su programa + N° de orden: si ya existe, se actualiza con lo del Excel
+          const vistos = new Set();
+          filas.forEach((p) => {
+            const k = clave(p.programa) + '|' + p.orden;
+            if (!p.error && vistos.has(k)) p.error = 'N° de orden repetido en el mismo programa (' + p.orden + ')';
+            vistos.add(k);
+            const g = progs[clave(p.programa)];
+            const ex = g.existe && App.piezas.find((x) => x.programa_id === g.existe.Title && Number(x.orden) === p.orden);
+            p.existente = ex || null;
+            if (ex) {
+              const nuevo = datos(p), cambios = Object.keys(nuevo).filter((c) => c === 'fecha_publicacion' ? !!nuevo[c] && new Date(nuevo[c]).getTime() !== new Date(ex[c] || 0).getTime() : texto(ex[c]) !== texto(nuevo[c]));
+              p.cambios = cambios;
+            }
+          });
+          const ok = filas.filter((p) => !p.error), malas = filas.filter((p) => p.error);
+          const nuevas = ok.filter((p) => !p.existente), actualizar = ok.filter((p) => p.existente && p.cambios.length), iguales = ok.filter((p) => p.existente && !p.cambios.length);
+          const enMuro = actualizar.filter((p) => publicada(p.existente)).length;
+          plan = { nuevas, actualizar, progs };
+          const nuevosProg = Object.values(progs).filter((g) => !g.existe);
+          const fila = (p, que) => '<tr><td>' + p.orden + '</td><td>' + esc(p.etiqueta) + '</td><td>' + esc(p.titular) + '</td><td>' + que + '</td></tr>';
           cu.querySelector('#iPrev').innerHTML =
-            '<div style="background:#EEF6FB;border:1px solid #CFE3F1;border-radius:10px;padding:10px 12px"><b>' + validas.length + '</b> piezas listas para cargar' + (nuevos.length ? ' · se crea el programa <b>' + nuevos.map((g) => esc(g.nombre)).join('</b>, <b>') + '</b>' : '') +
-            (rep.length ? '<br>' + rep.length + ' ya existen (mismo titular en el programa) y se omiten.' : '') + (malas.length ? '<br><span style="color:#B42318">' + malas.length + ' filas con errores no se cargan:</span>' : '') + '</div>' +
+            '<div style="background:#EEF6FB;border:1px solid #CFE3F1;border-radius:10px;padding:10px 12px">' +
+            '<b>' + nuevas.length + '</b> piezas nuevas · <b>' + actualizar.length + '</b> se actualizan · ' + iguales.length + ' sin cambios' +
+            (nuevosProg.length ? '<br>Se crea el programa <b>' + nuevosProg.map((g) => esc(g.nombre)).join('</b>, <b>') + '</b>' : '') +
+            (enMuro ? '<br>⚠ ' + enMuro + ' de las que se actualizan ya están publicadas: el muro mostrará el texto nuevo.' : '') +
+            (malas.length ? '<br><span style="color:#B42318">' + malas.length + ' filas con errores no se cargan:</span>' : '') + '</div>' +
             (malas.length ? '<ul style="margin:6px 0 0;padding-left:18px;font-size:13px">' + malas.slice(0, 10).map((p) => '<li>Fila ' + p.fila + ': ' + esc(p.error) + '</li>').join('') + '</ul>' : '') +
-            (validas.length ? '<div class="ic-tabla-caja" style="max-height:260px;overflow:auto;margin-top:10px"><table class="ic-tabla"><thead><tr><th>#</th><th>Etiqueta</th><th>Titular</th><th>Fecha</th></tr></thead><tbody>' +
-              validas.map((p) => '<tr><td>' + p.orden + '</td><td>' + esc(p.etiqueta) + '</td><td>' + esc(p.titular) + '</td><td>' + (p.fecha_publicacion ? esc(new Date(p.fecha_publicacion).toLocaleString('es-CO', { dateStyle: 'medium', timeStyle: 'short' })) : 'Sin fecha') + '</td></tr>').join('') + '</tbody></table></div>' : '');
-          cu.querySelector('#iOk').disabled = !validas.length;
+            (nuevas.length || actualizar.length ? '<div class="ic-tabla-caja" style="max-height:260px;overflow:auto;margin-top:10px"><table class="ic-tabla"><thead><tr><th>#</th><th>Etiqueta</th><th>Titular</th><th>Qué pasa</th></tr></thead><tbody>' +
+              nuevas.map((p) => fila(p, 'Nueva')).join('') + actualizar.map((p) => fila(p, 'Cambia: ' + esc(p.cambios.map((c) => NOMBRES[c] || c).join(', ')))).join('') + '</tbody></table></div>' : '');
+          cu.querySelector('#iOk').disabled = !(nuevas.length || actualizar.length);
+          cu.querySelector('#iOk').textContent = actualizar.length && !nuevas.length ? 'Actualizar piezas' : 'Cargar piezas';
         } catch (err) { cu.querySelector('#iPrev').innerHTML = '<p style="color:#B42318">No se pudo leer el archivo: ' + esc(err.message) + '</p>'; }
       };
       cu.querySelector('#iOk').onclick = async () => {
@@ -111,24 +135,26 @@ window.TalCarga = (function () {
         try {
           await U.conCarga(b, async () => {
             for (const g of Object.values(plan.progs)) {
-              if (g.existe || !plan.filas.some((p) => clave(p.programa) === clave(g.nombre))) continue;
+              if (g.existe || !plan.nuevas.some((p) => clave(p.programa) === clave(g.nombre))) continue;
               const n = await G.siguiente('TPR');
               g.existe = await G.crear('TAL_Programas', { Title: 'TP-' + pad(n, 2), nombre: g.nombre, descripcion: '', audiencia: 'TODOS', orden: n, estado: 'ACTIVO' });
             }
-            let k = 0;
-            for (const p of plan.filas.sort((a, b2) => a.orden - b2.orden)) {
+            let k = 0; const total = plan.nuevas.length + plan.actualizar.length;
+            for (const p of plan.nuevas.sort((a, b2) => a.orden - b2.orden)) {
               const n = await G.siguiente('TAL');
-              const campos = {
-                Title: 'PZ-' + pad(n, 5), programa_id: plan.progs[clave(p.programa)].existe.Title, tipo: p.tipo, etiqueta: p.etiqueta, orden: p.orden,
-                titular: p.titular, mensaje: p.tipo === 'TIP' ? p.mensaje : '', items: p.tipo === 'RESUMEN' ? p.items : '', copy: p.copy, accion: p.accion,
-                estado: 'BORRADOR'
-              };
-              if (p.fecha_publicacion) campos.fecha_publicacion = p.fecha_publicacion;
+              const campos = Object.assign({ Title: 'PZ-' + pad(n, 5), programa_id: plan.progs[clave(p.programa)].existe.Title, estado: 'BORRADOR' }, datos(p));
+              if (!campos.fecha_publicacion) delete campos.fecha_publicacion;
               await G.crear('TAL_Piezas', campos);
-              b.textContent = 'Cargando ' + (++k) + ' de ' + plan.filas.length + '…';
+              b.textContent = 'Guardando ' + (++k) + ' de ' + total + '…';
+            }
+            // Las existentes conservan su estado y su fecha (salvo que el Excel traiga otra fecha)
+            for (const p of plan.actualizar) {
+              const campos = {}; p.cambios.forEach((c) => { campos[c] = datos(p)[c]; });
+              await G.actualizar('TAL_Piezas', p.existente._id, campos, p.existente._etag);
+              b.textContent = 'Guardando ' + (++k) + ' de ' + total + '…';
             }
           });
-          U.cerrarModal(); U.aviso(plan.filas.length + ' piezas cargadas como borrador', 'ok', 6000);
+          U.cerrarModal(); U.aviso((plan.nuevas.length ? plan.nuevas.length + ' piezas nuevas en borrador' : '') + (plan.nuevas.length && plan.actualizar.length ? ' · ' : '') + (plan.actualizar.length ? plan.actualizar.length + ' actualizadas' : ''), 'ok', 6000);
           await alTerminar();
         } catch (e) { U.aviso(U.mensajeError(e), 'err', 9000); }
       };
