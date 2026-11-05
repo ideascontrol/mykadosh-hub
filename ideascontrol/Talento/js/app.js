@@ -265,6 +265,27 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
   // =====================================================================
   // PROGRAMAS (administración)
   // =====================================================================
+  // Elimina el programa con todas sus piezas (y sus «Entendido»). No se puede deshacer.
+  async function eliminarPrograma(p, c) {
+    const piezas = App.piezas.filter((x) => x.programa_id === p.Title);
+    const publicadas = piezas.filter(publicada).length, ids = new Set(piezas.map((x) => x.Title));
+    const lect = App.lecturas.filter((l) => ids.has(l.pieza_id));
+    U.cerrarModal();
+    const ok = await U.confirmar('Eliminar «' + p.nombre + '»', 'Se eliminarán el programa y sus ' + piezas.length + ' pieza' + (piezas.length === 1 ? '' : 's') + '.' +
+      (publicadas ? '\n\n⚠ ' + publicadas + ' ya se publicaron en el muro y desaparecerán' + (lect.length ? ', junto con ' + lect.length + ' registro(s) de «Entendido»' : '') + '. Si solo quiere ocultarlo, cancele y cambie su estado a Inactivo.' : '') +
+      '\n\nEsta acción no se puede deshacer.', 'Eliminar todo', true);
+    if (!ok) return;
+    U.aviso('Eliminando…', 'info', 2000);
+    try {
+      for (const l of lect) await G.eliminar('TAL_Lecturas', l._id);
+      for (const x of piezas) await G.eliminar('TAL_Piezas', x._id);
+      await G.eliminar('TAL_Programas', p._id);
+      if (App.filtroProg === p.Title) App.filtroProg = '';
+      U.aviso('Programa eliminado con ' + piezas.length + ' piezas', 'ok');
+    } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
+    await cargar(); vistaProgramas(c);
+  }
+
   function vistaProgramas(c) {
     c.innerHTML = '<div class="ic-barra"><div style="flex:1"><h1 class="ic-titulo">Programas</h1></div><button class="ic-btn" id="bN">+ Nuevo programa</button></div>' +
       '<div class="ic-tabla-caja"><table class="ic-tabla"><thead><tr><th>Programa</th><th>Público</th><th class="num">Piezas</th></tr></thead><tbody>' +
@@ -276,8 +297,10 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
         U.campo({ name: 'descripcion', label: 'Propósito', t: 'textarea', valor: p.descripcion, c: 'c12', filas: 2 }) +
         U.campo({ name: 'audiencia', label: 'Público', t: 'select', op: [['TODOS', 'Todo el personal'], ['TECNICOS', 'Técnicos']], valor: p.audiencia, vacio: false, c: 'c6' }) +
         U.campo({ name: 'estado', label: 'Estado', t: 'select', op: [['ACTIVO', 'Activo'], ['INACTIVO', 'Inactivo']], valor: p.estado, vacio: false, c: 'c6' }) +
-        '</div><div class="ic-acciones"><button type="button" class="ic-btn sec" id="gNo">Cancelar</button><button class="ic-btn" id="gOk">Guardar</button></div></form>', (cu) => {
+        '</div><div class="ic-acciones">' + (nuevo ? '' : '<button type="button" class="ic-btn peligro" id="gDel" style="margin-right:auto">Eliminar programa</button>') +
+        '<button type="button" class="ic-btn sec" id="gNo">Cancelar</button><button class="ic-btn" id="gOk">Guardar</button></div></form>', (cu) => {
         cu.querySelector('#gNo').onclick = U.cerrarModal;
+        if (!nuevo) cu.querySelector('#gDel').onclick = () => eliminarPrograma(p, c);
         cu.querySelector('#fG').onsubmit = async (ev) => {
           ev.preventDefault(); const v = U.leerForm(cu.querySelector('#fG'));
           if (!U.marcarErrores(cu.querySelector('#fG'), !v.nombre ? { nombre: 'Obligatorio' } : {})) return;
