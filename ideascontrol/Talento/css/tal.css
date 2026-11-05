@@ -35,3 +35,10 @@
 .peligro-txt { color: var(--ic-err) !important; }
 @media (max-width: 900px) { .tal-hoy, .tal-editor { grid-template-columns: 1fr; } .tal-prev { position: static; max-width: 360px; margin: 0 auto; } }
 .ic-barra select { width: auto; min-width: 200px; }
+
+/* Vista del equipo (vista previa desde el editor) */
+.tal-capa{position:fixed;inset:0;background:rgba(16,28,40,.55);z-index:2000;display:flex;align-items:flex-start;justify-content:center;padding:28px 16px;overflow:auto}
+.tal-capa-caja{background:#F4F7FA;border-radius:16px;max-width:1100px;width:100%;padding:18px 20px 22px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.tal-capa-cab{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;font-weight:700;color:#0A5A90}
+.tal-capa .tal-hoy{margin:0}
+.tal-capa button[disabled]{opacity:.55;cursor:not-allowed}

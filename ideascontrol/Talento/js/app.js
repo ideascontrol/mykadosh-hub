@@ -119,6 +119,20 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
     if (b('png')) b('png').onclick = () => Post.descargar(datosPost(p), nombreArchivo(p));
     if (b('copy')) b('copy').onclick = () => copiar(p.copy);
   }
+  // Vista previa de la pieza como la ve el personal en el muro (con los cambios aún sin guardar)
+  function vistaEquipo(p) {
+    const capa = document.createElement('div'); capa.className = 'tal-capa';
+    capa.innerHTML = '<div class="tal-capa-caja"><div class="tal-capa-cab"><span>👁 Vista del equipo · así se verá en el muro' + (publicada(p) ? '' : ' cuando se publique') + '</span><button type="button" class="ic-btn sec chico" id="vCerrar">Volver a editar</button></div>' +
+      '<div class="tal-hoy"><div class="tal-lienzo"><canvas id="cvV"></canvas></div><div class="tal-info">' +
+      fichaPieza(Object.assign({}, p, { Title: p.Title || '_vista' })).replace(/<button class="ic-btn( sec)?" data-acc="(\w+)">/g, '<button class="ic-btn$1" data-acc="$2" disabled title="Solo vista previa">') +
+      '</div></div></div>';
+    document.body.appendChild(capa);
+    Post.dibujar(datosPost(p), capa.querySelector('#cvV'));
+    const cerrar = () => { capa.remove(); document.removeEventListener('keydown', esc_); };
+    const esc_ = (e) => { if (e.key === 'Escape') { e.stopPropagation(); cerrar(); } };
+    capa.querySelector('#vCerrar').onclick = cerrar; capa.onclick = (e) => { if (e.target === capa) cerrar(); };
+    document.addEventListener('keydown', esc_, true);
+  }
   function abrirPieza(p, alCambiar) {
     U.modal(prog(p.programa_id).nombre + ' · ' + (p.etiqueta || ''), '<div class="tal-hoy modal"><div class="tal-lienzo"><canvas id="cvM"></canvas></div><div class="tal-info">' + fichaPieza(p) + '</div></div>', (cu) => {
       Post.dibujar(datosPost(p), cu.querySelector('#cvM'));
@@ -187,7 +201,7 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
       '</div></fieldset><p class="ope-nota">Estado: <b>' + esc(estadoVisible(p)) + '</b>' + (p.Title ? ' · ' + esc(p.Title) : '') + (p._modificado ? ' · modificada ' + esc(U.fmt.fechaHora(p._modificado)) + ' por ' + esc(p._editor) : '') + '</p>' +
       '<div class="ic-acciones">' +
       (!nueva && p.estado !== 'ARCHIVADA' ? '<button type="button" class="ic-btn sec peligro-txt" data-e="ARCHIVADA">Archivar</button>' : '') +
-      '<span style="flex:1"></span><button type="button" class="ic-btn sec" id="pPng">Descargar PNG</button>' +
+      '<span style="flex:1"></span><button type="button" class="ic-btn sec" id="pVer" title="Ver la pieza tal como la verán los empleados en el muro">Ver como el equipo</button><button type="button" class="ic-btn sec" id="pPng">Descargar PNG</button>' +
       (p.estado === 'PROGRAMADA' ? '<button type="button" class="ic-btn sec" data-e="BORRADOR">Volver a borrador</button><button class="ic-btn" data-e="PROGRAMADA">Guardar</button>'
         : '<button type="button" class="ic-btn sec" data-e="BORRADOR">Guardar borrador</button><button type="button" class="ic-btn" data-e="PROGRAMADA">Guardar y programar</button>') +
       '</div></form><div class="tal-prev"><canvas id="cvE"></canvas></div></div>';
@@ -207,6 +221,7 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
       });
       refrescar();
       cu.querySelector('#pPng').onclick = () => Post.descargar(datosPost(leer()), nombreArchivo(leer()));
+      cu.querySelector('#pVer').onclick = () => vistaEquipo(leer());
       f.onsubmit = (ev) => ev.preventDefault();
       cu.querySelectorAll('[data-e]').forEach((b) => {
         b.onclick = async () => {
