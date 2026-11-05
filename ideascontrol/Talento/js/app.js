@@ -163,6 +163,16 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
     const recargar = async () => { await cargar(); vistaPiezas(c); };
     c.querySelector('#bImportar').onclick = () => TalCarga.importar(recargar);
     c.querySelector('#bFechas').onclick = () => TalCarga.asignarFechas(App.filtroProg, recargar);
+    // Piezas programadas antes de existir el correo automático: se les genera la imagen
+    const sinImg = App.piezas.filter((p) => p.estado === 'PROGRAMADA' && !p.imagen_ruta && !publicada(p));
+    if (sinImg.length) {
+      c.querySelector('.ic-barra').insertAdjacentHTML('afterend', '<div class="tal-aviso-img">' + sinImg.length + ' pieza(s) programada(s) aún no tienen la imagen para el correo automático. <button class="ic-btn chico" id="bImgs">Preparar imágenes</button></div>');
+      c.querySelector('#bImgs').onclick = async (e) => {
+        const b = e.target; b.disabled = true;
+        for (let i = 0; i < sinImg.length; i++) { b.textContent = 'Preparando ' + (i + 1) + ' de ' + sinImg.length + '…'; await guardarImagen(sinImg[i]); }
+        U.aviso('Imágenes listas para ' + sinImg.length + ' piezas', 'ok'); await recargar();
+      };
+    }
     c.querySelector('#bProgTodas').onclick = async () => {
       const bor = l.filter((p) => p.estado === 'BORRADOR' && p.fecha_publicacion && p.titular && (p.tipo === 'RESUMEN' || p.mensaje));
       if (!bor.length) { U.aviso('No hay borradores con fecha para programar en este filtro.', 'warn'); return; }

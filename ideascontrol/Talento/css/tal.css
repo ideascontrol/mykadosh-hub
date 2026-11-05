@@ -42,3 +42,5 @@
 .tal-capa-cab{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;font-weight:700;color:#0A5A90}
 .tal-capa .tal-hoy{margin:0}
 .tal-capa button[disabled]{opacity:.55;cursor:not-allowed}
+
+.tal-aviso-img{background:#FBF6E5;border:1px solid #EBD9A0;color:#6B5310;border-radius:10px;padding:10px 14px;margin:0 0 12px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
