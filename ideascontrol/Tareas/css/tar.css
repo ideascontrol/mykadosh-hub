@@ -1,0 +1,36 @@
+/* APP-109 · Seguimiento por cliente */
+.tar-nav { display: flex; gap: 4px; margin-right: 14px; }
+.tar-nav a { padding: 7px 12px; border-radius: 999px; font-weight: 600; font-size: 14px; color: var(--ic-gris); text-decoration: none; }
+.tar-nav a:hover { background: var(--ic-fondo); }
+.tar-nav a.on { background: rgba(14, 118, 188, .1); color: var(--ic-azul); }
+.tar-kpis { grid-template-columns: repeat(5, 1fr); margin-bottom: 18px; }
+.tar-kpi { text-decoration: none; color: inherit; transition: border-color .15s; }
+.tar-kpi:hover { border-color: var(--ic-azul); }
+.tar-kpi.rojo .valor { color: #C0392B; } .tar-kpi.amarillo .valor { color: #B7860B; } .tar-kpi.verde .valor { color: var(--ic-teal); }
+.tar-dos { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; margin-bottom: 16px; }
+.tar-tres { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.tar-tcli tr[data-cli] { cursor: pointer; } .tar-tcli tr[data-cli]:hover td { background: #F5F9FC; }
+.tar-tcli small, .tar-tabla small { font-size: 12px; color: var(--ic-gris); }
+.tar-num { display: inline-block; min-width: 24px; padding: 1px 7px; border-radius: 999px; font-weight: 700; font-size: 13px; text-align: center; }
+.tar-num.rojo { background: #FDECEA; color: #B42318; } .tar-num.amarillo { background: #FFF4D6; color: #8A6100; }
+.tar-barra { height: 7px; background: #E9EEF2; border-radius: 99px; overflow: hidden; flex: 1; }
+.tar-barra i { display: block; height: 100%; background: var(--ic-azul); border-radius: 99px; }
+.tar-barra i.verde { background: var(--ic-teal); }
+.tar-fila-b { display: grid; grid-template-columns: 150px 1fr 34px; align-items: center; gap: 10px; padding: 7px 0; font-size: 14px; }
+.tar-fila-b b { text-align: right; }
+.tar-urg { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid var(--ic-borde); cursor: pointer; }
+.tar-urg:last-child { border-bottom: 0; }
+.tar-urg b { display: block; font-size: 14px; font-weight: 600; } .tar-urg .sec { font-size: 12px; color: var(--ic-gris); }
+.tar-sem { display: inline-block; white-space: nowrap; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+.tar-sem.rojo { background: #FDECEA; color: #B42318; } .tar-sem.amarillo { background: #FFF4D6; color: #8A6100; }
+.tar-sem.verde { background: #E3F4EF; color: #0F766E; } .tar-sem.gris { background: #EEF1F4; color: #5B6770; } .tar-sem.azul { background: #E6F0FA; color: #0A5A90; }
+.tar-estado { display: inline-block; white-space: nowrap; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 6px; background: #EEF1F4; color: #3D4A55; }
+.tar-estado.e-enprogreso { background: #E6F0FA; color: #0A5A90; } .tar-estado.e-abierto { background: #EAF4FF; color: #1B5E9E; }
+.tar-estado.e-pendienteoc { background: #FFF4D6; color: #8A6100; } .tar-estado.e-esperandocliente, .tar-estado.e-esperandoproveedor { background: #F3ECFB; color: #6B3FA0; }
+.tar-estado.e-resuelto, .tar-estado.e-cerrado { background: #E3F4EF; color: #0F766E; } .tar-estado.e-cancelada { background: #F2F2F2; color: #7A7A7A; text-decoration: line-through; }
+.tar-pri { font-size: 12px; font-weight: 700; } .tar-pri.p-alta { color: #B42318; } .tar-pri.p-media { color: #8A6100; } .tar-pri.p-baja { color: #5B6770; }
+.tar-tabla tr[data-id] { cursor: pointer; } .tar-tabla tr[data-id]:hover td { background: #F5F9FC; }
+.tar-tabla td.nw { white-space: nowrap; }
+.tar-sem-form { padding-top: 8px; }
+.ic-alerta.chica { background: #EEF6FB; border: 1px solid #CFE3F1; border-radius: 10px; padding: 10px 12px; margin: 10px 0; font-size: 14px; }
+@media (max-width: 980px) { .tar-kpis { grid-template-columns: repeat(2, 1fr); } .tar-dos, .tar-tres { grid-template-columns: 1fr; } .tar-nav { display: none; } }
