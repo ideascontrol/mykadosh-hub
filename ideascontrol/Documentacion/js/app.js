@@ -233,10 +233,13 @@
 
   // ---------- Documento (visor PDF) ----------
   let blobActual = null;
+  async function urlDescarga(item) {
+    const r = await G.llamar('GET', '/drives/' + driveId + '/items/' + item.id);
+    if (!r['@microsoft.graph.downloadUrl']) throw new Error('SharePoint no entregó el archivo; puede que esté desprotegido (sin publicar)');
+    return r['@microsoft.graph.downloadUrl'];
+  }
   async function contenido(item) {
-    const r = await G.llamar('GET', '/drives/' + driveId + '/items/' + item.id + '?$select=id,@microsoft.graph.downloadUrl');
-    const url = r['@microsoft.graph.downloadUrl'];
-    const res = await fetch(url);
+    const res = await fetch(await urlDescarga(item));
     if (!res.ok) throw new Error('No se pudo descargar el archivo (' + res.status + ')');
     return res.blob();
   }
@@ -260,15 +263,30 @@
         ${sig ? `<a class="sig" href="${urlDoc(sig)}"><small>Siguiente →</small>${esc(sig.codigo)} · ${esc(sig.titulo)}</a>` : `<a class="sig" href="#/area/${d.area.id}"><small>Proceso</small>Volver a ${esc(d.grupo.nombre)}</a>`}</nav>
     </div>`;
     if (!d.pdf) return;
-    contenido(d.pdf).then((b) => {
-      if (location.hash !== urlDoc(d)) return;
+    mostrarPdf(d);
+  }
+  async function mostrarPdf(d) {
+    const visor = () => $('#visor'), sigue = () => location.hash === urlDoc(d);
+    const fallo = (e) => { if (sigue()) visor().innerHTML = `<div class="vacio">No se pudo mostrar el documento aquí${e ? ' (' + esc(e.message) + ')' : ''}.<br><br><a class="btn pri" href="${esc(d.pdf.webUrl)}" target="_blank" rel="noopener">${ico('abrir', 16)}Abrirlo en SharePoint</a></div>`; };
+    // 1) Visor de SharePoint incrustable (no depende del navegador ni del celular)
+    try {
+      const p = await G.llamar('POST', '/drives/' + driveId + '/items/' + d.pdf.id + '/preview', {});
+      if (p && p.getUrl) {
+        if (!sigue()) return;
+        visor().innerHTML = `<iframe title="${esc(d.titulo)}" src="${esc(p.getUrl)}" allowfullscreen></iframe>`;
+        return;
+      }
+    } catch (e) { console.warn('preview', e); }
+    // 2) El PDF directo en el lector del navegador
+    try {
+      const b = await contenido(d.pdf);
+      if (!sigue()) return;
       if (blobActual) URL.revokeObjectURL(blobActual);
       blobActual = URL.createObjectURL(new Blob([b], { type: 'application/pdf' }));
-      const movil = matchMedia('(max-width: 760px)').matches;
-      $('#visor').innerHTML = movil
-        ? `<div class="vacio">En el celular el documento se abre con el lector de PDF del teléfono.<br><br><a class="btn pri" href="${blobActual}" target="_blank" rel="noopener">${ico('leer', 16)}Abrir documento</a></div>`
+      visor().innerHTML = matchMedia('(max-width: 760px)').matches
+        ? `<div class="vacio"><a class="btn pri" href="${blobActual}" target="_blank" rel="noopener">${ico('leer', 16)}Abrir documento</a></div>`
         : `<iframe title="${esc(d.titulo)}" src="${blobActual}#view=FitH&navpanes=0"></iframe>`;
-    }).catch((e) => { $('#visor').innerHTML = `<div class="vacio">No se pudo cargar el documento: ${esc(e.message)}.<br><br><a class="btn sec" href="${esc(d.pdf.webUrl)}" target="_blank" rel="noopener">Abrirlo en SharePoint</a></div>`; });
+    } catch (e) { console.warn('pdf', e); fallo(e); }
   }
 
   // Descarga de plantillas (Word) con su nombre
@@ -277,9 +295,12 @@
     const d = DOCS.find((x) => x.codigo === b.dataset.bajar); if (!d || !d.plantilla) return;
     const txt = b.innerHTML; b.disabled = true; b.textContent = 'Descargando…';
     try {
-      const blob = await contenido(d.plantilla);
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = d.plantilla.nombre;
-      document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+      const url = await urlDescarga(d.plantilla);
+      let href = url, blob = null;
+      try { const r = await fetch(url); if (r.ok) blob = await r.blob(); } catch (e) { /* el navegador no dejó leerlo: se descarga directo */ }
+      if (blob) href = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = href; a.download = d.plantilla.nombre;
+      document.body.appendChild(a); a.click(); setTimeout(() => { if (blob) URL.revokeObjectURL(href); a.remove(); }, 800);
     } catch (err) { alert('No se pudo descargar la plantilla: ' + err.message); }
     b.disabled = false; b.innerHTML = txt;
   });
