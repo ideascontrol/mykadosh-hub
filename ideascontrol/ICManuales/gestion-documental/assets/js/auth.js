@@ -27,6 +27,11 @@ window.GDAuth = (function () {
     for (const b of new TextEncoder().encode(s)) { h ^= b; h = Math.imul(h, 0x01000193) >>> 0; }
     return h.toString(16).padStart(8, '0');
   }
+  // Sesión de Microsoft 365: la deja la app Gestión documental (/ideascontrol/Documentacion/) al entrar con la cuenta de IC
+  const CLAVE_M365 = 'ic_doc_m365', APP_DOCS = '/ideascontrol/Documentacion/';
+  function sesionM365() {
+    try { const s = JSON.parse(localStorage.getItem(CLAVE_M365) || 'null'); return s && s.vence > Date.now() ? s : null; } catch { return null; }
+  }
   const leer = (st) => { try { return JSON.parse(st.getItem(CLAVE_SESION) || 'null'); } catch { return null; } };
   function sesion() {
     const s = leer(sessionStorage) || leer(localStorage);
@@ -45,18 +50,21 @@ window.GDAuth = (function () {
   // Ruta relativa a la raíz del portal (las páginas de documentos están en /documentos/)
   const base = () => (/\/documentos\/[^/]*$/.test(location.pathname) ? '../' : '');
   function cerrarSesion(redirigir = true) {
-    try { sessionStorage.removeItem(CLAVE_SESION); localStorage.removeItem(CLAVE_SESION); } catch { }
-    if (redirigir) location.href = base() + 'login.html';
+    try { sessionStorage.removeItem(CLAVE_SESION); localStorage.removeItem(CLAVE_SESION); localStorage.removeItem(CLAVE_M365); } catch { }
+    if (redirigir) location.href = APP_DOCS;
   }
   function usuarioActual() {
+    const m = sesionM365();
+    if (m) return { nombre: m.nombre || NOMBRE, email: m.email, rol: 'consulta', areas: '*', m365: true };
     const s = sesion();
     return s ? { nombre: s.nombre || NOMBRE, rol: 'consulta', areas: '*' } : null;
   }
   function proteger() {
     const u = usuarioActual();
     if (!u) {
-      const volver = location.pathname.split('/').slice(base() ? -2 : -1).join('/') + location.search + location.hash;
-      location.replace(base() + 'login.html?volver=' + encodeURIComponent(volver));
+      // Sin sesión: se entra con la cuenta de Microsoft desde Gestión documental (ya no con clave compartida)
+      try { sessionStorage.setItem('ic_doc_volver', location.href); } catch { }
+      location.replace(APP_DOCS);
       return null;
     }
     document.documentElement.classList.add('gd-auth-ok');

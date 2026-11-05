@@ -74,7 +74,7 @@
   function encabezado(usuario, subtitulo) {
     const ini = (usuario?.nombre || '?').split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
     return `<header class="top"><div class="wrap">
-      <a class="logo" href="${B}index.html" aria-label="Inicio"><img src="${B}assets/img/ideascontrol.webp" alt="Ideas Control Equipos y Soluciones S.A.S."></a>
+      <a class="logo" href="${APP_DOCS}" aria-label="Inicio"><img src="${B}assets/img/ideascontrol.webp" alt="Ideas Control Equipos y Soluciones S.A.S."></a>
       <div class="sistema"><b>Gestión Documental</b><span>${esc(subtitulo || 'Sistema de documentación interna')}</span></div>
       <div class="usuario">${/^ic_/.test(window.name || '') ? '<button type="button" class="salir" onclick="GD.volverPortal()" title="Cerrar esta pestaña y volver al portal de microapps">← Portal</button>' : ''}<span>${esc(usuario?.nombre || '')}</span><i>${esc(ini)}</i><button type="button" class="salir" onclick="GDAuth.cerrarSesion()" title="Cerrar sesión">Salir</button></div>
     </div></header>`;
@@ -109,7 +109,9 @@
       <span><b>${esc(h.titulo)}</b><small>${esc(h.resumen)}</small></span></a>`).join('');
 
   /* ---------- Portal principal ---------- */
+  const APP_DOCS = '/ideascontrol/Documentacion/';
   function iniciarPortal() {
+    location.replace(APP_DOCS); return;    // el portal de consulta ahora está en SharePoint (Gestión documental)
     const u = GDAuth.proteger(); if (!u) return;
     document.body.insertAdjacentHTML('afterbegin', encabezado(u));
     const pubs = publicados();
@@ -162,6 +164,7 @@
 
   /* ---------- Página de área ---------- */
   function iniciarArea() {
+    location.replace(APP_DOCS + '#/area/' + encodeURIComponent(document.body.dataset.area || '')); return;
     const u = GDAuth.proteger(); if (!u) return;
     const area = C.areas.find(a => a.id === document.body.dataset.area);
     if (!area || !GDAuth.puedeVerArea(area.id)) { location.href = 'index.html'; return; }
@@ -238,6 +241,7 @@
 
   /* ---------- Documento HTML de lectura (documentos/*.html) ---------- */
   function iniciarDocumento() {
+    location.replace(APP_DOCS + '#/doc/' + encodeURIComponent(document.body.dataset.doc || '')); return;
     const u = GDAuth.proteger(); if (!u) return;
     const d = buscarPorCodigo(document.body.dataset.doc);
     if (!d || d.estado !== 'publicado' || !GDAuth.puedeVerArea(d.area.id)) { location.href = B + 'index.html'; return; }

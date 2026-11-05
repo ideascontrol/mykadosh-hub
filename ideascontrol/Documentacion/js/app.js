@@ -124,7 +124,7 @@
       <div class="usuario">${IC.portal.desdePortal() ? '<button type="button" class="salir" id="bPortal" title="Cerrar esta pestaña y volver al portal de microapps">← Portal</button>' : '<a class="salir" href="' + IC.portal.URL_PORTAL + '">Portal</a>'}
         <span>${esc(usuario.nombre)}</span><i title="${esc(usuario.email)}">${esc(ini)}</i><button type="button" class="salir" id="bSalir" title="Cerrar sesión">Salir</button></div></div>`;
     const bp = $('#bPortal'); if (bp) bp.onclick = () => IC.portal.volver();
-    $('#bSalir').onclick = () => IC.auth.salir();
+    $('#bSalir').onclick = () => { try { localStorage.removeItem('ic_doc_m365'); } catch (e) { /* sin almacenamiento */ } IC.auth.salir(); };
   }
   function pie() {
     if ($('footer.pie-sitio')) return;
@@ -138,7 +138,7 @@
     input.addEventListener('keydown', (e) => { if (e.key === 'Escape') { input.value = ''; fn(''); } });
   }
   document.addEventListener('keydown', (e) => { const q = $('#q'); if (e.key === '/' && q && document.activeElement !== q && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) { e.preventDefault(); q.focus(); } });
-  const tarjetasHerr = (lista) => lista.map((h) => `<a class="tool" href="${CFG.herramientasBase + h.pagina}" target="_blank" rel="noopener"><span class="tool-ico">${ico(h.icono, 20)}</span>
+  const tarjetasHerr = (lista) => lista.map((h) => `<a class="tool" href="${CFG.herramientasBase + h.pagina}"><span class="tool-ico">${ico(h.icono, 20)}</span>
       <span><b>${esc(h.titulo)}</b><small>${esc(h.resumen)}</small></span></a>`).join('');
 
   // ---------- Inicio ----------
@@ -319,6 +319,10 @@
       usuario = { nombre: cuenta.name || cuenta.username, email: String(cuenta.username || '').toLowerCase() };
       await cargar();
       try { sessionStorage.removeItem('ic_volver_url'); } catch (e) { /* sin almacenamiento */ }
+      // Las herramientas de consulta (generador, mantenimiento, evaluación…) usan esta sesión en lugar de la clave
+      try { localStorage.setItem('ic_doc_m365', JSON.stringify({ nombre: usuario.nombre, email: usuario.email, vence: Date.now() + 12 * 36e5 })); } catch (e) { /* sin almacenamiento */ }
+      let volverHerr = null; try { volverHerr = sessionStorage.getItem('ic_doc_volver'); sessionStorage.removeItem('ic_doc_volver'); } catch (e) { /* sin almacenamiento */ }
+      if (volverHerr && volverHerr.indexOf(location.origin + CFG.herramientasBase) === 0) { location.replace(volverHerr); return; }
       pie();
       window.addEventListener('hashchange', rutear); rutear();
     } catch (e) {
