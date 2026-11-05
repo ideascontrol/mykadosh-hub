@@ -168,7 +168,11 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
       if (!bor.length) { U.aviso('No hay borradores con fecha para programar en este filtro.', 'warn'); return; }
       if (!(await U.confirmar('Programar ' + bor.length + ' piezas', 'Se programarán todos los borradores con fecha' + (App.filtroProg ? ' de este programa' : '') + '. Cada uno se publica en su fecha y hora:\n\n' +
         bor.map((p) => '• ' + (p.etiqueta || '') + ' — ' + fechaTexto(p.fecha_publicacion, true)).join('\n') + '\n\nPuede editarlas o volverlas a borrador después.', 'Programar'))) return;
-      try { for (const p of bor) await G.actualizar('TAL_Piezas', p._id, { estado: 'PROGRAMADA' }, p._etag); U.aviso(bor.length + ' piezas programadas', 'ok'); }
+      try {
+        U.aviso('Programando ' + bor.length + ' piezas…', 'info', 3000);
+        for (const p of bor) { await G.actualizar('TAL_Piezas', p._id, { estado: 'PROGRAMADA' }, p._etag); await guardarImagen(p); }
+        U.aviso(bor.length + ' piezas programadas', 'ok');
+      }
       catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
       await cargar(); vistaPiezas(c);
     };
@@ -237,11 +241,13 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
             fecha_publicacion: unir(v.fecha, v.hora) || null, estado };
           try {
             await U.conCarga(b, async () => {
+              let id = p._id;
               if (nueva) {
                 const n = await G.siguiente('TAL'); campos.Title = 'PZ-' + pad(n, 5);
                 Object.keys(campos).forEach((k) => { if (campos[k] === null || campos[k] === '') delete campos[k]; });
-                await G.crear('TAL_Piezas', campos);
+                id = (await G.crear('TAL_Piezas', campos))._id;
               } else await G.actualizar('TAL_Piezas', p._id, campos, p._etag);
+              if (estado === 'PROGRAMADA') await guardarImagen(Object.assign({}, p, campos, { _id: id }));
             });
             U.aviso(estado === 'PROGRAMADA' ? 'Programada: se publica ' + fechaTexto(campos.fecha_publicacion, true) : estado === 'ARCHIVADA' ? 'Pieza archivada' : 'Borrador guardado', 'ok', 6000);
             U.cerrarModal(); await cargar(); alCambiar();
@@ -249,6 +255,21 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
         };
       });
     });
+  }
+
+  // Imagen del post en SharePoint (IC Apps › Documentos › Talento) para el correo automático de Power Automate
+  let rutaBiblioteca = null;
+  async function guardarImagen(p) {
+    try {
+      if (rutaBiblioteca === null) {
+        const d = await G.llamar('GET', '/sites/' + await G.sitio(CFG.sitio.host, CFG.sitio.ruta) + '/drive?$select=webUrl');
+        rutaBiblioteca = decodeURIComponent(new URL(d.webUrl).pathname).replace(CFG.sitio.ruta, '');   // p. ej. /Shared Documents
+      }
+      const cv = await Post.dibujar(datosPost(p));
+      const blob = await new Promise((ok) => cv.toBlob(ok, 'image/jpeg', 0.9));   // JPEG: más liviano para el correo
+      await G.subirArchivo('Talento/' + p.Title + '.jpg', blob);
+      await G.actualizar('TAL_Piezas', p._id, { imagen_ruta: rutaBiblioteca + '/Talento/' + p.Title + '.jpg' });
+    } catch (e) { console.warn('imagen', e); U.aviso('La pieza quedó programada, pero no se pudo guardar su imagen para el correo: ' + U.mensajeError(e), 'warn', 9000); }
   }
 
   // =====================================================================

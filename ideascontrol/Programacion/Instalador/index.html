@@ -160,7 +160,8 @@ const LISTAS = [
     ['nombre', 't'], ['descripcion', 'm'], ['audiencia', 'c', ['TODOS', 'TECNICOS']], ['orden', 'n'], ['estado', 'c', ESTADO]] },
   { n: 'TAL_Piezas', title: 'pieza_id', d: 'Piezas (posts) de cada programa: textos, fecha de publicación y estado', cols: [
     ['programa_id', 't', null, 1], ['tipo', 'c', ['TIP', 'RESUMEN']], ['etiqueta', 't'], ['orden', 'n'], ['titular', 't'], ['mensaje', 'm'], ['items', 'm'], ['desde_numero', 'n'],
-    ['copy', 'm'], ['accion', 'm'], ['tam_titular', 'n'], ['fecha_publicacion', 'dt', null, 1], ['estado', 'c', ['BORRADOR', 'PROGRAMADA', 'ARCHIVADA'], 1]] },
+    ['copy', 'm'], ['accion', 'm'], ['tam_titular', 'n'], ['fecha_publicacion', 'dt', null, 1], ['estado', 'c', ['BORRADOR', 'PROGRAMADA', 'ARCHIVADA'], 1],
+    ['imagen_ruta', 't'], ['correo_enviado', 'dt']] },
   { n: 'TAL_Lecturas', title: 'lectura_id', d: 'Quién marcó «Entendido» en cada pieza', cols: [
     ['pieza_id', 't', null, 1], ['programa_id', 't'], ['email', 't', null, 1], ['nombre', 't'], ['fecha_hora', 'dt']] }
 ];
