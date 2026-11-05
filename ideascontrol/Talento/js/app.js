@@ -149,6 +149,7 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
     c.innerHTML = '<div class="ic-barra"><div style="flex:1"><h1 class="ic-titulo">Piezas</h1><p class="ic-subtitulo" style="margin:0">Edite, programe y revise cada pieza antes de que se publique.</p></div>' +
       '<select id="fProg"><option value="">Todos los programas</option>' + App.programas.map((p) => '<option value="' + esc(p.Title) + '"' + (p.Title === App.filtroProg ? ' selected' : '') + '>' + esc(p.nombre) + '</option>').join('') + '</select>' +
       '<button class="ic-btn sec" id="bImportar" title="Cargar muchas piezas desde un Excel">Carga masiva</button><button class="ic-btn sec" id="bFechas" title="Repartir los borradores sin fecha en días y hora">Asignar fechas</button>' +
+      '<button class="ic-btn sec" id="bMover" title="Aplazar o adelantar las piezas pendientes de un programa">Mover fechas</button>' +
       '<button class="ic-btn sec" id="bProgTodas">Programar borradores</button><button class="ic-btn" id="bNueva">+ Nueva pieza</button></div>' +
       '<div class="ic-tabla-caja ope-scroll"><table class="ic-tabla"><thead><tr><th style="width:90px"></th><th>Pieza</th><th>Publicación</th><th>Estado</th><th class="num">Entendido</th></tr></thead><tbody>' +
       (l.length ? l.map((p) => {
@@ -163,6 +164,7 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
     const recargar = async () => { await cargar(); vistaPiezas(c); };
     c.querySelector('#bImportar').onclick = () => TalCarga.importar(recargar);
     c.querySelector('#bFechas').onclick = () => TalCarga.asignarFechas(App.filtroProg, recargar);
+    c.querySelector('#bMover').onclick = () => TalCarga.moverFechas(App.filtroProg, recargar);
     // Piezas programadas antes de existir el correo automático: se les genera la imagen
     const sinImg = App.piezas.filter((p) => p.estado === 'PROGRAMADA' && !p.imagen_ruta && !publicada(p));
     if (sinImg.length) {

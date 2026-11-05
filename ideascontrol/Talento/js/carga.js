@@ -170,6 +170,7 @@ window.TalCarga = (function () {
     U.modal('Asignar fechas a borradores', '<form class="ic-form" id="fFe"><p style="margin-top:0">Se asignan fechas a los borradores <b>sin fecha</b> del programa, en su orden. Siguen en borrador: revíselos y luego use «Programar borradores».</p><div class="ic-campos">' +
       U.campo({ name: 'programa', label: 'Programa', t: 'select', op: progs.map((p) => [p.Title, p.nombre]), valor: sel, vacio: false, c: 'c12' }) +
       U.campo({ name: 'desde', label: 'Desde', t: 'date', valor: hoyIso, req: true, c: 'c6' }) +
+      U.campo({ name: 'hasta', label: 'Hasta (opcional)', t: 'date', valor: '', c: 'c6', ayuda: 'Si la pone, solo se asignan las piezas que caben hasta ese día; las demás siguen sin fecha.' }) +
       U.campo({ name: 'hora', label: 'Hora', t: 'time', valor: CFG.horaPieza || '08:10', req: true, c: 'c6' }) +
       '<div class="ic-campo c12"><label>Días</label><div style="display:flex;gap:12px;flex-wrap:wrap">' + DIAS.map(([v, t]) => '<label class="ic-check"><input type="checkbox" data-dia="' + v + '"' + ('135'.includes(v) ? ' checked' : '') + '> <span>' + t + '</span></label>').join('') + '</div></div>' +
       '</div><div id="fePrev" style="margin-top:10px;font-size:13px"></div><div class="ic-acciones"><button type="button" class="ic-btn sec" id="feNo">Cancelar</button><button type="button" class="ic-btn" id="feOk">Asignar fechas</button></div></form>', (cu) => {
@@ -180,12 +181,13 @@ window.TalCarga = (function () {
         if (!v.desde || !dias.length) return { lista: [], fechas: [] };
         const [hh, mm] = String(v.hora || '08:10').split(':').map(Number);
         const d = new Date(v.desde + 'T00:00:00'), fechas = [];
-        while (fechas.length < lista.length) { if (dias.includes(d.getDay())) fechas.push(new Date(d.getFullYear(), d.getMonth(), d.getDate(), hh, mm)); d.setDate(d.getDate() + 1); }
-        return { lista, fechas };
+        const tope = v.hasta ? new Date(v.hasta + 'T23:59:59') : null;
+        while (fechas.length < lista.length && (!tope || d <= tope)) { if (dias.includes(d.getDay())) fechas.push(new Date(d.getFullYear(), d.getMonth(), d.getDate(), hh, mm)); d.setDate(d.getDate() + 1); }
+        return { lista: lista.slice(0, fechas.length), fechas, total: lista.length };
       };
       const vista = () => {
-        const { lista, fechas } = calcular();
-        cu.querySelector('#fePrev').innerHTML = lista.length ? '<b>' + lista.length + '</b> piezas: del ' + esc(fechas[0].toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })) + ' al ' + esc(fechas[fechas.length - 1].toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })) + '.' : 'Elija al menos un día.';
+        const { lista, fechas, total } = calcular();
+        cu.querySelector('#fePrev').innerHTML = lista.length ? '<b>' + lista.length + '</b> de ' + total + ' piezas: del ' + esc(fechas[0].toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })) + ' al ' + esc(fechas[fechas.length - 1].toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })) + '.' + (total > lista.length ? ' Las otras ' + (total - lista.length) + ' siguen sin fecha.' : '') : 'No hay días disponibles con esos datos.';
       };
       f.addEventListener('change', vista); f.addEventListener('input', vista); vista();
       cu.querySelector('#feNo').onclick = U.cerrarModal;
@@ -200,5 +202,48 @@ window.TalCarga = (function () {
       };
     });
   }
-  return { importar, asignarFechas, plantilla };
+  // ---------- Mover fechas de un programa (aplazar o adelantar) ----------
+  function moverFechas(programaId, alTerminar) {
+    const ahora = new Date();
+    const pend = (pid) => App.piezas.filter((x) => x.programa_id === pid && x.fecha_publicacion && new Date(x.fecha_publicacion) > ahora && x.estado !== 'ARCHIVADA')
+      .sort((a, b) => String(a.fecha_publicacion).localeCompare(String(b.fecha_publicacion)));
+    const progs = App.programas.filter((p) => pend(p.Title).length);
+    if (!progs.length) { U.aviso('No hay piezas con fechas futuras para mover.', 'warn'); return; }
+    const sel = progs.find((p) => p.Title === programaId) ? programaId : progs[0].Title;
+    const iso = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    U.modal('Mover fechas de un programa', '<form class="ic-form" id="fMv"><p style="margin-top:0">Corre todas las piezas <b>aún no publicadas</b> del programa, conservando su hora, su día de la semana y su estado.</p><div class="ic-campos">' +
+      U.campo({ name: 'programa', label: 'Programa', t: 'select', op: progs.map((p) => [p.Title, p.nombre]), valor: sel, vacio: false, c: 'c12' }) +
+      U.campo({ name: 'nueva', label: 'La primera pieza pasa a', t: 'date', valor: '', req: true, c: 'c6' }) +
+      '</div><div id="mvPrev" style="margin-top:10px;font-size:13px"></div><div class="ic-acciones"><button type="button" class="ic-btn sec" id="mvNo">Cancelar</button><button type="button" class="ic-btn" id="mvOk">Mover fechas</button></div></form>', (cu) => {
+      const f = cu.querySelector('#fMv');
+      const calcular = () => {
+        const v = U.leerForm(f), lista = pend(v.programa);
+        if (!lista.length) return { lista, dias: 0 };
+        const primera = new Date(lista[0].fecha_publicacion);
+        if (!f.nueva.value) f.nueva.value = iso(new Date(primera.getTime() + 7 * 864e5));
+        const objetivo = new Date(f.nueva.value + 'T00:00:00'), base = new Date(primera.getFullYear(), primera.getMonth(), primera.getDate());
+        return { lista, dias: Math.round((objetivo - base) / 864e5), primera };
+      };
+      const vista = () => {
+        const { lista, dias, primera } = calcular(); if (!lista.length) return;
+        const ult = new Date(new Date(lista[lista.length - 1].fecha_publicacion).getTime() + dias * 864e5);
+        cu.querySelector('#mvPrev').innerHTML = '<b>' + lista.length + '</b> piezas se corren <b>' + Math.abs(dias) + ' día(s) ' + (dias >= 0 ? 'después' : 'antes') + '</b>: hoy la primera es el ' +
+          esc(primera.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })) + '; quedarán del ' +
+          esc(new Date(primera.getTime() + dias * 864e5).toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })) + ' al ' + esc(ult.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })) + '.' +
+          (dias % 7 ? '<br><span style="color:#8a6d0f">Ojo: no es un múltiplo de 7 días, así que cambia el día de la semana.</span>' : '');
+      };
+      f.addEventListener('change', (e) => { if (e.target.name === 'programa') f.nueva.value = ''; vista(); }); f.addEventListener('input', vista); vista();
+      cu.querySelector('#mvNo').onclick = U.cerrarModal;
+      cu.querySelector('#mvOk').onclick = async () => {
+        const { lista, dias } = calcular(); if (!lista.length || !dias) { U.cerrarModal(); return; }
+        try {
+          await U.conCarga(cu.querySelector('#mvOk'), async () => {
+            for (const x of lista) await G.actualizar('TAL_Piezas', x._id, { fecha_publicacion: new Date(new Date(x.fecha_publicacion).getTime() + dias * 864e5).toISOString(), correo_enviado: null }, x._etag);
+          });
+          U.cerrarModal(); U.aviso(lista.length + ' piezas movidas', 'ok'); await alTerminar();
+        } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
+      };
+    });
+  }
+  return { importar, asignarFechas, moverFechas, plantilla };
 })();
