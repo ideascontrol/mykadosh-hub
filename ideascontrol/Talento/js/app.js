@@ -214,6 +214,7 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
       U.campo({ name: 'orden', label: 'N° de orden', valor: p.orden, c: 'c4', modo: 'numeric' }) +
       '</div></fieldset><p class="ope-nota">Estado: <b>' + esc(estadoVisible(p)) + '</b>' + (p.Title ? ' · ' + esc(p.Title) : '') + (p._modificado ? ' · modificada ' + esc(U.fmt.fechaHora(p._modificado)) + ' por ' + esc(p._editor) : '') + '</p>' +
       '<div class="ic-acciones">' +
+      (!nueva ? '<button type="button" class="ic-btn peligro" id="pDel" title="Eliminar la pieza definitivamente">Eliminar</button>' : '') +
       (!nueva && p.estado !== 'ARCHIVADA' ? '<button type="button" class="ic-btn sec peligro-txt" data-e="ARCHIVADA">Archivar</button>' : '') +
       '<span style="flex:1"></span><button type="button" class="ic-btn sec" id="pVer" title="Ver la pieza tal como la verán los empleados en el muro">Ver como el equipo</button><button type="button" class="ic-btn sec" id="pPng">Descargar PNG</button>' +
       (p.estado === 'PROGRAMADA' ? '<button type="button" class="ic-btn sec" data-e="BORRADOR">Volver a borrador</button><button class="ic-btn" data-e="PROGRAMADA">Guardar</button>'
@@ -236,6 +237,19 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
       refrescar();
       cu.querySelector('#pPng').onclick = () => Post.descargar(datosPost(leer()), nombreArchivo(leer()));
       cu.querySelector('#pVer').onclick = () => vistaEquipo(leer());
+      const bDel = cu.querySelector('#pDel');
+      if (bDel) bDel.onclick = async () => {
+        const lect = App.lecturas.filter((l) => l.pieza_id === p.Title);
+        U.cerrarModal();
+        const ok = await U.confirmar('Eliminar pieza', '«' + (p.titular || p.Title) + '» se eliminará definitivamente' + (publicada(p) ? ' y desaparecerá del muro' : '') + (lect.length ? ', junto con ' + lect.length + ' registro(s) de «Entendido»' : '') + '.\n\nEsta acción no se puede deshacer.', 'Eliminar', true);
+        if (!ok) { editor(p, alCambiar); return; }
+        try {
+          for (const l of lect) await G.eliminar('TAL_Lecturas', l._id);
+          await G.eliminar('TAL_Piezas', p._id);
+          U.aviso('Pieza eliminada', 'ok');
+        } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
+        await cargar(); alCambiar();
+      };
       f.onsubmit = (ev) => ev.preventDefault();
       cu.querySelectorAll('[data-e]').forEach((b) => {
         b.onclick = async () => {
