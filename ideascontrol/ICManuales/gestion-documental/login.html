@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
+<script>
+/* La clave compartida se retiró: se entra con la cuenta de Microsoft desde Gestión documental, que devuelve a la página pedida */
+(function () {
+  var v = new URLSearchParams(location.search).get('volver');
+  try { if (v && !/^(https?:)?\/\//.test(v)) sessionStorage.setItem('ic_doc_volver', new URL(v, location.href).href); } catch (e) {}
+  location.replace('/ideascontrol/Documentacion/');
+})();
+</script>
 <title>Ingresar · Gestión Documental · Ideas Control</title>
 <link rel="icon" href="assets/img/ideascontrol.webp">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
