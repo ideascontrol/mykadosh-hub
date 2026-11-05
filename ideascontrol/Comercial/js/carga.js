@@ -43,7 +43,7 @@
   };
   // ⚠ CARGA PROVISIONAL (nov 2026): permite cargar empresas y contactos con datos incompletos.
   //   Lo que falta se muestra como «Pendiente» y no impide la carga. Volver a false para exigir todo.
-  const CARGA_PROVISIONAL = true;
+  const CARGA_PROVISIONAL = false;
   const PROVISIONAL_OBLIG = { EMPRESAS: ['tipo_id_fiscal', 'nit', 'razon_social', 'estado_comercial'], CONTACTOS: ['nit_empresa', 'nombres'] };
   const NIT_PROVISIONAL = /^99990\d{4}$/;   // NIT de relleno mientras se consigue el real
   const NOMBRE_CAMPO = { tipo_id_fiscal: 'Tipo identificación', nit: 'NIT', razon_social: 'Razón social', ciudad: 'Ciudad', telefono: 'Teléfono',
