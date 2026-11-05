@@ -255,7 +255,7 @@
       <section class="dv-cab">
         <div><div class="meta"><span class="cod">${esc(d.codigo)}</span><span class="tipo ${esc(d.tipo)}">${esc(TIPOS[d.tipo] || d.tipo)}</span>${d.version ? `<span>v${esc(d.version)}</span>` : ''}${chipVig}</div>
           <h1>${esc(d.titulo)}</h1>${d.resumen ? `<p>${esc(d.resumen)}</p>` : ''}</div>
-        <div class="dv-acc">${btnPlantilla(d, 'pri')}${d.pdf ? `<a class="btn sec" href="${esc(d.pdf.webUrl)}" target="_blank" rel="noopener" title="Abrir el archivo en SharePoint">${ico('abrir', 16)}Abrir en SharePoint</a>` : ''}</div>
+        <div class="dv-acc">${btnPlantilla(d, 'pri')}${d.pdf ? `<button type="button" class="btn sec" id="bCompleta" title="Ver el documento en pantalla completa">${ico('leer', 16)}Pantalla completa</button>` : ''}${d.pdf ? `<a class="btn sec" href="${esc(d.pdf.webUrl)}" target="_blank" rel="noopener" title="Abrir el archivo en SharePoint">${ico('abrir', 16)}Abrir en SharePoint</a>` : ''}</div>
       </section>
       <dl class="dv-ficha">${ficha.map(([a, b]) => `<div><dt>${esc(a)}</dt><dd>${esc(b)}</dd></div>`).join('')}</dl>
       <div class="dv-visor" id="visor">${d.pdf ? '<div class="dv-cargando"><span></span>Cargando el documento…</div>' : '<div class="vacio">Este formato se consulta con su plantilla en Word.</div>'}</div>
@@ -263,30 +263,39 @@
         ${sig ? `<a class="sig" href="${urlDoc(sig)}"><small>Siguiente →</small>${esc(sig.codigo)} · ${esc(sig.titulo)}</a>` : `<a class="sig" href="#/area/${d.area.id}"><small>Proceso</small>Volver a ${esc(d.grupo.nombre)}</a>`}</nav>
     </div>`;
     if (!d.pdf) return;
+    $('#bCompleta').onclick = pantallaCompleta;
     mostrarPdf(d);
   }
   async function mostrarPdf(d) {
     const visor = () => $('#visor'), sigue = () => location.hash === urlDoc(d);
     const fallo = (e) => { if (sigue()) visor().innerHTML = `<div class="vacio">No se pudo mostrar el documento aquí${e ? ' (' + esc(e.message) + ')' : ''}.<br><br><a class="btn pri" href="${esc(d.pdf.webUrl)}" target="_blank" rel="noopener">${ico('abrir', 16)}Abrirlo en SharePoint</a></div>`; };
-    // 1) Visor de SharePoint incrustable (no depende del navegador ni del celular)
-    try {
-      const p = await G.llamar('POST', '/drives/' + driveId + '/items/' + d.pdf.id + '/preview', {});
-      if (p && p.getUrl) {
-        if (!sigue()) return;
-        visor().innerHTML = `<iframe title="${esc(d.titulo)}" src="${esc(p.getUrl)}" allowfullscreen></iframe>`;
-        return;
-      }
-    } catch (e) { console.warn('preview', e); }
-    // 2) El PDF directo en el lector del navegador
-    try {
+    const movil = matchMedia('(max-width: 760px)').matches;
+    // Lector de PDF del navegador: ocupa todo el ancho (mejor en computador)
+    const lectorNavegador = async () => {
       const b = await contenido(d.pdf);
-      if (!sigue()) return;
+      if (!sigue()) return true;
       if (blobActual) URL.revokeObjectURL(blobActual);
       blobActual = URL.createObjectURL(new Blob([b], { type: 'application/pdf' }));
-      visor().innerHTML = matchMedia('(max-width: 760px)').matches
+      visor().innerHTML = movil
         ? `<div class="vacio"><a class="btn pri" href="${blobActual}" target="_blank" rel="noopener">${ico('leer', 16)}Abrir documento</a></div>`
-        : `<iframe title="${esc(d.titulo)}" src="${blobActual}#view=FitH&navpanes=0"></iframe>`;
-    } catch (e) { console.warn('pdf', e); fallo(e); }
+        : `<iframe title="${esc(d.titulo)}" src="${blobActual}#view=FitH&navpanes=0" allowfullscreen></iframe>`;
+      return true;
+    };
+    // Visor de SharePoint incrustable (mejor en el celular)
+    const visorSharePoint = async () => {
+      const p = await G.llamar('POST', '/drives/' + driveId + '/items/' + d.pdf.id + '/preview', {});
+      if (!p || !p.getUrl) throw new Error('sin visor');
+      if (sigue()) visor().innerHTML = `<iframe title="${esc(d.titulo)}" src="${esc(p.getUrl)}" allowfullscreen></iframe>`;
+      return true;
+    };
+    const orden = movil ? [visorSharePoint, lectorNavegador] : [lectorNavegador, visorSharePoint];
+    let ultimo = null;
+    for (const f of orden) { try { if (await f()) return; } catch (e) { console.warn(e); ultimo = e; } }
+    fallo(ultimo);
+  }
+  function pantallaCompleta() {
+    const f = $('#visor iframe'); if (!f) return;
+    (f.requestFullscreen || f.webkitRequestFullscreen || (() => {})).call(f);
   }
 
   // Descarga de plantillas (Word) con su nombre
