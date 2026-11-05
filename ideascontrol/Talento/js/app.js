@@ -249,6 +249,8 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
           const campos = { programa_id: v.programa_id, tipo: v.tipo, etiqueta: v.etiqueta, orden: v.orden === '' ? null : Number(v.orden), tam_titular: v.tam_titular === '' ? null : v.tam_titular,
             titular: v.titular, mensaje: v.tipo === 'RESUMEN' ? '' : v.mensaje, items: v.tipo === 'RESUMEN' ? v.items : '', copy: v.copy, accion: v.accion,
             fecha_publicacion: unir(v.fecha, v.hora) || null, estado };
+          // Si vuelve a borrador o cambia la fecha, el correo automático se podrá enviar de nuevo
+          if (!nueva && p.correo_enviado && (estado === 'BORRADOR' || new Date(campos.fecha_publicacion || 0).getTime() !== new Date(p.fecha_publicacion || 0).getTime())) campos.correo_enviado = null;
           try {
             await U.conCarga(b, async () => {
               let id = p._id;
