@@ -232,17 +232,12 @@
   }
 
   // ---------- Documento (visor PDF) ----------
-  let blobActual = null;
-  async function urlDescarga(item) {
+    async function urlDescarga(item) {
     const r = await G.llamar('GET', '/drives/' + driveId + '/items/' + item.id);
     if (!r['@microsoft.graph.downloadUrl']) throw new Error('SharePoint no entregó el archivo; puede que esté desprotegido (sin publicar)');
     return r['@microsoft.graph.downloadUrl'];
   }
-  async function contenido(item) {
-    const res = await fetch(await urlDescarga(item));
-    if (!res.ok) throw new Error('No se pudo descargar el archivo (' + res.status + ')');
-    return res.blob();
-  }
+
   function vistaDoc(main, codigo) {
     const d = DOCS.find((x) => x.codigo === codigo);
     if (!d) { location.hash = '#/'; return; }
@@ -255,7 +250,7 @@
       <section class="dv-cab">
         <div><div class="meta"><span class="cod">${esc(d.codigo)}</span><span class="tipo ${esc(d.tipo)}">${esc(TIPOS[d.tipo] || d.tipo)}</span>${d.version ? `<span>v${esc(d.version)}</span>` : ''}${chipVig}</div>
           <h1>${esc(d.titulo)}</h1>${d.resumen ? `<p>${esc(d.resumen)}</p>` : ''}</div>
-        <div class="dv-acc">${btnPlantilla(d, 'pri')}${d.pdf ? `<button type="button" class="btn sec" id="bCompleta" title="Ver el documento en pantalla completa">${ico('leer', 16)}Pantalla completa</button>` : ''}${d.pdf ? `<a class="btn sec" href="${esc(d.pdf.webUrl)}" target="_blank" rel="noopener" title="Abrir el archivo en SharePoint">${ico('abrir', 16)}Abrir en SharePoint</a>` : ''}</div>
+        <div class="dv-acc">${btnPlantilla(d, 'pri')}${d.pdf ? `<button type="button" class="btn sec" id="bCompleta" title="Ver el documento en pantalla completa">${ico('leer', 16)}Pantalla completa</button>` : ''}</div>
       </section>
       <dl class="dv-ficha">${ficha.map(([a, b]) => `<div><dt>${esc(a)}</dt><dd>${esc(b)}</dd></div>`).join('')}</dl>
       <div class="dv-visor" id="visor">${d.pdf ? '<div class="dv-cargando"><span></span>Cargando el documento…</div>' : '<div class="vacio">Este formato se consulta con su plantilla en Word.</div>'}</div>
@@ -266,32 +261,17 @@
     $('#bCompleta').onclick = pantallaCompleta;
     mostrarPdf(d);
   }
+  // Solo lectura: el PDF se muestra con el visor de SharePoint incrustado; no se entrega el archivo
   async function mostrarPdf(d) {
     const visor = () => $('#visor'), sigue = () => location.hash === urlDoc(d);
-    const fallo = (e) => { if (sigue()) visor().innerHTML = `<div class="vacio">No se pudo mostrar el documento aquí${e ? ' (' + esc(e.message) + ')' : ''}.<br><br><a class="btn pri" href="${esc(d.pdf.webUrl)}" target="_blank" rel="noopener">${ico('abrir', 16)}Abrirlo en SharePoint</a></div>`; };
-    const movil = matchMedia('(max-width: 760px)').matches;
-    // Lector de PDF del navegador: ocupa todo el ancho (mejor en computador)
-    const lectorNavegador = async () => {
-      const b = await contenido(d.pdf);
-      if (!sigue()) return true;
-      if (blobActual) URL.revokeObjectURL(blobActual);
-      blobActual = URL.createObjectURL(new Blob([b], { type: 'application/pdf' }));
-      visor().innerHTML = movil
-        ? `<div class="vacio"><a class="btn pri" href="${blobActual}" target="_blank" rel="noopener">${ico('leer', 16)}Abrir documento</a></div>`
-        : `<iframe title="${esc(d.titulo)}" src="${blobActual}#view=FitH&navpanes=0" allowfullscreen></iframe>`;
-      return true;
-    };
-    // Visor de SharePoint incrustable (mejor en el celular)
-    const visorSharePoint = async () => {
-      const p = await G.llamar('POST', '/drives/' + driveId + '/items/' + d.pdf.id + '/preview', {});
-      if (!p || !p.getUrl) throw new Error('sin visor');
+    try {
+      const p = await G.llamar('POST', '/drives/' + driveId + '/items/' + d.pdf.id + '/preview', { zoom: 1 });
+      if (!p || !p.getUrl) throw new Error('SharePoint no entregó el visor');
       if (sigue()) visor().innerHTML = `<iframe title="${esc(d.titulo)}" src="${esc(p.getUrl)}" allowfullscreen></iframe>`;
-      return true;
-    };
-    const orden = movil ? [visorSharePoint, lectorNavegador] : [lectorNavegador, visorSharePoint];
-    let ultimo = null;
-    for (const f of orden) { try { if (await f()) return; } catch (e) { console.warn(e); ultimo = e; } }
-    fallo(ultimo);
+    } catch (e) {
+      console.warn(e);
+      if (sigue()) visor().innerHTML = `<div class="vacio">No se pudo mostrar el documento (${esc(e.message)}). Intente de nuevo en unos minutos.</div>`;
+    }
   }
   function pantallaCompleta() {
     const f = $('#visor iframe'); if (!f) return;
