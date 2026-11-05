@@ -41,6 +41,11 @@
     COMPRAS: ['codigo', 'distribuidor', 'precio', 'moneda', 'fecha_compra'],
     INVENTARIO: ['codigo', 'fecha_corte', 'cantidad']
   };
+  // ⚠ CARGA PROVISIONAL (nov 2026): permite cargar empresas y contactos con datos incompletos.
+  //   Lo que falta se muestra como «Pendiente» y no impide la carga. Volver a false para exigir todo.
+  const CARGA_PROVISIONAL = true;
+  const PROVISIONAL_OBLIG = { EMPRESAS: ['tipo_id_fiscal', 'nit', 'razon_social', 'estado_comercial'], CONTACTOS: ['nit_empresa', 'nombres'] };
+  const NIT_PROVISIONAL = /^99990\d{4}$/;   // NIT de relleno mientras se consigue el real
   const NOMBRE_CAMPO = { tipo_id_fiscal: 'Tipo identificación', nit: 'NIT', razon_social: 'Razón social', ciudad: 'Ciudad', telefono: 'Teléfono',
     estado_comercial: 'Tipo', tipo_cliente: 'Relación', comercial: 'Comercial', nit_empresa: 'NIT empresa', nombre: 'Nombre sede', nombres: 'Nombres',
     apellidos: 'Apellidos', autoriza_datos: 'Autoriza datos', email: 'Correo', cumpleanos: 'Cumpleaños', sede: 'Sede', pais: 'País',
@@ -171,7 +176,12 @@
       o.estado_comercial = String(o.estado_comercial || '').toUpperCase();
       o.tipo_cliente = String(o.tipo_cliente || '').toUpperCase();
       if (EJEMPLOS.indexOf(o.nit) >= 0) { err(o, 'Es una fila de ejemplo de la plantilla: bórrela'); o._accion = 'ERROR'; res.EMPRESAS.push(o); return; }
-      OBLIGATORIAS.EMPRESAS.forEach((k) => { if (!o[k]) err(o, 'Falta ' + NOMBRE_CAMPO[k]); });
+      if (CARGA_PROVISIONAL) {
+        PROVISIONAL_OBLIG.EMPRESAS.forEach((k) => { if (!o[k]) err(o, 'Falta ' + NOMBRE_CAMPO[k]); });
+        const pend = OBLIGATORIAS.EMPRESAS.filter((k) => !o[k] && PROVISIONAL_OBLIG.EMPRESAS.indexOf(k) < 0).map((k) => NOMBRE_CAMPO[k]);
+        if (NIT_PROVISIONAL.test(o.nit)) pend.unshift('NIT real (este es provisional)');
+        if (pend.length) (o._avisos = o._avisos || []).push('Pendiente: ' + pend.join(', '));
+      } else OBLIGATORIAS.EMPRESAS.forEach((k) => { if (!o[k]) err(o, 'Falta ' + NOMBRE_CAMPO[k]); });
       if (['NIT', 'RUC', 'RFC', 'TAX ID', 'OTRO'].indexOf(o.tipo_id_fiscal) < 0) err(o, 'Tipo identificación no válido');
       if (o.tipo_id_fiscal === 'NIT' && o.nit && !/^\d{5,12}$/.test(o.nit)) err(o, 'NIT debe tener 5 a 12 dígitos sin DV');
       if (o.estado_comercial && ['PROSPECTO', 'CLIENTE'].indexOf(o.estado_comercial) < 0) err(o, 'Tipo debe ser PROSPECTO o CLIENTE');
@@ -226,10 +236,15 @@
       o.email = String(o.email || '').toLowerCase();
       o.autoriza_datos = String(o.autoriza_datos || '').toUpperCase();
       if (EJEMPLOS.indexOf(o.nit_empresa) >= 0) { err(o, 'Es una fila de ejemplo de la plantilla: bórrela'); o._accion = 'ERROR'; res.CONTACTOS.push(o); return; }
-      OBLIGATORIAS.CONTACTOS.forEach((k) => { if (!o[k]) err(o, 'Falta ' + NOMBRE_CAMPO[k]); });
+      if (CARGA_PROVISIONAL) {
+        PROVISIONAL_OBLIG.CONTACTOS.forEach((k) => { if (!o[k]) err(o, 'Falta ' + NOMBRE_CAMPO[k]); });
+        const pend = OBLIGATORIAS.CONTACTOS.filter((k) => !o[k] && PROVISIONAL_OBLIG.CONTACTOS.indexOf(k) < 0).map((k) => NOMBRE_CAMPO[k]);
+        if (!o.celular && !o.telefono && !o.email) pend.push('celular, teléfono o correo');
+        if (pend.length) (o._avisos = o._avisos || []).push('Pendiente: ' + pend.join(', '));
+      } else OBLIGATORIAS.CONTACTOS.forEach((k) => { if (!o[k]) err(o, 'Falta ' + NOMBRE_CAMPO[k]); });
       if (o.nit_empresa && !empresaValida(o.nit_empresa)) err(o, 'La empresa con NIT ' + o.nit_empresa + ' no existe ni se crea en este archivo (o tiene errores)');
       if (o.autoriza_datos && ['SI', 'NO'].indexOf(o.autoriza_datos) < 0) err(o, 'Autoriza datos debe ser SI o NO');
-      if (!o.celular && !o.telefono && !o.email) err(o, 'Registre al menos celular, teléfono o correo');
+      if (!CARGA_PROVISIONAL && !o.celular && !o.telefono && !o.email) err(o, 'Registre al menos celular, teléfono o correo');
       if (o.email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(o.email)) err(o, 'Correo no válido');
       if (o.cumpleanos === 'INVALIDA') err(o, 'Cumpleaños no es una fecha válida (AAAA-MM-DD)');
       if (o.cumpleanos && o.cumpleanos !== 'INVALIDA' && o.autoriza_datos !== 'SI') err(o, 'Cumpleaños requiere Autoriza datos = SI');
