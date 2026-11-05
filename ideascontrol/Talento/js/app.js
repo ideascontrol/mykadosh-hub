@@ -134,6 +134,7 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
     const gente = audiencia.length;
     c.innerHTML = '<div class="ic-barra"><div style="flex:1"><h1 class="ic-titulo">Piezas</h1><p class="ic-subtitulo" style="margin:0">Edite, programe y revise cada pieza antes de que se publique.</p></div>' +
       '<select id="fProg"><option value="">Todos los programas</option>' + App.programas.map((p) => '<option value="' + esc(p.Title) + '"' + (p.Title === App.filtroProg ? ' selected' : '') + '>' + esc(p.nombre) + '</option>').join('') + '</select>' +
+      '<button class="ic-btn sec" id="bImportar" title="Cargar muchas piezas desde un Excel">Carga masiva</button><button class="ic-btn sec" id="bFechas" title="Repartir los borradores sin fecha en días y hora">Asignar fechas</button>' +
       '<button class="ic-btn sec" id="bProgTodas">Programar borradores</button><button class="ic-btn" id="bNueva">+ Nueva pieza</button></div>' +
       '<div class="ic-tabla-caja ope-scroll"><table class="ic-tabla"><thead><tr><th style="width:90px"></th><th>Pieza</th><th>Publicación</th><th>Estado</th><th class="num">Entendido</th></tr></thead><tbody>' +
       (l.length ? l.map((p) => {
@@ -145,6 +146,9 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
       }).join('') : '<tr><td colspan="5" class="ic-vacio">No hay piezas.</td></tr>') + '</tbody></table></div>';
     c.querySelector('#fProg').onchange = (e) => { App.filtroProg = e.target.value; vistaPiezas(c); };
     c.querySelector('#bNueva').onclick = () => editor(null, () => vistaPiezas(c));
+    const recargar = async () => { await cargar(); vistaPiezas(c); };
+    c.querySelector('#bImportar').onclick = () => TalCarga.importar(recargar);
+    c.querySelector('#bFechas').onclick = () => TalCarga.asignarFechas(App.filtroProg, recargar);
     c.querySelector('#bProgTodas').onclick = async () => {
       const bor = l.filter((p) => p.estado === 'BORRADOR' && p.fecha_publicacion && p.titular && (p.tipo === 'RESUMEN' || p.mensaje));
       if (!bor.length) { U.aviso('No hay borradores con fecha para programar en este filtro.', 'warn'); return; }

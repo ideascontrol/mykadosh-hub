@@ -61,10 +61,13 @@ window.Post = (function () {
     const PIE = 1200;                                   // línea del pie
     ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
 
+    const unaLineaCab = (() => { const pr = String(p.programa || 'Comunicaciones de servicio').toUpperCase(), e2 = String(p.etiqueta || '').toUpperCase();
+      fuente(ctx, 800, 26); espaciado(ctx, 0.08, 26); const wc = e2 ? ctx.measureText(e2).width + 40 : 0;
+      fuente(ctx, 700, 26); espaciado(ctx, 0.14, 26); const r = ctx.measureText(pr).width + (wc ? 22 + wc : 0) <= W - 2 * M; espaciado(ctx, 0, 10); return r; })();
     // 1. Medir el titular: ocupa todo el ancho, máximo 3 líneas (se reduce solo)
     let tam = Number(p.tam_titular) || (resumen ? 88 : 100), ls;
     do { fuente(ctx, 800, tam); ls = lineas(ctx, p.titular, W - 2 * M); if (ls.length > 3) tam -= 6; } while (ls.length > 3 && tam > 52);
-    const yTit = 196, lhT = tam * 1.08;
+    const yTit = unaLineaCab ? 196 : 222, lhT = tam * 1.08;
     const yLinea = yTit + ls.length * lhT + 34;
     const alto = Math.max(500, Math.min(720, yLinea + 12 + 76));   // el bloque azul se ajusta al titular
 
@@ -76,13 +79,19 @@ window.Post = (function () {
 
     // 3. Etiqueta del programa + cápsula dorada
     ctx.textBaseline = 'middle';
-    fuente(ctx, 700, 26); espaciado(ctx, 0.14, 26); ctx.fillStyle = 'rgba(255,255,255,.92)';
-    const prog = String(p.programa || 'Comunicaciones de servicio').toUpperCase();
-    ctx.fillText(prog, M, 104);
-    const xCap = M + ctx.measureText(prog).width + 22;
+    // Nombre del programa + cápsula: si no caben en una línea, se reduce la letra y, si aún no cabe, la cápsula baja
+    const prog = String(p.programa || 'Comunicaciones de servicio').toUpperCase(), et = String(p.etiqueta || '').toUpperCase();
+    fuente(ctx, 800, 26); espaciado(ctx, 0.08, 26); const wCap = et ? ctx.measureText(et).width + 40 : 0;
+    let tp = 26, wProg;
+    const medirProg = () => { fuente(ctx, 700, tp); espaciado(ctx, 0.14, tp); wProg = ctx.measureText(prog).width; };
+    medirProg();
+    const unaLinea = wProg + (wCap ? 22 + wCap : 0) <= W - 2 * M;
+    if (!unaLinea) { while (wProg > W - 2 * M && tp > 14) { tp -= 1; medirProg(); } }
+    ctx.fillStyle = 'rgba(255,255,255,.92)';
+    ctx.fillText(prog, M, unaLinea ? 104 : 90);
+    const xCap = unaLinea ? M + wProg + 22 : M, yCap = unaLinea ? 79 : 116;
     fuente(ctx, 800, 26); espaciado(ctx, 0.08, 26);
-    const et = String(p.etiqueta || '').toUpperCase(), wCap = ctx.measureText(et).width + 40;
-    if (et) { ctx.fillStyle = C.dorado; redondeado(ctx, xCap, 79, wCap, 50, 25); ctx.fill(); ctx.fillStyle = C.tinta; ctx.fillText(et, xCap + 20, 105); }
+    if (et) { ctx.fillStyle = C.dorado; redondeado(ctx, xCap, yCap, wCap, 50, 25); ctx.fill(); ctx.fillStyle = C.tinta; ctx.fillText(et, xCap + 20, yCap + 26); }
     espaciado(ctx, 0, 10);
 
     // 4. Titular y línea dorada debajo
