@@ -283,6 +283,28 @@
   .center{text-align:center;}
   .mt-24{margin-top:24px;}
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Encode+Sans+Semi+Expanded:wght@600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/ideascontrol/assets/landing-viva.css?v=1.0.1">
+<style>
+  /* Paleta viva (misma de PilotoTyA) sobre los estilos del diagnóstico */
+  :root{ --primary:#0E76BB; --primary-dark:#0B2945; --primary-light:#1FA3E0; --accent:#E0B93A; --accent-light:#F0CC55; --gray-border:#DCE3EA; --bg:#F3F6F9; --ink:#182E40; --ink-soft:#4E6072; }
+  #app{ max-width:none; padding:0; }
+  #app.band{ background:linear-gradient(180deg,#0B2945 0,#0E3960 230px,#F3F6F9 230px); min-height:70vh; }
+  .stage{ max-width:920px; margin:0 auto; padding:42px 18px 80px; }
+  .stage.full{ max-width:none; padding:0; }
+  .progress-fill,.area-bar-fill{ background:linear-gradient(90deg,#0E76BB,#1BB0A8 55%,#E0B93A); }
+  .option-btn.selected{ background:#EAF4FB; }
+  .option-btn:hover:not(:disabled){ background:#F3F8FC; }
+  .result-score-row .stat .num{ color:#0E76BB; }
+  .result-level{ background:#E2F5F3; color:#0F7F86; }
+  .interpretation.recommendation{ background:#FBF6E5; }
+  .cta-section{ background:radial-gradient(700px 300px at 85% 10%,rgba(27,176,168,.25),transparent 60%),linear-gradient(135deg,#0B2945,#0E3960 60%,#0E5F7A); }
+  .cta-section .btn-accent{ color:#0B2945; }
+  .hero h1{ max-width:15em; font-size:clamp(1.9rem,4.6vw,3.1rem); }
+  .site-footer{ padding:34px 0 30px; text-align:left; }
+</style>
 </head>
 <body>
 
@@ -291,10 +313,10 @@
     <div class="brand">
       <img id="brandLogo" src="/ideascontrol/assets/ideascontrol.webp" alt="Ideas Control - Equipos y Soluciones S.A.S.">
     </div>
-    <a class="header-phone" href="tel:+573213184853" aria-label="Llamar a Ideas Control">
+    <div class="header-acc"><a class="header-phone" href="tel:+573213184853" aria-label="Llamar a Ideas Control">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2a1 1 0 011.01-.24 11.3 11.3 0 003.54.57 1 1 0 011 1V20a1 1 0 01-1 1C10.4 21 3 13.6 3 4.5a1 1 0 011-1h3.49a1 1 0 011 1c0 1.24.2 2.44.57 3.54a1 1 0 01-.25 1.02l-2.2 2.2z"/></svg>
       57 321 318 4853
-    </a>
+    </a><a class="btn btn--navy btn--sm" href="#" id="ctaHeader">Comenzar diagnóstico</a></div>
   </div>
 </header>
 
@@ -308,7 +330,11 @@
 </div>
 
 <footer class="site-footer">
-  Ideas Control Equipos y Soluciones S.A.S. — Diagnóstico de madurez en Tiempo &amp; Asistencia
+  <div class="wrap">
+    <img class="footer__logo" src="/ideascontrol/assets/ideascontrol.webp" alt="Ideas Control Equipos y Soluciones S.A.S.">
+    <span>Ideas Control Equipos y Soluciones S.A.S. — Diagnóstico de madurez en Tiempo &amp; Asistencia</span>
+    <a href="https://www.ideascontrol.com" target="_blank" rel="noopener">ideascontrol.com</a>
+  </div>
 </footer>
 
 <script>
@@ -492,9 +518,11 @@ function hideLoading(){
    RENDER HELPERS
    ========================================================================= */
 var app = document.getElementById("app");
-function renderStage(node){
+function renderStage(node, full){
   app.innerHTML = "";
-  var wrap = el("div", { class: "stage" }, [node]);
+  app.className = full ? "" : "band";
+  var cta = document.getElementById("ctaHeader"); if(cta) cta.style.display = full ? "" : "none";
+  var wrap = el("div", { class: "stage" + (full ? " full" : "") }, [node]);
   app.appendChild(wrap);
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -517,23 +545,71 @@ function errorBannerWithRetry(message, onRetry){
 /* =========================================================================
    ETAPA 1 — PRESENTACIÓN
    ========================================================================= */
+var HUELLA = '<svg class="hero__print" viewBox="0 0 400 400" aria-hidden="true" focusable="false"><g fill="none" stroke-linecap="round" stroke-width="10"><path d="M120 330a140 140 0 0 1 0-260" stroke="#0E76BB"/><path d="M160 300a100 100 0 0 1 0-200" stroke="#1FA3E0"/><path d="M200 270a60 60 0 0 1 0-140" stroke="#1BB0A8"/><path d="M90 70a180 180 0 0 1 240 30" stroke="#479A7B"/><path d="M60 120a200 200 0 0 1 300-10" stroke="#8CC57A"/><path d="M240 130a70 70 0 0 1 20 120" stroke="#E0B93A"/><path d="M280 110a110 110 0 0 1 20 180" stroke="#1BB0A8"/><path d="M320 100a150 150 0 0 1 10 220" stroke="#1FA3E0"/></g></svg>';
+var ICO = {
+  rayo: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+  meta: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/>',
+  ruta: '<path d="M3 20h18"/><path d="M5 16l4-5 4 3 6-8"/><path d="M15 6h4v4"/>',
+  regalo: '<rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 12h18"/><path d="M12 8c-2-4-6-4-6-1.5S10 8 12 8zm0 0c2-4 6-4 6-1.5S14 8 12 8z"/>',
+  idea: '<path d="M9 18h6M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.1V18h6v-1.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z"/>'
+};
+function svgDe(str){ var t = document.createElement("template"); t.innerHTML = str.trim(); return t.content.firstChild; }
+function icono(n, cls){ return svgDe('<svg class="' + (cls || "") + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICO[n] + '</svg>'); }
+function aparecer(){
+  var items = document.querySelectorAll(".rv");
+  if(!("IntersectionObserver" in window)){ items.forEach(function(x){ x.classList.add("in"); }); return; }
+  var io = new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } }); }, { threshold: .12 });
+  items.forEach(function(x){ io.observe(x); });
+}
+function beneficio(n, ic, titulo, texto){
+  return el("article", { class: "var rv" }, [ el("span", { class: "var__n" }, ["0" + n]), el("div", { class: "var__ic" }, [icono(ic)]), el("h3", {}, [titulo]), el("p", {}, [texto]) ]);
+}
+function comenzar(ev){ if(ev && ev.preventDefault) ev.preventDefault(); renderRegistro(); }
+
 function renderPresentacion(){
   state.stage = "PRESENTACION";
-  var hero = el("div", { class: "hero" }, [
-    el("span", { class: "eyebrow" }, ["Ideas Control"]),
-    el("h1", {}, ["Diagnóstico de madurez en Tiempo & Asistencia"]),
-    el("p", { class: "lead" }, [
-      "Descubre en 2 minutos qué tan madura está tu empresa en el control de Tiempo & Asistencia y dónde tienes mayores oportunidades de mejora. Responde 10 preguntas breves y recibe tu resultado inmediatamente."
+  var hero = el("section", { class: "hero" }, [ svgDe(HUELLA), el("div", { class: "wrap" }, [
+    el("span", { class: "eyebrow" }, ["Diagnóstico gratuito · Ideas Control"]),
+    el("h1", {}, ["¿Qué tan madura está tu gestión de ", el("span", { class: "hl" }, ["Tiempo & Asistencia"]), "?"]),
+    el("p", { class: "lead" }, ["Descubre en 2 minutos qué tan madura está tu empresa en el control de Tiempo & Asistencia y dónde tienes las mayores oportunidades de mejora. Responde 10 preguntas breves y recibe tu resultado al instante."]),
+    el("div", { class: "hero__cta" }, [
+      el("button", { class: "btn btn--gold", onclick: comenzar }, ["Comenzar diagnóstico gratuito"]),
+      el("a", { class: "btn btn--line", href: "#como" }, ["Cómo funciona"])
     ]),
-    el("div", { class: "hero-benefits" }, [
-      el("div", { class: "item" }, [ el("strong", {}, ["Rápido"]), "Solo toma unos minutos completarlo." ]),
-      el("div", { class: "item" }, [ el("strong", {}, ["Resultado inmediato"]), "Obtén tu nivel de madurez al instante." ]),
-      el("div", { class: "item" }, [ el("strong", {}, ["Accionable"]), "Identifica las áreas con mayor oportunidad de mejora." ])
+    el("ul", { class: "chips" }, [ el("li", {}, ["10 preguntas"]), el("li", {}, ["2 minutos"]), el("li", {}, ["Resultado inmediato"]), el("li", {}, ["Sin costo"]) ])
+  ]) ]);
+
+  var obtienes = el("section", { class: "sec" }, [ el("div", { class: "wrap" }, [
+    el("div", { class: "sec__head rv" }, [ el("span", { class: "eyebrow" }, ["Lo que obtienes"]), el("h2", {}, ["Un mapa claro de dónde está tu empresa hoy"]),
+      el("p", { class: "muted" }, ["Al terminar recibes tu nivel de madurez, la interpretación de tu resultado y recomendaciones por cada área evaluada."]) ]),
+    el("div", { class: "vars" }, [
+      beneficio(1, "rayo", "Rápido", "Solo toma unos minutos completarlo, desde el computador o el celular."),
+      beneficio(2, "meta", "Resultado inmediato", "Obtén tu nivel de madurez y tu puntaje apenas respondes la última pregunta."),
+      beneficio(3, "ruta", "Accionable", "Identifica las áreas con mayor oportunidad de mejora y qué hacer en cada una."),
+      beneficio(4, "regalo", "Sin costo", "Es gratuito y no te compromete a nada. Tú decides si quieres conversar después.")
     ]),
-    el("button", { class: "btn btn-accent", onclick: function(){ renderRegistro(); } }, ["Comenzar Diagnóstico Gratuito"]),
-    el("div", { style: "margin-top:12px;font-size:.85rem;color:rgba(255,255,255,.85);" }, ["10 preguntas - 2 minutos - resultado inmediato"])
-  ]);
-  renderStage(hero);
+    el("div", { class: "closing rv" }, [ icono("idea", "closing__ic"), el("div", {}, [
+      el("p", {}, ["El reto no es solo registrar el tiempo."]),
+      el("p", {}, ["Es convertir los datos en mejores decisiones y una gestión más eficiente."]) ]) ])
+  ]) ]);
+
+  var como = el("section", { class: "sec sec--dark", id: "como" }, [ el("div", { class: "wrap" }, [
+    el("div", { class: "sec__head rv" }, [ el("span", { class: "eyebrow" }, ["Cómo funciona"]), el("h2", {}, ["Tres pasos y tienes tu resultado"]) ]),
+    el("div", { class: "dgrid tres" }, [
+      el("article", { class: "dcard rv" }, [ el("span", { class: "dcard__k" }, ["01"]), el("h3", {}, ["Cuéntanos sobre tu empresa"]), el("p", {}, ["Nombre, empresa, país y número de empleados, para preparar un diagnóstico relevante."]) ]),
+      el("article", { class: "dcard rv" }, [ el("span", { class: "dcard__k" }, ["02"]), el("h3", {}, ["Responde 10 preguntas"]), el("p", {}, ["Preguntas breves sobre cómo gestionas hoy el tiempo y la asistencia de tu personal."]) ]),
+      el("article", { class: "dcard rv" }, [ el("span", { class: "dcard__k" }, ["03"]), el("h3", {}, ["Recibe tu nivel de madurez"]), el("p", {}, ["Tu puntaje, tu nivel y recomendaciones concretas por área, en la misma pantalla."]) ])
+    ])
+  ]) ]);
+
+  var cierre = el("section", { class: "quote" }, [ el("div", { class: "wrap" }, [
+    el("h2", { class: "rv" }, ["Lo que no se mide, no se puede mejorar."]),
+    el("p", { class: "rv" }, ["Empieza por saber dónde estás. Toma 2 minutos."]),
+    el("div", { class: "hero__cta", style: "justify-content:center" }, [ el("button", { class: "btn btn--gold", onclick: comenzar }, ["Comenzar diagnóstico gratuito"]) ])
+  ]) ]);
+
+  renderStage(el("div", {}, [hero, obtienes, como, cierre]), true);
+  aparecer();
 }
 
 /* =========================================================================
@@ -1273,6 +1349,7 @@ function registrarConversion(contactBtn, statusSlot){
    ========================================================================= */
 captureUTM();
 ensurePreguntasLoading(); // arranca la carga de preguntas ya, en paralelo con todo lo que sigue
+var ctaH = document.getElementById("ctaHeader"); if(ctaH) ctaH.addEventListener("click", comenzar);
 renderPresentacion();
 
 })();
