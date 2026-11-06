@@ -1,7 +1,7 @@
 /* =====================================================================
    APP-112 · Marketing
    Vistas: #  calendario semanal · #lista · #pub/PUB-00001 · #temas · #tema/TEM-0001
-           #aprobar · #metricas · #resumen
+           #aprobar · #metricas · #resumen · #generar[/TEM-0001[/contenido|newsletter]] (js/generador.js)
    Aprobación: mínimo CFG.minAprobaciones de las personas de CFG.usuarios. Cambiar el copy o la pieza
    de una publicación en aprobación o aprobada la devuelve a «En producción» (hay que volver a enviarla).
    ===================================================================== */
@@ -65,7 +65,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     document.getElementById('encabezado').innerHTML =
       '<a href="#"><img class="logo" src="' + CFG.logo + '" alt="Ideas Control"></a>' +
       '<div class="app-nombre"><b>' + esc(CFG.app.nombre) + '</b><span>' + CFG.app.id + ' · v' + CFG.app.version + '</span></div><div class="espacio"></div>' +
-      '<nav class="mkt-nav"><a href="#" data-r="">Calendario</a><a href="#lista" data-r="lista">Publicaciones</a><a href="#temas" data-r="temas">Temas</a>' +
+      '<nav class="mkt-nav"><a href="#" data-r="">Calendario</a><a href="#lista" data-r="lista">Publicaciones</a><a href="#temas" data-r="temas">Temas</a><a href="#generar" data-r="generar">Generar</a>' +
       '<a href="#aprobar" data-r="aprobar">Por aprobar' + (n ? '<span class="mkt-badge">' + n + '</span>' : '') + '</a><a href="#metricas" data-r="metricas">Métricas</a><a href="#resumen" data-r="resumen">Resumen</a></nav>' +
       '<div class="ic-user">' + IC.portal.boton() + '<div class="datos"><b>' + esc(u.nombre) + '</b><span>' + esc(CFG.usuarios[u.email] || '') + '</span></div>' +
       '<div class="ic-avatar" title="' + esc(u.email) + '">' + esc(u.iniciales) + '</div><button class="ic-btn sec chico" id="btnSalir">Salir</button></div>';
@@ -403,7 +403,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     if (!t) { raiz.innerHTML = '<div class="ic-tabla-caja"><p class="ic-vacio">No se encontró ' + esc(id) + '. <a href="#temas">Volver</a></p></div>'; return; }
     const ps = nuevo ? [] : App.pubs.filter((p) => p.tema_id === t.Title);
     raiz.innerHTML = '<a class="ic-volver" href="#temas">← Temas</a><div class="ic-ficha-cab"><div class="principal">' + (nuevo ? '' : '<span class="ic-tag" style="background:#E6F0FA;color:#0A5A90">' + esc(t.Title) + '</span>') +
-      '<h1>' + esc(nuevo ? 'Nuevo tema' : t.tema) + '</h1></div>' + (nuevo ? '' : '<button class="ic-btn" id="bPub">+ Publicación de este tema</button>') + '</div>' +
+      '<h1>' + esc(nuevo ? 'Nuevo tema' : t.tema) + '</h1></div>' + (nuevo ? '' : '<div class="gen-acc"><a class="ic-btn" href="#generar/' + esc(t.Title) + '/contenido">✨ Generar contenido</a><a class="ic-btn sec" href="#generar/' + esc(t.Title) + '/newsletter">Generar newsletter</a><button class="ic-btn sec" id="bPub">+ Publicación</button></div>') + '</div>' +
       '<div class="mkt-ficha"><div class="mkt-col"><section class="ic-bloque"><div class="cab"><h2>Definición</h2></div><div class="cuerpo"><form class="ic-form" id="fTema"><div class="ic-campos">' +
         CAMPOS_TEMA.map((c) => U.campo({ name: c[0], label: c[1], t: c[2] === 'm' ? 'textarea' : c[2] === 'date' ? 'date' : 'text', valor: c[2] === 'date' ? dia(t[c[0]]) : (t[c[0]] || ''), c: c[2] === 'm' || c[0] === 'tema' ? 'c12' : 'c4', filas: 2, req: c[0] === 'tema', max: c[2] === 't' ? 250 : undefined })).join('') +
       '</div><div class="ic-acciones"><button class="ic-btn" id="bGuardar">Guardar</button></div></form></div></section></div>' +
@@ -588,7 +588,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
       await cargar();
       pintarEncabezado();
       U.enrutar({ '': () => vistaCalendario(raiz), lista: () => vistaLista(raiz), pub: () => vistaPub(raiz), temas: () => vistaTemas(raiz), tema: () => vistaTema(raiz),
-        aprobar: () => vistaAprobar(raiz), metricas: () => vistaMetricas(raiz), resumen: () => vistaResumen(raiz) }, marcarNav);
+        aprobar: () => vistaAprobar(raiz), metricas: () => vistaMetricas(raiz), resumen: () => vistaResumen(raiz), generar: () => MKT_GEN.vista(raiz) }, marcarNav);
     } catch (e) {
       console.error(e);
       const falta = /No existe la lista MKT_/.test(e.message);
@@ -596,5 +596,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
         texto: falta ? 'Las listas de Marketing aún no existen en IC Apps. Abra el instalador (Programacion/Instalador/) y haga clic en «Crear estructura».' : U.mensajeError(e), boton: 'Reintentar', alClic: () => location.reload() });
     }
   }
+  // Funciones que usa el generador (js/generador.js)
+  window.MKT = { dia, hoyISO, sumarDias, lunesDe, fLarga, fCorta, pad, temaDe, utm, redDeCanal, copiar, rutaUrl, chipCanal, chipEstado };
   window.addEventListener('DOMContentLoaded', arrancar);
 })();

@@ -83,3 +83,30 @@
 @media (max-width: 960px) { .mkt-ficha, .mkt-res2 { grid-template-columns: 1fr; } }
 @media (max-width: 720px) { .mkt-semana { grid-template-columns: 1fr 1fr; } .mkt-nav { order: 10; width: 100%; flex-wrap: nowrap; overflow-x: auto; margin: 6px 0 0; } .ic-campo.c3, .ic-campo.c4 { grid-column: span 6; } }
 @media print { .ic-header, .mkt-noimp, .ic-toast-zona { display: none !important; } body { background: #fff; } .ic-bloque, .ic-kpi { box-shadow: none; break-inside: avoid; } }
+
+/* ---------- Generador con Claude (#generar) ---------- */
+.gen-pasos { display: grid; gap: 14px; }
+.gen-paso .cab h2 { display: flex; align-items: center; gap: 10px; }
+.gen-n { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #0B2945; color: #E0B93A; font-size: 13px; font-weight: 800; flex: none; }
+.gen-tema { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px 16px; margin: 12px 0 0; padding: 12px 14px; background: #F4F7F9; border-radius: 10px; }
+.gen-tema dt { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #159090; }
+.gen-tema dd { margin: 2px 0 0; font-size: 13.5px; }
+.gen-tipos { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.gen-tipo { text-align: left; font: inherit; cursor: pointer; border: 2px solid #E3E8EC; background: #fff; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; color: inherit; }
+.gen-tipo span { font-size: 13px; color: #5B6770; }
+.gen-tipo.on { border-color: #0E76BC; background: #F2F8FC; }
+.gen-slots { display: flex; flex-wrap: wrap; gap: 6px; }
+.gen-slot { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; padding: 4px 8px; background: #F4F7F9; border-radius: 8px; }
+.gen-slot.off { opacity: .55; }
+.gen-acc { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.gen-h3 { margin: 16px 0 8px; font-size: 15px; color: #0B2945; }
+.gen-tabla td { vertical-align: top; }
+.gen-tabla details summary { cursor: pointer; font-size: 13px; }
+.gen-copy { white-space: pre-wrap; font-size: 12.5px; background: #F4F7F9; border-radius: 8px; padding: 8px 10px; margin-top: 6px; max-height: 260px; overflow: auto; }
+.gen-copy.b { background: #E8F5F4; } .gen-copy.d { background: #EAF3FB; }
+.gen-news { background: #F4F7F9; border-radius: 10px; padding: 12px 14px; } .gen-news h4 { margin: 0 0 6px; font-size: 17px; color: #0B2945; }
+.gen-aviso { background: #FFF7E6; border: 1px solid #F3D38A; border-radius: 10px; padding: 10px 12px; font-size: 13px; margin-top: 12px; display: grid; gap: 4px; }
+.gen-error { background: #FDF1EF; border: 1px solid #F3C7BF; color: #8A1C10; border-radius: 10px; padding: 10px 12px; font-size: 13.5px; margin-top: 12px; }
+.gen-ok { background: #EDF8F2; border: 1px solid #BFE3CF; border-radius: 10px; padding: 12px 14px; font-size: 13.5px; margin-top: 12px; }
+.gen-ok ul { margin: 8px 0 0; padding-left: 18px; } .gen-ok li { margin: 2px 0; }
+@media (max-width: 640px) { .gen-tabla th:nth-child(3), .gen-tabla td:nth-child(3) { display: none; } }
