@@ -67,9 +67,19 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
   }
   const metVacia = (m) => CAMPOS_MET.every((c) => !n0(m[c[0]]));
   // Filas vacías (sin números ni enlace) que tienen una gemela con datos: misma red, tipo, fecha de publicación y nombre parecido
+  // Regla: misma red, tipo y día de publicación con una fila CON datos; se quitan tantas vacías como filas con datos haya ese día
+  // (primero las de nombre parecido), para no tocar una vacía que sea de otro post todavía sin medir.
   function vaciasRepetidas() {
-    return App.mets.filter((m) => metVacia(m) && !m.enlace_post && !m.post_id && App.mets.some((x) => x !== m && !metVacia(x) && x.red === m.red &&
-      (x.tipo || 'Orgánico') === (m.tipo || 'Orgánico') && dia(x.fecha_publicacion) === dia(m.fecha_publicacion) && parecido(x.nombre, m.nombre) >= 0.5));
+    const grupos = {};
+    App.mets.forEach((m) => { if (!m.red || !dia(m.fecha_publicacion)) return; const k = m.red + '|' + (m.tipo || 'Orgánico') + '|' + dia(m.fecha_publicacion); (grupos[k] = grupos[k] || []).push(m); });
+    const out = [];
+    Object.keys(grupos).forEach((k) => {
+      const g = grupos[k], llenas = g.filter((m) => !metVacia(m)), vacias = g.filter((m) => metVacia(m) && !m.enlace_post && !m.post_id);
+      if (!llenas.length || !vacias.length) return;
+      const orden = vacias.map((v) => ({ v, s: Math.max.apply(null, llenas.map((x) => parecido(x.nombre, v.nombre))) })).sort((a, b) => b.s - a.s);
+      orden.forEach((o, i) => { if (o.s >= 0.5 || i < llenas.length) out.push(o.v); });
+    });
+    return out;
   }
   // Nombre corto de una métrica: primera frase del post, sin emojis al inicio ni hashtags (máx. ~90 caracteres)
   function nombreCorto(s) {
