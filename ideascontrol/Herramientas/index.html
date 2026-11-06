@@ -14,7 +14,7 @@
   body { margin: 0; font-family: Inter, system-ui, Arial, sans-serif; color: var(--tinta); background: var(--fondo); -webkit-font-smoothing: antialiased; }
   .caja { max-width: 980px; margin: 32px auto; background: var(--blanco); border: 1px solid var(--linea); border-radius: 16px; padding: 28px 28px 34px; box-shadow: 0 8px 30px rgba(29, 43, 54, .05); }
   .marca { display: flex; align-items: center; gap: 12px; }
-  .marca img { height: 34px; }
+  .marca img { height: 48px; display: block; }
   h1 { margin: 0; color: var(--teal); font-size: 26px; font-weight: 700; letter-spacing: -.2px; }
   h2 { margin: 14px 0 4px; font-size: 18px; font-weight: 600; }
   .lema { margin: 0 0 20px; font-size: 13.5px; color: var(--gris); }
@@ -41,7 +41,7 @@
 </head>
 <body>
 <main class="caja">
-  <h1>Ideas Control</h1>
+  <div class="marca"><h1><img src="/ideascontrol/assets/ideascontrol.webp" alt="Ideas Control Equipos y Soluciones S.A.S."></h1></div>
   <h2>Centro de herramientas empresariales</h2>
   <p class="lema">Del dato a la decisión. De la decisión al resultado.</p>
   <input class="buscar" id="q" type="search" placeholder="Buscar una herramienta..." aria-label="Buscar una herramienta" autocomplete="off">
