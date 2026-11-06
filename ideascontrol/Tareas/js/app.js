@@ -41,6 +41,15 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
     App.tareas = (await G.items('TAR_Tareas', { top: 5000 })).map(normal)
       .sort((a, b) => String(a.cliente_nombre).localeCompare(String(b.cliente_nombre)) || (Number(a.orden) || 0) - (Number(b.orden) || 0) || String(a.Title).localeCompare(b.Title));
   }
+  // Pasa las categorías anteriores a la lista nueva (una sola vez por tarea)
+  const equivalente = (c) => { if (!c) return c; const k = Object.keys(CFG.equivalencias || {}).find((x) => U.norm(x) === U.norm(c)); return k ? CFG.equivalencias[k] : c; };
+  async function convertirCategorias() {
+    const viejas = App.tareas.filter((t) => t.categoria && equivalente(t.categoria) !== t.categoria);
+    if (!viejas.length) return;
+    for (const t of viejas) { try { await G.actualizar('TAR_Tareas', t._id, { categoria: equivalente(t.categoria) }); } catch (e) { console.warn(e); } }
+    await cargar();
+    U.aviso(viejas.length + ' tareas pasaron a las categorías nuevas', 'ok', 6000);
+  }
   async function cargarClientes() {
     try { App.clientes = (await G.items('MAE_Empresas', { top: 5000 })).filter((e) => e.estado !== 'INACTIVO').map((e) => ({ id: e.Title, nombre: e.razon_social })); }
     catch (e) { App.clientes = []; }
@@ -283,7 +292,7 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
           let est = String(val(r, C.est)).trim(); est = CFG.estados.find((e) => U.norm(e) === U.norm(est)) || (est ? est : 'Abierto');
           let pr = Number(val(r, C.prog)) || 0; if (pr > 0 && pr <= 1) pr = pr * 100;
           const pri = CFG.prioridades.find((p) => U.norm(p) === U.norm(val(r, C.pri))) || '';
-          const o = { item: String(val(r, C.item)).trim(), categoria: String(val(r, C.cat)).trim(), responsable: String(val(r, C.resp)).trim(), prioridad: pri, estado: est,
+          const o = { item: String(val(r, C.item)).trim(), categoria: equivalente(String(val(r, C.cat)).trim()), responsable: String(val(r, C.resp)).trim(), prioridad: pri, estado: est,
             fecha_apertura: fechaExcel(val(r, C.ap)), fecha_inicio: fechaExcel(val(r, C.ini)), fecha_limite: fechaExcel(val(r, C.lim)), fecha_cierre: fechaExcel(val(r, C.cie)), progreso: Math.round(pr), bitacora: String(val(r, C.bit)).trim() };
           o.repetida = ya.has(U.norm(o.item));
           return o;
@@ -331,6 +340,7 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
       App.usuario = { nombre: cuenta.name || email, email, iniciales: U.fmt.iniciales(cuenta.name || email) };
       await G.sitio(CFG.sitio.host, CFG.sitio.ruta);
       await Promise.all([cargar(), cargarClientes()]);
+      await convertirCategorias();
       pintarEncabezado();
       U.enrutar({ '': () => vistaResumen(raiz), tareas: () => vistaTareas(raiz), importar: () => vistaImportar(raiz) }, marcarNav);
     } catch (e) {

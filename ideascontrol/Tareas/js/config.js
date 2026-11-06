@@ -4,7 +4,7 @@
    por cliente como «Plan de Trabajo - Papeles Nacionales»).
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-109', nombre: 'Seguimiento por cliente', version: '0.1.1' },
+  app: { id: 'APP-109', nombre: 'Seguimiento por cliente', version: '0.1.2' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -41,5 +41,9 @@ window.CFG = {
     ['Documentación', 'Manuales, actas, informes, procedimientos y entregables.'],
     ['Gestión interna', 'Actividades administrativas o coordinaciones internas relacionadas con el cliente.']
   ],
+  // Categorías anteriores (Excel del plan de trabajo) → categoría nueva más cercana. Se convierten solas al abrir la app y al importar.
+  equivalencias: { 'Instalación': 'Instalación', 'Inspección': 'Inspección / Visita técnica', 'Incidente': 'Incidente', 'Software': 'Software / Configuración',
+    'Mejora': 'Desarrollo / Mejoras', 'Desarrollo': 'Desarrollo / Mejoras', 'Facturación': 'Facturación / Cartera', 'Cotización': 'Comercial',
+    'Aprobación': 'Seguimiento al cliente', 'Informe': 'Documentación' },
   diasAviso: 3          // «Próxima a vencer» = vence en 3 días o menos
 };
