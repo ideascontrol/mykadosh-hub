@@ -544,7 +544,7 @@ window.MKT_GEN = (function () {
           res.innerHTML = '<div class="gen-ok"><b>✅ Listo.</b> ' + (r.aviso ? esc(r.aviso) + ' ' : '') +
             (r.web ? '<a href="' + esc(r.web) + '" target="_blank" rel="noopener">Abrir el Word en SharePoint ↗</a> · ' : '') + '<a href="#" id="gBaj">Descargar copia</a>' +
             '<ul>' + r.hechos.map((h) => '<li><a href="#pub/' + esc(h.id) + '">' + esc(h.id) + '</a> · ' + esc(h.grupo) + ' · ' + esc(M().fLarga(h.fecha)) + ' · ' + (h.sinCambio ? 'sin cambios' : h.nueva ? 'nueva' : 'actualizada') + '</li>').join('') + '</ul>' +
-            '<p class="sec" style="margin:6px 0 0">Siguiente paso: haga las piezas (Canva, CapCut o HeyGen), súbalas en cada publicación y envíelas a aprobación.</p></div>';
+            '<p class="sec" style="margin:6px 0 0">Siguiente paso: <a href="#revision/' + esc(t.Title) + '">envíe la semana a revisión de gerencia</a>. Cuando cada pieza esté aprobada, haga el diseño (Canva, CapCut o HeyGen) y súbalo en su publicación.</p></div>';
           res.querySelector('#gBaj').onclick = (ev) => { ev.preventDefault(); descargar(r.blob, r.archivo); };
           U.aviso('Contenido guardado en el portal', 'ok');
         } catch (e) { console.error(e); res.innerHTML = '<div class="gen-error">' + esc(U.mensajeError(e)) + '</div>'; }

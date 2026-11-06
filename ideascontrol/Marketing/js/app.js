@@ -99,7 +99,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     document.getElementById('encabezado').innerHTML =
       '<a href="#"><img class="logo" src="' + CFG.logo + '" alt="Ideas Control"></a>' +
       '<div class="app-nombre"><b>' + esc(CFG.app.nombre) + '</b><span>' + CFG.app.id + ' · v' + CFG.app.version + '</span></div><div class="espacio"></div>' +
-      '<nav class="mkt-nav"><a href="#" data-r="">Calendario</a><a href="#lista" data-r="lista">Publicaciones</a><a href="#temas" data-r="temas">Temas</a><a href="#generar" data-r="generar">Generar</a>' +
+      '<nav class="mkt-nav"><a href="#" data-r="">Calendario</a><a href="#lista" data-r="lista">Publicaciones</a><a href="#temas" data-r="temas">Temas</a><a href="#generar" data-r="generar">Generar</a><a href="#revision" data-r="revision">Revisión</a>' +
       '<a href="#aprobar" data-r="aprobar">Por aprobar' + (n ? '<span class="mkt-badge">' + n + '</span>' : '') + '</a><a href="#metricas" data-r="metricas">Métricas</a><a href="#resumen" data-r="resumen">Resumen</a></nav>' +
       '<div class="ic-user">' + IC.portal.boton() + '<div class="datos"><b>' + esc(u.nombre) + '</b><span>' + esc(CFG.usuarios[u.email] || '') + '</span></div>' +
       '<div class="ic-avatar" title="' + esc(u.email) + '">' + esc(u.iniciales) + '</div><button class="ic-btn sec chico" id="btnSalir">Salir</button></div>';
@@ -469,7 +469,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     const mias = pendientesMias(), todas = App.pubs.filter((p) => p.estado === 'En aprobación');
     const fila = (p) => '<a class="ic-item" href="#pub/' + esc(p.Title) + '"><div><div class="titulo">' + esc(p.titulo || (temaDe(p.tema_id) || {}).tema || p.Title) + '</div><div class="sec">' + esc(fLarga(p.fecha)) + ' · ' + esc(p.canal) +
       ' · ' + aprobadores(p).length + ' de ' + CFG.minAprobaciones + ' aprobaciones</div></div>' + chipCanal(p.canal) + '</a>';
-    raiz.innerHTML = '<h1 class="ic-titulo">Por aprobar</h1><p class="ic-subtitulo">Cada publicación necesita ' + CFG.minAprobaciones + ' aprobaciones de Gerencia General, Dirección Comercial o Dirección de Operaciones.</p>' +
+    raiz.innerHTML = '<div class="ic-barra"><h1 class="ic-titulo" style="margin:0">Por aprobar</h1><span class="espacio"></span><a class="ic-btn" href="#revision">Revisar por semana</a></div><p class="ic-subtitulo">Cada publicación necesita ' + CFG.minAprobaciones + ' aprobaciones de Gerencia General, Dirección Comercial o Dirección de Operaciones.</p>' +
       '<section class="ic-bloque"><div class="cab"><h2>Esperan su respuesta (' + mias.length + ')</h2></div><div class="cuerpo">' + (mias.map(fila).join('') || '<p class="ic-vacio" style="padding:8px 0">Nada pendiente para usted. 🎉</p>') + '</div></section>' +
       '<section class="ic-bloque" style="margin-top:16px"><div class="cab"><h2>Todas en aprobación (' + todas.length + ')</h2></div><div class="cuerpo">' + (todas.map(fila).join('') || '<p class="ic-vacio" style="padding:8px 0">Ninguna.</p>') + '</div></section>';
   }
@@ -579,7 +579,9 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
   // RESUMEN PARA GERENCIA
   // =====================================================================
   function vistaResumen(raiz) {
-    const M = App.mf; if (!M.rd) { const p = periodoDefecto(); M.rd = p[0]; M.rh = p[1]; }
+    const M = App.mf, pr = location.hash.slice(1).split('/');
+    if (/^\d{4}-\d{2}-\d{2}$/.test(pr[1] || '') && /^\d{4}-\d{2}-\d{2}$/.test(pr[2] || '')) { M.rd = pr[1]; M.rh = pr[2]; history.replaceState(null, '', '#resumen'); }
+    if (!M.rd) { const p = periodoDefecto(); M.rd = p[0]; M.rh = p[1]; }
     const ms = App.mets.filter((m) => { const f = dia(m.fecha_campana || m.fecha_publicacion); return f >= M.rd && f <= M.rh; });
     const S = (k, arr) => (arr || ms).reduce((s, m) => s + n0(m[k]), 0), SI = (arr) => (arr || ms).reduce((s, m) => s + interacciones(m), 0);
     const pl = App.pubs.filter((p) => dia(p.fecha) >= M.rd && dia(p.fecha) <= M.rh && p.estado !== 'Cancelada'), plPub = pl.filter((p) => p.estado === 'Publicada').length;
@@ -649,7 +651,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
       await cargar();
       pintarEncabezado();
       U.enrutar({ '': () => vistaCalendario(raiz), lista: () => vistaLista(raiz), pub: () => vistaPub(raiz), temas: () => vistaTemas(raiz), tema: () => vistaTema(raiz),
-        aprobar: () => vistaAprobar(raiz), metricas: () => vistaMetricas(raiz), resumen: () => vistaResumen(raiz), generar: () => MKT_GEN.vista(raiz), importar: () => MKT_IMP.vista(raiz) }, marcarNav);
+        aprobar: () => vistaAprobar(raiz), metricas: () => vistaMetricas(raiz), resumen: () => vistaResumen(raiz), generar: () => MKT_GEN.vista(raiz), importar: () => MKT_IMP.vista(raiz), revision: () => MKT_REV.vista(raiz) }, marcarNav);
     } catch (e) {
       console.error(e);
       const falta = /No existe la lista MKT_/.test(e.message);
@@ -658,6 +660,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     }
   }
   // Funciones que usa el generador (js/generador.js)
-  window.MKT = { dia, hoyISO, sumarDias, lunesDe, fLarga, fCorta, pad, temaDe, utm, redDeCanal, copiar, rutaUrl, chipCanal, chipEstado, opciones, nombreCorto, parecido, metVacia };
+  window.MKT = { dia, hoyISO, sumarDias, lunesDe, fLarga, fCorta, pad, temaDe, utm, redDeCanal, copiar, rutaUrl, chipCanal, chipEstado, opciones, nombreCorto, parecido, metVacia,
+    eventos, ronda, aprobadores, miDecision, guardarPub, soyAprobador, pintarEncabezado };
   window.addEventListener('DOMContentLoaded', arrancar);
 })();

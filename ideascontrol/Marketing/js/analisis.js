@@ -184,6 +184,37 @@ window.MKT_AN = (function () {
     el.querySelectorAll('[data-p]').forEach((a) => { a.onclick = (ev) => { ev.preventDefault(); const [d, h] = a.dataset.p.split('_'); if (alElegir) alElegir(d, h); }; });
   }
 
+  // ---------- Comentarios de gerencia sobre el informe (se guardan dentro del mismo análisis) ----------
+  function pintarComentarios(c, rd, rh, a, repintar) {
+    const el = c.querySelector('#anComent'); if (!el) return;
+    const cs = (a._comentarios || []).slice();
+    const vistos = Object.keys(CFG.usuarios).map((email) => { const v = cs.filter((x) => x.email === email).pop(); return '<span class="rev-per ' + (v ? 'ok' : 'pend') + '" title="' + esc(v ? 'Visto el ' + new Date(v.fecha).toLocaleString('es-CO') : 'Aún no lo ha visto') + '">' + esc(String(CFG.usuarios[email]).replace(/^Dirección (de )?/, '').replace('Gerencia General', 'Gerencia')) + (v ? ' ✔' : '') + '</span>'; }).join('');
+    const yaVi = cs.some((x) => x.email === App.usuario.email);
+    el.innerHTML = '<section class="an-coment"><h4 class="an-h4" style="margin-top:0">Comentarios de gerencia</h4><div class="rev-pers" style="margin-bottom:8px">' + vistos + '</div>' +
+      (cs.filter((x) => x.texto).map((x) => '<div class="an-com"><b>' + esc(x.nombre) + '</b> <span class="sec">' + esc(new Date(x.fecha).toLocaleString('es-CO', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })) + '</span><p>' + esc(x.texto) + '</p></div>').join('') || '<p class="sec">Todavía no hay comentarios.</p>') +
+      '<div class="mkt-noimp"><textarea id="anComTxt" rows="2" placeholder="Escriba un comentario sobre el informe…" style="width:100%;margin-top:8px"></textarea>' +
+      '<div class="gen-acc" style="margin-top:6px"><button class="ic-btn chico" id="anComOk">Comentar</button>' + (yaVi ? '' : '<button class="ic-btn sec chico" id="anVisto">Marcar como visto</button>') +
+      '<button class="ic-btn sec chico" id="anAvisar">Avisar a gerencia ✉</button></div></div></section>';
+    const guardar = (texto) => async () => {
+      try {
+        delete cache[rd + '_' + rh];
+        const actual = (await leerGuardado(rd, rh)) || a;   // relee para no pisar comentarios de otra persona
+        actual._comentarios = (actual._comentarios || []).concat([{ email: App.usuario.email, nombre: App.usuario.nombre, fecha: new Date().toISOString(), texto: texto || '' }]);
+        await G.subirArchivo(ruta(rd, rh, 'json'), new Blob([JSON.stringify(actual, null, 2)], { type: 'application/json' }));
+        cache[rd + '_' + rh] = actual; U.aviso(texto ? 'Comentario guardado' : 'Marcado como visto', 'ok'); repintar();
+      } catch (e) { console.error(e); U.aviso(U.mensajeError(e), 'err', 8000); }
+    };
+    const bc = el.querySelector('#anComOk');
+    if (bc) bc.onclick = () => { const t = el.querySelector('#anComTxt').value.trim(); if (!t) { U.aviso('Escriba el comentario', 'warn'); return; } U.conCarga(bc, guardar(t)); };
+    const bv = el.querySelector('#anVisto'); if (bv) bv.onclick = () => U.conCarga(bv, guardar(''));
+    el.querySelector('#anAvisar').onclick = () => {
+      const para = Object.keys(CFG.usuarios).filter((e) => e !== App.usuario.email);
+      const url = location.origin + '/ideascontrol/Marketing/#resumen/' + rd + '/' + rh;
+      const cuerpo = 'Hola,\n\nYa está el informe de marketing del ' + M().fLarga(rd) + ' al ' + M().fLarga(rh) + (a.titular ? ':\n«' + a.titular + '»' : '.') + '\n\nLo pueden ver y comentar aquí (con su cuenta de Ideas Control):\n' + url + '\n\nGracias,\n' + App.usuario.nombre;
+      location.href = 'mailto:' + para.join(';') + '?subject=' + encodeURIComponent('Informe de marketing · ' + M().fCorta(rd) + ' al ' + M().fCorta(rh)) + '&body=' + encodeURIComponent(cuerpo);
+    };
+  }
+
   async function pintar(cont, rd, rh, alElegir) {
     cont.innerHTML = '<section class="ic-bloque" style="margin-top:16px"><div class="cab"><h2>✨ Análisis con Claude</h2><span class="sec mkt-noimp">' + esc(M().fLarga(rd)) + ' al ' + esc(M().fLarga(rh)) + '</span></div><div class="cuerpo" id="anCuerpo"><p class="sec">Buscando un análisis guardado de este periodo…</p></div></section>';
     const a = await leerGuardado(rd, rh);
@@ -198,8 +229,9 @@ window.MKT_AN = (function () {
     if (!c.isConnected) return;
     c.innerHTML = (a ? tarjeta(a) + '<div class="gen-acc mkt-noimp" style="margin:14px 0">' + (web ? '<a class="ic-btn" href="' + esc(web) + '" target="_blank" rel="noopener">Abrir en SharePoint ↗</a>' : '') +
       '<button class="ic-btn' + (web ? ' sec' : '') + '" id="anSubir">' + (web ? 'Actualizar Word en SharePoint' : 'Guardar Word en SharePoint') + '</button><button class="ic-btn sec" id="anWord">Descargar copia</button></div>' +
-      '<p class="sec mkt-noimp" style="margin:-6px 0 12px">Word en SharePoint: Documentos › Marketing › Informes › ' + esc('Informe_Marketing_' + rd + '_' + rh + '.docx') + (web ? '' : ' (aún no existe)') + '</p>' : '') + pasos + '<div class="mkt-noimp" id="anLista"></div>';
+      '<p class="sec mkt-noimp" style="margin:-6px 0 12px">Word en SharePoint: Documentos › Marketing › Informes › ' + esc('Informe_Marketing_' + rd + '_' + rh + '.docx') + (web ? '' : ' (aún no existe)') + '</p>' : '') + (a ? '<div id="anComent"></div>' : '') + pasos + '<div class="mkt-noimp" id="anLista"></div>';
     pintarGuardados(c, rd, rh, alElegir);
+    if (a) pintarComentarios(c, rd, rh, a, () => pintar(cont, rd, rh, alElegir));
     const bs = c.querySelector('#anSubir');
     if (bs) bs.onclick = () => U.conCarga(bs, async () => {
       try { await G.subirArchivo(ruta(rd, rh, 'docx'), await word(d, a)); U.aviso('Word guardado en SharePoint con los números de hoy', 'ok'); pintar(cont, rd, rh, alElegir); }
