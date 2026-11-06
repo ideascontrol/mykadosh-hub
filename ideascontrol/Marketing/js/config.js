@@ -42,15 +42,15 @@ window.CFG = {
   // Metas del embudo (hoja «Definicion KPIs» del Plan de Marketing). Se comparan con el periodo del resumen.
   metas: { alcance: 2000, interacciones: 200, clics: 80, microapps: 40, leads: 12 },
 
-  // Destinos para los enlaces con UTM (Centro de herramientas y landings)
+  // Destinos para los enlaces con UTM: [nombre, URL, palabra clave que se muestra en vez del enlace]
   destinos: [
-    ['Centro de herramientas', 'https://www.mykadosh.com/ideascontrol/Herramientas/'],
-    ['Centro de conocimiento (artículos)', 'https://www.mykadosh.com/ideascontrol/Recursos/'],
-    ['Diagnóstico de Madurez', 'https://www.mykadosh.com/ideascontrol/DiagnosticoMadurezTyA/'],
-    ['Costo del Ausentismo', 'https://www.mykadosh.com/ideascontrol/CostoHoraAusente/'],
-    ['Piloto de Tiempo y Asistencia', 'https://www.mykadosh.com/ideascontrol/PilotoTyA/'],
-    ['TimeVision', 'https://www.mykadosh.com/ideascontrol/TimeVision/'],
-    ['Sitio web ideascontrol.com', 'https://www.ideascontrol.com/']
+    ['Centro de herramientas', 'https://www.mykadosh.com/ideascontrol/Herramientas/', 'Herramientas gratuitas'],
+    ['Centro de conocimiento (artículos)', 'https://www.mykadosh.com/ideascontrol/Recursos/', 'Artículos de Ideas Control'],
+    ['Diagnóstico de Madurez', 'https://www.mykadosh.com/ideascontrol/DiagnosticoMadurezTyA/', 'Diagnóstico de madurez gratuito'],
+    ['Costo del Ausentismo', 'https://www.mykadosh.com/ideascontrol/CostoHoraAusente/', 'Calculadora del costo del ausentismo'],
+    ['Piloto de Tiempo y Asistencia', 'https://www.mykadosh.com/ideascontrol/PilotoTyA/', 'Piloto de 15 días'],
+    ['TimeVision', 'https://www.mykadosh.com/ideascontrol/TimeVision/', 'TimeVision'],
+    ['Sitio web ideascontrol.com', 'https://www.ideascontrol.com/', 'ideascontrol.com']
   ],
   // Generador de contenido con Claude (#generar)
   generador: {

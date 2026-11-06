@@ -47,11 +47,13 @@ window.MKT_GEN = (function () {
     if (/imagen|post|foto|infograf/.test(n)) return 'Imagen';
     return CFG.formatos.indexOf(f) >= 0 ? f : '';
   }
-  function destinoDe(t) {
+  function destinoFila(t) {
     const m = U.norm(t.microapp || '') + ' ' + U.norm(t.cta_microapp || '');
     const d = CFG.destinos.find((x) => { const k = U.norm(x[0]).split(' ').filter((w) => w.length > 4); return k.some((w) => m.indexOf(w) >= 0); });
-    return (d || CFG.destinos.find((x) => /diagn/i.test(x[0])) || CFG.destinos[0])[1];
+    return d || CFG.destinos.find((x) => /diagn/i.test(x[0])) || CFG.destinos[0];
   }
+  const destinoDe = (t) => destinoFila(t)[1];
+  const etiquetaDe = (t) => { const d = destinoFila(t); return d[2] || d[0]; };   // palabra clave que se muestra en vez del enlace
 
   // ---------- piezas de la semana (salen del plan) ----------
   function slots(t) {
@@ -98,11 +100,11 @@ window.MKT_GEN = (function () {
     let s = base + '\n\n═══════════════════════════════\nMATRIZ DEL TEMA DE LA SEMANA (semana del ' + fechaLarga(lunes) + ')\n' + matriz(t) + '\n';
     if (tipo === 'contenido') {
       const sl = slots(t).filter((x) => x.editable);
-      s += '\nEl enlace {{ENLACE}} lleva a: ' + dest + '\n\nPIEZAS A DESARROLLAR (' + sl.length + ')\n' + sl.map((x) => '- id: ' + x.id + ' | ' + x.grupo + ' | ' + diaTitulo(x.fecha) +
+      s += '\nEl enlace {{ENLACE}} lleva a: ' + dest + ' y se mostrará como la palabra clave «' + etiquetaDe(t) + '» (no repitas esas palabras justo antes de {{ENLACE}}).\n\nPIEZAS A DESARROLLAR (' + sl.length + ')\n' + sl.map((x) => '- id: ' + x.id + ' | ' + x.grupo + ' | ' + diaTitulo(x.fecha) +
         (x.formato_planeado ? ' | formato planeado: ' + x.formato_planeado : '') + ' | sección sugerida: ' + x.seccion + (x.nota ? '\n  Nota: ' + x.nota : '')).join('\n') + '\n' + PR.formatoContenido;
     } else {
       const pn = pubNewsletter(t);
-      s += '\nFecha de publicación: ' + fechaLarga(pn ? pn.fecha : M().sumarDias(lunes, 2)) + ' — LinkedIn Newsletter\nEl enlace del CTA ({{ENLACE}}) lleva a: ' + dest + '\n' + PR.formatoNewsletter;
+      s += '\nFecha de publicación: ' + fechaLarga(pn ? pn.fecha : M().sumarDias(lunes, 2)) + ' — LinkedIn Newsletter\nEl enlace del CTA ({{ENLACE}}) lleva a: ' + dest + ' y se mostrará como la palabra clave «' + etiquetaDe(t) + '» (no repitas esas palabras justo antes de {{ENLACE}}).\n' + PR.formatoNewsletter;
     }
     return s;
   }
@@ -158,6 +160,7 @@ window.MKT_GEN = (function () {
   }
   function leer(tipo, txt, t) {
     const d = extraerJSON(txt);
+    ST.etiqueta = etiquetaDe(t);
     if (tipo === 'contenido') {
       if (!Array.isArray(d.piezas) || !d.piezas.length) throw new Error('La respuesta no trae "piezas". ¿Pegó la respuesta del newsletter en el contenido de la semana?');
       const sl = slots(t), porId = {};
@@ -176,9 +179,15 @@ window.MKT_GEN = (function () {
   }
 
   // ---------- armar textos ----------
-  const cambiarEnlace = (txt, url) => String(txt || '').replace(/\{\{\s*ENLACE\s*\}\}|\[enlace[^\]]*\]/gi, url);
+  // Enlaces: nunca la URL larga en el texto. En el Word va una palabra clave con el enlace (marca [[L|texto|url]]);
+  // en el copy para pegar en la red, la palabra clave + dónde está el enlace (primer comentario o bio).
+  const RE_ENLACE = /\{\{\s*ENLACE\s*\}\}|\[enlace[^\]]*\]|https?:\/\/(?:www\.)?mykadosh\.com\/ideascontrol\/\S*/gi;
+  const enlaceWord = (txt, url, etq) => String(txt || '').replace(RE_ENLACE, '[[L|' + etq + '|' + url + ']]');
+  const sufijoRed = (red) => (red === 'Instagram' || red === 'TikTok') ? ' (enlace en la bio)' : ' 👇';
+  const enlacePlano = (txt, etq, red) => String(txt || '').replace(RE_ENLACE, etq + (red === undefined ? '' : sufijoRed(red)));
+  const cambiarEnlace = (txt, url) => enlacePlano(txt, ST.etiqueta || 'el enlace');
   function copyFinal(s, url) {
-    return [sinNegritas(cambiarEnlace(s.pieza.copy, url)).trim(), s.contacto, s.hashtags].filter(Boolean).join('\n\n');
+    return [sinNegritas(enlacePlano(s.pieza.copy, ST.etiqueta, s.red)).trim(), s.contacto, s.hashtags].filter(Boolean).join('\n\n');
   }
   function notasGeneradas(s, url) {
     const p = s.pieza, d = p.diseno || {}, v = p.video, L2 = [];
@@ -197,7 +206,7 @@ window.MKT_GEN = (function () {
     }
     if (p.copy_b) L2.push('', 'VERSIÓN B:', sinNegritas(cambiarEnlace(p.copy_b, url)) + (p.nota_b ? '\n(' + p.nota_b + ')' : ''));
     (p.variantes || []).filter((x) => x && x.copy).forEach((x) => L2.push('', String(x.nombre || 'Variante').toUpperCase() + ':', sinNegritas(cambiarEnlace(x.copy, url))));
-    L2.push('', 'El Word de la semana tiene el detalle con formato.');
+    L2.push('', '🔗 Enlace para el primer comentario' + ((s.red === 'Instagram' || s.red === 'TikTok') ? ' o la bio' : '') + ': está en «Enlace UTM» de esta publicación.', 'El Word de la semana tiene el detalle con formato.');
     return L2.join('\n');
   }
   function unirNotas(viejas, nuevas) {
@@ -220,7 +229,7 @@ window.MKT_GEN = (function () {
     });
     const c = n.cta || {};
     L2.push('', c.titulo || '', c.texto || '', GC.contactoLinea, cambiarEnlace(c.enlace_texto || '', url), n.cierre || '');
-    return sinNegritas(L2.filter((x) => x !== undefined).join('\n\n').replace(/\n{3,}/g, '\n\n')).trim();
+    return sinNegritas(enlacePlano(L2.filter((x) => x !== undefined).join('\n\n').replace(/\n{3,}/g, '\n\n'), ST.etiqueta || 'el enlace')).trim();
   }
 
   // ---------- logo para el Word ----------
@@ -247,16 +256,19 @@ window.MKT_GEN = (function () {
   // ---------- crear Word ----------
   async function wordContenido(t, lectura, titulo) {
     const piezas = lectura.slots.filter((s) => s.pieza && s.incluir !== false).map((s) => {
-      const url = s.url || (s.pub ? M().utm(s.pub, destinoDe(t), 'organico') : destinoDe(t)), p = s.pieza;
+      const url = s.url || (s.pub ? M().utm(s.pub, destinoDe(t), 'organico') : destinoDe(t)), p = s.pieza, etq = etiquetaDe(t);
       return Object.assign({}, p, { grupo: s.grupo, seccion: p.seccion || s.seccion, fechaTxt: diaTitulo(s.fecha), pubId: s.pubId || (s.pub ? s.pub.Title : ''), formato: mapFormato(p.formato) || p.formato,
-        copy: cambiarEnlace(p.copy, url), copy_b: cambiarEnlace(p.copy_b, url), variantes: (p.variantes || []).map((v) => Object.assign({}, v, { copy: cambiarEnlace(v.copy, url) })),
-        hashtags: s.hashtags, contacto: s.contacto });
+        copy: enlaceWord(p.copy, url, etq), copy_b: enlaceWord(p.copy_b, url, etq), variantes: (p.variantes || []).map((v) => Object.assign({}, v, { copy: enlaceWord(v.copy, url, etq) })),
+        hashtags: s.hashtags, contacto: s.contacto,
+        enlace: '🔗 Enlace para el ' + ((s.red === 'Instagram' || s.red === 'TikTok') ? 'primer comentario o la bio' : 'primer comentario') + ': [[L|' + etq + '|' + url + ']]' });
     });
     return IC_DOCX.contenido({ piezas, estrategia: lectura.datos.estrategia }, { tema: t, titulo, fechaTxt: fechaLarga(lunesTema(t)), logo: await logoDoc() });
   }
   async function logoDoc() { const l = await logo(); return l ? { data: l.data, alto: Math.round(150 * l.h / l.w) } : null; }
   async function wordNewsletter(t, n, url, fechaPub) {
-    const n2 = Object.assign({}, n, { cta: Object.assign({}, n.cta || {}, { enlace_texto: cambiarEnlace((n.cta || {}).enlace_texto || '', url) }) });
+    const etq = etiquetaDe(t), cw = (x) => enlaceWord(x, url, etq);
+    const n2 = Object.assign({}, n, { cta: Object.assign({}, n.cta || {}, { enlace_texto: cw((n.cta || {}).enlace_texto || '') }),
+      bloques: (n.bloques || []).map((b) => b && b.tipo === 'parrafos' ? Object.assign({}, b, { texto: [].concat(b.texto || []).map(cw) }) : b && b.texto && typeof b.texto === 'string' ? Object.assign({}, b, { texto: cw(b.texto) }) : b) });
     return IC_DOCX.newsletter(n2, { tema: t, fechaTxt: fechaLarga(fechaPub), fechaPublicacion: diaTitulo(fechaPub) + ' de ' + fecha(fechaPub).getFullYear() + ' — LinkedIn Newsletter', logo: await logoDoc(), contactoLinea: GC.contactoLinea });
   }
 

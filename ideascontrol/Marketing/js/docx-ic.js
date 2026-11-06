@@ -22,10 +22,65 @@ window.IC_DOCX = (function () {
     });
   }
 
+  // ---------- Reparación de emojis partidos ----------
+  // En el navegador, la librería escribe el XML por bloques: si un emoji (dos unidades UTF-16) cae justo en el borde
+  // de un bloque, queda codificado como dos «medios caracteres» (CESU-8) y Word/LibreOffice no abren el archivo.
+  // Se abre el .docx, se reescriben esos bytes como el emoji correcto (UTF-8 de 4 bytes) y se vuelve a empacar.
+  function cargarZip() {
+    if (window.JSZip) return Promise.resolve(window.JSZip);
+    return new Promise((ok, mal) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+      s.onload = () => ok(window.JSZip);
+      s.onerror = () => mal(new Error('No se pudo cargar la librería para revisar el Word. Revise la conexión e intente de nuevo.'));
+      document.head.appendChild(s);
+    });
+  }
+  function repararBytes(u8) {
+    let malos = false;
+    for (let i = 0; i + 5 < u8.length; i++) if (u8[i] === 0xED && (u8[i + 1] & 0xF0) === 0xA0 && u8[i + 3] === 0xED && (u8[i + 4] & 0xF0) === 0xB0) { malos = true; break; }
+    if (!malos) return null;
+    const out = new Uint8Array(u8.length);
+    let j = 0;
+    for (let i = 0; i < u8.length; i++) {
+      if (u8[i] === 0xED && i + 5 < u8.length && (u8[i + 1] & 0xF0) === 0xA0 && u8[i + 3] === 0xED && (u8[i + 4] & 0xF0) === 0xB0) {
+        const hi = 0xD000 | ((u8[i + 1] & 0x3F) << 6) | (u8[i + 2] & 0x3F), lo = 0xD000 | ((u8[i + 4] & 0x3F) << 6) | (u8[i + 5] & 0x3F);
+        const cp = ((hi - 0xD800) << 10) + (lo - 0xDC00) + 0x10000;
+        out[j++] = 0xF0 | (cp >> 18); out[j++] = 0x80 | ((cp >> 12) & 0x3F); out[j++] = 0x80 | ((cp >> 6) & 0x3F); out[j++] = 0x80 | (cp & 0x3F);
+        i += 5;
+      } else out[j++] = u8[i];
+    }
+    return out.slice(0, j);
+  }
+  async function empacar(doc) {
+    const blob = await D.Packer.toBlob(doc);
+    const Z = await cargarZip(), zip = await Z.loadAsync(blob);
+    let cambio = false;
+    for (const nombre of Object.keys(zip.files)) {
+      if (!/\.(xml|rels)$/i.test(nombre) || zip.files[nombre].dir) continue;
+      const f = repararBytes(await zip.files[nombre].async('uint8array'));
+      if (f) { zip.file(nombre, f); cambio = true; }
+    }
+    if (!cambio) return blob;
+    return zip.generateAsync({ type: 'blob', compression: 'DEFLATE', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+  }
+
   // ---------- Texto con **negritas** ----------
+  // [[L|palabra clave|url]] -> hipervínculo resaltado (nunca se muestra la URL larga)
   function runs(texto, o) {
     o = o || {};
-    const partes = String(texto == null ? '' : texto).split(/(\*\*[^*]+\*\*)/g).filter((x) => x !== '');
+    // Si el enlace quedó dentro de una negrita (**… [[L|…]] …**), se cierra la negrita antes y se abre después.
+    const t = String(texto == null ? '' : texto).replace(/\*\*([^*]*?)(\[\[L\|[^\]]+\]\])([^*]*?)\*\*/g, '**$1**$2**$3**').replace(/\*\*\*\*/g, '');
+    const out = [];
+    t.split(/(\[\[L\|[^|\]]*\|[^\]]+\]\])/g).forEach((seg) => {
+      const m = seg.match(/^\[\[L\|([^|\]]*)\|([^\]]+)\]\]$/);
+      if (m) { out.push(new D.ExternalHyperlink({ link: m[2], children: emo(m[1], { bold: true, color: C.azul, underline: {}, size: o.size, font: o.font }) })); return; }
+      if (seg) out.push.apply(out, runsNeg(seg, o));
+    });
+    return out.length ? out : [new D.TextRun('')];
+  }
+  function runsNeg(texto, o) {
+    const partes = String(texto).split(/(\*\*[^*]+\*\*)/g).filter((x) => x !== '');
     if (!partes.length) partes.push('');
     return partes.map((p) => {
       const neg = /^\*\*[^*]+\*\*$/.test(p);
@@ -107,6 +162,7 @@ window.IC_DOCX = (function () {
     out.push.apply(out, bloqueTexto(p.copy));
     if (p.contacto) out.push.apply(out, bloqueTexto(p.contacto, { size: 20, despues: 40 }));
     if (p.hashtags) out.push(P(p.hashtags, { color: C.azul, size: 19, antes: 60 }));
+    if (p.enlace) out.push(P(p.enlace, { size: 17, color: C.gris, antes: 40 }));
     if (p.copy_b) {
       out.push(esp(60));
       out.push(caja([P('🔁 VERSIÓN B (optimizada) – ' + (p.seccion || ''), { bold: true, color: C.navy, size: 20 })].concat(bloqueTexto(p.copy_b, { size: 20, despues: 80 }),
@@ -179,7 +235,7 @@ window.IC_DOCX = (function () {
       styles: { default: { document: { run: { font: 'Calibri', size: 21, color: '1D2B36' } } } },
       sections: [{ properties: pagina(), headers: { default: encabezadoLogo(ctx, 'CONTENIDO DE LA SEMANA  |  ' + (ctx.fechaTxt || '')) }, footers: { default: pie('Ideas Control • Equipos y Soluciones S.A.S. • Marketing • ' + (t.Title || '')) }, children: hijos }]
     });
-    return D.Packer.toBlob(doc);
+    return empacar(doc);
   }
 
   // =====================================================================
@@ -195,7 +251,7 @@ window.IC_DOCX = (function () {
          new D.Paragraph({ children: emo(res, { bold: true, size: 52, color: C.azul, font: F }), spacing: { after: 160 } })]
       : [new D.Paragraph({ children: emo(tit, { bold: true, size: 52, color: C.navy, font: F }), spacing: { after: 160 } })];
     hijos.push.apply(hijos, tituloRuns);
-    if (n.bajada) hijos.push(P('**' + n.bajada + '**', { size: 22, color: C.navy, despues: 240 }));
+    if (n.bajada) hijos.push(P(n.bajada, { bold: true, size: 22, color: C.navy, despues: 240 }));
     const pr = (t, o) => P(t, Object.assign({ size: 21, despues: 140, linea: 290 }, o || {}));
     (n.bloques || []).forEach((b) => {
       if (!b) return;
@@ -245,7 +301,7 @@ window.IC_DOCX = (function () {
           hijos.push(esp(200)); break;
         case 'pregunta':
           if (b.titulo) hijos.push(new D.Paragraph({ children: emo(b.titulo, { bold: true, size: 30, color: C.navy, font: F }), spacing: { before: 200, after: 100 }, keepNext: true }));
-          if (b.destacado) hijos.push(pr('**' + b.destacado + '**'));
+          if (b.destacado) hijos.push(pr(b.destacado, { bold: true }));
           if (b.texto) hijos.push(pr(b.texto));
           break;
         default:
@@ -260,8 +316,8 @@ window.IC_DOCX = (function () {
       P(ctx.contactoLinea || '', { bold: true, size: 19, color: C.azul, align: D.AlignmentType.CENTER, despues: 0 })], { ancho: ANCHO, fondo: C.azulClaro, m: 220 })] })], [ANCHO],
       { bordes: Object.assign(sinBordes(), { top: { style: D.BorderStyle.SINGLE, size: 8, color: C.azul } }) }));
     hijos.push(esp(200));
-    if (cta.enlace_texto) hijos.push(P('**' + cta.enlace_texto + '**', { color: C.azul, size: 22, align: D.AlignmentType.CENTER, despues: 60 }));
-    if (n.cierre) hijos.push(P('**' + n.cierre + '**', { color: C.navy, size: 22, align: D.AlignmentType.CENTER, despues: 0 }));
+    if (cta.enlace_texto) hijos.push(P(cta.enlace_texto, { bold: true, color: C.azul, size: 22, align: D.AlignmentType.CENTER, despues: 60 }));
+    if (n.cierre) hijos.push(P(n.cierre, { bold: true, color: C.navy, size: 22, align: D.AlignmentType.CENTER, despues: 0 }));
 
     // Ficha editorial
     const f = n.ficha || {}, et = (t) => P(t, { bold: true, color: C.azul, size: 19, antes: 160, despues: 40 }), vt = (t) => P(t, { size: 20, despues: 40 });
@@ -281,7 +337,7 @@ window.IC_DOCX = (function () {
       styles: { default: { document: { run: { font: F, size: 21, color: '1D2B36' } } } },
       sections: [{ properties: pagina(), headers: { default: encabezadoLogo(ctx, 'NEWSLETTER  |  ' + (ctx.fechaTxt || '')) }, footers: { default: pie('Ideas Control • Equipos y Soluciones S.A.S. • Tiempo & Asistencia • WFM') }, children: hijos }]
     });
-    return D.Packer.toBlob(doc);
+    return empacar(doc);
   }
 
   return { cargar, contenido, newsletter };
