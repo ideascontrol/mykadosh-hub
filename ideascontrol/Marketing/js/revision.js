@@ -78,8 +78,14 @@ window.MKT_REV = (function () {
   }
   function pintar(raiz) {
     const t = M().temaDe(ST.temaId);
-    const opTemas = App.temas.filter((x) => M().dia(x.semana_inicio)).slice().sort((a, b) => M().dia(b.semana_inicio).localeCompare(M().dia(a.semana_inicio)))
-      .map((x) => { const n = App.pubs.filter((p) => p.tema_id === x.Title && p.estado === 'En aprobación').length; return '<option value="' + esc(x.Title) + '"' + (t && x.Title === t.Title ? ' selected' : '') + '>Semana del ' + esc(M().fCorta(x.semana_inicio)) + ' · ' + esc(x.tema) + (n ? ' · ' + n + ' por aprobar' : '') + '</option>'; }).join('');
+    // Semanas: «Esta semana y próximas» en orden de calendario; «Anteriores» de la más reciente hacia atrás. Con año.
+    const lunesHoy = M().lunesDe(M().hoyISO());
+    const opc = (x) => { const n = App.pubs.filter((p) => p.tema_id === x.Title && p.estado === 'En aprobación').length, f = new Date(M().dia(x.semana_inicio) + 'T12:00:00');
+      return '<option value="' + esc(x.Title) + '"' + (t && x.Title === t.Title ? ' selected' : '') + '>Semana del ' + esc(f.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })) + ' · ' + esc(x.tema) + (n ? ' · ' + n + ' por aprobar' : '') + '</option>'; };
+    const conFecha = App.temas.filter((x) => M().dia(x.semana_inicio));
+    const prox = conFecha.filter((x) => lunesTema(x) >= lunesHoy).sort((a, b) => M().dia(a.semana_inicio).localeCompare(M().dia(b.semana_inicio)));
+    const ant = conFecha.filter((x) => lunesTema(x) < lunesHoy).sort((a, b) => M().dia(b.semana_inicio).localeCompare(M().dia(a.semana_inicio)));
+    const opTemas = (prox.length ? '<optgroup label="Esta semana y próximas">' + prox.map(opc).join('') + '</optgroup>' : '') + (ant.length ? '<optgroup label="Semanas anteriores">' + ant.map(opc).join('') + '</optgroup>' : '');
     if (!t) { raiz.innerHTML = '<h1 class="ic-titulo">Revisión de la semana</h1><div class="ic-tabla-caja"><p class="ic-vacio">No hay temas con semana asignada.</p></div>'; return; }
     const ps = pubsDe(t), yo = App.usuario.email, aprobador = M().soyAprobador();
     const cuenta = (e) => ps.filter((p) => p.estado === e).length;
