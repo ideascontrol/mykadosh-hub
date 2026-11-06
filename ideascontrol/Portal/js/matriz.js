@@ -27,6 +27,7 @@ window.MatrizAccesos = (function () {
     { app: 'Desarrollo de Talento (APP-108)', rol: 'tal', modulos: [
       ['Muro (leer, Entendido, descargar)', (r) => !!r], ['Piezas (crear, editar, programar)', (r) => r === 'Administrador'], ['Lecturas', (r) => r === 'Administrador'], ['Programas', (r) => r === 'Administrador']] },
     { app: 'Soporte técnico (tickets) (APP-102)', rol: 'tik', modulos: [['Centro de tiquetes (mesadeayuda.timevisionbi.com)', (r) => !!r]] },
+    { app: 'TimeVision BI (APP-111)', rol: 'tvb', modulos: [['Acceso desde el Portal (timevisionbi.com)', (r) => !!r]] },
     { app: 'Gestión documental (APP-105)', rol: 'doc', modulos: [['Consultar documentos y plantillas', (r) => !!r]] },
     { app: 'Gestión de Clientes (APP-109)', rol: 'cli', modulos: [['Resumen, tareas e importar', (r) => !!r]] },
     { app: 'Calculadora de costos y precios (APP-110)', rol: 'cal', modulos: [['Nuevo cálculo e historial', (r) => !!r], ['Eliminar del historial', (r) => r === 'Dirección de Operaciones']] },
@@ -46,6 +47,7 @@ window.MatrizAccesos = (function () {
       nov: a7 ? (a7.rol === 'ADMIN' ? 'Dirección' : 'Consulta') : tec ? 'Técnico' : '',
       tal: a8 && a8.rol === 'ADMIN' ? 'Administrador' : 'Personal IC',
       tik: 'Todo el personal',
+      tvb: 'Todo el personal',
       doc: oficina ? 'Consulta' : tec ? 'Pendiente (permiso SharePoint)' : 'Según permisos de SharePoint',
       cli: dueno ? 'Dirección' : '',
       cal: ({ 'operaciones@ideascontrol.com': 'Dirección de Operaciones', 'patricia@ideascontrol.com': 'Gerencia General', 'margarita@ideascontrol.com': 'Dirección Comercial' })[email] || '',
@@ -97,6 +99,7 @@ window.MatrizAccesos = (function () {
       ['Novedades (APP-107)', 'Dirección · Consulta · Técnico', 'SYS_Accesos de APP-107; si no tiene, toma el rol de la Programación. Técnico = correo en la ficha del técnico.'],
       ['Desarrollo de Talento (APP-108)', 'Administrador · Personal IC', 'Todo el personal ve el muro. Administrador = ADMIN en APP-108 o en la Programación.'],
       ['Soporte técnico (tickets) (APP-102)', 'Todo el personal', 'Activo para todos en el Portal. Abre el centro de tiquetes https://mesadeayuda.timevisionbi.com/ en una pestaña nueva; el inicio de sesión y los permisos internos los maneja la mesa de ayuda.'],
+      ['TimeVision BI (APP-111)', 'Todo el personal', 'Botón activo para todos en el Portal. Abre https://timevisionbi.com/ en una pestaña nueva; el inicio de sesión y los permisos de los tableros los maneja TimeVision.'],
       ['Gestión documental (APP-105)', 'Consulta', 'Depende de los permisos de la biblioteca 00_Documentacion_Maestra en SharePoint. Los técnicos quedan pendientes del permiso del administrador.'],
       ['Gestión de Clientes (APP-109)', 'Dirección', 'Solo operaciones@ideascontrol.com (configuración de la app).'],
       ['Calculadora de costos y precios (APP-110)', 'Gerencia General · Dirección Comercial · Dirección de Operaciones', 'Solo patricia@, margarita@ y operaciones@ (configuración de la app). Eliminar registros del historial: solo operaciones@.'],
