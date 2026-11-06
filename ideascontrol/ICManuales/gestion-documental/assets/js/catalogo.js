@@ -228,9 +228,9 @@ window.GD_CATALOGO = {
        "titulo": "Política de Tratamiento de Datos Personales",
        "tipo": "MAN",
        "estado": "publicado",
-       "version": "1.0",
+       "version": "1.1",
        "fecha": "Octubre 2025",
-       "revision": "Octubre 2026",
+       "revision": "Noviembre 2026",
        "responsable": "Gerencia General",
        "resumen": "Cómo Ideas Control recolecta, usa, circula y suprime datos personales (habeas data, Ley 1581 de 2012): responsable del tratamiento, finalidades, autorización y aviso de privacidad, derechos de los titulares, procedimiento de consultas y reclamos, deberes y seguridad de los datos.",
        "temas": [
