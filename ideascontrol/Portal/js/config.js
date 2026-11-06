@@ -4,7 +4,7 @@
    está en la lista SYS_Microapps (columna url), esa tiene prioridad.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-100', nombre: 'Portal de microapps', version: '0.1.12' },
+  app: { id: 'APP-100', nombre: 'Portal de microapps', version: '0.1.13' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -37,8 +37,8 @@ window.APPS = [
     texto: 'Tareas y pendientes de cada cliente: plan de trabajo, semáforo de vencimientos y resumen de estados.',
     url: '/ideascontrol/Tareas/', datos: 'SHAREPOINT', solo: ['operaciones@ideascontrol.com'] },
   { grupo: 'Operaciones', id: 'APP-102', nombre: 'Soporte técnico (tickets)', icono: 'ticket', color: '',
-    texto: 'Gestión de tickets de soporte, implementaciones y seguimiento de recursos.',
-    url: '', datos: 'POWERAPPS', soloOficina: true, nota: 'Registre su dirección en SYS_Microapps (APP-102 › url) para activarla aquí.' },
+    texto: 'Centro de tiquetes: registre y siga sus casos de soporte, implementaciones y seguimiento de recursos. Se abre en una pestaña nueva.',
+    url: 'https://mesadeayuda.timevisionbi.com/', datos: 'EXTERNA', fija: true },   // activa para todo el personal; externa = pestaña nueva
   { grupo: 'Comercial', id: 'APP-101', nombre: 'Comercial', icono: 'comercial', color: 'teal',
     texto: 'Empresas y contactos, productos y precios, cotizaciones con PDF, interacciones y tablero comercial.',
     url: '/ideascontrol/Comercial/', datos: 'SHAREPOINT', acceso: 'APP101' },
