@@ -200,7 +200,7 @@
             </div>
             <div class="consent">
               <input type="checkbox" id="consent">
-              <label for="consent" id="consentLabel">Autorizo a Ideas Control Equipos y Soluciones S.A.S. a guardar y tratar mis datos personales para contactarme con información sobre TimeVision y sus servicios, de acuerdo con su política de tratamiento de datos personales (Ley 1581 de 2012).</label>
+              <label for="consent" id="consentLabel">Autorizo de manera previa, expresa e informada a Ideas Control Equipos y Soluciones S.A.S. para tratar mis datos personales con la finalidad de atender mi solicitud sobre TimeVision, contactarme y compartirme información sobre sus soluciones, conforme a su Política de Tratamiento de Datos Personales (Ley 1581 de 2012). <span class="req">*</span></label>
             </div>
             <div class="error" id="formError" role="alert"></div>
             <div class="actions"><button type="submit" class="btn btn-primary" id="submitBtn">Quiero conocer TimeVision</button></div>
@@ -250,6 +250,9 @@ const LANDING_ID="LANDING-TIMEVISION";
 const FUENTE="Landing TimeVision";
 const VERSION_POLITICA="1.0";
 const POLICY_URL="";
+/* Texto exacto de la autorización (se guarda con el consentimiento como evidencia). */
+const TEXTO_AUTORIZACION="Autorizo de manera previa, expresa e informada a Ideas Control Equipos y Soluciones S.A.S. para tratar mis datos personales con la finalidad de atender mi solicitud sobre TimeVision, contactarme y compartirme información sobre sus soluciones, conforme a su Política de Tratamiento de Datos Personales (Ley 1581 de 2012).";
+let leadIdGuardado=null; // si el registro del consentimiento falla, el reintento no duplica el lead
 const PHONE="573213184853";
 const WA_TEXT="Hola Ideas Control. Acabo de dejar mis datos en la página de TimeVision y quisiera conocer más.";
 
@@ -259,7 +262,7 @@ const btn=document.getElementById("submitBtn");
 
 if(POLICY_URL){
   const lbl=document.getElementById("consentLabel");
-  lbl.innerHTML=lbl.innerHTML.replace("política de tratamiento de datos personales",'<a href="'+POLICY_URL+'" target="_blank" rel="noopener">política de tratamiento de datos personales</a>');
+  lbl.innerHTML=lbl.innerHTML.replace("Política de Tratamiento de Datos Personales",'<a href="'+POLICY_URL+'" target="_blank" rel="noopener">Política de Tratamiento de Datos Personales</a>');
 }
 
 function apiPost(params){
@@ -300,6 +303,8 @@ form.addEventListener("submit",async function(e){
 
   btn.disabled=true;btn.textContent="Guardando…";
   try{
+    const fechaAceptacion=new Date().toISOString();
+    if(!leadIdGuardado){
     const leadRes=await apiPost({
       action:"crear_lead",
       nombre:nombre,apellido:apellido,
@@ -309,14 +314,19 @@ form.addEventListener("submit",async function(e){
       telefono:tel.value.trim(),
       fuente:FUENTE,landing_id:LANDING_ID,microapp_id:MICROAPP_ID
     });
-    const leadId=pick(leadRes,["lead_id","leadId","id"])||pick(leadRes.data||{},["lead_id","leadId","id"]);
-    if(!leadId)throw new Error("No recibimos el identificador del registro.");
+    leadIdGuardado=pick(leadRes,["lead_id","leadId","id"])||pick(leadRes.data||{},["lead_id","leadId","id"]);
+    if(!leadIdGuardado)throw new Error("No recibimos el identificador del registro.");
+    }
+    const leadId=leadIdGuardado;
     await apiPost({
       action:"registrar_consentimiento",
       lead_id:leadId,
       tipo:"tratamiento_datos",
       version_politica:VERSION_POLITICA,
       aceptado:true,
+      fecha_aceptacion:fechaAceptacion,
+      texto_autorizacion:TEXTO_AUTORIZACION,
+      url_pagina:location.href.split("#")[0],
       fuente:FUENTE
     });
     form.style.display="none";

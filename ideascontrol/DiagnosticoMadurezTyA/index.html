@@ -254,7 +254,7 @@
     display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:var(--radius-sm);
     font-size:.92rem;margin-bottom:18px;
   }
-  .status-banner.error{background:var(--danger-bg);color:var(--danger);border:1px solid #F1C6C0;}
+  .status-banner.error{display:flex;margin-top:0;font-weight:400;background:var(--danger-bg);color:var(--danger);border:1px solid #F1C6C0;}
   .status-banner.info{background:var(--bg);color:var(--ink-soft);border:1px solid var(--gray-border);}
   .spinner{
     width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(0,0,0,.15);
@@ -352,12 +352,14 @@ var PHONE_DISPLAY  = "57 321 318 4853";
 var PHONE_TEL      = "+573213184853";
 var VERSION_POLITICA = "1.0";
 var POLICY_URL     = ""; // Se completará cuando Ideas Control entregue el enlace a la política de tratamiento de datos.
+/* Texto exacto de la autorización (se guarda con el consentimiento como evidencia). */
+var TEXTO_AUTORIZACION = "Autorizo de manera previa, expresa e informada a Ideas Control Equipos y Soluciones S.A.S. para tratar mis datos personales con la finalidad de preparar mi diagnóstico, contactarme y compartirme información sobre sus soluciones, conforme a su Política de Tratamiento de Datos Personales (Ley 1581 de 2012).";
 
 /* =========================================================================
    ESTADO EN MEMORIA (nunca en localStorage / cookies / URL)
    ========================================================================= */
 var state = {
-  stage: "PRESENTACION", // PRESENTACION -> REGISTRO -> CONSENTIMIENTO -> CREAR_SESION -> DIAGNOSTICO -> RESULTADO -> CONTACTO -> CONFIRMACION
+  stage: "PRESENTACION", // PRESENTACION -> REGISTRO (con autorización de datos) -> CREAR_SESION -> DIAGNOSTICO -> RESULTADO -> CONTACTO -> CONFIRMACION
   leadId: null,
   sessionId: null,
   microappId: MICROAPP_ID,
@@ -654,6 +656,7 @@ function renderRegistro(){
       selectField("pais", "País", PAISES, true),
       selectField("empleados", "Número de empleados", RANGOS_EMPLEADOS, true)
     ]),
+    consentimientoField(),
     el("div", { class: "mt-24" }, [
       el("button", { class: "btn btn-primary btn-block", type: "submit", id: "registroSubmitBtn" }, ["Continuar"])
     ])
@@ -668,6 +671,23 @@ function renderRegistro(){
     if(!data) return; // errores de validación ya mostrados
     submitLead(data, errorSlot);
   });
+}
+
+/* Autorización de tratamiento de datos: va en el mismo formulario, ANTES de
+   guardar cualquier dato (la autorización debe ser previa). Sin la casilla
+   marcada no se crea el registro. */
+function consentimientoField(){
+  var partes = TEXTO_AUTORIZACION.split("Política de Tratamiento de Datos Personales");
+  var policy = POLICY_URL
+    ? el("a", { href: POLICY_URL, target: "_blank", rel: "noopener" }, ["Política de Tratamiento de Datos Personales"])
+    : el("span", {}, ["Política de Tratamiento de Datos Personales"]);
+  return el("div", { class: "mt-24" }, [
+    el("div", { class: "consent-box" }, [
+      el("input", { type: "checkbox", id: "consentCheck" }),
+      el("label", { for: "consentCheck" }, [partes[0], policy, partes[1] || "", el("span", { class: "req" }, [" *"])])
+    ]),
+    el("div", { class: "error-text", id: "consent_err" }, [])
+  ]);
 }
 
 function collectRegistro(form){
@@ -687,6 +707,13 @@ function collectRegistro(form){
     }
     data[f] = val;
   });
+  var consentCheck = form.querySelector("#consentCheck");
+  var consentErr = form.querySelector("#consent_err");
+  consentErr.textContent = "";
+  if(!consentCheck.checked){
+    consentErr.textContent = "Debes autorizar el tratamiento de tus datos para continuar.";
+    valid = false;
+  }
   var emailInput = form.querySelector("#email");
   var emailErr = form.querySelector("#email_err");
   var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -718,91 +745,48 @@ function crearLeadConReintento(payload, intentosRestantes){
   });
 }
 
-/* Avance optimista: apenas se envía el formulario, pasamos a la pantalla de
-   consentimiento sin esperar a que crear_lead confirme — la persona puede
-   empezar a leer y marcar la casilla mientras el registro se guarda en el
-   fondo. Solo se espera la confirmación real cuando hace clic en "Aceptar y
-   continuar" (ver renderConsentimiento). Si para entonces el registro ya
-   terminó, el clic se siente instantáneo. */
+/* Registro: la persona ya marcó la autorización en el formulario.
+   1) crear_lead  2) registrar_consentimiento (con fecha, versión y texto exacto).
+   Si el segundo paso falla, el reintento NO vuelve a crear el lead: solo
+   vuelve a registrar el consentimiento del mismo lead. */
+function registrarConsentimiento(fechaAceptacion){
+  return callApi("registrar_consentimiento", {
+    lead_id: state.leadId,
+    tipo: "tratamiento_datos",
+    version_politica: VERSION_POLITICA,
+    aceptado: true,
+    fecha_aceptacion: fechaAceptacion,
+    texto_autorizacion: TEXTO_AUTORIZACION,
+    url_pagina: location.href.split("#")[0],
+    fuente: FUENTE
+  }, {
+    friendlyMsg: "No pudimos registrar tu autorización. Por favor, inténtalo nuevamente."
+  });
+}
 function submitLead(data, errorSlot){
   errorSlot.innerHTML = "";
+  var btn = document.getElementById("registroSubmitBtn");
+  var fechaAceptacion = new Date().toISOString();
   var payload = Object.assign({}, data, {
     fuente: FUENTE,
     landing_id: LANDING_ID,
     microapp_id: MICROAPP_ID
   });
-  var leadPromise = crearLeadConReintento(payload);
-  renderConsentimiento(payload, leadPromise);
-}
-
-/* =========================================================================
-   ETAPA 5 — CONSENTIMIENTO
-   ========================================================================= */
-function renderConsentimiento(payload, leadPromise){
-  state.stage = "CONSENTIMIENTO";
-  var errorSlot = el("div", {});
-  var checkbox = el("input", { type: "checkbox", id: "consentCheck" });
-  var continueBtn = el("button", { class: "btn btn-primary btn-block", disabled: "disabled" }, ["Aceptar y continuar"]);
-  var originalLabel = continueBtn.textContent;
-
-  function intentar(){
-    errorSlot.innerHTML = "";
-    continueBtn.disabled = true;
-    continueBtn.textContent = "Guardando…";
-    leadPromise
-      .then(function(){
-        return callApi("registrar_consentimiento", {
-          lead_id: state.leadId,
-          tipo: "tratamiento_datos",
-          version_politica: VERSION_POLITICA,
-          aceptado: true,
-          fuente: FUENTE
-        }, {
-          friendlyMsg: "No pudimos registrar tu consentimiento. Por favor, inténtalo nuevamente."
-        });
-      })
-      .then(function(){
-        state.consentAccepted = true;
-        crearSesionYContinuar();
-      })
-      .catch(function(err){
-        continueBtn.disabled = !checkbox.checked;
-        continueBtn.textContent = originalLabel;
-        errorSlot.innerHTML = "";
-        errorSlot.appendChild(errorBannerWithRetry(err.friendly || "No pudimos completar tu registro. Por favor, inténtalo nuevamente.", function(){
-          leadPromise = crearLeadConReintento(payload); // reintento completo desde cero
-          intentar();
-        }));
-      });
-  }
-
-  checkbox.addEventListener("change", function(){
-    continueBtn.disabled = !checkbox.checked;
-  });
-  continueBtn.addEventListener("click", function(){
-    if(!checkbox.checked) return;
-    intentar();
-  });
-
-  var policyLink = POLICY_URL
-    ? el("a", { href: POLICY_URL, target: "_blank", rel: "noopener" }, ["política de tratamiento de datos"])
-    : el("span", {}, ["política de tratamiento de datos"]);
-
-  var card = el("div", { class: "card" }, [
-    el("h2", {}, ["Antes de continuar"]),
-    el("p", {}, ["Para procesar tu diagnóstico necesitamos tu consentimiento para el tratamiento de tus datos personales."]),
-    el("div", { class: "consent-box" }, [
-      checkbox,
-      el("label", { for: "consentCheck" }, [
-        "Acepto el tratamiento de mis datos personales de acuerdo con la ",
-        policyLink,
-        "."
-      ])
-    ]),
-    errorSlot,
-    continueBtn
-  ]);
-  renderStage(card);
+  if(btn){ btn.disabled = true; btn.textContent = "Guardando…"; }
+  var paso = state.leadId ? Promise.resolve(state.leadId) : crearLeadConReintento(payload);
+  paso
+    .then(function(){ return registrarConsentimiento(fechaAceptacion); })
+    .then(function(){
+      state.consentAccepted = true;
+      crearSesionYContinuar();
+    })
+    .catch(function(err){
+      if(btn){ btn.disabled = false; btn.textContent = "Continuar"; }
+      errorSlot.innerHTML = "";
+      errorSlot.appendChild(errorBannerWithRetry(err.friendly || "No pudimos completar tu registro. Por favor, inténtalo nuevamente.", function(){
+        submitLead(data, errorSlot);
+      }));
+    });
 }
 
 /* =========================================================================

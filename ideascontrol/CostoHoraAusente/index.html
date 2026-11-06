@@ -41,6 +41,9 @@ const LANDING_ID="LANDING-APP002";
 const FUENTE="Landing APP-002 - Costo Ausentismo";
 const VERSION_POLITICA="1.0";
 const POLICY_URL="";
+/* Texto exacto de la autorización (se guarda con el consentimiento como evidencia). */
+const TEXTO_AUTORIZACION="Autorizo de manera previa, expresa e informada a Ideas Control Equipos y Soluciones S.A.S. para tratar mis datos personales con la finalidad de atender mi solicitud, contactarme y compartirme información sobre sus soluciones, conforme a su Política de Tratamiento de Datos Personales (Ley 1581 de 2012).";
+let leadIdGuardado=null; // si el registro del consentimiento falla, el reintento no duplica el lead
 const PHONE="573213184853";
 const app=document.getElementById("app");
 
@@ -178,13 +181,14 @@ function createForm(){
   form.appendChild(grid);
 
   const policyLink=POLICY_URL
-    ? el("a",{href:POLICY_URL,target:"_blank",rel:"noopener"},["política de tratamiento de datos"])
-    : el("span",{},["política de tratamiento de datos"]);
+    ? el("a",{href:POLICY_URL,target:"_blank",rel:"noopener"},["Política de Tratamiento de Datos Personales"])
+    : el("span",{},["Política de Tratamiento de Datos Personales"]);
+  const partes=TEXTO_AUTORIZACION.split("Política de Tratamiento de Datos Personales");
 
   const consent=el("div",{class:"consent"},[
     el("input",{type:"checkbox",id:"consent"}),
     el("label",{for:"consent"},[
-      "Acepto el tratamiento de mis datos personales de acuerdo con la ",policyLink," de Ideas Control."
+      partes[0],policyLink,partes[1]||"",el("span",{class:"req"},[" *"])
     ])
   ]);
   form.appendChild(consent);
@@ -208,7 +212,7 @@ function createForm(){
     const email=document.getElementById("email");
     if(email.value&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)){ok=false;email.style.borderColor="var(--danger)"}
     if(!document.getElementById("consent").checked){ok=false}
-    if(!ok){error.textContent="Completa los campos obligatorios y acepta la política de tratamiento de datos.";error.style.display="block";return}
+    if(!ok){error.textContent="Completa los campos obligatorios y autoriza el tratamiento de tus datos personales.";error.style.display="block";return}
 
     btn.disabled=true;btn.textContent="Guardando…";
     const payload={
@@ -221,9 +225,13 @@ function createForm(){
       fuente:FUENTE,landing_id:LANDING_ID,microapp_id:MICROAPP_ID
     };
     try{
-      const leadRes=await apiRequest("POST",{action:"crear_lead",...payload});
-      const leadId=pick(leadRes,["lead_id","leadId","id"],null)||pick(leadRes.data||{},["lead_id","leadId","id"],null);
-      if(!leadId)throw new Error("No recibimos el identificador del registro.");
+      const fechaAceptacion=new Date().toISOString();
+      if(!leadIdGuardado){
+        const leadRes=await apiRequest("POST",{action:"crear_lead",...payload});
+        leadIdGuardado=pick(leadRes,["lead_id","leadId","id"],null)||pick(leadRes.data||{},["lead_id","leadId","id"],null);
+        if(!leadIdGuardado)throw new Error("No recibimos el identificador del registro.");
+      }
+      const leadId=leadIdGuardado;
 
       await apiRequest("POST",{
         action:"registrar_consentimiento",
@@ -231,6 +239,9 @@ function createForm(){
         tipo:"tratamiento_datos",
         version_politica:VERSION_POLITICA,
         aceptado:true,
+        fecha_aceptacion:fechaAceptacion,
+        texto_autorizacion:TEXTO_AUTORIZACION,
+        url_pagina:location.href.split("#")[0],
         fuente:FUENTE
       });
 
