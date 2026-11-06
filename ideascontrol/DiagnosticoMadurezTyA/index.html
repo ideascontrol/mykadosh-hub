@@ -339,7 +339,7 @@
 
 <script src="/ideascontrol/assets/js/ic-paises.js?v=1.0.0"></script>
 <script src="/ideascontrol/assets/js/ic-validacion.js?v=1.0.0"></script>
-<script src="/ideascontrol/assets/js/ic-formulario.js?v=1.0.1"></script>
+<script src="/ideascontrol/assets/js/ic-formulario.js?v=1.0.2"></script>
 <script>
 (function(){
 "use strict";
@@ -693,7 +693,7 @@ function submitLead(data, errorSlot){
   errorSlot.innerHTML = "";
   var btn = document.getElementById("registroSubmitBtn");
   var fechaAceptacion = new Date().toISOString();
-  var payload = Object.assign({}, data, {
+  var payload = Object.assign({}, data, data.utm || {}, {
     fuente: FUENTE,
     landing_id: LANDING_ID,
     microapp_id: MICROAPP_ID

@@ -78,11 +78,16 @@ const ICONOS = {
 const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const esc = (s) => String(s || '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 let cat = '', q = '';
+/* UTM: si la persona llegó con etiquetas (p. ej. desde el enlace de la bio de Instagram), se pasan a cada herramienta */
+const UTM = (() => { try { const p = new URLSearchParams(location.search), o = new URLSearchParams();
+  ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].forEach((k) => { const v = p.get(k); if (v) o.set(k, v.slice(0, 100)); });
+  return o.toString(); } catch (e) { return ''; } })();
+const conUtm = (u) => UTM ? u + (u.indexOf('?') < 0 ? '?' : '&') + UTM : u;
 function pintar() {
   const t = norm(q).split(/\s+/).filter(Boolean);
   const lista = HERRAMIENTAS.filter((h) => (!cat || h.cat === cat) && t.every((x) => norm(h.nombre + ' ' + h.texto + ' ' + h.cat).includes(x)));
   document.getElementById('grid').innerHTML = lista.length ? lista.map((h) =>
-    '<a class="card" href="' + esc(h.url) + '" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONOS[h.icono] || '') + '</svg>' +
+    '<a class="card" href="' + esc(conUtm(h.url)) + '" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONOS[h.icono] || '') + '</svg>' +
     '<h3>' + esc(h.nombre) + '</h3><p>' + esc(h.texto) + '</p><span class="cat">' + esc(h.cat) + '</span></a>').join('')
     : '<div class="vacio">No encontramos herramientas con ese criterio.</div>';
 }

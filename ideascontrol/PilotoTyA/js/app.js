@@ -38,7 +38,7 @@
     var out = {};
     try {
       var p = new URLSearchParams(location.search);
-      ['utm_source', 'utm_medium', 'utm_campaign'].forEach(function (k) {
+      ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].forEach(function (k) {
         var v = p.get(k); if (v) out[k] = v.slice(0, 100);
       });
     } catch (e) { /* sin UTM */ }

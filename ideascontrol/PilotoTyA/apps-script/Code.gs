@@ -15,12 +15,21 @@
  *   RATE_EMAIL_PER_DAY  (opcional)  por defecto 3 registros nuevos por correo cada 24 h
  *   MIN_FILL_MS         (opcional)  por defecto 2500 ms (antibots)
  *   TIMEZONE            (opcional)  por defecto America/Bogota
+ *
+ * Version 2026-11-06 (UTM): guarda tambien de donde llego la persona
+ * (utm_source, utm_medium, utm_campaign, utm_content, utm_term).
+ * Despues de pegar este archivo, ejecute setup() UNA vez: agrega las
+ * 5 columnas nuevas al final de LEADS sin mover ni borrar los datos.
  */
 
 var HEADERS = [
   'id', 'fecha_registro', 'nombre_completo', 'correo_empresarial', 'codigo_pais',
-  'telefono', 'empresa', 'pais', 'acepta_politicas', 'version_politicas', 'fecha_aceptacion'
+  'telefono', 'empresa', 'pais', 'acepta_politicas', 'version_politicas', 'fecha_aceptacion',
+  'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'
 ];
+/* Encabezados de la version anterior (11 columnas): setup() los acepta y agrega las UTM. */
+var HEADERS_BASE = HEADERS.slice(0, 11);
+var UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
 
 var DEFAULT_BLOCKED = [
   'gmail.com', 'googlemail.com', 'hotmail.com', 'hotmail.es', 'hotmail.co', 'outlook.com', 'outlook.es',
@@ -116,7 +125,7 @@ function handleLead_(p) {
       'SI',
       asText_(cfg.policyVersion),
       accepted
-    ];
+    ].concat(utmCells_(p.utm));
     var r = sheet.getLastRow() + 1;               // nunca sobrescribe: siempre la fila siguiente
     sheet.getRange(r, 1, 1, HEADERS.length).setValues([row]);
     SpreadsheetApp.flush();
@@ -210,6 +219,14 @@ function safeCell_(s) {
   s = String(s);
   return /^[=+\-@\t\r]/.test(s) ? "'" + s : s;
 }
+/* Etiquetas UTM: solo texto, sin caracteres de control, maximo 100 caracteres. */
+function utmCells_(u) {
+  u = (u && typeof u === 'object') ? u : {};
+  return UTM_KEYS.map(function (k) {
+    var v = u[k] == null ? '' : String(u[k]).replace(/[\u0000-\u001F\u007F]/g, ' ').trim().slice(0, 100);
+    return safeCell_(v);
+  });
+}
 /* Fuerza texto (conserva ceros iniciales y el signo + del prefijo). */
 function asText_(s) {
   return "'" + String(s);
@@ -229,8 +246,18 @@ function setup() {
   if (sh.getLastRow() === 0) {
     sh.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
   } else {
-    var current = sh.getRange(1, 1, 1, HEADERS.length).getValues()[0].map(String);
-    if (current.join('|') !== HEADERS.join('|')) {
+    var ancho = Math.max(sh.getLastColumn(), HEADERS.length);
+    var current = sh.getRange(1, 1, 1, ancho).getValues()[0].map(String);
+    var actual = current.slice(0, HEADERS.length).join('|');
+    var base = current.slice(0, HEADERS_BASE.length).join('|');
+    var resto = current.slice(HEADERS_BASE.length).join('');
+    if (actual === HEADERS.join('|')) {
+      // ya tiene el esquema nuevo
+    } else if (base === HEADERS_BASE.join('|') && resto === '') {
+      // esquema anterior (11 columnas): se agregan las 5 columnas UTM al final
+      sh.getRange(1, HEADERS_BASE.length + 1, 1, UTM_KEYS.length).setValues([UTM_KEYS]);
+      console.log('Se agregaron las columnas UTM: ' + UTM_KEYS.join(', '));
+    } else {
       throw new Error('Los encabezados de ' + cfg.sheetName + ' no coinciden con el esquema aprobado. No se modific\u00F3 nada.');
     }
   }
@@ -240,7 +267,9 @@ function setup() {
   sh.getRange('K2:K').setNumberFormat('yyyy-mm-dd hh:mm:ss');
 
   // Proteccion: solo el propietario (y quien el agregue) puede editar.
-  var prot = sh.protect().setDescription('LEADS - solo personal autorizado');
+  var existentes = sh.getProtections(SpreadsheetApp.ProtectionType.SHEET);
+  var prot = existentes.length ? existentes[0] : sh.protect();
+  prot.setDescription('LEADS - solo personal autorizado');
   prot.removeEditors(prot.getEditors());
   if (prot.canDomainEdit()) prot.setDomainEdit(false);
   console.log('LEADS listo. Columnas: ' + HEADERS.join(', '));
@@ -266,7 +295,8 @@ function pruebaRegistro() {
       version_politicas: cfg.policyVersion,
       fecha_aceptacion: new Date().toISOString(),
       hp: '',
-      elapsed_ms: 10000
+      elapsed_ms: 10000,
+      utm: { utm_source: 'prueba', utm_medium: 'manual', utm_campaign: 'prueba-utm' }
     });
     console.log('Resultado: ' + JSON.stringify(res));
   } catch (e) {

@@ -33,7 +33,7 @@
 
 <script src="/ideascontrol/assets/js/ic-paises.js?v=1.0.0"></script>
 <script src="/ideascontrol/assets/js/ic-validacion.js?v=1.0.0"></script>
-<script src="/ideascontrol/assets/js/ic-formulario.js?v=1.0.1"></script>
+<script src="/ideascontrol/assets/js/ic-formulario.js?v=1.0.2"></script>
 <script>
 (function(){
 "use strict";
@@ -187,6 +187,7 @@ function createForm(){
     const payload={
       nombre:datos.nombre,apellido:datos.apellido,empresa:datos.empresa,cargo:"",
       email:datos.email,codigo_pais:datos.codigo_pais,telefono:datos.telefono,pais:datos.pais,hp:datos.hp,
+      utm_source:(datos.utm||{}).utm_source||'',utm_medium:(datos.utm||{}).utm_medium||'',utm_campaign:(datos.utm||{}).utm_campaign||'',utm_content:(datos.utm||{}).utm_content||'',utm_term:(datos.utm||{}).utm_term||'',
       fuente:FUENTE,landing_id:LANDING_ID,microapp_id:MICROAPP_ID
     };
     try{

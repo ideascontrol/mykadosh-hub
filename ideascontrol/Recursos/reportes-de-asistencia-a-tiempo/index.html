@@ -77,6 +77,11 @@
   document.querySelectorAll('[data-red]').forEach(function (a) { a.target = '_blank'; });
   var b = document.getElementById('kbCopiar');
   b.onclick = function () { try { navigator.clipboard.writeText(url).then(function () { b.textContent = '¡Copiado!'; }); } catch (e) { prompt('Copie el enlace:', url); } };
+  /* UTM: si la persona llegó al artículo desde una publicación con etiquetas, el botón de la herramienta conserva ese origen */
+  try {
+    var qs = new URLSearchParams(location.search), hay = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].filter(function (k) { return qs.get(k); });
+    if (hay.length) document.querySelectorAll('.kb-btn').forEach(function (a) { var u = new URL(a.href); hay.forEach(function (k) { u.searchParams.set(k, qs.get(k).slice(0, 100)); }); a.href = u.toString(); });
+  } catch (e) { /* navegador antiguo */ }
   var otros = (window.IC_ARTICULOS || []).filter(function (a) { return a.slug !== 'reportes-de-asistencia-a-tiempo'; }).slice(0, 3);
   var esc = function (s) { return String(s || '').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   document.getElementById('kbMas').innerHTML = otros.map(function (a) {

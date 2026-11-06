@@ -36,7 +36,7 @@ window.IC_CONFIG = {
 
   /* Parámetros UTM: se capturan pero NO se envían, porque la hoja LEADS no
      tiene columna "origen". Activar solo si se aprueba ampliar la BD. */
-  SEND_UTM: false,
+  SEND_UTM: true,
 
   /* Tiempo máximo de espera de la respuesta del backend (ms). */
   REQUEST_TIMEOUT_MS: 20000

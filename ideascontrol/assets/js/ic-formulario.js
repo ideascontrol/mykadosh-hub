@@ -24,6 +24,21 @@ window.IC_FORM = (function () {
     'live.com', 'live.com.mx', 'msn.com', 'yahoo.com', 'yahoo.es', 'yahoo.com.co', 'yahoo.com.mx', 'ymail.com',
     'icloud.com', 'me.com', 'aol.com', 'protonmail.com', 'proton.me'];
   var porIso = {}; PAISES.forEach(function (c) { porIso[c[0]] = c; });
+  /* UTM: etiquetas del enlace por el que llegó la persona (red, medio, campaña, pieza).
+     Se guardan en la visita para no perderlas si navega dentro de la landing. */
+  var CLAVES_UTM = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+  function utm() {
+    var out = {}, guardado = {};
+    try { guardado = JSON.parse(sessionStorage.getItem('ic_utm') || '{}') || {}; } catch (e) { /* sin almacenamiento */ }
+    try {
+      var q = new URLSearchParams(location.search), hay = false;
+      CLAVES_UTM.forEach(function (k) { var v = q.get(k); if (v) { out[k] = v.slice(0, 100); hay = true; } });
+      if (hay) { try { sessionStorage.setItem('ic_utm', JSON.stringify(out)); } catch (e) { /* sin almacenamiento */ } return out; }
+    } catch (e) { /* navegador antiguo */ }
+    CLAVES_UTM.forEach(function (k) { if (guardado[k]) out[k] = String(guardado[k]).slice(0, 100); });
+    return out;
+  }
+  utm();   // guarda los UTM apenas carga la página
   var nombres = PAISES.map(function (c) { return c[1]; });
 
   var CSS = '.icf-tel{display:grid;grid-template-columns:minmax(0,240px) minmax(0,1fr);gap:8px}' +
@@ -121,10 +136,11 @@ window.IC_FORM = (function () {
         empresa: res.empresa.value.toLocaleUpperCase('es-CO'),
         pais: res.pais.value,
         empleados: res.empleados ? res.empleados.value : '',
-        hp: $('hp').value
+        hp: $('hp').value,
+        utm: utm()
       };
     }
     return { validar: validar };
   }
-  return { crear: crear, BLOQUEADOS: BLOQUEADOS };
+  return { crear: crear, utm: utm, BLOQUEADOS: BLOQUEADOS };
 })();

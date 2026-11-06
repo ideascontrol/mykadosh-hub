@@ -232,7 +232,7 @@
 </script>
 <script src="/ideascontrol/assets/js/ic-paises.js?v=1.0.0"></script>
 <script src="/ideascontrol/assets/js/ic-validacion.js?v=1.0.0"></script>
-<script src="/ideascontrol/assets/js/ic-formulario.js?v=1.0.1"></script>
+<script src="/ideascontrol/assets/js/ic-formulario.js?v=1.0.2"></script>
 <script>
 (function(){
 "use strict";
@@ -291,6 +291,7 @@ form.addEventListener("submit",async function(e){
       telefono:datos.telefono,
       pais:datos.pais,
       hp:datos.hp,
+      utm_source:(datos.utm||{}).utm_source||'',utm_medium:(datos.utm||{}).utm_medium||'',utm_campaign:(datos.utm||{}).utm_campaign||'',utm_content:(datos.utm||{}).utm_content||'',utm_term:(datos.utm||{}).utm_term||'',
       fuente:FUENTE,landing_id:LANDING_ID,microapp_id:MICROAPP_ID
     });
     leadIdGuardado=pick(leadRes,["lead_id","leadId","id"])||pick(leadRes.data||{},["lead_id","leadId","id"]);
