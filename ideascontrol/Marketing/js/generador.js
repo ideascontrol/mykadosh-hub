@@ -165,12 +165,21 @@ window.MKT_GEN = (function () {
       if (!Array.isArray(d.piezas) || !d.piezas.length) throw new Error('La respuesta no trae "piezas". ¿Pegó la respuesta del newsletter en el contenido de la semana?');
       const sl = slots(t), porId = {};
       sl.forEach((s) => { porId[s.id] = s; });
-      const usadas = {}, avisos = [];
+      const usadas = {}, avisos = [], sueltas = [];
       d.piezas.forEach((p) => {
-        const s = porId[String(p.id || '').trim()];
-        if (!s) { avisos.push('Claude devolvió una pieza con id «' + (p.id || 'sin id') + '» que no está en la lista: se omite.'); return; }
+        const s = porId[String(p.pub_id || '').trim()] || porId[String(p.id || '').trim()];
+        if (!s || usadas[s.id]) { sueltas.push(p); return; }
         usadas[s.id] = true; s.pieza = p; s.incluir = s.editable;
       });
+      // Respuesta guardada antes de crear las publicaciones (ids NUEVA-n): se emparejan en el mismo orden de la estructura de la semana
+      const libres = sl.filter((s) => !usadas[s.id]);
+      let porOrden = 0;
+      sueltas.forEach((p) => {
+        const s = /^NUEVA-\d+$/i.test(String(p.id || '')) ? libres.shift() : null;
+        if (!s) { avisos.push('Claude devolvió una pieza con id «' + (p.id || 'sin id') + '» que no está en la lista: se omite.'); return; }
+        usadas[s.id] = true; s.pieza = p; s.incluir = s.editable; porOrden++;
+      });
+      if (porOrden) avisos.push(porOrden + ' pieza(s) se emparejaron con sus publicaciones por el orden de la semana. Revise en la vista previa que cada una esté en su red y día.');
       sl.filter((s) => s.editable && !usadas[s.id]).forEach((s) => avisos.push('Falta la pieza ' + s.id + ' (' + s.grupo + ' · ' + diaTitulo(s.fecha) + '). Puede pedírsela a Claude y volver a pegar.'));
       return { tipo, datos: d, slots: sl, avisos };
     }
@@ -306,6 +315,8 @@ window.MKT_GEN = (function () {
     const carpeta = GC.carpetaSemanas + '/' + lunesTema(t);
     progreso('Guardando el Word en SharePoint…');
     const web = await subir(carpeta + '/' + archivo, blob);
+    // Respaldo de la respuesta, con el número real de publicación de cada pieza (para «Usar la respuesta guardada»)
+    lectura.slots.forEach((s) => { if (s.pieza && s.pubId) s.pieza.pub_id = s.pubId; });
     try { await G.subirArchivo(carpeta + '/' + archivo.replace(/\.docx$/i, '') + '.json', new Blob([JSON.stringify(lectura.datos, null, 2)], { type: 'application/json' })); } catch (e) { /* respaldo opcional */ }
     return { hechos, web, blob, archivo, carpeta };
   }
@@ -369,7 +380,7 @@ window.MKT_GEN = (function () {
       (t ? '<section class="ic-bloque gen-paso"><div class="cab"><h2><span class="gen-n">2</span> ¿Qué vamos a generar?</h2></div><div class="cuerpo"><div class="gen-tipos">' +
         '<button class="gen-tipo' + (ST.tipo === 'contenido' ? ' on' : '') + '" data-tipo="contenido"><b>Contenido de la semana</b><span>Copies por red y día sin repetir, formato recomendado, diseño de cada pieza, guiones para CapCut o HeyGen y estrategia.</span></button>' +
         '<button class="gen-tipo' + (ST.tipo === 'newsletter' ? ' on' : '') + '" data-tipo="newsletter"><b>Newsletter de LinkedIn</b><span>Artículo con el diseño de IC, ficha editorial y SEO. Queda como publicación «LinkedIn Newsletter».</span></button>' +
-      '</div>' + (ST.tipo === 'contenido' ? listaSlots(t) : infoNewsletter(t)) + '</div></section>' +
+      '</div>' + (ST.tipo === 'contenido' ? listaSlots(t) : infoNewsletter(t)) + '<div id="gYa"></div></div></section>' +
       '<section class="ic-bloque gen-paso"><div class="cab"><h2><span class="gen-n">3</span> Llevar el prompt a Claude</h2></div><div class="cuerpo">' +
         '<p class="sec" style="margin-top:0">Copie el prompt, péguelo en un chat nuevo de Claude y espere la respuesta. Claude responde con un bloque de código: use su botón «Copiar».</p>' +
         '<div class="gen-acc"><button class="ic-btn" id="gCopiar">Copiar prompt</button><a class="ic-btn sec" href="https://claude.ai/new" target="_blank" rel="noopener">Abrir Claude ↗</a><button class="ic-btn sec" id="gVer">Ver prompt</button><button class="ic-btn sec" id="gEditar">Editar plantilla</button></div>' +
@@ -414,6 +425,7 @@ window.MKT_GEN = (function () {
       catch (e) { raiz.querySelector('#gPrev').innerHTML = '<div class="gen-error">' + esc(e.message) + '</div>'; }
     };
     if (ST.lectura) pintarPrevia(raiz, t);
+    pintarYa(raiz, t);
   }
   function pintarSinTema(raiz, l) {
     pintar(raiz);
@@ -424,6 +436,48 @@ window.MKT_GEN = (function () {
     const f = (k, l) => t[k] ? '<div><dt>' + l + '</dt><dd>' + esc(t[k]) + '</dd></div>' : '';
     return '<dl class="gen-tema">' + f('hook', 'Hook') + f('problema', 'Problema') + f('solucion', 'Solución') + f('cta', 'CTA') + f('microapp', 'Microapp') + '</dl>';
   }
+  // ---------- Lo ya generado para esta semana (SharePoint) ----------
+  async function hijos(carpeta) {
+    try {
+      const sid = await G.sitio(CFG.sitio.host, CFG.sitio.ruta);
+      return (await G.llamar('GET', '/sites/' + sid + '/drive/root:/' + M().rutaUrl(carpeta) + ':/children?$top=100')).value || [];
+    } catch (e) { return []; }
+  }
+  async function pintarYa(raiz, t) {
+    const el = raiz.querySelector('#gYa'); if (!el) return;
+    const tipo = ST.tipo, lunes = lunesTema(t);
+    el.innerHTML = '<p class="sec" style="margin:10px 0 0">Buscando lo ya generado para esta semana…</p>';
+    let words = [], jsons = [];
+    if (tipo === 'contenido') {
+      const h = await hijos(GC.carpetaSemanas + '/' + lunes);
+      words = h.filter((x) => /\.docx$/i.test(x.name)); jsons = h.filter((x) => /\.json$/i.test(x.name));
+    } else {
+      const pn = pubNewsletter(t);
+      const [hp, hj] = await Promise.all([pn ? hijos(CFG.carpetaPiezas + '/' + pn.Title) : Promise.resolve([]), hijos(GC.carpetaNewsletters + '/' + lunes)]);
+      words = hp.filter((x) => /\.docx$/i.test(x.name)); jsons = hj.filter((x) => /\.json$/i.test(x.name));
+    }
+    if (!el.isConnected || ST.tipo !== tipo || ST.temaId !== t.Title) return;
+    const pubs = tipo === 'contenido' ? App.pubs.filter((p) => p.tema_id === t.Title && !/newsletter/i.test(p.canal || '') && /Generado con Claude/.test(p.notas || '')) : [];
+    if (!words.length && !jsons.length) { el.innerHTML = '<p class="sec" style="margin:10px 0 0">Todavía no hay ' + (tipo === 'contenido' ? 'contenido' : 'newsletter') + ' generado para esta semana en SharePoint.</p>'; return; }
+    const f = (x) => new Date(x.lastModifiedDateTime).toLocaleString('es-CO', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+    const reciente = (arr) => arr.slice().sort((a, b) => String(b.lastModifiedDateTime).localeCompare(String(a.lastModifiedDateTime)))[0];
+    const j = reciente(jsons);
+    el.innerHTML = '<div class="gen-ok" style="margin-top:12px"><b>✅ Ya se generó para esta semana.</b>' +
+      (words.length ? '<ul>' + words.map((w) => '<li><a href="' + esc(w.webUrl) + '" target="_blank" rel="noopener">' + esc(w.name) + ' ↗</a> <span class="sec">(' + esc(f(w)) + ')</span></li>').join('') + '</ul>' : '') +
+      (pubs.length ? '<p class="sec" style="margin:6px 0 0">' + pubs.length + ' publicaciones de esta semana tienen el copy generado: <a href="#lista">ver en Publicaciones</a>.</p>' : '') +
+      (j ? '<div class="gen-acc" style="margin-top:8px"><button class="ic-btn sec chico" id="gUsar">Usar la respuesta guardada</button><span class="sec">Vuelve a mostrar la vista previa sin pedírsela otra vez a Claude (para revisar, cambiar el nombre o volver a crear el Word).</span></div>' : '') + '</div>';
+    const bu = el.querySelector('#gUsar');
+    if (bu) bu.onclick = () => U.conCarga(bu, async () => {
+      try {
+        const r = await fetch(j['@microsoft.graph.downloadUrl']); if (!r.ok) throw new Error('No se pudo leer la respuesta guardada (' + r.status + ').');
+        const txt = await r.text();
+        ST.respuesta = txt; const ta = raiz.querySelector('#gResp'); if (ta) ta.value = txt;
+        ST.lectura = leer(ST.tipo, txt, t); ST.resultado = null; pintarPrevia(raiz, t);
+        raiz.querySelector('#gPrev').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
+    });
+  }
+
   function listaSlots(t) {
     const sl = slots(t), pl = sl.filter((s) => s.pub).length;
     return '<p class="sec" style="margin:12px 0 6px">Piezas de la semana: ' + sl.length + ' — ' + pl + ' del plan (Publicaciones) y ' + (sl.length - pl) + ' nuevas de la estructura estándar. En la vista previa puede desmarcar las que no quiera crear.</p>' +
