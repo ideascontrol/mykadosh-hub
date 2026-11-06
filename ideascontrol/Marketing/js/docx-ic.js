@@ -29,8 +29,18 @@ window.IC_DOCX = (function () {
     if (!partes.length) partes.push('');
     return partes.map((p) => {
       const neg = /^\*\*[^*]+\*\*$/.test(p);
-      return new D.TextRun({ text: neg ? p.slice(2, -2) : p, bold: neg || !!o.bold, italics: !!o.italics, color: o.color, size: o.size, font: o.font });
-    });
+      return emo(neg ? p.slice(2, -2) : p, { bold: neg || !!o.bold, italics: !!o.italics, color: o.color, size: o.size, font: o.font });
+    }).reduce((a, b) => a.concat(b), []);
+  }
+  // Emojis a color: Word solo los pinta a color con la fuente «Segoe UI Emoji»; con Calibri/Arial salen planos (blanco y negro).
+  const RE_EMOJI = /((?:\p{Extended_Pictographic}|\p{Regional_Indicator}{2}|[0-9#*]\uFE0F?\u20E3)(?:\uFE0F|\u200D\p{Extended_Pictographic}|[\u{1F3FB}-\u{1F3FF}])*)/u;
+  const RE_EMOJI_G = new RegExp(RE_EMOJI.source, 'gu');
+  function emo(texto, props) {
+    const t = String(texto == null ? '' : texto);
+    if (!RE_EMOJI.test(t)) return [new D.TextRun(Object.assign({ text: t }, props))];
+    return t.split(RE_EMOJI_G).filter((x) => x !== '').map((x) => RE_EMOJI.test(x) && /^\S+$/.test(x) && !/^[0-9#*]$/.test(x)
+      ? new D.TextRun(Object.assign({}, props, { text: x, font: { ascii: 'Segoe UI Emoji', hAnsi: 'Segoe UI Emoji', cs: 'Segoe UI Emoji', eastAsia: 'Segoe UI Emoji' } }))
+      : new D.TextRun(Object.assign({ text: x }, props)));
   }
   function P(texto, o) {
     o = o || {};
@@ -84,7 +94,7 @@ window.IC_DOCX = (function () {
 
   function h(nivel, texto, o) {
     const tam = { 1: 30, 2: 26, 3: 22, 4: 20 }[nivel], col = nivel === 1 ? C.navy : nivel === 2 ? C.azul : C.teal;
-    return new D.Paragraph({ heading: D.HeadingLevel['HEADING_' + nivel], children: [new D.TextRun({ text: texto, bold: true, size: tam, color: col, font: 'Calibri' })],
+    return new D.Paragraph({ heading: D.HeadingLevel['HEADING_' + nivel], children: emo(texto, { bold: true, size: tam, color: col, font: 'Calibri' }),
       spacing: { before: nivel === 1 ? 360 : nivel === 2 ? 280 : 200, after: 100 }, keepNext: true, pageBreakBefore: !!(o && o.salto) });
   }
 
@@ -181,9 +191,9 @@ window.IC_DOCX = (function () {
     const tit = String(n.titulo || ''), res = String(n.titulo_resaltado || '');
     const corte = res && tit.endsWith(res) ? tit.length - res.length : -1;
     const tituloRuns = corte > 0
-      ? [new D.Paragraph({ children: [new D.TextRun({ text: tit.slice(0, corte).trim(), bold: true, size: 52, color: C.navy, font: F })], spacing: { after: 0 } }),
-         new D.Paragraph({ children: [new D.TextRun({ text: res, bold: true, size: 52, color: C.azul, font: F })], spacing: { after: 160 } })]
-      : [new D.Paragraph({ children: [new D.TextRun({ text: tit, bold: true, size: 52, color: C.navy, font: F })], spacing: { after: 160 } })];
+      ? [new D.Paragraph({ children: emo(tit.slice(0, corte).trim(), { bold: true, size: 52, color: C.navy, font: F }), spacing: { after: 0 } }),
+         new D.Paragraph({ children: emo(res, { bold: true, size: 52, color: C.azul, font: F }), spacing: { after: 160 } })]
+      : [new D.Paragraph({ children: emo(tit, { bold: true, size: 52, color: C.navy, font: F }), spacing: { after: 160 } })];
     hijos.push.apply(hijos, tituloRuns);
     if (n.bajada) hijos.push(P('**' + n.bajada + '**', { size: 22, color: C.navy, despues: 240 }));
     const pr = (t, o) => P(t, Object.assign({ size: 21, despues: 140, linea: 290 }, o || {}));
@@ -191,7 +201,7 @@ window.IC_DOCX = (function () {
       if (!b) return;
       switch (b.tipo) {
         case 'parrafos': [].concat(b.texto || []).forEach((t) => hijos.push(pr(t))); break;
-        case 'subtitulo': hijos.push(new D.Paragraph({ children: [new D.TextRun({ text: b.texto || '', bold: true, size: 30, color: C.navy, font: F })], spacing: { before: 300, after: 120 }, keepNext: true })); break;
+        case 'subtitulo': hijos.push(new D.Paragraph({ children: emo(b.texto || '', { bold: true, size: 30, color: C.navy, font: F }), spacing: { before: 300, after: 120 }, keepNext: true })); break;
         case 'comparacion': {
           if (b.titulo) hijos.push(P(String(b.titulo).toUpperCase(), { bold: true, size: 16, color: C.gris, align: D.AlignmentType.CENTER, antes: 120, despues: 80 }));
           const lado = (x, color) => [P(String((x || {}).titulo || '').toUpperCase(), { bold: true, size: 18, color, align: D.AlignmentType.CENTER, despues: 80 })].concat(((x || {}).items || []).map((i) => P('• ' + i, { size: 18, despues: 40 })));
@@ -225,7 +235,7 @@ window.IC_DOCX = (function () {
           hijos.push(esp(200)); break;
         }
         case 'checklist': {
-          if (b.titulo) hijos.push(new D.Paragraph({ children: [new D.TextRun({ text: b.titulo, bold: true, size: 30, color: C.navy, font: F })], spacing: { before: 300, after: 120 }, keepNext: true }));
+          if (b.titulo) hijos.push(new D.Paragraph({ children: emo(b.titulo, { bold: true, size: 30, color: C.navy, font: F }), spacing: { before: 300, after: 120 }, keepNext: true }));
           hijos.push(caja((b.items || []).map((i) => P('☐  ' + i, { size: 19, despues: 70 })).concat(b.cierre ? [P(b.cierre, { size: 18, color: C.gris, antes: 60, despues: 0 })] : []), 'FFFFFF', C.linea));
           hijos.push(esp(200)); break;
         }
@@ -234,7 +244,7 @@ window.IC_DOCX = (function () {
           hijos.push(tabla([new D.TableRow({ children: [celda([P(b.linea1 || '', { bold: true, size: 26, color: 'FFFFFF', align: D.AlignmentType.CENTER, despues: 40 }), P(b.linea2 || '', { bold: true, size: 26, color: '7CC4F2', align: D.AlignmentType.CENTER, despues: 0 })], { ancho: ANCHO, fondo: C.navy, m: 300 })] })], [ANCHO]));
           hijos.push(esp(200)); break;
         case 'pregunta':
-          if (b.titulo) hijos.push(new D.Paragraph({ children: [new D.TextRun({ text: b.titulo, bold: true, size: 30, color: C.navy, font: F })], spacing: { before: 200, after: 100 }, keepNext: true }));
+          if (b.titulo) hijos.push(new D.Paragraph({ children: emo(b.titulo, { bold: true, size: 30, color: C.navy, font: F }), spacing: { before: 200, after: 100 }, keepNext: true }));
           if (b.destacado) hijos.push(pr('**' + b.destacado + '**'));
           if (b.texto) hijos.push(pr(b.texto));
           break;
@@ -255,7 +265,7 @@ window.IC_DOCX = (function () {
 
     // Ficha editorial
     const f = n.ficha || {}, et = (t) => P(t, { bold: true, color: C.azul, size: 19, antes: 160, despues: 40 }), vt = (t) => P(t, { size: 20, despues: 40 });
-    hijos.push(new D.Paragraph({ pageBreakBefore: true, children: [new D.TextRun({ text: 'NEWSLETTER IDEAS CONTROL — Ficha editorial', bold: true, size: 30, color: C.navy, font: F })], spacing: { after: 160 } }));
+    hijos.push(new D.Paragraph({ pageBreakBefore: true, children: emo('NEWSLETTER IDEAS CONTROL — Ficha editorial', { bold: true, size: 30, color: C.navy, font: F }), spacing: { after: 160 } }));
     hijos.push(et('Título'), vt(n.titulo || ''));
     if (n.bajada) hijos.push(et('Bajada / subtítulo'), vt(n.bajada));
     hijos.push(et('Fecha de publicación'), vt(ctx.fechaPublicacion || ''));
