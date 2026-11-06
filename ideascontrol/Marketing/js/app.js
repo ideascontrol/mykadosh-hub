@@ -1,5 +1,5 @@
 /* =====================================================================
-   APP-111 · Marketing
+   APP-112 · Marketing
    Vistas: #  calendario semanal · #lista · #pub/PUB-00001 · #temas · #tema/TEM-0001
            #aprobar · #metricas · #resumen
    Aprobación: mínimo CFG.minAprobaciones de las personas de CFG.usuarios. Cambiar el copy o la pieza
