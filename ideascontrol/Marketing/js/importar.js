@@ -28,10 +28,10 @@ window.MKT_IMP = (function () {
   const S = {
     meta: {
       post_id: ['identificador de la publicacion', 'id de la publicacion', 'post id'], enlace: ['enlace permanente', 'permalink'], fecha: ['hora de publicacion', 'publish time', 'fecha de publicacion'],
-      texto: ['descripcion', 'description', 'titulo', 'title'], tipo_post: ['tipo de publicacion', 'post type'], alcance: ['alcance', 'reach', 'cuentas alcanzadas'],
+      texto: ['titulo', 'title', 'descripcion', 'description'], tipo_post: ['tipo de publicacion', 'post type'], alcance: ['alcance', 'reach', 'cuentas alcanzadas', 'espectadores', 'viewers'],
       impresiones: ['visualizaciones', 'views', 'impresiones', 'impressions'], reacciones: ['reacciones', 'reactions', 'me gusta', 'likes'], comentarios: ['comentarios', 'comments'],
       compartidos: ['veces que se compartio', 'compartidos', 'shares', 'veces compartido'], guardados: ['guardados', 'saves', 'veces que se guardo'],
-      clics: ['clics en el enlace', 'link clicks', 'clics totales', 'total clicks', 'clics'], nuevos_seguidores: ['seguimientos', 'follows', 'nuevos seguidores'],
+      clics: ['clics en el enlace', 'link clicks', 'total de clics', 'clics totales', 'total clicks', 'clics'], nuevos_seguidores: ['seguimientos', 'follows', 'nuevos seguidores'],
       reproducciones: ['reproducciones', 'plays', 'reproducciones de video de 3 segundos', '3-second video views'], tiempo_prom: ['tiempo promedio de reproduccion', 'average watch time']
     },
     ads: {
@@ -95,11 +95,16 @@ window.MKT_IMP = (function () {
     }
     return mejor && mejor.puntos >= 3 ? mejor : null;
   }
-  function mapaInicial(fuente, cab) {
+  // Para cada dato toma la primera columna conocida QUE TENGA DATOS (ej. Meta deja «Descripción» vacía y pone el texto en «Título»)
+  function mapaInicial(fuente, cab, filas) {
     const m = {}, usados = {};
+    const conDatos = (j) => (filas || []).some((r) => { const v = String((r || [])[j] == null ? '' : r[j]).trim(); return v !== '' && !/^n\/?a$/i.test(v); });
     CAMPOS.forEach(([k]) => {
       const sin = (S[fuente] || {})[k]; if (!sin) return;
-      for (const x of sin) { const i = cab.findIndex((c, j) => !usados[j] && (nz(c) === x || nz(c).indexOf(x + ' (') === 0)); if (i >= 0) { m[k] = i; usados[i] = true; break; } }
+      const cand = [];
+      sin.forEach((x) => cab.forEach((c, j) => { if (!usados[j] && cand.indexOf(j) < 0 && (nz(c) === x || nz(c).indexOf(x + ' (') === 0)) cand.push(j); }));
+      const j = cand.find(conDatos); const elegido = j !== undefined ? j : cand[0];
+      if (elegido !== undefined) { m[k] = elegido; usados[elegido] = true; }
     });
     return m;
   }
@@ -274,7 +279,7 @@ window.MKT_IMP = (function () {
       try {
         const d = await leerArchivo(f);
         Object.assign(ST, { archivo: f.name, fuente: d.fuente, cab: d.cab, filas: d.a.slice(d.fila + 1).filter((r) => (r || []).some((x) => String(x).trim() !== '')), red: '', fmtFecha: 'auto' });
-        ST.mapa = mapaInicial(ST.fuente, ST.cab);
+        ST.mapa = mapaInicial(ST.fuente, ST.cab, ST.filas);
         // Corte sugerido: el «fin del informe» del archivo de anuncios, si viene
         const iFin = ST.cab.findIndex((x) => iguala(x, ['fin del informe', 'reporting ends']));
         if (iFin >= 0 && ST.filas[0]) { const fin = fechaISO(ST.filas[0][iFin], 'md'); if (fin) { ST.corte = fin; raiz.querySelector('#iCorte').value = fin; } }
