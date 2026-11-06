@@ -587,7 +587,9 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     const kpi = (v, l, s) => '<div class="ic-kpi"><div class="valor">' + v + '</div><div class="etiqueta">' + l + '</div>' + (s ? '<div class="mkt-sub">' + s + '</div>' : '') + '</div>';
     const meta = (v, mt, l) => '<div class="mkt-meta"><div class="t"><b>' + l + '</b><span>' + num(v) + ' de ' + num(mt) + '</span></div><div class="barra"><i style="width:' + Math.min(100, Math.round(100 * v / (mt || 1))) + '%"></i></div></div>';
     const redes = CFG.redes.map((r) => { const a = ms.filter((m) => m.red === r); return [r, a]; }).filter((x) => x[1].length);
-    const top = ms.slice().sort((a, b) => interacciones(b) - interacciones(a)).slice(0, 5);
+    // Contenido destacado: los 5 con más interacciones, mostrados por fecha de publicación y red
+    const top = ms.slice().sort((a, b) => interacciones(b) - interacciones(a)).slice(0, 5)
+      .sort((a, b) => dia(a.fecha_publicacion).localeCompare(dia(b.fecha_publicacion)) || CFG.redes.indexOf(a.red) - CFG.redes.indexOf(b.red));
     raiz.innerHTML = '<div class="ic-barra"><div><h1 class="ic-titulo">Resumen para gerencia</h1><p class="ic-subtitulo" style="margin:0">Ideas Control · ' + esc(fLarga(M.rd)) + ' al ' + esc(fLarga(M.rh)) + '</p></div><span class="espacio"></span>' +
       '<label class="mkt-fecha mkt-noimp">Desde <input type="date" id="rD" value="' + M.rd + '"></label><label class="mkt-fecha mkt-noimp">Hasta <input type="date" id="rH" value="' + M.rh + '"></label>' +
       '<button class="ic-btn sec mkt-noimp" id="bImp">Imprimir / PDF</button><button class="ic-btn sec mkt-noimp" id="bExcel">Excel</button></div>' +

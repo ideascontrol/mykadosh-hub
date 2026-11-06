@@ -376,19 +376,19 @@ window.IC_DOCX = (function () {
     const conDatos = d.posts.filter((x) => x.alcance || x.impresiones || x.interacciones || x.clics || x.reproducciones);
     if (conDatos.length) {
       hijos.push(h(2, 'Contenido destacado'));
-      hijos.push(tablaDatos(['Post', 'Red', 'Fecha', 'Alcance', 'Interac.', 'Clics'], conDatos.slice(0, 10).map((x) => [x.nombre || '—', x.red + (x.tipo === 'Pago' ? ' (pago)' : ''), x.fecha, n(x.alcance), n(x.interacciones), n(x.clics)]), [4380, 1500, 1300, 1000, 1000, 900]), esp());
+      hijos.push(tablaDatos(['Post', 'Red', 'Fecha', 'Alcance', 'Interac.', 'Clics'], conDatos.slice().sort((a, b) => b.interacciones - a.interacciones).slice(0, 10).sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)) || (CFG.redes.indexOf(a.red) - CFG.redes.indexOf(b.red))).map((x) => [x.nombre || '—', x.red + (x.tipo === 'Pago' ? ' (pago)' : ''), x.fecha, n(x.alcance), n(x.interacciones), n(x.clics)]), [4380, 1500, 1300, 1000, 1000, 900]), esp());
     }
     if (a) {
       const dos = (a.destacados || []).length || (a.alertas || []).length;
       if (dos) {
         hijos.push(h(2, 'Lectura del periodo'));
-        const col = (tit, arr, fondo, color) => [P(tit, { bold: true, color, size: 21, despues: 80 })].concat((arr || []).filter(Boolean).map((x) => P('**' + (x.titulo || '') + '.** ' + (x.detalle || ''), { size: 19, despues: 80 })));
+        const col = (tit, arr, fondo, color) => [P(tit, { bold: true, color, size: 21, despues: 80 })].concat((arr || []).filter(Boolean).map((x) => P(([x.fecha, x.red].filter(Boolean).length ? '[' + [x.fecha, x.red].filter(Boolean).join(' · ') + '] ' : '') + '**' + (x.titulo || '') + '.** ' + (x.detalle || ''), { size: 19, despues: 80 })));
         hijos.push(tabla([new D.TableRow({ children: [celda(col('✅ Lo que funcionó', a.destacados, C.verdeClaro, C.verde), { ancho: 5040, fondo: C.verdeClaro, m: 160 }), celda(col('⚠️ Para revisar', a.alertas, C.rojoClaro, C.rojo), { ancho: 5040, fondo: C.rojoClaro, m: 160 })] })], [5040, 5040],
           { bordes: Object.assign(sinBordes(), { insideVertical: { style: D.BorderStyle.SINGLE, size: 12, color: 'FFFFFF' } }) }), esp());
       }
       if ((a.recomendaciones || []).length) {
         hijos.push(h(2, 'Recomendaciones'));
-        hijos.push(tablaDatos(['Prioridad', 'Acción', 'Por qué', 'Red'], a.recomendaciones.filter(Boolean).map((r) => [r.prioridad || '—', r.accion || '', r.por_que || '', r.red || '']), [1200, 3600, 3880, 1400], C.teal), esp());
+        hijos.push(tablaDatos(['Prioridad', 'Acción', 'Por qué', 'Red'], a.recomendaciones.filter(Boolean).map((r) => [r.prioridad || '—', r.accion || '', r.por_que || '', [r.red, r.fecha].filter(Boolean).join('\n')]), [1200, 3600, 3680, 1600], C.teal), esp());
       }
       if ((a.aprendizajes || []).length) { hijos.push(h(3, 'Aprendizajes')); a.aprendizajes.filter(Boolean).forEach((x) => hijos.push(P('• ' + x, { despues: 60, sangria: 200 }))); }
       const ps = a.proxima_semana || {};

@@ -141,3 +141,4 @@ th.mkt-ord.on .mkt-flecha { opacity: 1; }
 .an-nota { font-size: 12.5px; color: #5B6770; font-style: italic; margin-top: 12px !important; }
 .an-pasos details summary { cursor: pointer; color: #0E76BC; font-weight: 600; font-size: 13.5px; }
 @media print { .an-pasos { display: none; } }
+.an-etq { display: inline-block; font-size: 11px; font-weight: 700; color: #0A5A90; background: #fff; border: 1px solid #D5E6F2; border-radius: 6px; padding: 0 6px; margin-right: 4px; }

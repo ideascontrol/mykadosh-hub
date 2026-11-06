@@ -18,6 +18,15 @@ window.MKT_AN = (function () {
   const num = (v) => Math.round(n0(v)).toLocaleString('es-CO');
   const pct = (v) => (v === null || !isFinite(v)) ? '—' : (Math.round(v * 1000) / 10).toLocaleString('es-CO') + ' %';
   const inter = (m) => n0(m.reacciones) + n0(m.comentarios) + n0(m.compartidos) + n0(m.guardados) + n0(m.clics);
+  const ordRed = (r) => { const i = CFG.redes.indexOf(r); return i < 0 ? 99 : i; };
+  const porFechaRed = (a, b) => String(a.fecha || '').localeCompare(String(b.fecha || '')) || ordRed(a.red) - ordRed(b.red) || String(a.nombre || '').localeCompare(String(b.nombre || ''));
+  // Ordena lo que devuelve Claude por fecha y red (si trae esos datos); por_red siempre en el orden de las redes
+  function ordenar(a) {
+    if (!a) return a;
+    ['destacados', 'alertas', 'recomendaciones'].forEach((k) => { if (Array.isArray(a[k])) a[k] = a[k].map((x, i) => Object.assign({ _i: i }, x)).sort((x, y) => (x.fecha && y.fecha ? String(x.fecha).localeCompare(String(y.fecha)) : 0) || ((x.red && y.red) ? ordRed(x.red) - ordRed(y.red) : 0) || x._i - y._i); });
+    if (Array.isArray(a.por_red)) a.por_red = a.por_red.slice().sort((x, y) => ordRed(x.red) - ordRed(y.red));
+    return a;
+  }
   const dentro = (m, a, b) => { const f = M().dia(m.fecha_campana || m.fecha_publicacion); return f >= a && f <= b; };
 
   // ---------- datos del periodo ----------
@@ -40,11 +49,11 @@ window.MKT_AN = (function () {
     ms.forEach((m) => { const s = M().dia(m.fecha_campana) || M().lunesDe(M().dia(m.fecha_publicacion)); (semanas[s] = semanas[s] || []).push(m); });
     const temas = App.temas.filter((t) => { const l = M().dia(t.semana_inicio); return l && l >= M().lunesDe(rd) && l <= rh; }).sort((a, b) => M().dia(a.semana_inicio).localeCompare(M().dia(b.semana_inicio)));
     const siguiente = App.temas.filter((t) => M().dia(t.semana_inicio) > rh).sort((a, b) => M().dia(a.semana_inicio).localeCompare(M().dia(b.semana_inicio)))[0] || null;
-    const posts = ms.slice().sort((a, b) => inter(b) - inter(a)).map((m) => {
+    const posts = ms.slice().map((m) => {
       const p = m.publicacion_id ? App.pubs.find((x) => x.Title === m.publicacion_id) : null;
       return { id: m.Title, pub: m.publicacion_id || '', red: m.red || '', tipo: m.tipo || '', formato: p ? (p.formato || '') : '', fecha: M().dia(m.fecha_publicacion), nombre: M().nombreCorto(m.nombre || ''),
         alcance: n0(m.alcance), impresiones: n0(m.impresiones), interacciones: inter(m), clics: n0(m.clics), reproducciones: n0(m.reproducciones), inversion: n0(m.inversion), resultados: n0(m.resultados), notas: String(m.notas || '').replace(/^Importado de[^\n]*/i, '').trim().slice(0, 200) };
-    });
+    }).sort(porFechaRed);
     return { rd, rh, dias, total: totales(ms), anterior: { rd: ard, rh: arh, t: totales(App.mets.filter((m) => dentro(m, ard, arh))) }, redes,
       semanas: Object.keys(semanas).sort().map((s) => ({ semana: s, t: totales(semanas[s]), tema: (App.temas.find((t) => M().dia(t.semana_inicio) === s) || {}).tema || '' })),
       plan: { planeadas: pl.length, publicadas: pl.filter((p) => p.estado === 'Publicada').length }, temas, siguiente, posts, metas: CFG.metas };
@@ -59,6 +68,7 @@ window.MKT_AN = (function () {
     L.push('', 'Reglas:', '- Usa SOLO los datos de abajo. No inventes cifras, causas ni resultados. Si un dato falta o es poco confiable, dilo en "nota_datos".',
       '- Compara contra las metas del periodo y contra el periodo anterior (variación en %). Ojo: si el periodo anterior tiene pocos registros, la comparación es débil; dilo.',
       '- Explica qué funcionó y qué no por red, formato, tipo (orgánico o pago) y ángulo del contenido (usa los nombres de los posts).',
+      '- ORDEN: presenta todo en orden de fecha (de la más antigua a la más reciente) y, dentro de cada fecha, por red en este orden: ' + CFG.redes.join(', ') + '. En "destacados", "alertas" y "recomendaciones" indica "fecha" (AAAA-MM-DD del post o la semana a la que se refiere) y "red" (o "Todas"). En "por_red" usa ese mismo orden de redes.',
       '- Las recomendaciones deben ser concretas y accionables para la próxima semana (qué hacer, en qué red, con qué formato), priorizadas.',
       '- Tono: claro, directo, profesional, en español de Colombia, para gerentes que no son expertos en redes. Frases cortas. No uses la expresión «cualquier industria».');
     L.push('', '═══ PERIODO: ' + M().fLarga(d.rd) + ' al ' + M().fLarga(d.rh) + ' (' + d.dias + ' días; las métricas se agrupan por semana de campaña = lunes)');
@@ -70,18 +80,18 @@ window.MKT_AN = (function () {
     if (d.siguiente) L.push('', 'Tema de la próxima semana (' + M().dia(d.siguiente.semana_inicio) + '): «' + d.siguiente.tema + '» · hook: ' + (d.siguiente.hook || '—') + ' · objetivo: ' + (d.siguiente.objetivo || '—'));
     L.push('', 'Por red:', d.redes.map((r) => '- ' + r.red + ': ' + T(r.t)).join('\n') || '- (sin datos)');
     L.push('', 'Por semana de campaña:', d.semanas.map((s) => '- ' + s.semana + (s.tema ? ' «' + s.tema + '»' : '') + ': ' + T(s.t)).join('\n') || '- (sin datos)');
-    L.push('', 'Posts del periodo (de más a menos interacciones; máximo 60):');
+    L.push('', 'Posts del periodo (ordenados por fecha y red; máximo 60):');
     d.posts.slice(0, 60).forEach((p) => L.push('- ' + [p.fecha, p.red, p.tipo, p.formato, '«' + p.nombre + '»', 'alcance ' + num(p.alcance), 'impr. ' + num(p.impresiones), 'interac. ' + num(p.interacciones), 'clics ' + num(p.clics),
       p.reproducciones ? 'reprod. ' + num(p.reproducciones) : '', p.inversion ? 'inversión $' + num(p.inversion) + ' · resultados ' + num(p.resultados) : '', p.notas ? 'nota: ' + p.notas : ''].filter(Boolean).join(' · ')));
     L.push('', '═══ FORMATO DE RESPUESTA (obligatorio)', 'Responde ÚNICAMENTE con un bloque de código JSON válido, sin texto antes ni después:', '```json', '{',
       '  "tipo": "analisis_marketing",',
       '  "titular": "una frase que resuma el periodo",',
       '  "resumen": ["párrafo 1 (qué pasó, con cifras clave)", "párrafo 2 (contra metas y periodo anterior)"],',
-      '  "destacados": [ { "titulo": "lo que funcionó", "detalle": "con cifras y por qué" } ],',
-      '  "alertas": [ { "titulo": "lo que preocupa o no funcionó", "detalle": "" } ],',
+      '  "destacados": [ { "fecha": "AAAA-MM-DD", "red": "", "titulo": "lo que funcionó", "detalle": "con cifras y por qué" } ],',
+      '  "alertas": [ { "fecha": "AAAA-MM-DD", "red": "", "titulo": "lo que preocupa o no funcionó", "detalle": "" } ],',
       '  "por_red": [ { "red": "Facebook", "lectura": "", "recomendacion": "" } ],',
       '  "aprendizajes": ["aprendizaje sobre formatos, ángulos u horarios"],',
-      '  "recomendaciones": [ { "accion": "", "por_que": "", "red": "", "prioridad": "Alta | Media | Baja" } ],',
+      '  "recomendaciones": [ { "fecha": "AAAA-MM-DD (cuándo aplicarla)", "accion": "", "por_que": "", "red": "", "prioridad": "Alta | Media | Baja" } ],',
       '  "proxima_semana": { "enfoque": "cómo aplicar lo aprendido al tema de la próxima semana", "ideas": ["", ""] },',
       '  "nota_datos": "limitaciones de los datos (vacíos, redes sin importar, comparaciones débiles)"',
       '}', '```', 'Escapa las comillas dobles dentro del texto como \\".');
@@ -106,7 +116,7 @@ window.MKT_AN = (function () {
       const sid = await G.sitio(CFG.sitio.host, CFG.sitio.ruta);
       const meta = await G.llamar('GET', '/sites/' + sid + '/drive/root:/' + M().rutaUrl(ruta(rd, rh, 'json')));
       const r = await fetch(meta['@microsoft.graph.downloadUrl']); if (!r.ok) throw new Error('descarga');
-      cache[k] = await r.json();
+      cache[k] = ordenar(await r.json());
     } catch (e) { cache[k] = null; }
     return cache[k];
   }
@@ -134,15 +144,16 @@ window.MKT_AN = (function () {
   function tarjeta(a) {
     const lista = (arr, f) => (arr || []).filter(Boolean).map(f).join('');
     const prio = (p) => '<span class="an-prio ' + esc(U.norm(p || 'media').split(' ')[0]) + '">' + esc(p || 'Media') + '</span>';
+    const etq = (x) => (x.fecha || x.red) ? '<span class="an-etq">' + esc([x.fecha && /^\d{4}-\d{2}-\d{2}/.test(x.fecha) ? M().fCorta(x.fecha) : x.fecha, x.red].filter(Boolean).join(' · ')) + '</span> ' : '';
     return '<div class="an-card">' +
       '<p class="an-meta">Análisis de Claude · ' + esc(a._meta ? new Date(a._meta.fecha).toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' }) + (a._meta.por ? ' · pegado por ' + a._meta.por : '') : '') + '</p>' +
       (a.titular ? '<h3 class="an-tit">' + esc(a.titular) + '</h3>' : '') +
       lista(a.resumen, (p) => '<p>' + esc(p) + '</p>') +
       ((a.destacados || []).length || (a.alertas || []).length ? '<div class="an-2">' +
-        '<div class="an-caja ok"><h4>✅ Lo que funcionó</h4>' + lista(a.destacados, (x) => '<p><b>' + esc(x.titulo || '') + '.</b> ' + esc(x.detalle || '') + '</p>') + '</div>' +
-        '<div class="an-caja alerta"><h4>⚠️ Para revisar</h4>' + (lista(a.alertas, (x) => '<p><b>' + esc(x.titulo || '') + '.</b> ' + esc(x.detalle || '') + '</p>') || '<p>—</p>') + '</div></div>' : '') +
+        '<div class="an-caja ok"><h4>✅ Lo que funcionó</h4>' + lista(a.destacados, (x) => '<p>' + etq(x) + '<b>' + esc(x.titulo || '') + '.</b> ' + esc(x.detalle || '') + '</p>') + '</div>' +
+        '<div class="an-caja alerta"><h4>⚠️ Para revisar</h4>' + (lista(a.alertas, (x) => '<p>' + etq(x) + '<b>' + esc(x.titulo || '') + '.</b> ' + esc(x.detalle || '') + '</p>') || '<p>—</p>') + '</div></div>' : '') +
       ((a.por_red || []).length ? '<h4 class="an-h4">Por red</h4><div class="an-redes">' + lista(a.por_red, (r) => '<div><b>' + esc(r.red || '') + '</b><p>' + esc(r.lectura || '') + '</p>' + (r.recomendacion ? '<p class="an-rec">→ ' + esc(r.recomendacion) + '</p>' : '') + '</div>') + '</div>' : '') +
-      ((a.recomendaciones || []).length ? '<h4 class="an-h4">Recomendaciones</h4><ol class="an-recs">' + lista(a.recomendaciones, (r) => '<li>' + prio(r.prioridad) + ' <b>' + esc(r.accion || '') + '</b>' + (r.red ? ' <span class="sec">(' + esc(r.red) + ')</span>' : '') + (r.por_que ? '<br><span class="sec">' + esc(r.por_que) + '</span>' : '') + '</li>') + '</ol>' : '') +
+      ((a.recomendaciones || []).length ? '<h4 class="an-h4">Recomendaciones</h4><ol class="an-recs">' + lista(a.recomendaciones, (r) => '<li>' + prio(r.prioridad) + ' <b>' + esc(r.accion || '') + '</b>' + (r.red || r.fecha ? ' <span class="sec">(' + esc([r.red, r.fecha && /^\d{4}-\d{2}-\d{2}/.test(r.fecha) ? M().fCorta(r.fecha) : r.fecha].filter(Boolean).join(' · ')) + ')</span>' : '') + (r.por_que ? '<br><span class="sec">' + esc(r.por_que) + '</span>' : '') + '</li>') + '</ol>' : '') +
       ((a.aprendizajes || []).length ? '<h4 class="an-h4">Aprendizajes</h4><ul>' + lista(a.aprendizajes, (x) => '<li>' + esc(x) + '</li>') + '</ul>' : '') +
       (a.proxima_semana && (a.proxima_semana.enfoque || (a.proxima_semana.ideas || []).length) ? '<h4 class="an-h4">Para la próxima semana</h4>' + (a.proxima_semana.enfoque ? '<p>' + esc(a.proxima_semana.enfoque) + '</p>' : '') + '<ul>' + lista(a.proxima_semana.ideas, (x) => '<li>' + esc(x) + '</li>') + '</ul>' : '') +
       (a.nota_datos ? '<p class="an-nota">Sobre los datos: ' + esc(a.nota_datos) + '</p>' : '') + '</div>';
@@ -168,7 +179,7 @@ window.MKT_AN = (function () {
     if (bg) bg.onclick = () => U.conCarga(bg, async () => {
       const msg = c.querySelector('#anMsg');
       try {
-        const an = extraer(c.querySelector('#anResp').value);
+        const an = ordenar(extraer(c.querySelector('#anResp').value));
         msg.innerHTML = '<p class="sec">Creando el informe en Word…</p>';
         an._meta = { fecha: new Date().toISOString(), por: App.usuario.nombre, desde: rd, hasta: rh, registros: d.total.registros };
         let web = '';
