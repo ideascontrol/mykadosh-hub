@@ -4,7 +4,7 @@
    Cada cálculo se usa una vez y se guarda como registro histórico (CAL_Costeos).
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-110', nombre: 'Calculadora de costos y precios', version: '0.1.0' },
+  app: { id: 'APP-110', nombre: 'Calculadora de costos y precios', version: '0.1.1' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',

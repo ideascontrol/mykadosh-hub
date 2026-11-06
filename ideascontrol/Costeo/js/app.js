@@ -7,7 +7,7 @@
      prestaciones = % × líneas de familia Personal · costo unitario = total ÷ cantidad a calcular
      precio = costo unitario ÷ (1 − margen − comisión − otros) · IVA aparte
    ===================================================================== */
-const App = { usuario: null, c: null, hist: null, filtro: { q: '', categoria: '' } };
+const App = { usuario: null, c: null, base: null, hist: null, filtro: { q: '', categoria: '' } };
 
 (function () {
   const U = IC.ui, esc = U.esc, G = IC.graph;
@@ -58,11 +58,7 @@ const App = { usuario: null, c: null, hist: null, filtro: { q: '', categoria: ''
     return { q, tot, prest, total, costoU, resto, precio, precioIva, utilidad, margenReal, faltaTasa, personal,
       precioTotal: precio === null ? null : precio * q, precioIvaTotal: precioIva === null ? null : precioIva * q, utilidadTotal: utilidad === null ? null : utilidad * q };
   }
-  function guardarBorrador() { try { localStorage.setItem(BORRADOR, JSON.stringify(App.c)); } catch (e) { /* sin almacenamiento */ } }
-  function leerBorrador() {
-    try { const b = JSON.parse(localStorage.getItem(BORRADOR) || 'null'); if (b && Array.isArray(b.lineas)) { b.lineas = b.lineas.map(linea); return Object.assign(nuevo(), b); } } catch (e) { /* nada */ }
-    return null;
-  }
+  // Cada «Nuevo cálculo» empieza limpio: no se conserva borrador (solo se borra el de versiones anteriores)
   function borrarBorrador() { try { localStorage.removeItem(BORRADOR); } catch (e) { /* nada */ } }
 
   // ---------- Encabezado ----------
@@ -125,10 +121,10 @@ const App = { usuario: null, c: null, hist: null, filtro: { q: '', categoria: ''
       el.addEventListener('input', () => { const k = el.dataset.c; c[k] = el.dataset.p ? num(el.value) / 100 : el.dataset.n ? num(el.value) : el.value; refrescar(raiz); });
       if (el.dataset.n && !el.dataset.p) el.addEventListener('blur', () => { if (el.value) el.value = verNum(num(el.value)); });
     });
-    raiz.querySelector('#bLinea').onclick = () => { c.lineas.push(linea()); pintarLineas(raiz); guardarBorrador(); const f = raiz.querySelectorAll('#lineas tr'); f[f.length - 1].querySelector('select').focus(); };
+    raiz.querySelector('#bLinea').onclick = () => { c.lineas.push(linea()); pintarLineas(raiz); const f = raiz.querySelectorAll('#lineas tr'); f[f.length - 1].querySelector('select').focus(); };
     raiz.querySelector('#bLimpiar').onclick = async () => {
       if (!(await U.confirmar('Empezar de cero', 'Se borra lo que lleva escrito en este cálculo (no afecta el historial).', 'Borrar y empezar'))) return;
-      App.c = nuevo(); borrarBorrador(); vistaCalc(raiz);
+      App.c = nuevo(); vistaCalc(raiz);
     };
     raiz.querySelector('#bGuardar').onclick = () => guardar(raiz);
     refrescar(raiz);
@@ -172,7 +168,6 @@ const App = { usuario: null, c: null, hist: null, filtro: { q: '', categoria: ''
     raiz.querySelector('#cajaTasa').hidden = !c.lineas.some((l) => l.moneda === 'USD') && !num(c.tasa);
     raiz.querySelector('#resultado').innerHTML = resultadoHtml(c, r);
     raiz.querySelector('#mini').innerHTML = 'Costo unitario <b>' + cop(r.costoU) + '</b> · Precio sugerido <b>' + (r.precio === null ? '—' : cop(r.precio)) + '</b>';
-    guardarBorrador();
   }
   function aviso(c, r) {
     if (r.faltaTasa) return ['mal', '⚠ Falta la tasa de cambio para las líneas en USD'];
@@ -220,7 +215,7 @@ const App = { usuario: null, c: null, hist: null, filtro: { q: '', categoria: ''
         });
       });
       U.aviso('Cálculo ' + id + ' guardado en el historial', 'ok', 6000);
-      App.c = nuevo(); borrarBorrador(); App.hist = null;
+      App.c = nuevo(); App.hist = null;
       location.hash = 'ver/' + id;
     } catch (e) { console.error(e); U.aviso(U.mensajeError(e), 'err', 9000); }
   }
@@ -321,13 +316,11 @@ const App = { usuario: null, c: null, hist: null, filtro: { q: '', categoria: ''
           (Number(h.tasa_usd) ? dato('Tasa USD → COP', esc(verNum(h.tasa_usd))) : '') + '</dl></div></section></div>';
     raiz.querySelector('#bImp').onclick = () => window.print();
     raiz.querySelector('#bBase').onclick = async () => {
-      const hay = App.c && (App.c.producto || App.c.lineas.some((l) => l.concepto || num(l.costo)));
-      if (hay && !(await U.confirmar('Usar como base', 'Se reemplaza el cálculo que tiene en curso por una copia de ' + h.Title + '. Podrá cambiar lo que necesite y guardarlo como un cálculo nuevo.', 'Usar como base'))) return;
-      App.c = Object.assign(nuevo(), { producto: h.producto || '', codigo: h.codigo || '', categoria: h.categoria || '', unidad: h.unidad || 'Unidad', cantidad: Number(h.cantidad) || 1,
+      App.base = Object.assign(nuevo(), { producto: h.producto || '', codigo: h.codigo || '', categoria: h.categoria || '', unidad: h.unidad || 'Unidad', cantidad: Number(h.cantidad) || 1,
         notas: (h.notas ? h.notas + '\n' : '') + 'Basado en ' + h.Title + '.', tasa: Number(h.tasa_usd) || 0, margen: Number(h.margen) || 0, comision: Number(h.comision) || 0,
         otros: Number(h.otros) || 0, iva: h.iva === null || h.iva === undefined ? CFG.iva : Number(h.iva),
         lineas: h._lineas.length ? h._lineas.map((l) => linea({ familia: l.familia, concepto: l.concepto, tipo: l.tipo, cant: l.cant, moneda: l.moneda, costo: l.costo, obs: l.obs })) : [linea()] });
-      guardarBorrador(); location.hash = '';
+      location.hash = '';
     };
     const del = raiz.querySelector('#bDel');
     if (del) del.onclick = async () => {
@@ -352,10 +345,16 @@ const App = { usuario: null, c: null, hist: null, filtro: { q: '', categoria: ''
       App.usuario = { nombre: cuenta.name || email, email, iniciales: U.fmt.iniciales(cuenta.name || email) };
       await G.sitio(CFG.sitio.host, CFG.sitio.ruta);
       await G.listaId(CFG.lista);   // comprueba que la lista exista
-      App.c = leerBorrador() || nuevo();
+      borrarBorrador(); App.c = nuevo();
       cargarHist().catch(() => { /* sugerencias opcionales */ });
       pintarEncabezado();
-      U.enrutar({ '': () => vistaCalc(raiz), historial: () => vistaHistorial(raiz), ver: () => vistaDetalle(raiz) }, marcarNav);
+      // «Nuevo cálculo» siempre limpio; «Usar como base» llega con la copia en App.base
+      const calc = () => { App.c = App.base || nuevo(); App.base = null; vistaCalc(raiz); };
+      document.addEventListener('click', (e) => {
+        const a = e.target.closest && e.target.closest('a[href="#"]');
+        if (a && (location.hash === '' || location.hash === '#')) { e.preventDefault(); calc(); window.scrollTo(0, 0); }
+      });
+      U.enrutar({ '': calc, historial: () => vistaHistorial(raiz), ver: () => vistaDetalle(raiz) }, marcarNav);
     } catch (e) {
       console.error(e);
       const falta = /No existe la lista CAL_/.test(e.message);
