@@ -144,7 +144,7 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
     c.innerHTML = '<div class="ic-barra"><div><h1 class="ic-titulo">Tareas</h1><p class="ic-subtitulo" style="margin:0">Haga clic en una tarea para actualizarla o agregar una anotación a la bitácora.</p></div><span class="espacio"></span>' +
       '<button class="ic-btn sec" id="bExcel">⬇ Excel</button><button class="ic-btn" id="bNueva">+ Nueva tarea</button></div>' +
       '<div class="ic-filtros">' + sel('fCli', [['', 'Todos los clientes']].concat(clientesConTareas().map((x) => [x.id, x.nombre])), f.cliente) +
-        sel('fEst', [['ACTIVAS', 'Pendientes activas'], ['TODAS', 'Todos los estados'], ['CERRADAS', 'Cerradas (finalizadas y canceladas)']].concat(CFG.estados.map((e) => [e, e])), f.estado) +
+        sel('fEst', [['ACTIVAS', 'Pendientes activas'], ['TODAS', 'Todos los estados'], ['CERRADAS', 'Cerrada']].concat(CFG.estados.map((e) => [e, e])), f.estado) +
         sel('fSem', [['', 'Todo semáforo'], ['VENCIDA', 'Vencidas'], ['PROXIMA', 'Próximas a vencer'], ['A_TIEMPO', 'A tiempo'], ['SIN_FECHA', 'Sin fecha']], f.semaforo) +
         sel('fPri', [['', 'Toda prioridad']].concat(CFG.prioridades.map((p) => [p, p])), f.prioridad) +
         sel('fCat', [['', 'Toda categoría']].concat(categorias().map((p) => [p, p])), f.categoria) +
