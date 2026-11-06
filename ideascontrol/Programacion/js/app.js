@@ -19,6 +19,7 @@ const ICO = {
   lista: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01"/></svg>',
   semana: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 9v11M13 9v11M18 9v11"/></svg>',
   oficina: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16M15 9h3a1 1 0 0 1 1 1v11"/><path d="M8 8h3M8 12h3M8 16h3"/></svg>',
+  resumen: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/><circle cx="19" cy="8" r="1.2"/></svg>',
   carga: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   alerta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>',
   politicas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>',
@@ -34,6 +35,7 @@ const MENU = [
     { ruta: 'semana', titulo: 'Programación semanal', texto: 'La semana lista para publicar el viernes: imprimir o copiar el texto.', icono: 'semana' }
   ] },
   { grupo: 'Control', items: [
+    { ruta: 'resumen', titulo: 'Resumen ejecutivo', texto: 'Instalaciones del periodo: cumplimiento, equipos, clientes, técnicos, reprogramaciones y análisis con Claude.', icono: 'resumen', color: 'teal', roles: ['ADMIN', 'EDITOR', 'CONSULTA'] },
     { ruta: 'rotacion', titulo: 'Rotación de oficina', texto: 'Quién cubre la oficina cada día y quién está sin asignar (y debe estar en la oficina).', icono: 'oficina', color: 'teal' },
     { ruta: 'carga', titulo: 'Carga por técnico', texto: 'Actividades de cada técnico en el mes, por tipo.', icono: 'carga', color: 'teal' },
     { ruta: 'conflictos', titulo: 'Conflictos', texto: 'Actividades con alertas ⚠ que deben corregirse antes de publicar.', icono: 'alerta', color: 'teal' }
@@ -71,7 +73,7 @@ function vistaMenu(c) {
     '<p class="ic-subtitulo">Programación de instalaciones, mantenimientos, soporte y rotación de oficina.</p>' +
     '<div class="ic-kpis">' + kpi('kOfi', 'Técnico de oficina hoy') + kpi('kCampo', 'Actividades en campo hoy') + kpi('kConf', 'Conflictos ⚠ próximos 30 días') + kpi('kSin', 'Días hábiles sin oficina este mes') + '</div>';
   MENU.forEach((g) => {
-    const items = g.items.filter((i) => (!i.admin || App.esAdmin()) && (!i.solo || i.solo === u.rol));
+    const items = g.items.filter((i) => (!i.admin || App.esAdmin()) && (!i.solo || i.solo === u.rol) && (!i.roles || i.roles.indexOf(u.rol) >= 0));
     if (!items.length) return;
     html += '<div class="ic-seccion">' + g.grupo + '</div><div class="ic-grid">';
     items.forEach((i) => {
@@ -141,7 +143,7 @@ async function arrancar() {
     const rutas = { '': () => vistaMenu(raiz) };
     MENU.forEach((g) => g.items.forEach((i) => {
       rutas[i.ruta] = () => {
-        if (i.admin && !App.esAdmin()) { location.hash = ''; return; }
+        if ((i.admin && !App.esAdmin()) || (i.roles && i.roles.indexOf(App.usuario.rol) < 0)) { location.hash = ''; return; }
         const fn = App.vistas[i.ruta];
         if (fn) fn(raiz, App.params()); else raiz.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a><p>Módulo en construcción.</p>';
       };
