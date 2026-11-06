@@ -60,7 +60,12 @@
     });
     code.appendChild(f1); pais.appendChild(f2);
     if (byIso[def]) { code.value = def; pais.value = byIso[def][1]; } else { pais.value = ''; }
-    code.addEventListener('change', function () { state.codeTouched = true; });
+    code.addEventListener('change', function () {
+      state.codeTouched = true;
+      // El código de país actualiza el país (el código se elige por país, así +1 no es ambiguo).
+      var c = byIso[code.value];
+      if (c && pais.value !== c[1]) { pais.value = c[1]; pais.dispatchEvent(new Event('change')); }
+    });
     pais.addEventListener('change', function () {
       // Sugerir el prefijo del país elegido si el usuario no lo cambió a mano.
       if (state.codeTouched) return;

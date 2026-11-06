@@ -337,6 +337,9 @@
   </div>
 </footer>
 
+<script src="/ideascontrol/assets/js/ic-paises.js?v=1.0.0"></script>
+<script src="/ideascontrol/assets/js/ic-validacion.js?v=1.0.0"></script>
+<script src="/ideascontrol/assets/js/ic-formulario.js?v=1.0.0"></script>
 <script>
 (function(){
 "use strict";
@@ -618,26 +621,6 @@ function renderPresentacion(){
    ETAPA 4 — REGISTRO DEL LEAD
    ========================================================================= */
 var RANGOS_EMPLEADOS = ["1 - 10","11 - 50","51 - 200","201 - 500","Más de 500"];
-var PAISES = ["Colombia","México","Perú","Chile","Ecuador","Panamá","Costa Rica","República Dominicana","Argentina","Estados Unidos","España","Otro"];
-
-function selectField(id, label, options, required){
-  var select = el("select", { id: id, name: id, required: required ? "required" : null }, [
-    el("option", { value: "" }, ["Seleccione…"])
-  ]);
-  options.forEach(function(o){ select.appendChild(el("option", { value: o }, [o])); });
-  return el("div", { class: "field" }, [
-    el("label", { for: id }, [label, required ? el("span", { class: "req" }, [" *"]) : null]),
-    select,
-    el("div", { class: "error-text", id: id + "_err" }, [])
-  ]);
-}
-function textField(id, label, type, required){
-  return el("div", { class: "field" }, [
-    el("label", { for: id }, [label, required ? el("span", { class: "req" }, [" *"]) : null]),
-    el("input", { id: id, name: id, type: type || "text", required: required ? "required" : null, autocomplete: "on" }),
-    el("div", { class: "error-text", id: id + "_err" }, [])
-  ]);
-}
 
 function renderRegistro(){
   state.stage = "REGISTRO";
@@ -647,16 +630,7 @@ function renderRegistro(){
   ]);
   var errorSlot = el("div", {});
   var form = el("form", { id: "registroForm", novalidate: "novalidate" }, [
-    el("div", { class: "form-grid" }, [
-      textField("nombre", "Nombre", "text", true),
-      textField("apellido", "Apellido", "text", true),
-      textField("email", "Email", "email", true),
-      textField("telefono", "Teléfono", "tel", true),
-      textField("empresa", "Empresa", "text", true),
-      selectField("pais", "País", PAISES, true),
-      selectField("empleados", "Número de empleados", RANGOS_EMPLEADOS, true)
-    ]),
-    consentimientoField(),
+    el("div", { id: "icfCont" }, []),
     el("div", { class: "mt-24" }, [
       el("button", { class: "btn btn-primary btn-block", type: "submit", id: "registroSubmitBtn" }, ["Continuar"])
     ])
@@ -664,65 +638,17 @@ function renderRegistro(){
   card.appendChild(errorSlot);
   card.appendChild(form);
   renderStage(card);
+  // Formulario estándar de IC (assets/js/ic-formulario.js): mismos campos y reglas que PilotoTyA
+  var formulario = IC_FORM.crear(document.getElementById("icfCont"), {
+    prefijo: "reg", empleados: RANGOS_EMPLEADOS, textoAutorizacion: TEXTO_AUTORIZACION, politicaUrl: POLICY_URL
+  });
 
   form.addEventListener("submit", function(ev){
     ev.preventDefault();
-    var data = collectRegistro(form);
+    var data = formulario.validar();
     if(!data) return; // errores de validación ya mostrados
     submitLead(data, errorSlot);
   });
-}
-
-/* Autorización de tratamiento de datos: va en el mismo formulario, ANTES de
-   guardar cualquier dato (la autorización debe ser previa). Sin la casilla
-   marcada no se crea el registro. */
-function consentimientoField(){
-  var partes = TEXTO_AUTORIZACION.split("Política de Tratamiento de Datos Personales");
-  var policy = POLICY_URL
-    ? el("a", { href: POLICY_URL, target: "_blank", rel: "noopener" }, ["Política de Tratamiento de Datos Personales"])
-    : el("span", {}, ["Política de Tratamiento de Datos Personales"]);
-  return el("div", { class: "mt-24" }, [
-    el("div", { class: "consent-box" }, [
-      el("input", { type: "checkbox", id: "consentCheck" }),
-      el("label", { for: "consentCheck" }, [partes[0], policy, partes[1] || "", el("span", { class: "req" }, [" *"])])
-    ]),
-    el("div", { class: "error-text", id: "consent_err" }, [])
-  ]);
-}
-
-function collectRegistro(form){
-  var fields = ["nombre","apellido","email","telefono","empresa","pais","empleados"];
-  var data = {};
-  var valid = true;
-  fields.forEach(function(f){
-    var input = form.querySelector("#" + f);
-    var errBox = form.querySelector("#" + f + "_err");
-    var val = input.value.trim();
-    input.classList.remove("invalid");
-    errBox.textContent = "";
-    if(!val){
-      input.classList.add("invalid");
-      errBox.textContent = "Este campo es obligatorio.";
-      valid = false;
-    }
-    data[f] = val;
-  });
-  var consentCheck = form.querySelector("#consentCheck");
-  var consentErr = form.querySelector("#consent_err");
-  consentErr.textContent = "";
-  if(!consentCheck.checked){
-    consentErr.textContent = "Debes autorizar el tratamiento de tus datos para continuar.";
-    valid = false;
-  }
-  var emailInput = form.querySelector("#email");
-  var emailErr = form.querySelector("#email_err");
-  var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if(data.email && !emailRe.test(data.email)){
-    emailInput.classList.add("invalid");
-    emailErr.textContent = "Ingresa un email válido.";
-    valid = false;
-  }
-  return valid ? data : null;
 }
 
 /* Crea el lead con reintento automático (1 reintento — el registro es sensible,

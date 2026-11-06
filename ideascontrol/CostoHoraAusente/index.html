@@ -31,6 +31,9 @@
   </div>
 </footer>
 
+<script src="/ideascontrol/assets/js/ic-paises.js?v=1.0.0"></script>
+<script src="/ideascontrol/assets/js/ic-validacion.js?v=1.0.0"></script>
+<script src="/ideascontrol/assets/js/ic-formulario.js?v=1.0.0"></script>
 <script>
 (function(){
 "use strict";
@@ -163,35 +166,10 @@ function renderInicio(){
 
 function createForm(){
   const form=el("form",{id:"leadForm",novalidate:"novalidate"});
-  const grid=el("div",{class:"form-grid"});
-  [
-    ["nombre","Nombre","text",true],
-    ["apellido","Apellido","text",true],
-    ["empresa","Empresa","text",true],
-    ["cargo","Cargo","text",false],
-    ["email","Correo electrónico","email",true],
-    ["telefono","Teléfono / WhatsApp","tel",true]
-  ].forEach(([id,label,type,req])=>{
-    const input=el("input",{id,type,autocomplete:"on"});
-    const box=el("div",{class:"field"});
-    box.appendChild(el("label",{for:id},[label,req?el("span",{class:"req"},[" *"]):null]));
-    box.appendChild(input);
-    grid.appendChild(box);
-  });
-  form.appendChild(grid);
-
-  const policyLink=POLICY_URL
-    ? el("a",{href:POLICY_URL,target:"_blank",rel:"noopener"},["Política de Tratamiento de Datos Personales"])
-    : el("span",{},["Política de Tratamiento de Datos Personales"]);
-  const partes=TEXTO_AUTORIZACION.split("Política de Tratamiento de Datos Personales");
-
-  const consent=el("div",{class:"consent"},[
-    el("input",{type:"checkbox",id:"consent"}),
-    el("label",{for:"consent"},[
-      partes[0],policyLink,partes[1]||"",el("span",{class:"req"},[" *"])
-    ])
-  ]);
-  form.appendChild(consent);
+  // Formulario estándar de IC (assets/js/ic-formulario.js): mismos campos y reglas que PilotoTyA
+  const cont=el("div",{});
+  form.appendChild(cont);
+  const formulario=IC_FORM.crear(cont,{prefijo:"cha",textoAutorizacion:TEXTO_AUTORIZACION,politicaUrl:POLICY_URL});
 
   const error=el("div",{class:"error",id:"formError"});
   form.appendChild(error);
@@ -202,26 +180,13 @@ function createForm(){
   form.addEventListener("submit",async function(e){
     e.preventDefault();
     error.style.display="none";
-    const required=["nombre","apellido","empresa","email","telefono"];
-    let ok=true;
-    required.forEach(id=>{
-      const x=document.getElementById(id);
-      x.style.borderColor="";
-      if(!x.value.trim()){ok=false;x.style.borderColor="var(--danger)"}
-    });
-    const email=document.getElementById("email");
-    if(email.value&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)){ok=false;email.style.borderColor="var(--danger)"}
-    if(!document.getElementById("consent").checked){ok=false}
-    if(!ok){error.textContent="Completa los campos obligatorios y autoriza el tratamiento de tus datos personales.";error.style.display="block";return}
+    const datos=formulario.validar();
+    if(!datos){error.textContent="Revisa los campos marcados.";error.style.display="block";return}
 
     btn.disabled=true;btn.textContent="Guardando…";
     const payload={
-      nombre:document.getElementById("nombre").value.trim(),
-      apellido:document.getElementById("apellido").value.trim(),
-      empresa:document.getElementById("empresa").value.trim(),
-      cargo:document.getElementById("cargo").value.trim(),
-      email:email.value.trim(),
-      telefono:document.getElementById("telefono").value.trim(),
+      nombre:datos.nombre,apellido:datos.apellido,empresa:datos.empresa,cargo:"",
+      email:datos.email,codigo_pais:datos.codigo_pais,telefono:datos.telefono,pais:datos.pais,hp:datos.hp,
       fuente:FUENTE,landing_id:LANDING_ID,microapp_id:MICROAPP_ID
     };
     try{
