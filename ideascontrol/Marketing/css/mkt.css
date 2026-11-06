@@ -120,3 +120,24 @@ th.mkt-ord:hover { color: #0E76BC; }
 th.mkt-ord.on { color: #0E76BC; }
 .mkt-flecha { display: inline-block; margin-left: 4px; font-size: 10px; opacity: .45; }
 th.mkt-ord.on .mkt-flecha { opacity: 1; }
+
+/* ---------- Análisis con Claude (Resumen) ---------- */
+.an-card { font-size: 14.5px; line-height: 1.55; }
+.an-meta { margin: 0 0 4px; font-size: 12px; color: #8A96A0; }
+.an-tit { margin: 0 0 10px; font-size: 19px; line-height: 1.3; color: #0B2945; }
+.an-card p { margin: 0 0 8px; }
+.an-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin: 14px 0; }
+.an-caja { border-radius: 12px; padding: 12px 14px; }
+.an-caja.ok { background: #EDF8F2; } .an-caja.alerta { background: #FDF1EF; }
+.an-caja h4, .an-h4 { margin: 0 0 8px; font-size: 14px; color: #0B2945; }
+.an-h4 { margin-top: 16px; }
+.an-redes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.an-redes > div { background: #F4F7F9; border-radius: 10px; padding: 10px 12px; }
+.an-redes p { font-size: 13.5px; margin: 4px 0 0; }
+.an-rec { color: #0E6F6F; }
+.an-recs { padding-left: 20px; margin: 0; } .an-recs li { margin: 0 0 8px; }
+.an-prio { display: inline-block; font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: #EAF3FB; color: #0A5A90; }
+.an-prio.alta { background: #FDE7E3; color: #8A1C10; } .an-prio.baja { background: #EEF2F5; color: #5B6770; }
+.an-nota { font-size: 12.5px; color: #5B6770; font-style: italic; margin-top: 12px !important; }
+.an-pasos details summary { cursor: pointer; color: #0E76BC; font-weight: 600; font-size: 13.5px; }
+@media print { .an-pasos { display: none; } }

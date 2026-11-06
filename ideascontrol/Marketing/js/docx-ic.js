@@ -340,5 +340,73 @@ window.IC_DOCX = (function () {
     return empacar(doc);
   }
 
-  return { cargar, contenido, newsletter };
+  // =====================================================================
+  // INFORME DE MARKETING (Resumen + análisis de Claude)
+  // =====================================================================
+  async function informe(d, a, ctx) {
+    await cargar();
+    const n = (v) => Math.round(Number(v) || 0).toLocaleString('es-CO');
+    const p = (v) => (v === null || v === undefined || !isFinite(v)) ? '—' : (Math.round(v * 1000) / 10).toLocaleString('es-CO') + ' %';
+    const cop = (v) => v ? '$ ' + n(v) : '—';
+    const vari = (x, y) => y ? ((x - y) / y >= 0 ? '+' : '') + (Math.round((x - y) / y * 1000) / 10).toLocaleString('es-CO') + ' %' : '—';
+    const t = d.total, an = d.anterior.t, hijos = [];
+    hijos.push(P('Informe de marketing en redes sociales', { bold: true, size: 40, color: C.navy, despues: 40 }));
+    hijos.push(P(ctx.periodo, { size: 22, color: C.azul, bold: true, despues: 200 }));
+    if (a && a.titular) hijos.push(caja([P(a.titular, { bold: true, size: 24, color: C.navy, despues: 0 })], C.azulClaro, C.azul), esp(160));
+    (a && a.resumen || []).forEach((x) => hijos.push(P(x, { despues: 120, linea: 290 })));
+
+    hijos.push(h(2, 'Resultados del periodo'));
+    const kpis = [['Alcance', n(t.alcance), n(an.alcance), vari(t.alcance, an.alcance), n(d.metas.alcance)], ['Impresiones', n(t.impresiones), n(an.impresiones), vari(t.impresiones, an.impresiones), '—'],
+      ['Interacciones', n(t.interacciones), n(an.interacciones), vari(t.interacciones, an.interacciones), n(d.metas.interacciones)], ['Tasa de interacción', p(t.tasa), p(an.tasa), '—', '—'],
+      ['Clics al enlace', n(t.clics), n(an.clics), vari(t.clics, an.clics), n(d.metas.clics)], ['Nuevos seguidores', n(t.nuevos_seguidores), n(an.nuevos_seguidores), vari(t.nuevos_seguidores, an.nuevos_seguidores), '—'],
+      ['Reproducciones de video', n(t.reproducciones), n(an.reproducciones), vari(t.reproducciones, an.reproducciones), '—'], ['Inversión en pauta', cop(t.inversion), cop(an.inversion), vari(t.inversion, an.inversion), '—'],
+      ['Resultados de pauta', n(t.resultados), n(an.resultados), vari(t.resultados, an.resultados), n(d.metas.leads)], ['Plan cumplido (publicadas / planeadas)', d.plan.publicadas + ' / ' + d.plan.planeadas, '—', '—', '—']];
+    hijos.push(tablaDatos(['Indicador', 'Este periodo', 'Periodo anterior', 'Variación', 'Meta'], kpis, [3280, 1700, 1700, 1700, 1700], C.navy), esp());
+
+    if (d.redes.length) {
+      hijos.push(h(2, 'Por red'));
+      hijos.push(tablaDatos(['Red', 'Registros', 'Alcance', 'Impresiones', 'Interacciones', 'Tasa', 'Clics', 'Inversión'],
+        d.redes.map((r) => [r.red, String(r.t.registros), n(r.t.alcance), n(r.t.impresiones), n(r.t.interacciones), p(r.t.tasa), n(r.t.clics), cop(r.t.inversion)]), [1500, 1100, 1250, 1350, 1350, 1100, 1080, 1350]), esp());
+      (a && a.por_red || []).forEach((r) => { if (!r || !(r.lectura || r.recomendacion)) return; hijos.push(P('**' + (r.red || '') + ':** ' + (r.lectura || ''), { despues: 40 })); if (r.recomendacion) hijos.push(P('→ ' + r.recomendacion, { color: C.teal, despues: 120, sangria: 200 })); });
+    }
+    if (d.semanas.length > 1) {
+      hijos.push(h(2, 'Por semana de campaña'));
+      hijos.push(tablaDatos(['Semana (lunes)', 'Tema', 'Alcance', 'Interacciones', 'Clics'], d.semanas.map((s) => [s.semana, s.tema || '—', n(s.t.alcance), n(s.t.interacciones), n(s.t.clics)]), [1700, 4280, 1400, 1400, 1300]), esp());
+    }
+    const conDatos = d.posts.filter((x) => x.alcance || x.impresiones || x.interacciones || x.clics || x.reproducciones);
+    if (conDatos.length) {
+      hijos.push(h(2, 'Contenido destacado'));
+      hijos.push(tablaDatos(['Post', 'Red', 'Fecha', 'Alcance', 'Interac.', 'Clics'], conDatos.slice(0, 10).map((x) => [x.nombre || '—', x.red + (x.tipo === 'Pago' ? ' (pago)' : ''), x.fecha, n(x.alcance), n(x.interacciones), n(x.clics)]), [4380, 1500, 1300, 1000, 1000, 900]), esp());
+    }
+    if (a) {
+      const dos = (a.destacados || []).length || (a.alertas || []).length;
+      if (dos) {
+        hijos.push(h(2, 'Lectura del periodo'));
+        const col = (tit, arr, fondo, color) => [P(tit, { bold: true, color, size: 21, despues: 80 })].concat((arr || []).filter(Boolean).map((x) => P('**' + (x.titulo || '') + '.** ' + (x.detalle || ''), { size: 19, despues: 80 })));
+        hijos.push(tabla([new D.TableRow({ children: [celda(col('✅ Lo que funcionó', a.destacados, C.verdeClaro, C.verde), { ancho: 5040, fondo: C.verdeClaro, m: 160 }), celda(col('⚠️ Para revisar', a.alertas, C.rojoClaro, C.rojo), { ancho: 5040, fondo: C.rojoClaro, m: 160 })] })], [5040, 5040],
+          { bordes: Object.assign(sinBordes(), { insideVertical: { style: D.BorderStyle.SINGLE, size: 12, color: 'FFFFFF' } }) }), esp());
+      }
+      if ((a.recomendaciones || []).length) {
+        hijos.push(h(2, 'Recomendaciones'));
+        hijos.push(tablaDatos(['Prioridad', 'Acción', 'Por qué', 'Red'], a.recomendaciones.filter(Boolean).map((r) => [r.prioridad || '—', r.accion || '', r.por_que || '', r.red || '']), [1200, 3600, 3880, 1400], C.teal), esp());
+      }
+      if ((a.aprendizajes || []).length) { hijos.push(h(3, 'Aprendizajes')); a.aprendizajes.filter(Boolean).forEach((x) => hijos.push(P('• ' + x, { despues: 60, sangria: 200 }))); }
+      const ps = a.proxima_semana || {};
+      if (ps.enfoque || (ps.ideas || []).length) {
+        hijos.push(h(3, 'Para la próxima semana'));
+        if (ps.enfoque) hijos.push(P(ps.enfoque, { despues: 80 }));
+        (ps.ideas || []).filter(Boolean).forEach((x) => hijos.push(P('• ' + x, { despues: 60, sangria: 200 })));
+      }
+      if (a.nota_datos) hijos.push(esp(80), P('Sobre los datos: ' + a.nota_datos, { italics: true, size: 17, color: C.gris }));
+      if (a._meta) hijos.push(P('Análisis elaborado con Claude a partir de las métricas del portal' + (a._meta.por ? ' · ' + a._meta.por : '') + ' · ' + new Date(a._meta.fecha).toLocaleDateString('es-CO'), { size: 15, color: C.suave, antes: 200 }));
+    }
+    const doc = new D.Document({
+      creator: 'Ideas Control · Marketing (APP-112)', title: 'Informe de marketing · ' + ctx.periodo,
+      styles: { default: { document: { run: { font: 'Calibri', size: 21, color: '1D2B36' } } } },
+      sections: [{ properties: pagina(), headers: { default: encabezadoLogo(ctx, 'INFORME DE MARKETING  |  ' + ctx.periodo) }, footers: { default: pie('Ideas Control • Equipos y Soluciones S.A.S. • Marketing') }, children: hijos }]
+    });
+    return empacar(doc);
+  }
+
+  return { cargar, contenido, newsletter, informe };
 })();
