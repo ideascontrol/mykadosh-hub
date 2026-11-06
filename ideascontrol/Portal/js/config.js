@@ -4,7 +4,7 @@
    está en la lista SYS_Microapps (columna url), esa tiene prioridad.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-100', nombre: 'Portal de microapps', version: '0.1.14' },
+  app: { id: 'APP-100', nombre: 'Portal de microapps', version: '0.1.15' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -48,6 +48,9 @@ window.APPS = [
   { grupo: 'Comercial', id: 'APP-110', nombre: 'Calculadora de costos y precios', icono: 'calc', color: 'dorado',
     texto: 'Precio sugerido a partir de los costos directos de un producto o servicio. Cada cálculo queda guardado en el historial.',
     url: '/ideascontrol/Costeo/', datos: 'SHAREPOINT', solo: ['operaciones@ideascontrol.com', 'patricia@ideascontrol.com', 'margarita@ideascontrol.com'] },
+  { grupo: 'Comercial', id: 'APP-111', nombre: 'Marketing', icono: 'mkt', color: 'teal',
+    texto: 'Plan de contenidos de redes: temas, publicaciones por red, aprobación (mínimo 2), métricas y resumen para gerencia.',
+    url: '/ideascontrol/Marketing/', datos: 'SHAREPOINT', solo: ['operaciones@ideascontrol.com', 'patricia@ideascontrol.com', 'margarita@ideascontrol.com'] },
   { grupo: 'Documentación', id: 'APP-105', nombre: 'Gestión documental', icono: 'docs', color: 'dorado',
     texto: 'Manuales, procedimientos, instructivos, formatos y políticas vigentes de Ideas Control.',
     url: '/ideascontrol/Documentacion/', datos: 'SHAREPOINT', fija: true },
