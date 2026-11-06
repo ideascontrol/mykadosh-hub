@@ -605,7 +605,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
         meta(alc, CFG.metas.alcance, 'Alcance') + meta(it, CFG.metas.interacciones, 'Interacciones') + meta(S('clics'), CFG.metas.clics, 'Tráfico (clics)') + meta(S('leads') || res, CFG.metas.leads, 'Leads') + '</div></section></div>' +
       '<section class="ic-bloque" style="margin-top:16px"><div class="cab"><h2>Contenido destacado del periodo</h2></div><div class="cuerpo">' +
         (top.map((m) => '<div class="ic-item"><div><div class="titulo mkt-nom" title="' + esc(m.nombre || '') + '">' + esc(nombreCorto(m.nombre || m.publicacion_id)) + '</div><div class="sec">' + esc(m.red) + ' · ' + esc(m.tipo || '') + ' · alcance ' + num(m.alcance) + '</div>' + (m.notas ? '<div class="sec">' + esc(m.notas) + '</div>' : '') + '</div><b>' + num(interacciones(m)) + ' interac.</b></div>').join('') || '<p class="ic-vacio" style="padding:8px 0">—</p>') + '</div></section><div id="rAnalisis"></div>';
-    MKT_AN.pintar(raiz.querySelector('#rAnalisis'), M.rd, M.rh);
+    MKT_AN.pintar(raiz.querySelector('#rAnalisis'), M.rd, M.rh, (d, h) => { M.rd = d; M.rh = h; vistaResumen(raiz); window.scrollTo(0, 0); });
     raiz.querySelector('#rD').onchange = (e) => { M.rd = e.target.value; vistaResumen(raiz); };
     raiz.querySelector('#rH').onchange = (e) => { M.rh = e.target.value; vistaResumen(raiz); };
     raiz.querySelector('#bImp').onclick = () => window.print();

@@ -142,3 +142,7 @@ th.mkt-ord.on .mkt-flecha { opacity: 1; }
 .an-pasos details summary { cursor: pointer; color: #0E76BC; font-weight: 600; font-size: 13.5px; }
 @media print { .an-pasos { display: none; } }
 .an-etq { display: inline-block; font-size: 11px; font-weight: 700; color: #0A5A90; background: #fff; border: 1px solid #D5E6F2; border-radius: 6px; padding: 0 6px; margin-right: 4px; }
+.an-lista { display: flex; flex-wrap: wrap; gap: 8px; }
+.an-li { display: inline-flex; gap: 10px; align-items: center; border: 1px solid #E3E8EC; border-radius: 10px; padding: 6px 12px; font-size: 13.5px; background: #fff; }
+.an-li.on { border-color: #0E76BC; background: #F2F8FC; }
+.an-li a { text-decoration: none; font-weight: 600; }

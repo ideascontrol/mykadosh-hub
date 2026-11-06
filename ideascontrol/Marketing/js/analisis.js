@@ -159,7 +159,32 @@ window.MKT_AN = (function () {
       (a.nota_datos ? '<p class="an-nota">Sobre los datos: ' + esc(a.nota_datos) + '</p>' : '') + '</div>';
   }
 
-  async function pintar(cont, rd, rh) {
+  // Busca el Word del periodo en SharePoint (no depende de lo anotado al guardar)
+  async function wordGuardado(rd, rh) {
+    try { const sid = await G.sitio(CFG.sitio.host, CFG.sitio.ruta); const m = await G.llamar('GET', '/sites/' + sid + '/drive/root:/' + M().rutaUrl(ruta(rd, rh, 'docx'))); return m && m.webUrl ? m.webUrl : ''; }
+    catch (e) { return ''; }
+  }
+  // Todos los periodos con análisis guardado (archivos Analisis_AAAA-MM-DD_AAAA-MM-DD.json de la carpeta Informes)
+  async function guardados() {
+    try {
+      const sid = await G.sitio(CFG.sitio.host, CFG.sitio.ruta);
+      const r = await G.llamar('GET', '/sites/' + sid + '/drive/root:/' + M().rutaUrl(CARPETA) + ':/children?$top=200&$select=name,webUrl,lastModifiedDateTime');
+      const hijos = r.value || [], words = {};
+      hijos.forEach((h) => { const m = String(h.name).match(/^Informe_Marketing_(\d{4}-\d{2}-\d{2})_(\d{4}-\d{2}-\d{2})\.docx$/); if (m) words[m[1] + '_' + m[2]] = h.webUrl; });
+      return hijos.map((h) => { const m = String(h.name).match(/^Analisis_(\d{4}-\d{2}-\d{2})_(\d{4}-\d{2}-\d{2})\.json$/); return m ? { rd: m[1], rh: m[2], fecha: h.lastModifiedDateTime, word: words[m[1] + '_' + m[2]] || '' } : null; })
+        .filter(Boolean).sort((a, b) => b.rd.localeCompare(a.rd) || b.rh.localeCompare(a.rh));
+    } catch (e) { return []; }
+  }
+  async function pintarGuardados(cont, rd, rh, alElegir) {
+    const el = cont.querySelector('#anLista'); if (!el) return;
+    const l = await guardados();
+    if (!el.isConnected) return;
+    el.innerHTML = l.length ? '<h4 class="an-h4">Informes guardados</h4><div class="an-lista">' + l.map((x) => '<div class="an-li' + (x.rd === rd && x.rh === rh ? ' on' : '') + '"><a href="#" data-p="' + x.rd + '_' + x.rh + '">' + esc(M().fCorta(x.rd) + ' – ' + M().fLarga(x.rh)) + '</a>' +
+      (x.word ? '<a class="sec" href="' + esc(x.word) + '" target="_blank" rel="noopener">Word ↗</a>' : '') + '</div>').join('') + '</div>' : '';
+    el.querySelectorAll('[data-p]').forEach((a) => { a.onclick = (ev) => { ev.preventDefault(); const [d, h] = a.dataset.p.split('_'); if (alElegir) alElegir(d, h); }; });
+  }
+
+  async function pintar(cont, rd, rh, alElegir) {
     cont.innerHTML = '<section class="ic-bloque" style="margin-top:16px"><div class="cab"><h2>✨ Análisis con Claude</h2><span class="sec mkt-noimp">' + esc(M().fLarga(rd)) + ' al ' + esc(M().fLarga(rh)) + '</span></div><div class="cuerpo" id="anCuerpo"><p class="sec">Buscando un análisis guardado de este periodo…</p></div></section>';
     const a = await leerGuardado(rd, rh);
     const c = cont.querySelector('#anCuerpo'); if (!c) return;
@@ -169,7 +194,17 @@ window.MKT_AN = (function () {
       (d.total.registros ? '<div class="gen-acc"><button class="ic-btn" id="anCopiar">Copiar prompt</button><a class="ic-btn sec" href="https://claude.ai/new" target="_blank" rel="noopener">Abrir Claude ↗</a><button class="ic-btn sec" id="anVer">Ver prompt</button></div>' +
         '<textarea id="anResp" rows="5" placeholder="Pegue aquí la respuesta de Claude (el bloque JSON)…" style="width:100%;margin-top:10px;font-family:ui-monospace,Consolas,monospace;font-size:12.5px"></textarea>' +
         '<div class="gen-acc" style="margin-top:8px"><button class="ic-btn" id="anGuardar">Guardar análisis</button></div><div id="anMsg"></div>' : '') + (a ? '</details>' : '') + '</div>';
-    c.innerHTML = (a ? tarjeta(a) + '<div class="gen-acc mkt-noimp" style="margin:14px 0"><button class="ic-btn" id="anWord">Descargar informe (Word)</button>' + (a._meta && a._meta.word ? '<a class="ic-btn sec" href="' + esc(a._meta.word) + '" target="_blank" rel="noopener">Abrir en SharePoint ↗</a>' : '') + '</div>' : '') + pasos;
+    const web = a ? await wordGuardado(rd, rh) : '';
+    if (!c.isConnected) return;
+    c.innerHTML = (a ? tarjeta(a) + '<div class="gen-acc mkt-noimp" style="margin:14px 0">' + (web ? '<a class="ic-btn" href="' + esc(web) + '" target="_blank" rel="noopener">Abrir en SharePoint ↗</a>' : '') +
+      '<button class="ic-btn' + (web ? ' sec' : '') + '" id="anSubir">' + (web ? 'Actualizar Word en SharePoint' : 'Guardar Word en SharePoint') + '</button><button class="ic-btn sec" id="anWord">Descargar copia</button></div>' +
+      '<p class="sec mkt-noimp" style="margin:-6px 0 12px">Word en SharePoint: Documentos › Marketing › Informes › ' + esc('Informe_Marketing_' + rd + '_' + rh + '.docx') + (web ? '' : ' (aún no existe)') + '</p>' : '') + pasos + '<div class="mkt-noimp" id="anLista"></div>';
+    pintarGuardados(c, rd, rh, alElegir);
+    const bs = c.querySelector('#anSubir');
+    if (bs) bs.onclick = () => U.conCarga(bs, async () => {
+      try { await G.subirArchivo(ruta(rd, rh, 'docx'), await word(d, a)); U.aviso('Word guardado en SharePoint con los números de hoy', 'ok'); pintar(cont, rd, rh, alElegir); }
+      catch (e) { console.error(e); U.aviso(U.mensajeError(e), 'err', 9000); }
+    });
     const txt = () => prompt(d);
     const bc = c.querySelector('#anCopiar'); if (bc) bc.onclick = () => M().copiar(txt(), 'Prompt copiado. Péguelo en Claude.');
     const bv = c.querySelector('#anVer'); if (bv) bv.onclick = () => { const t = txt(); U.modal('Prompt del análisis', '<div class="ic-form"><textarea rows="22" readonly style="width:100%;font-family:ui-monospace,Consolas,monospace;font-size:12px">' + esc(t) + '</textarea><div class="ic-acciones"><span class="sec">' + t.length.toLocaleString('es-CO') + ' caracteres</span><span class="espacio"></span><button class="ic-btn" id="anC2">Copiar</button></div></div>', (m) => { m.querySelector('#anC2').onclick = () => M().copiar(t, 'Prompt copiado.'); }); };
@@ -189,7 +224,7 @@ window.MKT_AN = (function () {
         await G.subirArchivo(ruta(rd, rh, 'json'), new Blob([JSON.stringify(an, null, 2)], { type: 'application/json' }));
         cache[rd + '_' + rh] = an;
         U.aviso('Análisis guardado', 'ok');
-        pintar(cont, rd, rh);
+        pintar(cont, rd, rh, alElegir);
       } catch (e) { console.error(e); msg.innerHTML = '<div class="gen-error">' + esc(U.mensajeError(e)) + '</div>'; }
     });
   }
