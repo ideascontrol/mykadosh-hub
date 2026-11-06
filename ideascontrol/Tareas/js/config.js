@@ -4,7 +4,7 @@
    por cliente como «Plan de Trabajo - Papeles Nacionales»).
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-109', nombre: 'Seguimiento por cliente', version: '0.1.0' },
+  app: { id: 'APP-109', nombre: 'Seguimiento por cliente', version: '0.1.1' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -20,6 +20,26 @@ window.CFG = {
   estados: ['Pendiente OC', 'Abierto', 'En Progreso', 'Esperando Cliente', 'Esperando Proveedor', 'Cancelada', 'Resuelto', 'Cerrado'],
   cerrados: ['Cancelada', 'Resuelto', 'Cerrado'],
   prioridades: ['Alta', 'Media', 'Baja'],
-  categorias: ['Instalación', 'Inspección', 'Incidente', 'Software', 'Mejora', 'Desarrollo', 'Facturación', 'Cotización', 'Aprobación', 'Informe'],
+  // Categorías con su definición (se muestra como ayuda al crear o editar una tarea)
+  categorias: [
+    ['Comercial', 'Oportunidades, propuestas, cotizaciones y nuevos negocios.'],
+    ['Seguimiento al cliente', 'Llamadas, correos, compromisos y pendientes con clientes.'],
+    ['Atención al cliente', 'Solicitudes, consultas, requerimientos y acompañamiento.'],
+    ['Soporte técnico', 'Problemas técnicos que requieren diagnóstico o solución.'],
+    ['Incidente', 'Fallas, interrupciones o situaciones que afectan el servicio.'],
+    ['Instalación', 'Instalación de dispositivos biométricos o infraestructura.'],
+    ['Implementación', 'Puesta en marcha de soluciones de software o hardware.'],
+    ['Mantenimiento', 'Mantenimientos preventivos y correctivos.'],
+    ['Inspección / Visita técnica', 'Revisiones presenciales, verificaciones y diagnósticos.'],
+    ['Software / Configuración', 'Parámetros, ajustes, usuarios, permisos y configuraciones.'],
+    ['Desarrollo / Mejoras', 'Nuevas funcionalidades, ajustes de aplicaciones y personalizaciones.'],
+    ['Capacitación', 'Formación a clientes, usuarios y administradores.'],
+    ['Integración', 'Conexiones con otros sistemas, plataformas o aplicaciones.'],
+    ['Calidad / Servicio', 'Evaluaciones, satisfacción, inconformidades y compromisos de mejora.'],
+    ['Facturación / Cartera', 'Facturas, pagos, saldos y asuntos administrativos comerciales.'],
+    ['Renovación / Contrato', 'Renovaciones, vencimientos, condiciones y acuerdos contractuales.'],
+    ['Documentación', 'Manuales, actas, informes, procedimientos y entregables.'],
+    ['Gestión interna', 'Actividades administrativas o coordinaciones internas relacionadas con el cliente.']
+  ],
   diasAviso: 3          // «Próxima a vencer» = vence en 3 días o menos
 };

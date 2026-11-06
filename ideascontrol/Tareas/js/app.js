@@ -109,7 +109,11 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
     c.querySelectorAll('.tar-urg').forEach((d) => { d.onclick = () => formTarea(App.tareas.find((t) => t.Title === d.dataset.id), () => vistaResumen(c)); });
   }
   const resumir = (s, n) => { s = String(s || '').replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
-  const categorias = () => { const s = new Set(CFG.categorias); App.tareas.forEach((t) => { if (t.categoria) s.add(t.categoria); }); return Array.from(s); };
+  const CAT = CFG.categorias.map((c) => c[0]);
+  const ayudaCat = (n) => (CFG.categorias.find((c) => c[0] === n) || [n, ''])[1];
+  // Las oficiales primero; luego las que ya traen tareas antiguas o importadas
+  const categorias = () => { const s = new Set(CAT); App.tareas.forEach((t) => { if (t.categoria) s.add(t.categoria); }); return Array.from(s); };
+  const otrasCategorias = () => categorias().filter((c) => CAT.indexOf(c) < 0);
 
   // =====================================================================
   // TAREAS (listado con filtros)
@@ -161,7 +165,10 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
       U.campo({ name: 'cliente_id', label: 'Cliente', t: 'select', op: opcionesClientes(v0.cliente_id), valor: v0.cliente_id, req: true, c: 'c6' }) +
       '<div class="ic-campo c6"><label for="f_plan">Plan / proyecto</label><input id="f_plan" name="plan" list="dlPlan" value="' + esc(v0.plan || '') + '" placeholder="Ej.: Implementación software T&A"><datalist id="dlPlan">' + planes.map((p) => '<option value="' + esc(p) + '">').join('') + '</datalist></div>' +
       U.campo({ name: 'item', label: 'Tarea', t: 'textarea', valor: v0.item, req: true, filas: 3, c: 'c12' }) +
-      '<div class="ic-campo c4"><label for="f_categoria">Categoría</label><input id="f_categoria" name="categoria" list="dlCat" value="' + esc(v0.categoria || '') + '"><datalist id="dlCat">' + categorias().map((p) => '<option value="' + esc(p) + '">').join('') + '</datalist></div>' +
+      '<div class="ic-campo c4"><label for="f_categoria">Categoría</label><select id="f_categoria" name="categoria"><option value="">Seleccione…</option>' +
+        CFG.categorias.map((c) => '<option value="' + esc(c[0]) + '" title="' + esc(c[1]) + '"' + (c[0] === v0.categoria ? ' selected' : '') + '>' + esc(c[0]) + '</option>').join('') +
+        (otrasCategorias().length ? '<optgroup label="Usadas antes">' + otrasCategorias().map((c) => '<option value="' + esc(c) + '"' + (c === v0.categoria ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '</optgroup>' : '') +
+        '</select><span class="ayuda" id="ayCat"></span></div>' +
       U.campo({ name: 'responsable', label: 'Responsable', valor: v0.responsable || 'Ideas Control', c: 'c4' }) +
       U.campo({ name: 'prioridad', label: 'Prioridad', t: 'select', op: CFG.prioridades.map((p) => [p, p]), valor: v0.prioridad, c: 'c4' }) +
       U.campo({ name: 'estado', label: 'Estado', t: 'select', op: CFG.estados.map((p) => [p, p]), valor: v0.estado, vacio: false, c: 'c4' }) +
@@ -177,6 +184,8 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
       '<button type="button" class="ic-btn sec" id="tNo">Cancelar</button><button class="ic-btn" id="tOk">Guardar</button></div></form>', (cu) => {
       const f = cu.querySelector('#fTar');
       const sem = () => { const v = U.leerForm(f); cu.querySelector('#semF').innerHTML = chipSem({ estado: v.estado, fecha_limite: v.fecha_limite }) + (textoDias({ estado: v.estado, fecha_limite: v.fecha_limite }) ? ' <small>' + esc(textoDias({ estado: v.estado, fecha_limite: v.fecha_limite })) + '</small>' : ''); };
+      const verAyuda = () => { cu.querySelector('#ayCat').textContent = ayudaCat(f.categoria.value) || (f.categoria.value ? '' : 'Elija la categoría que mejor describe la tarea.'); };
+      f.categoria.addEventListener('change', verAyuda); verAyuda();
       f.addEventListener('input', sem); f.addEventListener('change', (e) => {
         if (e.target.name === 'estado' && CFG.cerrados.indexOf(e.target.value) >= 0) { if (!f.fecha_cierre.value) f.fecha_cierre.value = hoy(); if (e.target.value !== 'Cancelada') f.progreso.value = 100; }
         sem();
