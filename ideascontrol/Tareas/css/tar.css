@@ -34,3 +34,9 @@
 .tar-sem-form { padding-top: 8px; }
 .ic-alerta.chica { background: #EEF6FB; border: 1px solid #CFE3F1; border-radius: 10px; padding: 10px 12px; margin: 10px 0; font-size: 14px; }
 @media (max-width: 980px) { .tar-kpis { grid-template-columns: repeat(2, 1fr); } .tar-dos, .tar-tres { grid-template-columns: 1fr; } .tar-nav { display: none; } }
+
+/* Estados v0.1.3 */
+.tar-estado.e-abierta { background: #EAF4FF; color: #1B5E9E; } .tar-estado.e-enproceso { background: #E6F0FA; color: #0A5A90; }
+.tar-estado.e-enesperadelcliente, .tar-estado.e-enesperadetercero, .tar-estado.e-enesperainterna { background: #F3ECFB; color: #6B3FA0; }
+.tar-estado.e-programada { background: #FFF4D6; color: #8A6100; } .tar-estado.e-enrevision { background: #E8F6F6; color: #0F6F6F; }
+.tar-estado.e-finalizada { background: #E3F4EF; color: #0F766E; }

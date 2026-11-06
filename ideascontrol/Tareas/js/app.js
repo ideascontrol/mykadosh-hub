@@ -43,12 +43,16 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
   }
   // Pasa las categorías anteriores a la lista nueva (una sola vez por tarea)
   const equivalente = (c) => { if (!c) return c; const k = Object.keys(CFG.equivalencias || {}).find((x) => U.norm(x) === U.norm(c)); return k ? CFG.equivalencias[k] : c; };
+  const estadoEquiv = (e) => { if (!e) return e; const k = Object.keys(CFG.equivEstados || {}).find((x) => U.norm(x) === U.norm(e)); return k ? CFG.equivEstados[k] : e; };
   async function convertirCategorias() {
-    const viejas = App.tareas.filter((t) => t.categoria && equivalente(t.categoria) !== t.categoria);
+    const viejas = App.tareas.filter((t) => (t.categoria && equivalente(t.categoria) !== t.categoria) || (t.estado && estadoEquiv(t.estado) !== t.estado));
     if (!viejas.length) return;
-    for (const t of viejas) { try { await G.actualizar('TAR_Tareas', t._id, { categoria: equivalente(t.categoria) }); } catch (e) { console.warn(e); } }
+    for (const t of viejas) {
+      const c = {}; if (t.categoria && equivalente(t.categoria) !== t.categoria) c.categoria = equivalente(t.categoria); if (t.estado && estadoEquiv(t.estado) !== t.estado) c.estado = estadoEquiv(t.estado);
+      try { await G.actualizar('TAR_Tareas', t._id, c); } catch (e) { console.warn(e); }
+    }
     await cargar();
-    U.aviso(viejas.length + ' tareas pasaron a las categorías nuevas', 'ok', 6000);
+    U.aviso(viejas.length + ' tareas pasaron a las categorías y estados nuevos', 'ok', 6000);
   }
   async function cargarClientes() {
     try { App.clientes = (await G.items('MAE_Empresas', { top: 5000 })).filter((e) => e.estado !== 'INACTIVO').map((e) => ({ id: e.Title, nombre: e.razon_social })); }
@@ -89,20 +93,20 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
     const T = App.tareas, act = T.filter((t) => !cerrada(t));
     const n = (f) => T.filter(f).length;
     const venc = n((t) => semaforo(t) === 'VENCIDA'), prox = n((t) => semaforo(t) === 'PROXIMA');
-    const resueltas = n((t) => t.estado === 'Resuelto' || t.estado === 'Cerrado');
+    const resueltas = n((t) => t.estado === 'Finalizada');
     const avance = T.length ? Math.round(resueltas * 100 / T.length) : 0;
     const kpi = (v, e, cls, ir) => '<a class="ic-kpi tar-kpi ' + (cls || '') + '" href="#tareas" data-ir="' + (ir || '') + '"><div class="valor">' + v + '</div><div class="etiqueta">' + e + '</div></a>';
     const barra = (v, max, cls) => '<div class="tar-barra"><i class="' + (cls || '') + '" style="width:' + (max ? Math.round(v * 100 / max) : 0) + '%"></i></div>';
     const porCliente = clientesConTareas().map((cl) => {
       const ts = T.filter((t) => t.cliente_id === cl.id), a = ts.filter((t) => !cerrada(t));
-      const r = ts.filter((t) => t.estado === 'Resuelto' || t.estado === 'Cerrado').length;
+      const r = ts.filter((t) => t.estado === 'Finalizada').length;
       return { cl, total: ts.length, activas: a.length, venc: ts.filter((t) => semaforo(t) === 'VENCIDA').length, prox: ts.filter((t) => semaforo(t) === 'PROXIMA').length, av: ts.length ? Math.round(r * 100 / ts.length) : 0 };
     }).sort((a, b) => b.venc - a.venc || b.activas - a.activas);
     const urgentes = act.filter((t) => ['VENCIDA', 'PROXIMA'].indexOf(semaforo(t)) >= 0).sort((a, b) => a.fecha_limite.localeCompare(b.fecha_limite)).slice(0, 12);
     const grupo = (campo, valores, lista) => { const tot = lista.length; return valores.concat(['']).map((v) => [v || 'Sin definir', lista.filter((t) => (t[campo] || '') === v).length]).filter((x) => x[1]).map((x) => '<div class="tar-fila-b"><span>' + esc(x[0]) + '</span>' + barra(x[1], tot) + '<b>' + x[1] + '</b></div>').join('') || '<p class="ic-conteo">Sin datos.</p>'; };
     c.innerHTML = '<div class="ic-barra"><div><h1 class="ic-titulo">Resumen</h1><p class="ic-subtitulo" style="margin:0">Tareas y pendientes de todos los clientes, al ' + esc(textoFecha(hoy())) + '.</p></div><span class="espacio"></span><button class="ic-btn" id="bNueva">+ Nueva tarea</button></div>' +
       '<div class="ic-kpis tar-kpis">' + kpi(T.length, 'Tareas registradas', '', 'TODAS') + kpi(act.length, 'Pendientes activas', '', 'ACTIVAS') + kpi(venc, 'Vencidas', 'rojo', 'VENCIDA') +
-        kpi(prox, 'Vencen en ' + CFG.diasAviso + ' días o menos', 'amarillo', 'PROXIMA') + kpi(avance + ' %', 'Avance (resueltas o cerradas)', 'verde', 'CERRADAS') + '</div>' +
+        kpi(prox, 'Vencen en ' + CFG.diasAviso + ' días o menos', 'amarillo', 'PROXIMA') + kpi(avance + ' %', 'Avance (finalizadas)', 'verde', 'CERRADAS') + '</div>' +
       '<div class="tar-dos"><section class="ic-bloque"><div class="cab"><h2>Por cliente</h2></div><div class="cuerpo">' +
         (porCliente.length ? '<table class="ic-tabla tar-tcli"><thead><tr><th>Cliente</th><th>Activas</th><th>Vencidas</th><th>Por vencer</th><th>Avance</th></tr></thead><tbody>' +
           porCliente.map((x) => '<tr data-cli="' + esc(x.cl.id) + '"><td><b>' + esc(x.cl.nombre) + '</b><span class="sec">' + x.total + ' tarea' + (x.total === 1 ? '' : 's') + '</span></td><td>' + x.activas + '</td><td>' + (x.venc ? '<span class="tar-num rojo">' + x.venc + '</span>' : '0') + '</td><td>' + (x.prox ? '<span class="tar-num amarillo">' + x.prox + '</span>' : '0') + '</td><td style="min-width:120px">' + barra(x.av, 100, 'verde') + '<small>' + x.av + ' %</small></td></tr>').join('') + '</tbody></table>'
@@ -140,7 +144,7 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
     c.innerHTML = '<div class="ic-barra"><div><h1 class="ic-titulo">Tareas</h1><p class="ic-subtitulo" style="margin:0">Haga clic en una tarea para actualizarla o agregar una anotación a la bitácora.</p></div><span class="espacio"></span>' +
       '<button class="ic-btn sec" id="bExcel">⬇ Excel</button><button class="ic-btn" id="bNueva">+ Nueva tarea</button></div>' +
       '<div class="ic-filtros">' + sel('fCli', [['', 'Todos los clientes']].concat(clientesConTareas().map((x) => [x.id, x.nombre])), f.cliente) +
-        sel('fEst', [['ACTIVAS', 'Pendientes activas'], ['TODAS', 'Todos los estados'], ['CERRADAS', 'Cerradas (resueltas, cerradas, canceladas)']].concat(CFG.estados.map((e) => [e, e])), f.estado) +
+        sel('fEst', [['ACTIVAS', 'Pendientes activas'], ['TODAS', 'Todos los estados'], ['CERRADAS', 'Cerradas (finalizadas y canceladas)']].concat(CFG.estados.map((e) => [e, e])), f.estado) +
         sel('fSem', [['', 'Todo semáforo'], ['VENCIDA', 'Vencidas'], ['PROXIMA', 'Próximas a vencer'], ['A_TIEMPO', 'A tiempo'], ['SIN_FECHA', 'Sin fecha']], f.semaforo) +
         sel('fPri', [['', 'Toda prioridad']].concat(CFG.prioridades.map((p) => [p, p])), f.prioridad) +
         sel('fCat', [['', 'Toda categoría']].concat(categorias().map((p) => [p, p])), f.categoria) +
@@ -168,7 +172,7 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
   // FORMULARIO DE TAREA (crear / actualizar / bitácora)
   // =====================================================================
   function formTarea(t, alGuardar) {
-    const nueva = !t, v0 = t || { cliente_id: App.filtro.cliente || '', estado: 'Abierto', prioridad: 'Media', fecha_apertura: hoy(), progreso: 0 };
+    const nueva = !t, v0 = t || { cliente_id: App.filtro.cliente || '', estado: 'Abierta', prioridad: 'Media', fecha_apertura: hoy(), progreso: 0 };
     const planes = Array.from(new Set(App.tareas.map((x) => x.plan).filter(Boolean)));
     U.modal(nueva ? 'Nueva tarea' : v0.Title + ' · ' + resumir(v0.cliente_nombre, 40), '<form class="ic-form" id="fTar" autocomplete="off"><div class="ic-campos">' +
       U.campo({ name: 'cliente_id', label: 'Cliente', t: 'select', op: opcionesClientes(v0.cliente_id), valor: v0.cliente_id, req: true, c: 'c6' }) +
@@ -180,7 +184,8 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
         '</select><span class="ayuda" id="ayCat"></span></div>' +
       U.campo({ name: 'responsable', label: 'Responsable', valor: v0.responsable || 'Ideas Control', c: 'c4' }) +
       U.campo({ name: 'prioridad', label: 'Prioridad', t: 'select', op: CFG.prioridades.map((p) => [p, p]), valor: v0.prioridad, c: 'c4' }) +
-      U.campo({ name: 'estado', label: 'Estado', t: 'select', op: CFG.estados.map((p) => [p, p]), valor: v0.estado, vacio: false, c: 'c4' }) +
+      '<div class="ic-campo c4"><label for="f_estado">Estado</label><select id="f_estado" name="estado">' + CFG.estados.concat(CFG.estados.indexOf(v0.estado) < 0 && v0.estado ? [v0.estado] : [])
+        .map((e) => '<option value="' + esc(e) + '" title="' + esc(CFG.ayudaEstados[e] || '') + '"' + (e === v0.estado ? ' selected' : '') + '>' + esc(e) + '</option>').join('') + '</select><span class="ayuda" id="ayEst"></span></div>' +
       U.campo({ name: 'progreso', label: '% de avance', t: 'number', valor: Math.round(v0.progreso || 0), c: 'c4' }) +
       '<div class="ic-campo c4"><label>&nbsp;</label><div class="tar-sem-form" id="semF"></div></div>' +
       U.campo({ name: 'fecha_apertura', label: 'Apertura', t: 'date', valor: v0.fecha_apertura, c: 'c3' }) +
@@ -195,6 +200,8 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
       const sem = () => { const v = U.leerForm(f); cu.querySelector('#semF').innerHTML = chipSem({ estado: v.estado, fecha_limite: v.fecha_limite }) + (textoDias({ estado: v.estado, fecha_limite: v.fecha_limite }) ? ' <small>' + esc(textoDias({ estado: v.estado, fecha_limite: v.fecha_limite })) + '</small>' : ''); };
       const verAyuda = () => { cu.querySelector('#ayCat').textContent = ayudaCat(f.categoria.value) || (f.categoria.value ? '' : 'Elija la categoría que mejor describe la tarea.'); };
       f.categoria.addEventListener('change', verAyuda); verAyuda();
+      const verAyEst = () => { cu.querySelector('#ayEst').textContent = CFG.ayudaEstados[f.estado.value] || ''; };
+      f.estado.addEventListener('change', verAyEst); verAyEst();
       f.addEventListener('input', sem); f.addEventListener('change', (e) => {
         if (e.target.name === 'estado' && CFG.cerrados.indexOf(e.target.value) >= 0) { if (!f.fecha_cierre.value) f.fecha_cierre.value = hoy(); if (e.target.value !== 'Cancelada') f.progreso.value = 100; }
         sem();
@@ -289,7 +296,7 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
         const val = (r, i) => (i >= 0 ? r[i] : '');
         const ya = new Set(App.tareas.filter((t) => t.cliente_id === f.cliente_id.value).map((t) => U.norm(t.item)));
         filas = m.slice(iCab + 1).filter((r) => String(val(r, C.item)).trim()).map((r) => {
-          let est = String(val(r, C.est)).trim(); est = CFG.estados.find((e) => U.norm(e) === U.norm(est)) || (est ? est : 'Abierto');
+          let est = String(val(r, C.est)).trim(); est = estadoEquiv(est); est = CFG.estados.find((e) => U.norm(e) === U.norm(est)) || (est ? est : 'Abierta');
           let pr = Number(val(r, C.prog)) || 0; if (pr > 0 && pr <= 1) pr = pr * 100;
           const pri = CFG.prioridades.find((p) => U.norm(p) === U.norm(val(r, C.pri))) || '';
           const o = { item: String(val(r, C.item)).trim(), categoria: equivalente(String(val(r, C.cat)).trim()), responsable: String(val(r, C.resp)).trim(), prioridad: pri, estado: est,

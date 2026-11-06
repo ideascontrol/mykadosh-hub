@@ -4,7 +4,7 @@
    por cliente como «Plan de Trabajo - Papeles Nacionales»).
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-109', nombre: 'Seguimiento por cliente', version: '0.1.2' },
+  app: { id: 'APP-109', nombre: 'Seguimiento por cliente', version: '0.1.3' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -17,8 +17,22 @@ window.CFG = {
   // Por ahora solo la Dirección de Operaciones usa esta app
   usuarios: ['operaciones@ideascontrol.com'],
   // Estados: los cerrados no cuentan como pendientes ni generan alarma
-  estados: ['Pendiente OC', 'Abierto', 'En Progreso', 'Esperando Cliente', 'Esperando Proveedor', 'Cancelada', 'Resuelto', 'Cerrado'],
-  cerrados: ['Cancelada', 'Resuelto', 'Cerrado'],
+  estados: ['Abierta', 'En proceso', 'En espera del cliente', 'En espera de tercero', 'En espera interna', 'Programada', 'En revisión', 'Finalizada', 'Cancelada'],
+  ayudaEstados: {
+    'Abierta': 'Tarea creada, pendiente de iniciar.',
+    'En proceso': 'Ya se está trabajando en ella.',
+    'En espera del cliente': 'Depende de una respuesta o acción del cliente.',
+    'En espera de tercero': 'Depende de un proveedor u otra entidad.',
+    'En espera interna': 'Depende de otra persona o área de Ideas Control.',
+    'Programada': 'Tiene una fecha definida para su ejecución.',
+    'En revisión': 'Se realizó el trabajo y está pendiente de validación.',
+    'Finalizada': 'Actividad completada y compromiso cumplido.',
+    'Cancelada': 'Actividad que ya no requiere ejecución.'
+  },
+  cerrados: ['Finalizada', 'Cancelada'],
+  // Estados anteriores (Excel del plan de trabajo) → estado nuevo. Se convierten solos al abrir la app y al importar.
+  equivEstados: { 'Pendiente OC': 'En espera del cliente', 'Abierto': 'Abierta', 'En Progreso': 'En proceso', 'Esperando Cliente': 'En espera del cliente',
+    'Esperando Proveedor': 'En espera de tercero', 'Resuelto': 'Finalizada', 'Cerrado': 'Finalizada' },
   prioridades: ['Alta', 'Media', 'Baja'],
   // Categorías con su definición (se muestra como ayuda al crear o editar una tarea)
   categorias: [
