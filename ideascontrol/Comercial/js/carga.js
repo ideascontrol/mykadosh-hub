@@ -175,6 +175,7 @@
       o.pais = o.pais || 'Colombia';
       o.estado_comercial = String(o.estado_comercial || '').toUpperCase();
       o.tipo_cliente = String(o.tipo_cliente || '').toUpperCase();
+      o.razon_social = String(o.razon_social || '').replace(/\s+/g, ' ').trim().toLocaleUpperCase('es-CO');   // Regla IC: nombre de empresa en MAYÚSCULAS
       if (EJEMPLOS.indexOf(o.nit) >= 0) { err(o, 'Es una fila de ejemplo de la plantilla: bórrela'); o._accion = 'ERROR'; res.EMPRESAS.push(o); return; }
       if (CARGA_PROVISIONAL) {
         PROVISIONAL_OBLIG.EMPRESAS.forEach((k) => { if (!o[k]) err(o, 'Falta ' + NOMBRE_CAMPO[k]); });

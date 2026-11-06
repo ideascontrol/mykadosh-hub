@@ -67,6 +67,8 @@ window.IC_FORM = (function () {
 
     var $ = function (k) { return cont.querySelector('#' + id(k)); };   // funciona aunque el formulario aún no esté en la página
     var cod = $('codigo'), pais = $('pais'), codTocado = false;
+    // Regla IC: el nombre de la empresa siempre en MAYÚSCULAS (máscara mientras se escribe)
+    (function (el) { el.addEventListener('input', function () { var a = el.selectionStart, b = el.selectionEnd, v = el.value.toLocaleUpperCase('es-CO'); if (v !== el.value) { el.value = v; try { el.setSelectionRange(a, b); } catch (e) { /* tipo sin cursor */ } } }); })($('empresa'));
     if (porIso[PAIS_DEF]) { cod.value = PAIS_DEF; pais.value = porIso[PAIS_DEF][1]; }
     // El código actualiza el país; el país sugiere el código si la persona no lo cambió a mano.
     cod.addEventListener('change', function () {
@@ -116,7 +118,7 @@ window.IC_FORM = (function () {
         email: res.email.value,
         codigo_pais: (porIso[cod.value] || [])[2] || '',
         telefono: res.telefono.value,
-        empresa: res.empresa.value,
+        empresa: res.empresa.value.toLocaleUpperCase('es-CO'),
         pais: res.pais.value,
         empleados: res.empleados ? res.empleados.value : '',
         hp: $('hp').value

@@ -153,11 +153,13 @@
       else { dv.value = ''; dv.closest('.ic-campo').style.visibility = 'hidden'; }
     };
     nit.oninput = actualizarDV; tipo.onchange = actualizarDV; actualizarDV();
+    // Regla IC: el nombre de la empresa siempre en MAYÚSCULAS (máscara mientras se escribe)
+    (function (el) { el.addEventListener('input', function () { var a = el.selectionStart, b = el.selectionEnd, v = el.value.toLocaleUpperCase('es-CO'); if (v !== el.value) { el.value = v; try { el.setSelectionRange(a, b); } catch (e) { /* tipo sin cursor */ } } }); })(f.querySelector('[name=razon_social]'));
 
     f.onsubmit = async (ev) => {
       ev.preventDefault();
       const v = U.leerForm(f);
-      v.razon_social = v.razon_social.replace(/\s+/g, ' ');
+      v.razon_social = v.razon_social.replace(/\s+/g, ' ').toLocaleUpperCase('es-CO');
       const err = {};
       ['nit', 'razon_social', 'pais', 'ciudad', 'telefono'].forEach((k) => { if (!v[k]) err[k] = 'Obligatorio'; });
       if (v.nit && v.tipo_id_fiscal === 'NIT' && !/^\d{5,12}$/.test(v.nit)) err.nit = 'El NIT debe tener entre 5 y 12 dígitos, sin DV';

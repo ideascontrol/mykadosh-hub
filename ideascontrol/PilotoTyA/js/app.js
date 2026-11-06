@@ -75,6 +75,9 @@
   }
   fillSelects();
 
+  /* Regla IC: el nombre de la empresa siempre en MAYÚSCULAS (máscara mientras se escribe). */
+  (function (el) { el.addEventListener('input', function () { var a = el.selectionStart, b = el.selectionEnd, v = el.value.toLocaleUpperCase('es-CO'); if (v !== el.value) { el.value = v; try { el.setSelectionRange(a, b); } catch (e) { /* tipo sin cursor */ } } }); })($('empresa'));
+
   /* ---------- Validación ---------- */
   function setError(id, msg) {
     var el = $(id), wrap = el.closest('.field');
@@ -164,7 +167,7 @@
       correo_empresarial: results.correo.value,
       codigo_pais: results.codigo_pais.value,
       telefono: results.telefono.value,
-      empresa: results.empresa.value,
+      empresa: results.empresa.value.toLocaleUpperCase('es-CO'),
       pais: results.pais.value,
       acepta_politicas: true,
       version_politicas: CFG.POLICY_VERSION,
