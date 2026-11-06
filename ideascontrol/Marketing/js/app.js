@@ -58,6 +58,13 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     catch (e) { App.colsMet = null; }
   }
   const tieneCol = (c) => !App.colsMet || App.colsMet.indexOf(c) >= 0;
+  // Nombre corto de una métrica: primera frase del post, sin emojis al inicio ni hashtags (máx. ~90 caracteres)
+  function nombreCorto(s) {
+    let t = String(s || '').split(/\n/).map((x) => x.trim()).find((x) => x && !/^#/.test(x)) || String(s || '');
+    t = t.replace(/#\S+/g, '').replace(/^[^\p{L}\p{N}¿¡"«]+/u, '').replace(/\s+/g, ' ').trim();
+    const f = t.match(/^(.{20,}?[.?!])(\s|$)/); if (f && f[1].length <= 90) t = f[1];
+    return t.length > 90 ? t.slice(0, 87).replace(/\s+\S*$/, '') + '…' : t;
+  }
   async function guardarPub(p, campos) {
     await G.actualizar(L.pubs, p._id, campos);
     Object.assign(p, campos);
@@ -459,7 +466,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     const pintar = () => {
       const lista = App.mets.filter((m) => { const f = dia(m.fecha_campana || m.fecha_publicacion); return f >= M.desde && f <= M.hasta && (!M.red || m.red === M.red); });
       raiz.querySelector('#tabla').innerHTML = '<p class="ic-conteo">' + lista.length + ' registros</p><div class="ic-tabla-caja mkt-scroll"><table class="ic-tabla"><thead><tr><th>Campaña</th><th>Publicado</th><th>Corte</th><th>Red</th><th>Publicación / campaña</th><th>Tipo</th><th class="n">Alcance</th><th class="n">Impresiones</th><th class="n">Interacciones</th><th class="n">Tasa</th><th class="n">Clics</th><th class="n">Inversión</th></tr></thead><tbody>' +
-        (lista.map((m) => { const i = interacciones(m); return '<tr data-m="' + esc(m.Title) + '"><td class="nw">' + esc(m.fecha_campana ? 'sem ' + fCorta(m.fecha_campana) : '—') + '</td><td class="nw">' + esc(fCorta(m.fecha_publicacion) || '—') + '</td><td class="nw">' + esc(fCorta(m.fecha_corte) || '—') + '</td><td>' + esc(m.red || '—') + '</td><td><b>' + esc(m.nombre || m.publicacion_id || '') + '</b>' + (m.publicacion_id ? '<span class="sec">' + esc(m.publicacion_id) + '</span>' : '') + '</td><td>' + esc(m.tipo || '') + '</td>' +
+        (lista.map((m) => { const i = interacciones(m); return '<tr data-m="' + esc(m.Title) + '"><td class="nw">' + esc(m.fecha_campana ? 'sem ' + fCorta(m.fecha_campana) : '—') + '</td><td class="nw">' + esc(fCorta(m.fecha_publicacion) || '—') + '</td><td class="nw">' + esc(fCorta(m.fecha_corte) || '—') + '</td><td>' + esc(m.red || '—') + '</td><td class="mkt-nomcel"><b class="mkt-nom" title="' + esc(m.nombre || '') + '">' + esc(nombreCorto(m.nombre || m.publicacion_id || '')) + '</b>' + (m.publicacion_id ? '<span class="sec">' + esc(m.publicacion_id) + '</span>' : '') + '</td><td>' + esc(m.tipo || '') + '</td>' +
           '<td class="n">' + num(m.alcance) + '</td><td class="n">' + num(m.impresiones) + '</td><td class="n">' + num(i) + '</td><td class="n">' + (n0(m.alcance) ? pct(i / n0(m.alcance)) : '—') + '</td><td class="n">' + num(m.clics) + '</td><td class="n">' + (n0(m.inversion) ? U.fmt.cop(m.inversion) : '—') + '</td></tr>'; }).join('') ||
           '<tr><td colspan="12" class="ic-vacio">Sin métricas en el periodo.</td></tr>') + '</tbody></table></div>';
       raiz.querySelectorAll('tr[data-m]').forEach((tr) => { tr.onclick = () => formMetrica(App.mets.find((m) => m.Title === tr.dataset.m), pintar); });
@@ -551,7 +558,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
       '<section class="ic-bloque"><div class="cab"><h2>Embudo vs. metas</h2><span class="sec">Definición de KPIs</span></div><div class="cuerpo">' +
         meta(alc, CFG.metas.alcance, 'Alcance') + meta(it, CFG.metas.interacciones, 'Interacciones') + meta(S('clics'), CFG.metas.clics, 'Tráfico (clics)') + meta(S('leads') || res, CFG.metas.leads, 'Leads') + '</div></section></div>' +
       '<section class="ic-bloque" style="margin-top:16px"><div class="cab"><h2>Contenido destacado del periodo</h2></div><div class="cuerpo">' +
-        (top.map((m) => '<div class="ic-item"><div><div class="titulo">' + esc(m.nombre || m.publicacion_id) + '</div><div class="sec">' + esc(m.red) + ' · ' + esc(m.tipo || '') + ' · alcance ' + num(m.alcance) + '</div>' + (m.notas ? '<div class="sec">' + esc(m.notas) + '</div>' : '') + '</div><b>' + num(interacciones(m)) + ' interac.</b></div>').join('') || '<p class="ic-vacio" style="padding:8px 0">—</p>') + '</div></section>';
+        (top.map((m) => '<div class="ic-item"><div><div class="titulo mkt-nom" title="' + esc(m.nombre || '') + '">' + esc(nombreCorto(m.nombre || m.publicacion_id)) + '</div><div class="sec">' + esc(m.red) + ' · ' + esc(m.tipo || '') + ' · alcance ' + num(m.alcance) + '</div>' + (m.notas ? '<div class="sec">' + esc(m.notas) + '</div>' : '') + '</div><b>' + num(interacciones(m)) + ' interac.</b></div>').join('') || '<p class="ic-vacio" style="padding:8px 0">—</p>') + '</div></section>';
     raiz.querySelector('#rD').onchange = (e) => { M.rd = e.target.value; vistaResumen(raiz); };
     raiz.querySelector('#rH').onchange = (e) => { M.rh = e.target.value; vistaResumen(raiz); };
     raiz.querySelector('#bImp').onclick = () => window.print();
@@ -604,6 +611,6 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     }
   }
   // Funciones que usa el generador (js/generador.js)
-  window.MKT = { dia, hoyISO, sumarDias, lunesDe, fLarga, fCorta, pad, temaDe, utm, redDeCanal, copiar, rutaUrl, chipCanal, chipEstado, opciones };
+  window.MKT = { dia, hoyISO, sumarDias, lunesDe, fLarga, fCorta, pad, temaDe, utm, redDeCanal, copiar, rutaUrl, chipCanal, chipEstado, opciones, nombreCorto };
   window.addEventListener('DOMContentLoaded', arrancar);
 })();

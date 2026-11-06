@@ -229,7 +229,7 @@ window.MKT_IMP = (function () {
       progreso('Guardando ' + (++k) + ' de ' + sel.length + '…');
       const p = it.pubId ? App.pubs.find((x) => x.Title === it.pubId) : null;
       const fPub = it.fecha || (p ? M().dia(p.fecha) : '');
-      const campos = { red: it.red, tipo: it.tipo, nombre: String(it.texto || (p && p.titulo) || it.enlace || 'Sin título').replace(/\s+/g, ' ').slice(0, 250),
+      const campos = { red: it.red, tipo: it.tipo, nombre: M().nombreCorto(it.texto || (p && p.titulo) || it.enlace || 'Sin título') || 'Sin título',
         publicacion_id: it.pubId || '', tema_id: p ? (p.tema_id || '') : '', fecha_publicacion: fPub || null,
         fecha_campana: (p ? M().lunesDe(M().dia(p.fecha)) : fPub ? M().lunesDe(fPub) : null) };
       if (tiene('fecha_corte')) campos.fecha_corte = ST.corte;
@@ -312,7 +312,7 @@ window.MKT_IMP = (function () {
         ST.items.map((it, i) => {
           const inter = ['reacciones', 'comentarios', 'compartidos', 'guardados'].reduce((s, k) => s + (it[k] || 0), 0);
           return '<tr><td><input type="checkbox" data-inc="' + i + '"' + (it.incluir ? ' checked' : '') + ' aria-label="Incluir"></td>' +
-            '<td><b>' + esc(String(it.texto || it.enlace || '—').slice(0, 70)) + '</b><span class="sec">' + esc(it.fecha ? M().fLarga(it.fecha) : 'sin fecha') + (it.tipo === 'Pago' ? ' · Pago' : '') + '</span></td>' +
+            '<td class="mkt-nomcel"><b class="mkt-nom" title="' + esc(it.texto || '') + '">' + esc(M().nombreCorto(it.texto || it.enlace || '—')) + '</b><span class="sec">' + esc(it.fecha ? M().fLarga(it.fecha) : 'sin fecha') + (it.tipo === 'Pago' ? ' · Pago' : '') + '</span></td>' +
             '<td>' + esc(it.red) + '</td>' +
             '<td><select data-pub="' + i + '" style="max-width:260px">' + opPubs(it) + '</select>' + (it.como ? '<span class="sec">por ' + esc(it.como) + '</span>' : '') + '</td>' +
             '<td class="n">' + (it.alcance === null ? '—' : Math.round(it.alcance).toLocaleString('es-CO')) + '</td><td class="n">' + (it.impresiones !== null ? Math.round(it.impresiones).toLocaleString('es-CO') : it.reproducciones !== null ? Math.round(it.reproducciones).toLocaleString('es-CO') : '—') + '</td>' +
