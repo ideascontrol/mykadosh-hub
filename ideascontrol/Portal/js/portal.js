@@ -65,11 +65,14 @@
     });
     const dueno = (CFG.verSitios || []).indexOf(String(cuenta.username || '').toLowerCase()) >= 0;   // solo la Dirección de Operaciones
     if (dueno) html += '<div class="ic-seccion">Sitios de SharePoint</div><div class="ic-grid">' + CFG.sitios.map((s) =>
-      '<a class="ic-card" href="' + esc(s.url) + '" target="_blank" rel="noopener"><div class="icono">' + ICO.sitio + '</div><h3>' + esc(s.nombre) + '</h3><p>' + esc(s.texto) + '</p></a>').join('') + '</div>';
+      '<a class="ic-card" href="' + esc(s.url) + '" target="_blank" rel="noopener"><div class="icono">' + ICO.sitio + '</div><h3>' + esc(s.nombre) + '</h3><p>' + esc(s.texto) + '</p></a>').join('') +
+      '<a class="ic-card dorado" href="#" id="bMatriz"><div class="icono">' + ICO.tareas + '</div><h3>Matriz de accesos (Excel)</h3><p>Qué apps y módulos ve cada usuario de IC y con qué rol. Se arma con los datos actuales.</p></a></div>';
     if (oficina) html += '<div class="ic-seccion">Herramientas para clientes (públicas)</div><div class="pt-publicas">' +
       PUBLICAS.map((p) => '<a href="' + esc(p.url) + '" target="_blank" rel="noopener">' + esc(p.nombre) + ' ↗</a>').join('') + '</div>';
     html += '<div class="ic-pie">' + CFG.app.id + ' · v' + CFG.app.version + ' · Las apps internas guardan sus datos en SharePoint (IC Apps) con la cuenta de Microsoft 365 de cada usuario.</div>';
     raiz.innerHTML = html;
+    const bm = raiz.querySelector('#bMatriz');
+    if (bm) bm.onclick = (e) => { e.preventDefault(); MatrizAccesos.descargar().catch((er) => U.aviso('No se pudo armar la matriz: ' + U.mensajeError(er), 'err', 8000)); };
     // Cada app interna se abre en su propia pestaña; si ya está abierta, se vuelve a ella
     raiz.querySelectorAll('a[data-app]').forEach((el) => {
       el.addEventListener('click', (ev) => {
