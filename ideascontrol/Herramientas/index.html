@@ -13,7 +13,8 @@
   * { box-sizing: border-box; }
   body { margin: 0; font-family: Inter, system-ui, Arial, sans-serif; color: var(--tinta); background: var(--fondo); -webkit-font-smoothing: antialiased; }
   .caja { max-width: 980px; margin: 32px auto; background: var(--blanco); border: 1px solid var(--linea); border-radius: 16px; padding: 28px 28px 34px; box-shadow: 0 8px 30px rgba(29, 43, 54, .05); }
-  .marca { display: flex; align-items: center; gap: 12px; }
+  .marca { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  @media (max-width: 480px) { .marca img { height: 38px; } .tabs a { padding: 6px 10px; font-size: 13px; } }
   .marca img { height: 48px; display: block; }
   h1 { margin: 0; color: var(--teal); font-size: 26px; font-weight: 700; letter-spacing: -.2px; }
   h2 { margin: 14px 0 4px; font-size: 18px; font-weight: 600; }
@@ -35,20 +36,31 @@
   .card:hover .ir { opacity: 1; }
   .vacio { grid-column: 1 / -1; text-align: center; padding: 30px; color: var(--gris); font-size: 14px; }
   .pie { max-width: 980px; margin: 0 auto 30px; padding: 0 28px; font-size: 12px; color: var(--suave); text-align: center; }
+  .tabs { margin-left: auto; display: flex; gap: 4px; }
+  .tabs a { text-decoration: none; color: var(--gris); font-weight: 600; font-size: 14px; padding: 7px 13px; border-radius: 999px; }
+  .tabs a:hover { background: var(--fondo); }
+  .tabs a.on { background: rgba(21, 144, 144, .1); color: var(--teal); }
+  .arts-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 30px 0 12px; }
+  .arts-cab h2 { margin: 0; }
+  .arts-cab a { font-size: 13.5px; font-weight: 600; color: var(--teal); }
+  .card .tema { font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--teal); }
+  .card .rel { font-size: 12px; color: var(--suave); }
   @media (min-width: 900px) { .grid { grid-template-columns: repeat(3, 1fr); } }
   @media (max-width: 640px) { .caja { margin: 0; border-radius: 0; border-width: 0 0 1px; padding: 22px 16px 26px; } .grid { grid-template-columns: 1fr; } .pie { padding: 0 16px; } }
 </style>
 </head>
 <body>
 <main class="caja">
-  <div class="marca"><h1><img src="/ideascontrol/assets/ideascontrol.webp" alt="Ideas Control Equipos y Soluciones S.A.S."></h1></div>
+  <div class="marca"><h1><img src="/ideascontrol/assets/ideascontrol.webp" alt="Ideas Control Equipos y Soluciones S.A.S."></h1><nav class="tabs"><a href="/ideascontrol/Herramientas/" class="on">Herramientas</a><a href="/ideascontrol/Recursos/">Artículos</a></nav></div>
   <h2>Centro de herramientas empresariales</h2>
   <p class="lema">Del dato a la decisión. De la decisión al resultado.</p>
   <input class="buscar" id="q" type="search" placeholder="Buscar una herramienta..." aria-label="Buscar una herramienta" autocomplete="off">
   <div class="chips" id="chips" role="group" aria-label="Categorías"></div>
   <div class="grid" id="grid"></div>
+  <div id="arts"></div>
 </main>
 <p class="pie">Ideas Control Equipos y Soluciones S.A.S. · Herramientas gratuitas para su empresa · <a href="/ideascontrol/Privacidad/" style="color:inherit">Política de Tratamiento de Datos Personales</a></p>
+<script src="/ideascontrol/Recursos/articulos.js?v=1.0.0"></script>
 <script>
 /* Herramientas públicas de Ideas Control. Para agregar una: sume una entrada aquí (icono: diag, huella, calc, vision). */
 const HERRAMIENTAS = [
@@ -79,6 +91,12 @@ document.getElementById('chips').innerHTML = ['Todas'].concat(cats).map((c, i) =
 document.querySelectorAll('#chips button').forEach((b) => { b.onclick = () => { cat = b.dataset.c; document.querySelectorAll('#chips button').forEach((x) => x.classList.toggle('on', x === b)); pintar(); }; });
 document.getElementById('q').addEventListener('input', (e) => { q = e.target.value; pintar(); });
 pintar();
+/* Artículos del Centro de conocimiento (los 3 más recientes) */
+(function () {
+  const A = window.IC_ARTICULOS || []; if (!A.length) return;
+  document.getElementById('arts').innerHTML = '<div class="arts-cab"><h2>Artículos para leer</h2><a href="/ideascontrol/Recursos/">Ver todos (' + A.length + ') →</a></div><div class="grid">' +
+    A.slice(0, 3).map((a) => '<a class="card" href="/ideascontrol/Recursos/' + esc(a.slug) + '/"><span class="tema">' + esc(a.tema) + '</span><h3>' + esc(a.titulo) + '</h3><p>' + esc(a.resumen) + '</p><span class="rel">' + esc(a.minutos) + ' min · Herramienta: ' + esc(a.herramienta) + '</span><span class="ir">Leer artículo →</span></a>').join('') + '</div>';
+})();
 </script>
 </body>
 </html>

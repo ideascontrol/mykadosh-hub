@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Artículos sobre tiempo y asistencia · Ideas Control</title>
+<meta name="description" content="Artículos de Ideas Control sobre control de asistencia, horas extra, nómina, biometría y decisiones con datos: ideas prácticas para Gestión Humana y operaciones.">
+<link rel="canonical" href="https://www.mykadosh.com/ideascontrol/Recursos/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Artículos sobre tiempo y asistencia · Ideas Control">
+<meta property="og:description" content="Ideas prácticas para controlar la asistencia, las horas extra y la nómina con información a tiempo.">
+<meta property="og:image" content="https://www.mykadosh.com/ideascontrol/assets/ideascontrol.webp">
+<link rel="icon" href="/ideascontrol/assets/ideascontrol.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="kb.css?v=1.0.0">
+<style>
+  .kb-hero .w { max-width: 1080px; }
+  .kb-hero p.sub { margin: 0; max-width: 680px; color: #C9D6E2; font-size: 16px; }
+  .kb-filtros { max-width: 1080px; margin: 0 auto; padding: 24px 20px 6px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .kb-filtros input { flex: 1 1 280px; font: inherit; font-size: 15px; padding: 11px 16px; border: 1px solid #D5DCE1; border-radius: 999px; outline: none; background: #fff; }
+  .kb-filtros input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(21, 144, 144, .12); }
+  .kb-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .kb-chips button { font: inherit; font-size: 13.5px; font-weight: 600; padding: 6px 14px; border: 1px solid #D5DCE1; border-radius: 999px; background: #fff; cursor: pointer; color: var(--tinta); }
+  .kb-chips button.on { background: var(--navy); border-color: var(--navy); color: #fff; }
+  .kb-wrap { max-width: 1080px; margin: 0 auto; padding: 14px 20px 40px; }
+  .kb-vacio { text-align: center; color: var(--gris); padding: 30px; }
+  .kb-item .her { font-size: 12.5px; color: var(--azul); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="kb-barra"></div>
+<header class="kb-top"><div class="w">
+  <a href="/ideascontrol/Herramientas/"><img src="/ideascontrol/assets/ideascontrol.webp" alt="Ideas Control Equipos y Soluciones S.A.S."></a>
+  <nav><a href="/ideascontrol/Herramientas/">Herramientas</a><a href="/ideascontrol/Recursos/" class="on">Artículos</a></nav>
+</div></header>
+<section class="kb-hero"><div class="w">
+  <span class="kb-chip">Centro de conocimiento</span>
+  <h1>Artículos sobre tiempo y asistencia<span>Del dato a la decisión.</span></h1>
+  <p class="sub">Ideas prácticas para controlar la asistencia, las horas extra y la nómina con información a tiempo. Cada artículo trae una herramienta gratuita para aplicarlo en tu empresa.</p>
+</div></section>
+<div class="kb-filtros"><input id="q" type="search" placeholder="Buscar un tema…" aria-label="Buscar un artículo" autocomplete="off"><div class="kb-chips" id="chips"></div></div>
+<main class="kb-wrap"><div class="kb-lista" id="lista"></div></main>
+<footer class="kb-pie">Ideas Control Equipos y Soluciones S.A.S. · Biometría, tiempo y asistencia · <a href="/ideascontrol/Privacidad/">Política de Tratamiento de Datos Personales</a></footer>
+<script src="articulos.js?v=1.0.0"></script>
+<script>
+(function () {
+  var A = window.IC_ARTICULOS || [], tema = '', q = '';
+  var esc = function (s) { return String(s || '').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  var norm = function (s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); };
+  var temas = A.map(function (a) { return a.tema; }).filter(function (t, i, x) { return x.indexOf(t) === i; });
+  var chips = document.getElementById('chips');
+  chips.innerHTML = ['Todos'].concat(temas).map(function (t, i) { return '<button type="button" data-t="' + (i ? esc(t) : '') + '"' + (i ? '' : ' class="on"') + '>' + esc(t) + '</button>'; }).join('');
+  chips.querySelectorAll('button').forEach(function (b) { b.onclick = function () { tema = b.dataset.t; chips.querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x === b); }); pintar(); }; });
+  document.getElementById('q').addEventListener('input', function (e) { q = e.target.value; pintar(); });
+  function pintar() {
+    var t = norm(q).split(/\s+/).filter(Boolean);
+    var l = A.filter(function (a) { return (!tema || a.tema === tema) && t.every(function (x) { return norm(a.titulo + ' ' + a.resumen + ' ' + a.tema).indexOf(x) >= 0; }); });
+    document.getElementById('lista').innerHTML = l.length ? l.map(function (a) {
+      return '<a class="kb-item" href="' + esc(a.slug) + '/"><span class="kb-chip">' + esc(a.tema) + '</span><h3>' + esc(a.titulo1) + (a.titulo2 ? ' <span>' + esc(a.titulo2) + '</span>' : '') + '</h3><p>' + esc(a.resumen) + '</p>' +
+        '<span class="her">Herramienta: ' + esc(a.herramienta) + '</span><small>' + esc(a.fecha_txt) + ' · ' + a.minutos + ' min de lectura</small></a>';
+    }).join('') : '<p class="kb-vacio">No encontramos artículos con ese criterio.</p>';
+  }
+  pintar();
+})();
+</script>
+</body>
+</html>

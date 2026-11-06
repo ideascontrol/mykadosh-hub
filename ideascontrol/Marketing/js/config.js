@@ -4,7 +4,7 @@
    Datos: MKT_Temas, MKT_Publicaciones, MKT_Metricas (IC Apps). Piezas: Documentos/Marketing/Piezas/<PUB>/
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-112', nombre: 'Marketing', version: '0.1.0' },
+  app: { id: 'APP-112', nombre: 'Marketing', version: '0.1.1' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -45,6 +45,7 @@ window.CFG = {
   // Destinos para los enlaces con UTM (Centro de herramientas y landings)
   destinos: [
     ['Centro de herramientas', 'https://www.mykadosh.com/ideascontrol/Herramientas/'],
+    ['Centro de conocimiento (artículos)', 'https://www.mykadosh.com/ideascontrol/Recursos/'],
     ['Diagnóstico de Madurez', 'https://www.mykadosh.com/ideascontrol/DiagnosticoMadurezTyA/'],
     ['Costo del Ausentismo', 'https://www.mykadosh.com/ideascontrol/CostoHoraAusente/'],
     ['Piloto de Tiempo y Asistencia', 'https://www.mykadosh.com/ideascontrol/PilotoTyA/'],

@@ -14,6 +14,7 @@ const ICONOS = {
   productos: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8M12 13v8"/></svg>',
   ayuda: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>',
   agenda: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 15l2 2 4-4"/></svg>',
+  contenido: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h12a2 2 0 0 1 2 2v14l-4-3H4z"/><path d="M8 9h6M8 13h4"/><path d="M18 8h2v12"/></svg>',
   tablero: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   actividad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>',
   carga: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>',
@@ -27,6 +28,7 @@ const MENU = [
     { ruta: 'cotizar', titulo: 'Nueva cotización', texto: 'Arme una propuesta con productos, descuentos, condiciones y PDF.', icono: 'cotizar', etapa: 2 },
     { ruta: 'cotizaciones', titulo: 'Cotizaciones', texto: 'Consulte, edite, revise y cambie el estado de las cotizaciones.', icono: 'cotizaciones', etapa: 2 },
     { ruta: 'agenda', titulo: 'Mis pendientes', texto: 'Llamadas, correos y visitas agendadas: lo vencido, lo de hoy y lo próximo.', icono: 'agenda', etapa: 2 },
+    { ruta: 'contenido', titulo: 'Contenido para compartir', texto: 'Artículos del Centro de conocimiento con su enlace y un mensaje listo para WhatsApp o correo.', icono: 'contenido', etapa: 2 },
     { ruta: 'tablero', titulo: 'Tablero comercial', texto: 'Cómo vamos: cotizado, ganado, embudo, seguimiento pendiente y motivos de pérdida.', icono: 'tablero', etapa: 2 }
   ] },
   { grupo: 'Datos maestros', items: [
