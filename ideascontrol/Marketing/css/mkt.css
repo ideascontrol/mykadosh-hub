@@ -114,3 +114,9 @@
 /* Nombre de la métrica: máximo dos líneas */
 .mkt-nomcel { min-width: 220px; max-width: 360px; }
 .mkt-nom { display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+/* Encabezados ordenables */
+th.mkt-ord { cursor: pointer; user-select: none; white-space: nowrap; }
+th.mkt-ord:hover { color: #0E76BC; }
+th.mkt-ord.on { color: #0E76BC; }
+.mkt-flecha { display: inline-block; margin-left: 4px; font-size: 10px; opacity: .45; }
+th.mkt-ord.on .mkt-flecha { opacity: 1; }
