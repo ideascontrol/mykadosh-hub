@@ -28,6 +28,7 @@ window.MatrizAccesos = (function () {
       ['Muro (leer, Entendido, descargar)', (r) => !!r], ['Piezas (crear, editar, programar)', (r) => r === 'Administrador'], ['Lecturas', (r) => r === 'Administrador'], ['Programas', (r) => r === 'Administrador']] },
     { app: 'Gestión documental (APP-105)', rol: 'doc', modulos: [['Consultar documentos y plantillas', (r) => !!r]] },
     { app: 'Gestión de Clientes (APP-109)', rol: 'cli', modulos: [['Resumen, tareas e importar', (r) => !!r]] },
+    { app: 'Calculadora de costos y precios (APP-110)', rol: 'cal', modulos: [['Nuevo cálculo e historial', (r) => !!r], ['Eliminar del historial', (r) => r === 'Dirección de Operaciones']] },
     { app: 'Portal', rol: 'por', modulos: [['Sitios de SharePoint', (r) => !!r], ['Matriz de accesos', (r) => !!r]] }
   ];
 
@@ -45,6 +46,7 @@ window.MatrizAccesos = (function () {
       tal: a8 && a8.rol === 'ADMIN' ? 'Administrador' : 'Personal IC',
       doc: oficina ? 'Consulta' : tec ? 'Pendiente (permiso SharePoint)' : 'Según permisos de SharePoint',
       cli: dueno ? 'Dirección' : '',
+      cal: ({ 'operaciones@ideascontrol.com': 'Dirección de Operaciones', 'patricia@ideascontrol.com': 'Gerencia General', 'margarita@ideascontrol.com': 'Dirección Comercial' })[email] || '',
       por: dueno ? 'Dirección' : '',
       _nombre: (usr && usr.nombre) || (mios[0] && mios[0].nombre) || (tec && tec.nombre) || '',
       _tipo: tec && !oficina ? 'Técnico' : oficina ? 'Oficina' : 'Sin registrar'
@@ -94,6 +96,7 @@ window.MatrizAccesos = (function () {
       ['Desarrollo de Talento (APP-108)', 'Administrador · Personal IC', 'Todo el personal ve el muro. Administrador = ADMIN en APP-108 o en la Programación.'],
       ['Gestión documental (APP-105)', 'Consulta', 'Depende de los permisos de la biblioteca 00_Documentacion_Maestra en SharePoint. Los técnicos quedan pendientes del permiso del administrador.'],
       ['Gestión de Clientes (APP-109)', 'Dirección', 'Solo operaciones@ideascontrol.com (configuración de la app).'],
+      ['Calculadora de costos y precios (APP-110)', 'Gerencia General · Dirección Comercial · Dirección de Operaciones', 'Solo patricia@, margarita@ y operaciones@ (configuración de la app). Eliminar registros del historial: solo operaciones@.'],
       ['Portal', 'Dirección', 'Sitios de SharePoint y esta matriz: solo operaciones@ideascontrol.com.'],
       [], ['Generada', new Date().toLocaleString('es-CO')], ['Nota', 'La matriz refleja lo que muestran las apps. Los permisos de SharePoint (quién puede abrir los sitios directamente) se administran aparte.']]);
     ws3['!cols'] = [{ wch: 30 }, { wch: 52 }, { wch: 110 }];

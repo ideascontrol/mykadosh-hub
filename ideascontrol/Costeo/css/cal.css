@@ -1,0 +1,76 @@
+/* APP-110 · Calculadora de costos y precios */
+.cal-nav { display: flex; gap: 4px; margin-right: 14px; }
+.cal-nav a { padding: 7px 12px; border-radius: 999px; font-weight: 600; font-size: 14px; color: var(--ic-gris); text-decoration: none; }
+.cal-nav a:hover { background: var(--ic-fondo); }
+.cal-nav a.on { background: rgba(14, 118, 188, .1); color: var(--ic-azul); }
+
+.cal-layout { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 16px; align-items: start; }
+.cal-layout > * { min-width: 0; }
+.cal-ancho { grid-column: 1 / -1; }
+.cal-mini { margin-right: auto; font-size: 14px; color: var(--ic-gris); }
+.cal-mini b { color: var(--ic-tinta); }
+.cal-sec fieldset { min-width: 0; }
+.cal-ayuda { margin: 0 0 12px; font-size: 13px; color: var(--ic-gris); background: #F5F9FC; border: 1px solid #E1EBF2; border-radius: 8px; padding: 9px 12px; }
+
+.cal-tabla-caja { overflow-x: auto; border: 1px solid var(--ic-borde); border-radius: 10px; }
+.cal-tabla { width: 100%; min-width: 980px; border-collapse: collapse; font-size: 14px; }
+.cal-tabla th { text-align: left; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--ic-gris); background: #F8FAFC; padding: 8px 6px; border-bottom: 1px solid var(--ic-borde); white-space: nowrap; }
+.cal-tabla td { padding: 4px 4px; border-bottom: 1px solid #EEF2F5; vertical-align: middle; }
+.cal-tabla .n { text-align: right; }
+.cal-tabla input, .cal-tabla select { width: 100%; font: inherit; font-size: 14px; padding: 7px 8px; border: 1px solid transparent; border-radius: 6px; background: #FFFBEA; }
+.cal-tabla input:focus, .cal-tabla select:focus { outline: none; border-color: var(--ic-azul); background: #fff; }
+.cal-tabla td.n input { text-align: right; }
+.cal-tabla th:nth-child(1) { width: 150px; } .cal-tabla th:nth-child(3) { width: 118px; } .cal-tabla th:nth-child(4) { width: 82px; }
+.cal-tabla th:nth-child(5) { width: 76px; } .cal-tabla th:nth-child(6) { width: 118px; } .cal-tabla th:nth-child(7) { width: 120px; } .cal-tabla th:nth-child(9) { width: 30px; }
+.cal-tabla td.tot { font-weight: 600; white-space: nowrap; padding-right: 10px; }
+.cal-tabla tfoot td { padding: 9px 10px; }
+.cal-prest td { font-size: 13px; font-style: italic; color: var(--ic-tinta); background: #F8FAFC; }
+.cal-prest .sec { font-size: 12px; color: var(--ic-gris); font-style: normal; }
+.cal-total td, tr.cal-total td { background: #1B365D; color: #fff; font-weight: 700; }
+.cal-x { border: 0; background: none; color: var(--ic-gris-claro); font-size: 20px; line-height: 1; cursor: pointer; padding: 4px 6px; border-radius: 6px; }
+.cal-x:hover { color: var(--ic-err); background: rgba(192, 57, 43, .08); }
+.cal-bajo { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin-top: 12px; }
+.cal-tasa { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+.cal-tasa input { width: 120px; text-align: right; background: #FFFBEA; }
+.cal-tasa.falta input { border-color: var(--ic-err); }
+.cal-sec textarea { width: 100%; }
+
+
+.cal-precio legend { margin-bottom: 12px; }
+.cal-params { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.cal-params .ic-campo { grid-column: auto; }
+.cal-pct { position: relative; }
+.cal-pct input { width: 100%; padding-right: 28px; text-align: right; background: #FFFBEA; }
+.cal-pct span { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--ic-gris); font-size: 14px; }
+
+.cal-res { width: 100%; border-collapse: collapse; font-size: 14px; }
+.cal-res th { font-size: 11.5px; text-transform: uppercase; letter-spacing: .03em; color: var(--ic-gris); text-align: right; padding: 6px 4px; border-bottom: 1px solid var(--ic-borde); }
+.cal-res td { padding: 8px 4px; border-bottom: 1px solid #EEF2F5; text-align: right; white-space: nowrap; }
+.cal-res td:first-child { text-align: left; color: var(--ic-tinta); font-weight: 600; white-space: normal; }
+.cal-res td:first-child span { display: block; font-size: 11.5px; font-weight: 400; color: var(--ic-gris); }
+.cal-res tr.grande td { font-size: 19px; font-weight: 700; color: var(--ic-teal); background: #EEF8F8; }
+.cal-res tr.grande td:first-child { font-size: 14px; color: var(--ic-tinta); }
+.cal-aviso { margin: 14px 0 0; padding: 10px 12px; border-radius: 8px; font-weight: 700; font-size: 14px; }
+.cal-aviso.bien { background: #E3F4EF; color: #0F6B4F; } .cal-aviso.mal { background: #FDECEA; color: #A3271B; } .cal-aviso.gris { background: #EEF1F4; color: #5B6770; }
+.cal-guardar { width: 100%; justify-content: center; margin-top: 16px; padding: 12px; font-size: 15px; }
+.cal-nota { margin: 8px 0 0; font-size: 12px; color: var(--ic-gris); text-align: center; }
+
+.cal-scroll { overflow-x: auto; }
+.ic-tabla td.n, .ic-tabla th.n { text-align: right; white-space: nowrap; } .ic-tabla td.nw { white-space: nowrap; }
+.cal-chip { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+.cal-chip.bien { background: #E3F4EF; color: #0F6B4F; } .cal-chip.mal { background: #FDECEA; color: #A3271B; }
+.cal-det { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.cal-det .cab .sec { font-size: 13px; color: var(--ic-gris); }
+.cal-tdet tbody tr { cursor: default; } .cal-tdet tbody tr:hover { background: none; }
+.cal-tdet tr.cal-total td { background: #1B365D; color: #fff; }
+.cal-notas { font-size: 14px; color: var(--ic-gris); margin: 12px 0 4px; white-space: pre-line; }
+.cal-dl { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; font-size: 13.5px; margin: 14px 0 0; }
+.cal-dl dt { color: var(--ic-gris); } .cal-dl dd { margin: 0; text-align: right; font-weight: 600; }
+
+@media (max-width: 1060px) { .cal-layout, .cal-det { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .cal-nav { display: none; } .cal-params { grid-template-columns: 1fr 1fr; } }
+@media print {
+  .ic-header, .cal-noimp, .ic-toast-zona { display: none !important; }
+  body { background: #fff; } .ic-main { padding: 0; max-width: none; }
+  .cal-det { grid-template-columns: 1fr; } .ic-bloque, .ic-ficha-cab { box-shadow: none; break-inside: avoid; }
+}
