@@ -190,7 +190,13 @@ window.MKT_IMP = (function () {
   function buscarMetrica(it) {
     const ne = normEnlace(it.enlace);
     const m = App.mets.find((x) => (it.post_id && x.post_id && String(x.post_id) === String(it.post_id)) || (ne && x.enlace_post && normEnlace(x.enlace_post) === ne)) ||
-      (it.pubId ? App.mets.find((x) => x.publicacion_id === it.pubId && x.red === it.red && (x.tipo || 'Orgánico') === it.tipo) : null);
+      (it.pubId ? App.mets.find((x) => x.publicacion_id === it.pubId && x.red === it.red && (x.tipo || 'Orgánico') === it.tipo) : null) ||
+      // Fila ya existente sin enlace (ej. del Excel de reporte): misma red, tipo y fecha de publicación, y nombre parecido -> se llena esa
+      (it.fecha ? App.mets.filter((x) => !x.enlace_post && !x.post_id && x.red === it.red && (x.tipo || 'Orgánico') === it.tipo && M().dia(x.fecha_publicacion) === it.fecha)
+        .map((x) => ({ x, s: M().parecido(it.texto, x.nombre) })).filter((o) => o.s >= 0.5).sort((a, b) => b.s - a.s).map((o) => o.x)[0] : null) ||
+      // …o si en esa red y ese día hay UNA sola fila vacía (sin números ni enlace), se llena esa aunque el texto haya cambiado
+      (it.fecha ? (() => { const v = App.mets.filter((x) => !x.enlace_post && !x.post_id && x.red === it.red && (x.tipo || 'Orgánico') === it.tipo && M().dia(x.fecha_publicacion) === it.fecha && M().metVacia(x));
+        return v.length === 1 && !ST.items.some((o) => o !== it && o.metId === v[0].Title) ? v[0] : null; })() : null);
     it.metId = m ? m.Title : '';
   }
 

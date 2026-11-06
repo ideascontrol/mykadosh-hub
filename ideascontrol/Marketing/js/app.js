@@ -58,6 +58,19 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     catch (e) { App.colsMet = null; }
   }
   const tieneCol = (c) => !App.colsMet || App.colsMet.indexOf(c) >= 0;
+  // Parecido entre dos textos (0 a 1): palabras de más de 3 letras en común
+  function parecido(a, b) {
+    const pal = (t) => U.norm(String(t || '').replace(/\*\*/g, '')).replace(/[^a-z0-9ñ ]+/g, ' ').split(' ').filter((w) => w.length > 3).slice(0, 40);
+    const A = pal(a), B = pal(b); if (!A.length || !B.length) return 0;
+    const sb = {}; B.forEach((w) => { sb[w] = 1; });
+    return A.filter((w) => sb[w]).length / Math.min(A.length, B.length);
+  }
+  const metVacia = (m) => CAMPOS_MET.every((c) => !n0(m[c[0]]));
+  // Filas vacías (sin números ni enlace) que tienen una gemela con datos: misma red, tipo, fecha de publicación y nombre parecido
+  function vaciasRepetidas() {
+    return App.mets.filter((m) => metVacia(m) && !m.enlace_post && !m.post_id && App.mets.some((x) => x !== m && !metVacia(x) && x.red === m.red &&
+      (x.tipo || 'Orgánico') === (m.tipo || 'Orgánico') && dia(x.fecha_publicacion) === dia(m.fecha_publicacion) && parecido(x.nombre, m.nombre) >= 0.5));
+  }
   // Nombre corto de una métrica: primera frase del post, sin emojis al inicio ni hashtags (máx. ~90 caracteres)
   function nombreCorto(s) {
     let t = String(s || '').split(/\n/).map((x) => x.trim()).find((x) => x && !/^#/.test(x)) || String(s || '');
@@ -465,11 +478,21 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
       '<div class="ic-filtros"><label class="mkt-fecha">Desde <input type="date" id="mD" value="' + M.desde + '"></label><label class="mkt-fecha">Hasta <input type="date" id="mH" value="' + M.hasta + '"></label><select id="mR">' + opciones(CFG.redes, M.red, 'Todas las redes') + '</select></div><div id="tabla"></div>';
     const pintar = () => {
       const lista = App.mets.filter((m) => { const f = dia(m.fecha_campana || m.fecha_publicacion); return f >= M.desde && f <= M.hasta && (!M.red || m.red === M.red); });
-      raiz.querySelector('#tabla').innerHTML = '<p class="ic-conteo">' + lista.length + ' registros</p><div class="ic-tabla-caja mkt-scroll"><table class="ic-tabla"><thead><tr><th>Campaña</th><th>Publicado</th><th>Corte</th><th>Red</th><th>Publicación / campaña</th><th>Tipo</th><th class="n">Alcance</th><th class="n">Impresiones</th><th class="n">Interacciones</th><th class="n">Tasa</th><th class="n">Clics</th><th class="n">Inversión</th></tr></thead><tbody>' +
+      const rep = vaciasRepetidas();
+      raiz.querySelector('#tabla').innerHTML = (rep.length ? '<div class="gen-aviso" style="margin:0 0 10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center"><span>⚠️ Hay ' + rep.length + ' fila(s) vacía(s) repetida(s): son registros sin números (por ejemplo, los del Excel de reporte) que ya tienen su gemela importada con datos.</span><button class="ic-btn chico" id="bRep">Quitar las vacías</button></div>' : '') +
+        '<p class="ic-conteo">' + lista.length + ' registros</p><div class="ic-tabla-caja mkt-scroll"><table class="ic-tabla"><thead><tr><th>Campaña</th><th>Publicado</th><th>Corte</th><th>Red</th><th>Publicación / campaña</th><th>Tipo</th><th class="n">Alcance</th><th class="n">Impresiones</th><th class="n">Interacciones</th><th class="n">Tasa</th><th class="n">Clics</th><th class="n">Inversión</th></tr></thead><tbody>' +
         (lista.map((m) => { const i = interacciones(m); return '<tr data-m="' + esc(m.Title) + '"><td class="nw">' + esc(m.fecha_campana ? 'sem ' + fCorta(m.fecha_campana) : '—') + '</td><td class="nw">' + esc(fCorta(m.fecha_publicacion) || '—') + '</td><td class="nw">' + esc(fCorta(m.fecha_corte) || '—') + '</td><td>' + esc(m.red || '—') + '</td><td class="mkt-nomcel"><b class="mkt-nom" title="' + esc(m.nombre || '') + '">' + esc(nombreCorto(m.nombre || m.publicacion_id || '')) + '</b>' + (m.publicacion_id ? '<span class="sec">' + esc(m.publicacion_id) + '</span>' : '') + '</td><td>' + esc(m.tipo || '') + '</td>' +
           '<td class="n">' + num(m.alcance) + '</td><td class="n">' + num(m.impresiones) + '</td><td class="n">' + num(i) + '</td><td class="n">' + (n0(m.alcance) ? pct(i / n0(m.alcance)) : '—') + '</td><td class="n">' + num(m.clics) + '</td><td class="n">' + (n0(m.inversion) ? U.fmt.cop(m.inversion) : '—') + '</td></tr>'; }).join('') ||
           '<tr><td colspan="12" class="ic-vacio">Sin métricas en el periodo.</td></tr>') + '</tbody></table></div>';
       raiz.querySelectorAll('tr[data-m]').forEach((tr) => { tr.onclick = () => formMetrica(App.mets.find((m) => m.Title === tr.dataset.m), pintar); });
+      const br = raiz.querySelector('#bRep');
+      if (br) br.onclick = async () => {
+        if (!(await U.confirmar('Quitar filas vacías repetidas', 'Se quitarán ' + rep.length + ' registro(s) sin números que ya tienen su gemela con datos (' + rep.map((m) => m.Title).join(', ') + '). Quedan en la papelera de SharePoint.', 'Quitar', true))) return;
+        await U.conCarga(br, async () => {
+          try { for (const m of rep) { await G.eliminar(L.mets, m._id); App.mets = App.mets.filter((x) => x !== m); } U.aviso(rep.length + ' fila(s) quitada(s)', 'ok'); pintar(); }
+          catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); pintar(); }
+        });
+      };
     };
     raiz.querySelector('#mD').onchange = (e) => { M.desde = e.target.value; pintar(); };
     raiz.querySelector('#mH').onchange = (e) => { M.hasta = e.target.value; pintar(); };
@@ -611,6 +634,6 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     }
   }
   // Funciones que usa el generador (js/generador.js)
-  window.MKT = { dia, hoyISO, sumarDias, lunesDe, fLarga, fCorta, pad, temaDe, utm, redDeCanal, copiar, rutaUrl, chipCanal, chipEstado, opciones, nombreCorto };
+  window.MKT = { dia, hoyISO, sumarDias, lunesDe, fLarga, fCorta, pad, temaDe, utm, redDeCanal, copiar, rutaUrl, chipCanal, chipEstado, opciones, nombreCorto, parecido, metVacia };
   window.addEventListener('DOMContentLoaded', arrancar);
 })();
