@@ -119,15 +119,19 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     if (!App.semana) App.semana = lunesDe(hoyISO());
     const ini = App.semana, fin = sumarDias(ini, 6), F = App.filtro;
     const semana = App.pubs.filter((p) => dia(p.fecha) >= ini && dia(p.fecha) <= fin && (!F.canal || p.canal === F.canal) && (!F.estado || p.estado === F.estado));
-    const temasSem = Array.from(new Set(semana.map((p) => p.tema_id))).map(temaDe).filter(Boolean);
+    const temasSem = Array.from(new Set(semana.map((p) => p.tema_id).concat(App.temas.filter((t) => dia(t.semana_inicio) && lunesDe(dia(t.semana_inicio)) === ini).map((t) => t.Title)))).map(temaDe).filter(Boolean);
+    const temaSem = temasSem[0] || null;
+    const deTema = temaSem ? App.pubs.filter((p) => p.tema_id === temaSem.Title && p.estado !== 'Cancelada').length : 0;
     raiz.innerHTML = '<div class="ic-barra"><div><h1 class="ic-titulo">Calendario</h1><p class="ic-subtitulo" style="margin:0">Semana del ' + esc(fLarga(ini)) + ' al ' + esc(fLarga(fin)) + '</p></div><span class="espacio"></span>' +
       '<div class="mkt-semnav"><button class="ic-btn sec chico" id="sAnt">‹ Anterior</button><button class="ic-btn sec chico" id="sHoy">Esta semana</button><button class="ic-btn sec chico" id="sSig">Siguiente ›</button></div>' +
       '<button class="ic-btn" id="bNueva">+ Publicación</button></div>' +
       '<div class="ic-filtros"><select id="fCanal">' + opciones(CFG.canales, F.canal, 'Todas las redes') + '</select><select id="fEstado">' + opciones(ESTADOS, F.estado, 'Todos los estados') + '</select></div>' +
       (temasSem.length ? '<div class="mkt-temasem">' + temasSem.map((t) => '<a href="#tema/' + esc(t.Title) + '"><span>Tema de la semana</span><b>' + esc(t.tema) + '</b></a>').join('') + '</div>' : '') +
+      (temaSem && deTema < 6 ? '<div class="gen-aviso mkt-noimp" style="margin:0 0 12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center"><span>Esta semana tiene ' + deTema + ' publicación(es) en el portal. Las piezas diarias (Facebook, Instagram, LinkedIn, TikTok) se crean al generar el contenido de la semana.</span><a class="ic-btn chico" href="#generar/' + esc(temaSem.Title) + '/contenido">✨ Generar la semana</a></div>' : '') +
+      '<p class="sec mkt-noimp" style="margin:0 0 8px">Arrastre una publicación a otro día para cambiar su fecha. Use + para crear una en ese día.</p>' +
       '<div class="mkt-semana">' + DIAS.map((d, i) => {
         const f = sumarDias(ini, i), del = semana.filter((p) => dia(p.fecha) === f);
-        return '<div class="mkt-dia' + (f === hoyISO() ? ' hoy' : '') + '"><div class="cab"><b>' + d + '</b> ' + esc(fCorta(f)) + '</div>' +
+        return '<div class="mkt-dia' + (f === hoyISO() ? ' hoy' : '') + '" data-fecha="' + f + '"><div class="cab"><b>' + d + '</b> ' + esc(fCorta(f)) + '<button class="mkt-mas" data-nueva="' + f + '" title="Nueva publicación el ' + esc(fLarga(f)) + '" aria-label="Nueva publicación el ' + esc(fLarga(f)) + '">+</button></div>' +
           (del.map(tarjeta).join('') || '<p class="mkt-libre">—</p>') + '</div>';
       }).join('') + '</div>';
     raiz.querySelector('#sAnt').onclick = () => { App.semana = sumarDias(App.semana, -7); vistaCalendario(raiz); };
@@ -135,11 +139,31 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     raiz.querySelector('#sHoy').onclick = () => { App.semana = lunesDe(hoyISO()); vistaCalendario(raiz); };
     raiz.querySelector('#fCanal').onchange = (e) => { F.canal = e.target.value; vistaCalendario(raiz); };
     raiz.querySelector('#fEstado').onchange = (e) => { F.estado = e.target.value; vistaCalendario(raiz); };
-    raiz.querySelector('#bNueva').onclick = () => nuevaPublicacion({ fecha: ini });
+    raiz.querySelector('#bNueva').onclick = () => nuevaPublicacion({ fecha: ini, tema_id: temaSem ? temaSem.Title : '' });
+    raiz.querySelectorAll('[data-nueva]').forEach((b) => { b.onclick = (ev) => { ev.preventDefault(); nuevaPublicacion({ fecha: b.dataset.nueva, tema_id: temaSem ? temaSem.Title : '' }); }; });
+    // Arrastrar y soltar: cambia la fecha (y la campaña del UTM si cambia de semana)
+    raiz.querySelectorAll('.mkt-tarjeta[data-id]').forEach((t) => {
+      t.addEventListener('dragstart', (ev) => { ev.dataTransfer.setData('text/plain', t.dataset.id); ev.dataTransfer.effectAllowed = 'move'; t.classList.add('arrastrando'); });
+      t.addEventListener('dragend', () => t.classList.remove('arrastrando'));
+    });
+    raiz.querySelectorAll('.mkt-dia[data-fecha]').forEach((col) => {
+      col.addEventListener('dragover', (ev) => { ev.preventDefault(); col.classList.add('sobre'); });
+      col.addEventListener('dragleave', () => col.classList.remove('sobre'));
+      col.addEventListener('drop', async (ev) => {
+        ev.preventDefault(); col.classList.remove('sobre');
+        const p = pubDe(ev.dataTransfer.getData('text/plain')), f = col.dataset.fecha;
+        if (!p || dia(p.fecha) === f) return;
+        if (['Programada', 'Publicada'].indexOf(p.estado) >= 0 && !(await U.confirmar('Cambiar fecha', p.Title + ' está ' + p.estado + '. Si cambia la fecha aquí, recuerde cambiarla también en Meta Business Suite o la red.', 'Cambiar'))) return;
+        const campos = { fecha: f };
+        if (p.utm_url && lunesDe(dia(p.fecha)) !== lunesDe(f)) { try { const u = new URL(p.utm_url); u.searchParams.set('utm_campaign', 'sem-' + lunesDe(f)); campos.utm_url = u.toString(); } catch (e) { /* enlace no válido: se deja */ } }
+        try { await guardarPub(p, campos); U.aviso(p.Title + ' movida al ' + fLarga(f), 'ok'); } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
+        vistaCalendario(raiz);
+      });
+    });
   }
   function tarjeta(p) {
     const ap = p.estado === 'En aprobación' ? '<span class="mkt-ap">' + aprobadores(p).length + '/' + CFG.minAprobaciones + ' aprob.</span>' : '';
-    return '<a class="mkt-tarjeta ' + claseEstado(p.estado) + '" href="#pub/' + esc(p.Title) + '">' + chipCanal(p.canal) +
+    return '<a class="mkt-tarjeta ' + claseEstado(p.estado) + '" href="#pub/' + esc(p.Title) + '" draggable="true" data-id="' + esc(p.Title) + '">' + chipCanal(p.canal) +
       '<b>' + esc(p.titulo || (temaDe(p.tema_id) || {}).tema || p.Title) + '</b><span class="pie">' + chipEstado(p.estado) + (p.formato ? '<i>' + esc(p.formato) + '</i>' : '') + ap + '</span></a>';
   }
 

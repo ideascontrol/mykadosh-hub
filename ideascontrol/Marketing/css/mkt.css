@@ -174,3 +174,10 @@ th.mkt-ord.on .mkt-flecha { opacity: 1; }
 .an-coment { margin: 16px 0; padding: 12px 14px; background: #F8FAFB; border: 1px solid #E3E8EC; border-radius: 12px; }
 .an-com { padding: 6px 0; border-bottom: 1px solid #EEF2F5; } .an-com:last-of-type { border-bottom: 0; } .an-com p { margin: 2px 0 0 !important; font-size: 14px; }
 @media print { .an-coment textarea, .an-coment .gen-acc { display: none; } }
+/* Calendario: arrastrar y soltar, + por día */
+.mkt-dia .cab { display: flex; align-items: center; gap: 4px; }
+.mkt-mas { margin-left: auto; width: 24px; height: 24px; border-radius: 50%; border: 1px solid #D5DCE1; background: #fff; color: #0E76BC; font-weight: 800; line-height: 1; cursor: pointer; padding: 0; }
+.mkt-mas:hover { background: #0E76BC; color: #fff; border-color: #0E76BC; }
+.mkt-dia.sobre { outline: 2px dashed #0E76BC; outline-offset: -4px; background: #F2F8FC; }
+.mkt-tarjeta[draggable="true"] { cursor: grab; } .mkt-tarjeta.arrastrando { opacity: .45; }
+@media print { .mkt-mas { display: none; } }
