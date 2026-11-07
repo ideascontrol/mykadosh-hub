@@ -89,16 +89,13 @@ window.MKT_IMG = (function () {
   function seccion(p) {
     return '<section class="ic-bloque"><div class="cab"><h2>🖼️ Prompt para la imagen</h2><span class="sec">' + esc(medidas(p)) + '</span></div><div class="cuerpo">' +
       '<p class="sec" style="margin:0 0 8px">Cópielo y péguelo en la IA de imágenes (ChatGPT, Gemini, Canva…). Toma el diseño que propuso Claude para esta pieza' + (diseno(p).descripcion ? '' : ' (esta no lo tiene: la IA propondrá la escena)') + '.</p>' +
-      '<div class="gen-acc"><button class="ic-btn" type="button" data-img-copiar>Copiar prompt</button><button class="ic-btn sec" type="button" data-img-ver>Ver</button><button class="ic-btn sec" type="button" data-img-editar>Editar plantilla</button></div>' +
-      '<p class="sec" style="margin:12px 0 6px">La IA deja libre la esquina para el logo. Cuando tenga la imagen, póngale el logo aquí:</p>' +
-      '<button class="ic-btn sec" type="button" data-img-logo>🏷️ Poner el logo</button></div></section>';
+      '<div class="gen-acc"><button class="ic-btn" type="button" data-img-copiar>Copiar prompt</button><button class="ic-btn sec" type="button" data-img-ver>Ver</button><button class="ic-btn sec" type="button" data-img-editar>Editar plantilla</button></div></div></section>';
   }
   function enlazar(raiz, p) {
     const c = raiz.querySelector('[data-img-copiar]'); if (!c) return;
     c.onclick = async () => M().copiar(await promptDe(p), 'Prompt de la imagen copiado');
     raiz.querySelector('[data-img-ver]').onclick = async () => verUno(p);
     raiz.querySelector('[data-img-editar]').onclick = async () => { await plantilla(); editar(); };
-    raiz.querySelector('[data-img-logo]').onclick = () => logo({ p, raiz });
   }
   async function verUno(p) {
     const txt = await promptDe(p);
@@ -119,90 +116,14 @@ window.MKT_IMG = (function () {
           '<div class="img-fila">' + M().chipCanal(p.canal) + '<div class="img-txt"><b>' + esc(limpio(p.titulo) || p.Title) + '</b><span class="sec">' + esc((p.formato || 'Imagen') + ' · ' + medidas(p)) + (diseno(p).descripcion ? '' : ' · sin diseño de Claude') + '</span></div>' +
           '<button class="ic-btn sec chico" data-ver="' + esc(p.Title) + '">Ver</button><button class="ic-btn chico" data-cop="' + esc(p.Title) + '">Copiar</button></div>').join('')).join('')
         : '<p class="ic-vacio">No hay publicaciones con imagen esta semana. Genere primero el contenido de la semana.</p>') +
-      '<div class="ic-acciones"><button class="ic-btn sec" id="imEd">Editar plantilla</button><button class="ic-btn sec" id="imLogo">🏷️ Poner el logo a imágenes</button><span class="espacio"></span><button class="ic-btn sec" id="imCerrar">Cerrar</button></div></div>', (c) => {
+      '<div class="ic-acciones"><button class="ic-btn sec" id="imEd">Editar plantilla</button><span class="espacio"></span><button class="ic-btn sec" id="imCerrar">Cerrar</button></div></div>', (c) => {
       const pub = (id) => pubs.find((x) => x.Title === id);
       c.querySelectorAll('[data-cop]').forEach((b) => { b.onclick = () => { M().copiar(prompt(pub(b.dataset.cop), base), 'Copiado: ' + b.dataset.cop); b.textContent = 'Copiado ✔'; }; });
       c.querySelectorAll('[data-ver]').forEach((b) => { b.onclick = () => verUno(pub(b.dataset.ver)); });
       c.querySelector('#imEd').onclick = () => editar(() => semana(lunes));
       c.querySelector('#imCerrar').onclick = U.cerrarModal;
-      c.querySelector('#imLogo').onclick = () => logo();
     });
   }
 
-  // =====================================================================
-  // PONER EL LOGO: la IA no reproduce bien el logo, así que se pone aquí sobre la imagen generada
-  // =====================================================================
-  let logoImg = null;
-  function cargarLogo() {
-    if (logoImg) return Promise.resolve(logoImg);
-    return new Promise((ok, mal) => { const i = new Image(); i.onload = () => { logoImg = i; ok(i); }; i.onerror = () => mal(new Error('No se pudo cargar el logo.')); i.src = CFG.logo; });
-  }
-  const leerImagen = (file) => new Promise((ok, mal) => { const u = URL.createObjectURL(file), i = new Image(); i.onload = () => ok(i); i.onerror = () => mal(new Error('No se pudo abrir ' + file.name)); i.src = u; });
-  // Brillo promedio de la zona donde va el logo (0 oscuro … 1 claro)
-  function brillo(img, x, y, w, h) {
-    const c = document.createElement('canvas'); c.width = 40; c.height = 20; const g = c.getContext('2d');
-    g.drawImage(img, x, y, w, h, 0, 0, 40, 20); const d = g.getImageData(0, 0, 40, 20).data; let s = 0;
-    for (let k = 0; k < d.length; k += 4) s += (0.299 * d[k] + 0.587 * d[k + 1] + 0.114 * d[k + 2]) / 255;
-    return s / (d.length / 4);
-  }
-  function componer(img, o) {
-    const W = img.naturalWidth, H = img.naturalHeight, c = document.createElement('canvas'); c.width = W; c.height = H;
-    const g = c.getContext('2d'); g.drawImage(img, 0, 0);
-    const lw = Math.round(W * o.tam / 100), lh = Math.round(lw * logoImg.naturalHeight / logoImg.naturalWidth), m = Math.round(Math.min(W, H) * 0.045);
-    const x = /der/.test(o.pos) ? W - m - lw : /centro/.test(o.pos) ? Math.round((W - lw) / 2) : m;
-    const y = /inf/.test(o.pos) ? H - m - lh : m;
-    let estilo = o.estilo;
-    if (estilo === 'auto') estilo = brillo(img, x, y, lw, lh) < 0.45 ? 'placa' : 'color';
-    if (estilo === 'placa') {   // placa blanca redondeada detrás del logo
-      const pd = Math.round(lh * 0.22), r = Math.round(lh * 0.25);
-      g.fillStyle = 'rgba(255,255,255,0.94)'; g.beginPath();
-      if (g.roundRect) g.roundRect(x - pd, y - pd, lw + 2 * pd, lh + 2 * pd, r); else g.rect(x - pd, y - pd, lw + 2 * pd, lh + 2 * pd);
-      g.fill();
-    }
-    if (estilo === 'blanco') {  // logo todo en blanco (para fondos oscuros)
-      const t = document.createElement('canvas'); t.width = lw; t.height = lh; const tg = t.getContext('2d');
-      tg.drawImage(logoImg, 0, 0, lw, lh); tg.globalCompositeOperation = 'source-in'; tg.fillStyle = '#fff'; tg.fillRect(0, 0, lw, lh);
-      g.drawImage(t, x, y);
-    } else g.drawImage(logoImg, x, y, lw, lh);
-    return c;
-  }
-  const aBlob = (c) => new Promise((ok) => c.toBlob(ok, 'image/png'));
-  const nombreConLogo = (n) => n.replace(/\.[^.]+$/, '') + '_logo.png';
-  async function logo(opc) {
-    opc = opc || {};
-    try { await cargarLogo(); } catch (e) { U.aviso(e.message, 'err'); return; }
-    const o = { pos: 'sup-izq', tam: 24, estilo: 'auto' }; let fotos = [];
-    U.modal('Poner el logo de Ideas Control', '<div class="ic-form">' +
-      '<p class="sec" style="margin-top:0">Suba la(s) imagen(es) que generó la IA. El logo se pone aquí, nítido y sin deformar' + (opc.p ? ', y se guarda en la pieza de ' + esc(opc.p.Title) : '') + '.</p>' +
-      '<label class="ic-btn sec mkt-subir">Elegir imagen(es)<input type="file" id="lgF" accept="image/png,image/jpeg,image/webp" multiple hidden></label>' +
-      '<div class="ic-campos" style="margin-top:10px"><div class="ic-campo c4"><label for="lgP">Posición</label><select id="lgP"><option value="sup-izq">Arriba a la izquierda</option><option value="sup-der">Arriba a la derecha</option><option value="inf-izq">Abajo a la izquierda</option><option value="inf-der">Abajo a la derecha</option><option value="inf-centro">Abajo al centro</option></select></div>' +
-      '<div class="ic-campo c4"><label for="lgE">Estilo</label><select id="lgE"><option value="auto">Automático según el fondo</option><option value="color">A color</option><option value="placa">A color sobre placa blanca</option><option value="blanco">Todo blanco (fondos oscuros)</option></select></div>' +
-      '<div class="ic-campo c4"><label for="lgT">Tamaño: <b id="lgTv">24</b>% del ancho</label><input type="range" id="lgT" min="12" max="45" value="24"></div></div>' +
-      '<div id="lgPrev" class="img-prev"><p class="sec">La vista previa aparece aquí.</p></div>' +
-      '<div class="ic-acciones"><span class="espacio"></span><button class="ic-btn sec" id="lgDesc" disabled>Descargar</button>' + (opc.p ? '<button class="ic-btn" id="lgGuardar" disabled>Guardar en la publicación</button>' : '') + '</div></div>', (m) => {
-      const prev = m.querySelector('#lgPrev');
-      const pintar = () => {
-        if (!fotos.length) return;
-        prev.innerHTML = ''; fotos.forEach((f) => { const c = componer(f.img, o); c.className = 'img-lienzo'; c.title = f.file.name; f.canvas = c; prev.appendChild(c); });
-        m.querySelector('#lgDesc').disabled = false; const bg = m.querySelector('#lgGuardar'); if (bg) bg.disabled = false;
-      };
-      m.querySelector('#lgF').onchange = async (e) => {
-        try { fotos = await Promise.all(Array.from(e.target.files || []).map(async (file) => ({ file, img: await leerImagen(file) }))); pintar(); }
-        catch (er) { U.aviso(er.message, 'err'); }
-      };
-      m.querySelector('#lgP').onchange = (e) => { o.pos = e.target.value; pintar(); };
-      m.querySelector('#lgE').onchange = (e) => { o.estilo = e.target.value; pintar(); };
-      m.querySelector('#lgT').oninput = (e) => { o.tam = +e.target.value; m.querySelector('#lgTv').textContent = o.tam; pintar(); };
-      m.querySelector('#lgDesc').onclick = async () => {
-        for (const f of fotos) { const a = document.createElement('a'); a.href = URL.createObjectURL(await aBlob(f.canvas)); a.download = nombreConLogo(f.file.name); document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); }
-      };
-      const bg = m.querySelector('#lgGuardar');
-      if (bg) bg.onclick = () => U.conCarga(bg, async () => {
-        const archivos = []; for (const f of fotos) archivos.push(new File([await aBlob(f.canvas)], nombreConLogo(f.file.name), { type: 'image/png' }));
-        U.cerrarModal(); await M().subirPiezas(opc.raiz, opc.p, archivos);
-      });
-    });
-  }
-
-  return { logo, medidas, diseno, prompt, promptDe, seccion, enlazar, semana, plantilla, editar };
+  return { medidas, diseno, prompt, promptDe, seccion, enlazar, semana, plantilla, editar };
 })();
