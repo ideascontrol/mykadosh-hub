@@ -124,7 +124,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     const deTema = temaSem ? App.pubs.filter((p) => p.tema_id === temaSem.Title && p.estado !== 'Cancelada').length : 0;
     raiz.innerHTML = '<div class="ic-barra"><div><h1 class="ic-titulo">Calendario</h1><p class="ic-subtitulo" style="margin:0">Semana del ' + esc(fLarga(ini)) + ' al ' + esc(fLarga(fin)) + '</p></div><span class="espacio"></span>' +
       '<div class="mkt-semnav"><button class="ic-btn sec chico" id="sAnt">‹ Anterior</button><button class="ic-btn sec chico" id="sHoy">Esta semana</button><button class="ic-btn sec chico" id="sSig">Siguiente ›</button></div>' +
-      '<button class="ic-btn" id="bNueva">+ Publicación</button></div>' +
+      '<button class="ic-btn sec" id="bImgs">🖼️ Prompts de imágenes</button><button class="ic-btn" id="bNueva">+ Publicación</button></div>' +
       '<div class="ic-filtros"><select id="fCanal">' + opciones(CFG.canales, F.canal, 'Todas las redes') + '</select><select id="fEstado">' + opciones(ESTADOS, F.estado, 'Todos los estados') + '</select></div>' +
       (temasSem.length ? '<div class="mkt-temasem">' + temasSem.map((t) => '<a href="#tema/' + esc(t.Title) + '"><span>Tema de la semana</span><b>' + esc(t.tema) + '</b></a>').join('') + '</div>' : '') +
       (temaSem && deTema < 6 ? '<div class="gen-aviso mkt-noimp" style="margin:0 0 12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center"><span>Esta semana tiene ' + deTema + ' publicación(es) en el portal. Las piezas diarias (Facebook, Instagram, LinkedIn, TikTok) se crean al generar el contenido de la semana.</span><a class="ic-btn chico" href="#generar/' + esc(temaSem.Title) + '/contenido">✨ Generar la semana</a></div>' : '') +
@@ -140,6 +140,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     raiz.querySelector('#fCanal').onchange = (e) => { F.canal = e.target.value; vistaCalendario(raiz); };
     raiz.querySelector('#fEstado').onchange = (e) => { F.estado = e.target.value; vistaCalendario(raiz); };
     raiz.querySelector('#bNueva').onclick = () => nuevaPublicacion({ fecha: ini, tema_id: temaSem ? temaSem.Title : '' });
+    raiz.querySelector('#bImgs').onclick = (ev) => U.conCarga(ev.currentTarget, () => MKT_IMG.semana(ini));
     raiz.querySelectorAll('[data-nueva]').forEach((b) => { b.onclick = (ev) => { ev.preventDefault(); nuevaPublicacion({ fecha: b.dataset.nueva, tema_id: temaSem ? temaSem.Title : '' }); }; });
     // Arrastrar y soltar: cambia la fecha (y la campaña del UTM si cambia de semana)
     raiz.querySelectorAll('.mkt-tarjeta[data-id]').forEach((t) => {
@@ -246,7 +247,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     raiz.innerHTML = '<a class="ic-volver" href="#lista">← Publicaciones</a>' +
       '<div class="ic-ficha-cab"><div class="principal"><span class="ic-tag" style="background:#E6F0FA;color:#0A5A90">' + esc(p.Title) + '</span>' +
         '<h1>' + esc(p.titulo || t.tema || '') + '</h1><div class="meta">' + chipCanal(p.canal) + '<span>' + esc(fLarga(p.fecha)) + '</span>' + chipEstado(p.estado) + (p.formato ? '<span>' + esc(p.formato) + '</span>' : '') + '</div></div>' +
-        '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="ic-btn sec" id="bBrief">Copiar brief para la pieza</button><button class="ic-btn peligro" id="bDel">Eliminar</button></div></div>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="ic-btn sec" id="bBrief">Copiar prompt de la imagen</button><button class="ic-btn peligro" id="bDel">Eliminar</button></div></div>' +
       '<div class="mkt-ficha"><div class="mkt-col">' +
         '<section class="ic-bloque"><div class="cab"><h2>Contenido</h2></div><div class="cuerpo"><form class="ic-form" id="fPub"><div class="ic-campos">' +
           U.campo({ name: 'fecha', label: 'Fecha', t: 'date', valor: dia(p.fecha), req: true, c: 'c4' }) +
@@ -258,6 +259,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
           U.campo({ name: 'link', label: 'Link publicado', valor: p.link || '', c: 'c6', ph: 'https://…' }) +
           U.campo({ name: 'notas', label: 'Notas', t: 'textarea', valor: p.notas || '', c: 'c12', filas: 2 }) +
         '</div><div class="ic-acciones"><button class="ic-btn" id="bGuardar">Guardar</button></div></form></div></section>' +
+        MKT_IMG.seccion(p) +
         '<section class="ic-bloque"><div class="cab"><h2>Pieza</h2><span class="sec">Imagen, carrusel o video final</span></div><div class="cuerpo"><div id="piezas" class="mkt-piezas"><div class="ic-spinner"></div></div>' +
           '<label class="ic-btn sec chico mkt-subir">Subir archivo(s)<input type="file" id="archivo" multiple accept="image/*,video/*,.pdf,.docx" hidden></label></div></section>' +
         '<section class="ic-bloque"><div class="cab"><h2>Enlace con UTM</h2><span class="sec">Para saber qué publicación trae cada lead</span></div><div class="cuerpo"><div class="ic-form"><div class="ic-campos">' +
@@ -295,7 +297,8 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
         try { await guardarPub(p, campos); U.aviso('Publicación guardada', 'ok'); vistaPub(raiz); pintarEncabezado(); } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
       });
     };
-    raiz.querySelector('#bBrief').onclick = () => copiar(brief(p, t), 'Brief copiado: péguelo en ChatGPT o Canva');
+    raiz.querySelector('#bBrief').onclick = async () => copiar(await MKT_IMG.promptDe(p), 'Prompt de la imagen copiado');
+    MKT_IMG.enlazar(raiz, p);
     raiz.querySelector('#bDel').onclick = async () => {
       if (!(await U.confirmar('Eliminar ' + p.Title, 'Se borra la publicación (sus métricas y archivos se conservan).', 'Eliminar', true))) return;
       try { await G.eliminar(L.pubs, p._id); App.pubs = App.pubs.filter((x) => x !== p); U.aviso('Publicación eliminada', 'ok'); location.hash = 'lista'; } catch (e) { U.aviso(U.mensajeError(e), 'err'); }
@@ -419,12 +422,6 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     const u = new URL(destino);
     u.searchParams.set('utm_source', src); u.searchParams.set('utm_medium', medio); u.searchParams.set('utm_campaign', sem); u.searchParams.set('utm_content', p.Title);
     return u.toString();
-  }
-  function brief(p, t) {
-    const L2 = (k, l) => t[k] ? l + ': ' + t[k] + '\n' : '';
-    return 'Diseña una pieza para ' + p.canal + ' (' + (p.formato || 'formato a definir') + ') de Ideas Control Equipos y Soluciones S.A.S. (biometría y control de tiempo y asistencia, Colombia).\n\n' +
-      'Tema: ' + (p.titulo || t.tema || '') + '\n' + L2('hook', 'Gancho') + L2('problema', 'Problema') + L2('solucion', 'Solución') + L2('cta', 'Llamado a la acción') + L2('promesa', 'Promesa') +
-      (p.copy ? '\nCopy de la publicación (no lo copies entero en la imagen; usa solo el gancho y 1-3 ideas):\n' + p.copy + '\n' : '') + '\n' + CFG.marca;
   }
   async function copiar(txt, msg) {
     try { await navigator.clipboard.writeText(txt); U.aviso(msg, 'ok'); }

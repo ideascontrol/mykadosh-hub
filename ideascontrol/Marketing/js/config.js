@@ -4,7 +4,7 @@
    Datos: MKT_Temas, MKT_Publicaciones, MKT_Metricas (IC Apps). Piezas: Documentos/Marketing/Piezas/<PUB>/
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-112', nombre: 'Marketing', version: '0.5.2' },
+  app: { id: 'APP-112', nombre: 'Marketing', version: '0.6.0' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -86,6 +86,15 @@ window.CFG = {
     contacto: '📍 Conócenos aquí:\n📲 +57 321 318 4853\n📧 info@ideascontrol.com\n🌐 www.ideascontrol.com',
     contactoLinea: '+57 321 318 4853  •  info@ideascontrol.com'
   },
+  // Medidas de las imágenes por red (van en el prompt de la imagen y en el pedido a Claude)
+  medidasImagen: {
+    Facebook: '1080 × 1350 px (vertical 4:5)',
+    Instagram: '1080 × 1350 px (vertical 4:5)',
+    LinkedIn: '546 × 312 px (horizontal)',
+    TikTok: '1080 × 1920 px (vertical 9:16, portada del video)',
+    YouTube: '1280 × 720 px (horizontal 16:9, miniatura del video)',
+    historia: '1080 × 1920 px (vertical 9:16)'
+  },
   // Guía de marca para el brief de las piezas (ChatGPT / Canva / CapCut)
-  marca: 'Marca Ideas Control: azul #0E76BC, teal #159090, dorado #C9A227, azul oscuro #0B2945; logo de huella (azul/verde/dorado) arriba a la izquierda; tipografía sans-serif (Inter/Montserrat); estilo limpio, profesional, B2B, Colombia. Formato 1080×1350 para feed, 1080×1920 para historia/Reel. Pocas palabras en la imagen; el mensaje largo va en el copy.'
+  marca: 'Marca Ideas Control: azul #0E76BC, teal #159090, dorado #C9A227, azul oscuro #0B2945; logo de huella (azul/verde/dorado) arriba a la izquierda; tipografía sans-serif (Inter/Montserrat); estilo limpio, profesional, B2B, Colombia. Medidas: Facebook e Instagram 1080×1350, LinkedIn 546×312, historia/Reel 1080×1920. Pocas palabras en la imagen; el mensaje largo va en el copy.'
 };

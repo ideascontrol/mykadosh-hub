@@ -464,8 +464,9 @@ window.MKT_GEN = (function () {
     const j = reciente(jsons);
     el.innerHTML = '<div class="gen-ok" style="margin-top:12px"><b>✅ Ya se generó para esta semana.</b>' +
       (words.length ? '<ul>' + words.map((w) => '<li><a href="' + esc(w.webUrl) + '" target="_blank" rel="noopener">' + esc(w.name) + ' ↗</a> <span class="sec">(' + esc(f(w)) + ')</span></li>').join('') + '</ul>' : '') +
-      (pubs.length ? '<p class="sec" style="margin:6px 0 0">' + pubs.length + ' publicaciones de esta semana tienen el copy generado: <a href="#lista">ver en Publicaciones</a>.</p>' : '') +
+      (pubs.length ? '<p class="sec" style="margin:6px 0 0">' + pubs.length + ' publicaciones de esta semana tienen el copy generado: <a href="#lista">ver en Publicaciones</a>. <button class="ic-btn sec chico" id="gImgs">🖼️ Prompts de imágenes</button></p>' : '') +
       (j ? '<div class="gen-acc" style="margin-top:8px"><button class="ic-btn sec chico" id="gUsar">Usar la respuesta guardada</button><span class="sec">Vuelve a mostrar la vista previa sin pedírsela otra vez a Claude (para revisar, cambiar el nombre o volver a crear el Word).</span></div>' : '') + '</div>';
+    const bi = el.querySelector('#gImgs'); if (bi) bi.onclick = () => U.conCarga(bi, () => MKT_IMG.semana(lunes));
     const bu = el.querySelector('#gUsar');
     if (bu) bu.onclick = () => U.conCarga(bu, async () => {
       try {

@@ -9,8 +9,45 @@
 window.MKT_PROMPTS = {
   archivos: {
     contenido: 'Marketing/Plantillas/Prompt_Contenido_Semana.txt',
-    newsletter: 'Marketing/Plantillas/Prompt_Newsletter.txt'
+    newsletter: 'Marketing/Plantillas/Prompt_Newsletter.txt',
+    imagen: 'Marketing/Plantillas/Prompt_Imagen.txt'
   },
+
+  /* Prompt para generar la imagen de cada publicación en otra IA. La app agrega al final los datos de la pieza. */
+  imagen: [
+    'Actúa como director de arte especializado en diseño publicitario B2B para redes sociales.',
+    'Crea la imagen de una publicación de Ideas Control Equipos y Soluciones S.A.S. (biometría, control de acceso y control de tiempo y asistencia en Colombia) con la información de la pieza que va al final.',
+    '',
+    '1. Formato',
+    '• Usa exactamente las medidas indicadas en «Medidas».',
+    '• Alta calidad y resolución. Deja márgenes de seguridad: ningún texto pegado a los bordes.',
+    '',
+    '2. Identidad visual de Ideas Control',
+    '• Colores: azul #0E76BC, teal #159090, azul oscuro #0B2945 y dorado #C9A227 solo como acento.',
+    '• Fondos limpios: blanco, gris muy claro o azul oscuro, con buen contraste.',
+    '• Tipografía sans-serif moderna (estilo Montserrat o Inter), en negrilla para el titular.',
+    '• Estilo profesional, limpio y corporativo; nada recargado ni con apariencia de infografía.',
+    '• Deja libre la esquina superior izquierda para poner el logo después. No dibujes logos, marcas ni sellos.',
+    '',
+    '3. Composición',
+    '• El texto de la imagen es el protagonista: titular grande y, si hay, una línea de apoyo pequeña.',
+    '• La ilustración o fotografía refuerza el mensaje: personas reales en contextos laborales de Colombia (oficinas, plantas, bodegas, obras, comercio, salud), equipos biométricos, control de acceso, tableros con datos.',
+    '• Evita clichés: apretones de manos, engranajes, bombillos, rompecabezas, flechas genéricas.',
+    '• Mucho espacio libre; pocos elementos.',
+    '',
+    '4. Texto en la imagen',
+    '• Reproduce exactamente el «Texto en la imagen», en español y sin errores ortográficos.',
+    '• No agregues palabras, URLs, teléfonos, correos ni hashtags. El mensaje largo va en el copy, no en la imagen.',
+    '',
+    '5. Según el formato',
+    '• Carrusel: una imagen por lámina, misma línea visual, con el número de lámina discreto.',
+    '• Reel / video: la portada del video, con el gancho como titular.',
+    '• LinkedIn (horizontal): titular a un lado e imagen al otro.',
+    '',
+    '6. Antes de entregar, verifica: medidas correctas, texto completo y bien escrito dentro de los márgenes, contraste legible y colores de marca.',
+    '',
+    '7. Genera directamente la imagen terminada, sin explicaciones ni alternativas.'
+  ].join('\n'),
 
   contenido: [
     'Prompt para desarrollar el contenido de la semana de Ideas Control (Contenido Sem ddmmaaaa IC)',
@@ -126,7 +163,7 @@ window.MKT_PROMPTS = {
     '      "copy_b": "Versión B optimizada",',
     '      "nota_b": "por qué cambia la versión B (una o dos líneas)",',
     '      "variantes": [ { "nombre": "ej. Variante estilo Isra Bravo", "copy": "..." } ],',
-    '      "diseno": { "descripcion": "qué se ve en la pieza", "texto_en_imagen": "pocas palabras", "laminas": ["Lámina 1: ...", "Lámina 2: ..."], "medidas": "1080×1350" },',
+    '      "diseno": { "descripcion": "qué se ve en la pieza", "texto_en_imagen": "pocas palabras", "laminas": ["Lámina 1: ...", "Lámina 2: ..."], "medidas": "según la red" },',
     '      "video": null',
     '    }',
     '  ],',
@@ -140,6 +177,7 @@ window.MKT_PROMPTS = {
     '  "clips": [ { "segmento": "Hook (0–1 s)", "muestra": "", "buscar_canva": "término en español / término en inglés; ...", "duracion": "1 clip de 1–2 s" } ],',
     '  "heygen": { "avatar": "", "escenario": "", "tono": "", "guion": "" },',
     '  "solo_guion": "guion corrido para grabar a cámara" }',
+    'Medidas del diseño según la red: Facebook e Instagram 1080×1350; LinkedIn 546×312; historia, Reel y TikTok 1080×1920; YouTube 1280×720. En "descripcion" describe la escena con detalle (personas, lugar, objetos, colores) porque con eso se genera la imagen en otra IA.',
     'Usa "clips" para CapCut y "heygen" para HeyGen (el otro puede ir vacío). "variantes" puede ser [] si no aplica.',
     'Incluye TODAS las piezas de la lista, en el mismo orden, con su "id" exacto. Escapa las comillas dobles dentro del texto como \\".'
   ].join('\n'),

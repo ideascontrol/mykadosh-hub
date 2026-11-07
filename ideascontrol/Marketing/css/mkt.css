@@ -181,3 +181,10 @@ th.mkt-ord.on .mkt-flecha { opacity: 1; }
 .mkt-dia.sobre { outline: 2px dashed #0E76BC; outline-offset: -4px; background: #F2F8FC; }
 .mkt-tarjeta[draggable="true"] { cursor: grab; } .mkt-tarjeta.arrastrando { opacity: .45; }
 @media print { .mkt-mas { display: none; } }
+
+/* v0.6.0 · prompts de imágenes */
+.mkt-pre { white-space: pre-wrap; background: #f6f8fb; border: 1px solid #e3e8ef; border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.5; max-height: 55vh; overflow: auto; margin: 0 0 10px; }
+.img-dia { font-size: 14px; margin: 16px 0 6px; color: #0B2945; text-transform: capitalize; }
+.img-fila { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #edf0f4; }
+.img-fila .img-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.img-fila .img-txt b { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
