@@ -4,7 +4,7 @@
    Datos: MKT_Temas, MKT_Publicaciones, MKT_Metricas (IC Apps). Piezas: Documentos/Marketing/Piezas/<PUB>/
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-112', nombre: 'Marketing', version: '0.6.3' },
+  app: { id: 'APP-112', nombre: 'Marketing', version: '0.7.0' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -70,17 +70,18 @@ window.CFG = {
       { grupo: 'LinkedIn Personal', canal: 'LinkedIn', dia: 2, principal: true, seccion: 'Copy para el Newsletter', hashtags: 'linkedinPersonal',
         nota: 'Post personal de opinión dirigido a gerentes que acompaña el newsletter. En "variantes" incluye «Variante estilo Isra Bravo» (frases muy cortas, storytelling) y «Formato Frogmatter» (el mismo mensaje con diseño para LinkedIn: separadores y un emoji por línea).' },
       { grupo: 'LinkedIn Ideas Control', canal: 'LinkedIn', dia: 2, seccion: 'Share with comments', hashtags: 'linkedinIC', nota: 'Desde la página de Ideas Control: compartir el newsletter o el post con un comentario de la empresa.' },
+      // Facebook e Instagram: lunes a jueves, una pieza distinta por red cada día (copy e imagen propios)
       { grupo: 'Facebook', canal: 'Facebook', dia: 0, principal: true, seccion: 'FB Copy', hashtags: 'facebook', nota: 'Post principal de Facebook de la semana (también sirve como anuncio de pauta).' },
-      { grupo: 'Facebook', canal: 'Facebook', dia: 0, hashtags: 'facebook' },
       { grupo: 'Facebook', canal: 'Facebook', dia: 1, hashtags: 'facebook' },
       { grupo: 'Facebook', canal: 'Facebook', dia: 2, hashtags: 'facebook' },
       { grupo: 'Facebook', canal: 'Facebook', dia: 3, hashtags: 'facebook' },
-      { grupo: 'Instagram', canal: 'Instagram', dia: 0, principal: true, seccion: 'Ins Copy', hashtags: 'instagram', nota: 'Post principal de Instagram de la semana.' },
-      { grupo: 'Instagram', canal: 'Instagram', dia: 1, hashtags: 'instagram' },
-      { grupo: 'Instagram', canal: 'Instagram', dia: 2, hashtags: 'instagram' },
-      { grupo: 'Instagram', canal: 'Instagram', dia: 3, hashtags: 'instagram' },
-      { grupo: 'Instagram', canal: 'Instagram', dia: 4, hashtags: 'instagram' },
-      { grupo: 'TikTok', canal: 'TikTok', dia: 4, principal: true, seccion: 'TT Copy y video 30 segundos', hashtags: 'tiktok', formato: 'Reel / video corto' }
+      { grupo: 'Instagram', canal: 'Instagram', dia: 0, principal: true, seccion: 'Ins Copy', hashtags: 'instagram', nota: 'Post principal de Instagram de la semana. Pieza distinta a la de Facebook del mismo día.' },
+      { grupo: 'Instagram', canal: 'Instagram', dia: 1, hashtags: 'instagram', nota: 'Pieza distinta a la de Facebook del mismo día.' },
+      { grupo: 'Instagram', canal: 'Instagram', dia: 2, hashtags: 'instagram', nota: 'Pieza distinta a la de Facebook del mismo día.' },
+      { grupo: 'Instagram', canal: 'Instagram', dia: 3, hashtags: 'instagram', nota: 'Pieza distinta a la de Facebook del mismo día.' },
+      // TikTok: video corto, imagen única o carrusel de fotos (1080×1920)
+      { grupo: 'TikTok', canal: 'TikTok', dia: 4, principal: true, seccion: 'TT Copy y pieza', hashtags: 'tiktok',
+        nota: 'Elige el mejor formato para TikTok: video corto (30 s), imagen única o carrusel de fotos, todo vertical 1080×1920. Si es carrusel, describe cada lámina en "laminas".' }
     ],
     // Bloque de contacto (Facebook y TikTok, como en el formato semanal)
     contacto: '📍 Conócenos aquí:\n📲 +57 321 318 4853\n📧 info@ideascontrol.com\n🌐 www.ideascontrol.com',
@@ -91,7 +92,7 @@ window.CFG = {
     Facebook: '1080 × 1350 px (vertical 4:5)',
     Instagram: '1080 × 1350 px (vertical 4:5)',
     LinkedIn: '546 × 312 px (horizontal)',
-    TikTok: '1080 × 1920 px (vertical 9:16, portada del video)',
+    TikTok: '1080 × 1920 px (vertical 9:16)',
     YouTube: '1280 × 720 px (horizontal 16:9, miniatura del video)',
     historia: '1080 × 1920 px (vertical 9:16)'
   },

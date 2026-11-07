@@ -79,7 +79,7 @@ window.MKT_GEN = (function () {
       const r = s.red;
       if (!s.hashtags) s.hashtags = r === 'Instagram' ? GC.hashtags.instagram : r === 'TikTok' ? GC.hashtags.tiktok : r === 'LinkedIn' ? GC.hashtags.linkedinPersonal : GC.hashtags.facebook;
       s.contacto = (r === 'Facebook' || r === 'TikTok') ? GC.contacto : '';
-      const video = r === 'TikTok' || /reel|video/i.test(s.formato_planeado || '');
+      const video = /reel|video/i.test(s.formato_planeado || '');   // TikTok decide Claude: video, imagen o carrusel
       if (video && !/video/.test(s.nota)) s.nota = (s.nota ? s.nota + ' ' : '') + 'Es video: incluye el objeto "video" (guion por tramos, clips de Canva para CapCut o avatar y guion para HeyGen) y "solo_guion".';
       s.editable = !s.pub || EDITABLES.indexOf(s.pub.estado || 'Planeada') >= 0;
     });
@@ -464,7 +464,7 @@ window.MKT_GEN = (function () {
     const j = reciente(jsons);
     el.innerHTML = '<div class="gen-ok" style="margin-top:12px"><b>✅ Ya se generó para esta semana.</b>' +
       (words.length ? '<ul>' + words.map((w) => '<li><a href="' + esc(w.webUrl) + '" target="_blank" rel="noopener">' + esc(w.name) + ' ↗</a> <span class="sec">(' + esc(f(w)) + ')</span></li>').join('') + '</ul>' : '') +
-      (pubs.length ? '<p class="sec" style="margin:6px 0 0">' + pubs.length + ' publicaciones de esta semana tienen el copy generado: <a href="#lista">ver en Publicaciones</a>. <button class="ic-btn sec chico" id="gImgs">🖼️ Prompts de imágenes</button></p>' : '') +
+      (pubs.length ? '<p class="sec" style="margin:6px 0 0">' + pubs.length + ' publicaciones de esta semana tienen el copy generado: <a href="#lista">ver en Publicaciones</a>. <button class="ic-btn sec chico" id="gImgs">📅 Copys y prompts de imágenes por día</button></p>' : '') +
       (j ? '<div class="gen-acc" style="margin-top:8px"><button class="ic-btn sec chico" id="gUsar">Usar la respuesta guardada</button><span class="sec">Vuelve a mostrar la vista previa sin pedírsela otra vez a Claude (para revisar, cambiar el nombre o volver a crear el Word).</span></div>' : '') + '</div>';
     const bi = el.querySelector('#gImgs'); if (bi) bi.onclick = () => U.conCarga(bi, () => MKT_IMG.semana(lunes));
     const bu = el.querySelector('#gUsar');

@@ -13,12 +13,12 @@ window.MKT_IMG = (function () {
     const c = U.norm(p.canal || ''), f = U.norm(p.formato || ''), MD = CFG.medidasImagen;
     if (/historia/.test(f)) return MD.historia;
     if (c.indexOf('linkedin') >= 0) return MD.LinkedIn;
-    if (c.indexOf('tiktok') >= 0) return MD.TikTok;
-    if (c.indexOf('youtube') >= 0) return MD.YouTube;
+    if (c.indexOf('tiktok') >= 0) return MD.TikTok + (esVideo(p) ? ' — portada del video' : '');
+    if (c.indexOf('youtube') >= 0) return esVideo(p) ? MD.YouTube : MD.TikTok;
     if (c.indexOf('instagram') >= 0 && c.indexOf('facebook') < 0) return MD.Instagram;
     return MD.Facebook;
   }
-  const esVideo = (p) => /reel|video/i.test(p.formato || '') || /tiktok|youtube/i.test(p.canal || '');
+  const esVideo = (p) => /reel|video/i.test(p.formato || '');   // TikTok también puede ser imagen o carrusel
   const esCarrusel = (p) => /carrusel/i.test(p.formato || '');
 
   // ---------- diseño guardado en las notas al generar la semana ----------
@@ -68,58 +68,89 @@ window.MKT_IMG = (function () {
     });
   }
 
-  // ---------- el prompt de una publicación ----------
-  function prompt(p, base) {
-    const t = M().temaDe(p.tema_id) || {}, d = diseno(p), md = medidas(p);
+  // ---------- el prompt de una publicación (o de una lámina del carrusel: k = 1…N) ----------
+  const laminasDe = (p) => esCarrusel(p) ? diseno(p).laminas : [];
+  function prompt(p, base, k) {
+    const t = M().temaDe(p.tema_id) || {}, d = diseno(p), md = medidas(p), N = d.laminas.length;
+    const lam = esCarrusel(p) && k && N;
     const L = ['', '═══════════════════════════════', 'INFORMACIÓN DE ESTA PIEZA',
       'Red: ' + (p.canal || ''),
       'Medidas: ' + md,
-      'Formato: ' + (p.formato || 'Imagen') + (esVideo(p) ? ' → genera la PORTADA / MINIATURA del video' : esCarrusel(p) ? ' → genera UNA IMAGEN POR LÁMINA, todas con la misma línea visual' : ''),
+      'Formato: ' + (p.formato || 'Imagen') + (esVideo(p) ? ' → genera la PORTADA del video' : lam ? ' → lámina ' + k + ' de ' + N : esCarrusel(p) ? ' → genera UNA IMAGEN POR LÁMINA, todas con la misma línea visual' : ''),
       'Fecha de publicación: ' + M().fLarga(p.fecha),
       'Tema: ' + limpio(p.titulo || t.tema || '')];
-    L.push('Qué se ve: ' + (d.descripcion || 'propón una escena que represente el tema con personas reales en un contexto laboral colombiano'));
-    L.push('Texto en la imagen (exacto): ' + (d.texto || limpio(t.hook) || 'propón un titular corto (máximo 8 palabras) a partir del tema'));
-    if (d.laminas.length) { L.push('Láminas:'); d.laminas.forEach((x) => L.push('• ' + x)); }
+    L.push('Qué se ve' + (lam ? ' (línea visual de todo el carrusel)' : '') + ': ' + (d.descripcion || 'propón una escena que represente el tema con personas reales en un contexto laboral colombiano'));
+    if (lam) {
+      if (d.texto) L.push('Textos generales del carrusel: ' + d.texto);
+      L.push('Láminas del carrusel:'); d.laminas.forEach((x, n) => L.push((n + 1 === k ? '→ ' : '• ') + x));
+      L.push('', 'ESTA IMAGEN: LÁMINA ' + k + ' DE ' + N + ' → ' + d.laminas[k - 1],
+        k === 1 ? 'Es la primera lámina (portada del carrusel): usa el logo adjunto y define la línea visual que seguirán las demás.'
+          : 'Mantén exactamente la misma línea visual de las láminas anteriores de esta conversación: colores, tipografía, estilo de fotografía, ubicación del logo y número de lámina.');
+    } else {
+      L.push('Texto en la imagen (exacto): ' + (d.texto || limpio(t.hook) || 'propón un titular corto (máximo 8 palabras) a partir del tema'));
+      if (N) { L.push('Láminas:'); d.laminas.forEach((x) => L.push('• ' + x)); }
+    }
     const i = idea(p); if (i) L.push('Contexto del post (NO lo copies en la imagen): ' + i);
     return (base || PR.imagen).trim() + '\n' + L.join('\n');
   }
-  async function promptDe(p) { return prompt(p, (await plantilla()).texto); }
+  async function promptDe(p, k) { return prompt(p, (await plantilla()).texto, k); }
 
   // ---------- sección en la ficha de la publicación ----------
   function seccion(p) {
     return '<section class="ic-bloque"><div class="cab"><h2>🖼️ Prompt para la imagen</h2><span class="sec">' + esc(medidas(p)) + '</span></div><div class="cuerpo">' +
       '<p class="sec" style="margin:0 0 8px">Cópielo y péguelo en la IA de imágenes (ChatGPT, Gemini, Canva…). Toma el diseño que propuso Claude para esta pieza' + (diseno(p).descripcion ? '' : ' (esta no lo tiene: la IA propondrá la escena)') + '.</p>' +
-      '<div class="gen-acc"><button class="ic-btn" type="button" data-img-copiar>Copiar prompt</button><button class="ic-btn sec" type="button" data-img-ver>Ver</button><button class="ic-btn sec" type="button" data-img-editar>Editar plantilla</button></div></div></section>';
+      (laminasDe(p).length ? '<p class="sec" style="margin:0 0 8px">Carrusel de ' + laminasDe(p).length + ' láminas: un prompt por lámina. Péguelos en orden en la misma conversación.</p><div class="gen-acc">' +
+        laminasDe(p).map((x, n) => '<button class="ic-btn' + (n ? ' sec' : '') + ' chico" type="button" data-img-lam="' + (n + 1) + '" title="' + esc(x) + '">Lámina ' + (n + 1) + '</button>').join('') + '</div>' : '') +
+      '<div class="gen-acc"' + (laminasDe(p).length ? ' style="margin-top:8px"' : '') + '>' + (laminasDe(p).length ? '' : '<button class="ic-btn" type="button" data-img-copiar>Copiar prompt</button>') +
+        '<button class="ic-btn sec" type="button" data-img-ver>Ver</button><button class="ic-btn sec" type="button" data-img-editar>Editar plantilla</button></div></div></section>';
   }
   function enlazar(raiz, p) {
-    const c = raiz.querySelector('[data-img-copiar]'); if (!c) return;
-    c.onclick = async () => M().copiar(await promptDe(p), 'Prompt de la imagen copiado');
+    if (!raiz.querySelector('[data-img-ver]')) return;
+    const c = raiz.querySelector('[data-img-copiar]'); if (c) c.onclick = async () => M().copiar(await promptDe(p), 'Prompt de la imagen copiado');
+    raiz.querySelectorAll('[data-img-lam]').forEach((b) => { b.onclick = async () => { M().copiar(await promptDe(p, +b.dataset.imgLam), 'Prompt de la lámina ' + b.dataset.imgLam + ' copiado'); b.textContent = 'Lámina ' + b.dataset.imgLam + ' ✔'; }; });
     raiz.querySelector('[data-img-ver]').onclick = async () => verUno(p);
     raiz.querySelector('[data-img-editar]').onclick = async () => { await plantilla(); editar(); };
   }
-  async function verUno(p) {
-    const txt = await promptDe(p);
-    U.modal('Prompt de la imagen · ' + p.Title, '<div class="ic-form"><p class="sec" style="margin-top:0">' + esc(p.canal) + ' · ' + esc(medidas(p)) + '</p><pre class="mkt-pre">' + esc(txt) + '</pre>' +
+  async function verUno(p, k) {
+    if (!k && laminasDe(p).length) k = 1;
+    const txt = await promptDe(p, k);
+    U.modal('Prompt de la imagen · ' + p.Title + (k ? ' · lámina ' + k + ' de ' + laminasDe(p).length : ''), '<div class="ic-form"><p class="sec" style="margin-top:0">' + esc(p.canal) + ' · ' + esc(medidas(p)) + '</p><pre class="mkt-pre">' + esc(txt) + '</pre>' +
       '<div class="ic-acciones"><span class="espacio"></span><button class="ic-btn" id="imC">Copiar</button></div></div>', (c) => { c.querySelector('#imC').onclick = () => M().copiar(txt, 'Prompt de la imagen copiado'); });
   }
 
-  // ---------- todos los de una semana, por día y red ----------
+  // ---------- la semana, día por día: copy y prompt(s) de imagen de cada publicación ----------
   const ORDEN = ['facebook / instagram', 'facebook', 'instagram', 'linkedin', 'linkedin newsletter', 'tiktok / youtube', 'tiktok', 'youtube'];
+  const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
   async function semana(lunes) {
     const base = (await plantilla()).texto, fin = M().sumarDias(lunes, 6);
-    const pubs = App.pubs.filter((p) => M().dia(p.fecha) >= lunes && M().dia(p.fecha) <= fin && p.estado !== 'Cancelada' && !/^texto$/i.test(p.formato || ''))
+    const pubs = App.pubs.filter((p) => M().dia(p.fecha) >= lunes && M().dia(p.fecha) <= fin && p.estado !== 'Cancelada')
       .sort((a, b) => M().dia(a.fecha).localeCompare(M().dia(b.fecha)) || ORDEN.indexOf(U.norm(a.canal || '')) - ORDEN.indexOf(U.norm(b.canal || '')));
-    const dias = Array.from(new Set(pubs.map((p) => M().dia(p.fecha))));
-    U.modal('🖼️ Prompts de imágenes · semana del ' + M().fLarga(lunes), '<div class="ic-form">' +
-      (pubs.length ? '<p class="sec" style="margin-top:0">Uno por publicación. Copie el de cada pieza y péguelo en la IA de imágenes. Medidas: Facebook e Instagram ' + esc(CFG.medidasImagen.Facebook) + ' · LinkedIn ' + esc(CFG.medidasImagen.LinkedIn) + '.</p>' +
-        dias.map((f) => '<h3 class="img-dia">' + esc(M().fLarga(f)) + '</h3>' + pubs.filter((p) => M().dia(p.fecha) === f).map((p) =>
-          '<div class="img-fila">' + M().chipCanal(p.canal) + '<div class="img-txt"><b>' + esc(limpio(p.titulo) || p.Title) + '</b><span class="sec">' + esc((p.formato || 'Imagen') + ' · ' + medidas(p)) + (diseno(p).descripcion ? '' : ' · sin diseño de Claude') + '</span></div>' +
-          '<button class="ic-btn sec chico" data-ver="' + esc(p.Title) + '">Ver</button><button class="ic-btn chico" data-cop="' + esc(p.Title) + '">Copiar</button></div>').join('')).join('')
-        : '<p class="ic-vacio">No hay publicaciones con imagen esta semana. Genere primero el contenido de la semana.</p>') +
-      '<div class="ic-acciones"><button class="ic-btn sec" id="imEd">Editar plantilla</button><span class="espacio"></span><button class="ic-btn sec" id="imCerrar">Cerrar</button></div></div>', (c) => {
+    const conImagen = (p) => !/^texto$|newsletter/i.test(p.formato || '') && !/newsletter/i.test(p.canal || '');
+    const fila = (p) => {
+      const L = laminasDe(p), img = conImagen(p);
+      return '<div class="img-fila">' + M().chipCanal(p.canal) + '<div class="img-txt"><a href="#pub/' + esc(p.Title) + '"><b>' + esc(limpio(p.titulo) || p.Title) + '</b></a><span class="sec">' +
+          esc((p.formato || 'Imagen') + (img ? ' · ' + medidas(p) : '')) + (img && !diseno(p).descripcion ? ' · sin diseño de Claude' : '') + (p.copy ? '' : ' · sin copy') + '</span></div>' +
+        '<div class="img-btns">' + (p.copy ? '<button class="ic-btn sec chico" data-copy="' + esc(p.Title) + '">Copy</button>' : '') +
+          (!img ? '' : L.length ? L.map((x, n) => '<button class="ic-btn chico" data-cop="' + esc(p.Title) + '" data-k="' + (n + 1) + '" title="' + esc(x) + '">Lám. ' + (n + 1) + '</button>').join('')
+            : '<button class="ic-btn chico" data-cop="' + esc(p.Title) + '">Prompt imagen</button>') +
+          (img ? '<button class="ic-btn sec chico" data-ver="' + esc(p.Title) + '" title="Ver el prompt">👁</button>' : '') + '</div></div>';
+    };
+    let html = '';
+    for (let i = 0; i < 7; i++) {
+      const f = M().sumarDias(lunes, i), del = pubs.filter((p) => M().dia(p.fecha) === f);
+      if (!del.length && i > 4) continue;
+      html += '<h3 class="img-dia">' + DIAS[i] + ' ' + esc(M().fCorta(f)) + '</h3>' + (del.map(fila).join('') || '<p class="sec" style="margin:0 0 6px">Sin publicaciones este día.</p>');
+    }
+    U.modal('📅 Copys y prompts de imágenes · semana del ' + M().fLarga(lunes), '<div class="ic-form">' +
+      (pubs.length ? '<p class="sec" style="margin-top:0">Por cada publicación: <b>Copy</b> copia el texto para la red y <b>Prompt imagen</b> el prompt para la IA (en carruseles, uno por lámina: péguelos en orden en la misma conversación). ' +
+          'Medidas: Facebook e Instagram ' + esc(CFG.medidasImagen.Facebook) + ' · LinkedIn ' + esc(CFG.medidasImagen.LinkedIn) + ' · TikTok ' + esc(CFG.medidasImagen.TikTok) + '.</p>' + html
+        : '<p class="ic-vacio">No hay publicaciones esta semana. Genere primero el contenido de la semana en «Generar».</p>') +
+      '<div class="ic-acciones"><button class="ic-btn sec" id="imEd">Editar plantilla de imágenes</button><span class="espacio"></span><button class="ic-btn sec" id="imCerrar">Cerrar</button></div></div>', (c) => {
       const pub = (id) => pubs.find((x) => x.Title === id);
-      c.querySelectorAll('[data-cop]').forEach((b) => { b.onclick = () => { M().copiar(prompt(pub(b.dataset.cop), base), 'Copiado: ' + b.dataset.cop); b.textContent = 'Copiado ✔'; }; });
+      c.querySelectorAll('[data-copy]').forEach((b) => { b.onclick = () => { M().copiar(pub(b.dataset.copy).copy, 'Copy copiado: ' + b.dataset.copy); b.textContent = 'Copy ✔'; }; });
+      c.querySelectorAll('[data-cop]').forEach((b) => { b.onclick = () => { const k = +b.dataset.k || 0; M().copiar(prompt(pub(b.dataset.cop), base, k), 'Prompt copiado: ' + b.dataset.cop + (k ? ' · lámina ' + k : '')); b.textContent = (k ? 'Lám. ' + k : 'Prompt') + ' ✔'; }; });
       c.querySelectorAll('[data-ver]').forEach((b) => { b.onclick = () => verUno(pub(b.dataset.ver)); });
+      c.querySelectorAll('.img-txt a').forEach((x) => { x.onclick = () => U.cerrarModal(); });
       c.querySelector('#imEd').onclick = () => editar(() => semana(lunes));
       c.querySelector('#imCerrar').onclick = U.cerrarModal;
     });
