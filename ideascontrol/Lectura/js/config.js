@@ -5,7 +5,7 @@
    Dejar de heredar permisos y dejar solo tu cuenta.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'PER-01', nombre: 'De Dios para el camino', version: '0.1.1' },
+  app: { id: 'PER-01', nombre: 'De Dios para el camino', version: '0.1.2' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -29,5 +29,7 @@ window.CFG = {
   hashtags: '#Devocional #Reflexion #Fe #MensajeBiblico #Biblia #Propósito',
   relleno: 'Miqueas 4:3',                                 // texto de las entradas de relleno que se reemplazan
   facebook: 'https://www.facebook.com/bendicionesencamino',
+  // Biblia digital para copiar el texto de cada versículo ({ref} y {ver} se reemplazan)
+  biblia: { nombre: 'Bible Gateway', url: 'https://www.biblegateway.com/passage/?search={ref}&version={ver}', versiones: ['NTV', 'RVR1960', 'NVI', 'LBLA', 'DHH', 'RVA-2015'], defecto: 'NTV' },
   categorias: ['Promesas de Dios', 'Confianza', 'Sabiduría', 'Fortaleza', 'Liderazgo', 'Consuelo']
 };

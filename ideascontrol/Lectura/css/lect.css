@@ -40,3 +40,10 @@
 .ld-op-cab input[type=radio] { width: 18px; height: 18px; margin: 0; flex: none; accent-color: #0E76BC; }
 .ld-op-cab { justify-content: flex-start; }
 @media (max-width: 640px) { .ld-fechas { flex-wrap: wrap; } }
+.ld-biblia { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 12px; font-size: 13.5px; }
+.ld-biblia select { font: inherit; padding: 5px 8px; border: 1px solid #D5DCE1; border-radius: 8px; width: auto; }
+.ld-lbl-fila { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.ld-mini { display: inline-flex; gap: 10px; align-items: center; font-size: 12.5px; white-space: nowrap; }
+.ld-mini a { color: #0E76BC; font-weight: 600; text-decoration: none; }
+.ld-pegar { font: inherit; font-size: 12px; font-weight: 700; color: #fff; background: #0E76BC; border: 0; border-radius: 6px; padding: 3px 10px; cursor: pointer; }
+.ld-pegar:hover { filter: brightness(1.1); }

@@ -268,8 +268,9 @@ const App = { usuario: null, ex: null, plan: null, word: null, dia: '', lect: nu
       (!vs.length ? '<div class="ic-tabla-caja" style="padding:16px"><p style="margin:0 0 10px">Este día todavía no tiene versículos en el Excel.</p>' +
           (sf.length ? '<p class="sec">Al final del Excel hay ' + sf.length + ' versículo(s) sin fecha (' + esc(sf.map((r) => r.ref).join(', ')) + '). ¿Son de este día?</p><button class="ic-btn" id="dAsignar">Asignarles el ' + esc(dmy(f)) + '</button> ' : '') +
           '<a class="ic-btn' + (sf.length ? ' sec' : '') + '" href="#generar">Generar versículos con Claude</a></div>' :
+        '<div class="ld-biblia"><span>Biblia para copiar el texto:</span><select id="dVer" aria-label="Versión de la Biblia">' + CFG.biblia.versiones.map((v) => '<option' + (v === version() ? ' selected' : '') + '>' + esc(v) + '</option>').join('') + '</select><span class="sec">' + esc(CFG.biblia.nombre) + ' · cada versículo tiene «Abrir en la Biblia» y «Pegar»</span></div>' +
         '<div class="ld-opciones">' + vs.map((r, i) => tarjeta(r, i, el)).join('') + '</div>' +
-        '<div class="ld-acc"><button class="ic-btn" id="dDoc">' + (el ? 'Guardar cambios y actualizar el Word' : 'Elegir y documentar en el Word') + '</button><span class="sec">Se guarda en el Excel (columna C = elegido) y en el Word, en la entrada del ' + esc(dmy(f)) + '.</span></div>' +
+        '<div class="ld-acc"><button class="ic-btn sec" id="dTextos">Guardar textos en el Excel</button><button class="ic-btn" id="dDoc">' + (el ? 'Guardar cambios y actualizar el Word' : 'Elegir y documentar en el Word') + '</button><span class="sec">Se guarda en el Excel (columna C = elegido) y en el Word, en la entrada del ' + esc(dmy(f)) + '.</span></div>' +
         (el ? salida(el) : ''));
     const ir = (n) => { App.dia = n; vistaDia(raiz); };
     raiz.querySelector('#dAnt').onclick = () => ir(sumar(f, -1));
@@ -307,6 +308,33 @@ const App = { usuario: null, ex: null, plan: null, word: null, dia: '', lect: nu
         vistaDia(raiz);
       } catch (e) { console.error(e); App.word = null; U.aviso(errorArchivo(e), 'err', 10000); }
     });
+    // Versión de la Biblia y enlaces
+    const sv = raiz.querySelector('#dVer');
+    if (sv) sv.onchange = () => { try { localStorage.setItem('ld_version', sv.value); } catch (e) { /* sin almacenamiento */ } raiz.querySelectorAll('[data-biblia]').forEach((a) => { a.href = urlBiblia(vs[+a.dataset.biblia].ref); }); };
+    // Pegar desde el portapapeles en el campo del texto
+    raiz.querySelectorAll('[data-pegar]').forEach((b) => {
+      b.onclick = async (ev) => {
+        ev.preventDefault(); ev.stopPropagation();
+        const ta = raiz.querySelector('textarea[data-campo="texto"][data-i="' + b.dataset.pegar + '"]');
+        try {
+          const t = (await navigator.clipboard.readText() || '').replace(/\s+\n/g, '\n').trim();
+          if (!t) { U.aviso('No hay texto copiado. Copie el versículo en su Biblia digital.', 'warn'); return; }
+          ta.value = limpiarVersiculo(t, vs[+b.dataset.pegar].ref); ta.dispatchEvent(new Event('input')); U.aviso('Texto pegado', 'ok', 1500);
+        } catch (e) { ta.focus(); U.aviso('Su navegador no dejó leer el portapapeles. Haga clic en el campo y use Ctrl+V.', 'warn', 6000); }
+      };
+    });
+    // Guardar solo los textos de las 3 opciones (sin elegir ni tocar el Word)
+    const bt = raiz.querySelector('#dTextos');
+    if (bt) bt.onclick = () => U.conCarga(bt, async () => {
+      try {
+        let n = 0;
+        for (const ta of raiz.querySelectorAll('textarea[data-campo="texto"]')) {
+          const o = vs[+ta.dataset.i], t = ta.value.trim();
+          if (t !== o.texto) { await escribir(C.texto + o.fila, [[tx(t)]]); o.texto = t; n++; }
+        }
+        U.aviso(n ? n + ' texto(s) guardados en el Excel' : 'No había textos nuevos', n ? 'ok' : 'warn');
+      } catch (e) { U.aviso(errorArchivo(e), 'err', 9000); }
+    });
     // Cualquier clic en la tarjeta (también en sus textos) elige esa opción
     raiz.querySelectorAll('.ld-op').forEach((op) => { op.addEventListener('click', () => { const r = op.querySelector('input[type=radio]'); if (r && !r.checked) { r.checked = true; raiz.querySelectorAll('.ld-op').forEach((x) => x.classList.toggle('on', x === op)); } }); });
     raiz.querySelectorAll('[data-copiar]').forEach((b) => { b.onclick = () => copiar(raiz.querySelector('#' + b.dataset.copiar).textContent, b.dataset.msg); });
@@ -318,12 +346,24 @@ const App = { usuario: null, ex: null, plan: null, word: null, dia: '', lect: nu
     const bpdf = raiz.querySelector('#dPdf'); if (bpdf) bpdf.onclick = () => descargarPDF(bpdf);
     if (!App.word) leerWord().then(() => { if (App.dia === f && location.hash.replace('#', '') === '') vistaDia(raiz); }).catch(() => { /* se informa en Archivos */ });
   }
+  // Limpia lo pegado: números de versículo al inicio («17 Y él…»), saltos de línea y la cita que algunas Biblias agregan al final
+  function limpiarVersiculo(t, ref) {
+    let s = String(t).replace(/\r/g, '').replace(/\n+/g, ' ').replace(/\s{2,}/g, ' ').trim();
+    s = s.replace(/^\d{1,3}\s*(?=\D)/, '').replace(/\s\d{1,3}\s?(?=[A-ZÁÉÍÓÚÑ¿¡«"“])/g, ' ');
+    s = s.replace(/\s*[-–—]?\s*\(?[1-3]?\s?[A-Za-zÁÉÍÓÚáéíóúñÑ]+\.?\s\d{1,3}:\d{1,3}(?:[-–]\d{1,3})?\s*(?:\(?[A-Z0-9-]{2,8}\)?)?\)?\s*$/, '');
+    return s.trim();
+  }
   const chip = (t, c) => '<span class="ld-chip ' + c + '">' + esc(t) + '</span>';
+  // Versión de la Biblia elegida (se recuerda en este navegador)
+  const version = () => { try { return localStorage.getItem('ld_version') || CFG.biblia.defecto; } catch (e) { return CFG.biblia.defecto; } };
+  const urlBiblia = (ref) => CFG.biblia.url.replace('{ref}', encodeURIComponent(ref)).replace('{ver}', encodeURIComponent(version()));
   function tarjeta(r, i, el) {
     const marc = el ? el === r : i === 0;
     const campo = (k, l, filas, ph) => '<label class="ld-lbl">' + l + '</label><textarea data-campo="' + k + '" data-i="' + i + '" rows="' + filas + '"' + (ph ? ' placeholder="' + esc(ph) + '"' : '') + '>' + esc(r[k]) + '</textarea>';
+    const campoTexto = '<div class="ld-lbl-fila"><label class="ld-lbl">Texto del versículo</label><span class="ld-mini"><a href="' + esc(urlBiblia(r.ref)) + '" target="_blank" rel="noopener" data-biblia="' + i + '">Abrir en la Biblia ↗</a>' +
+      '<button type="button" class="ld-pegar" data-pegar="' + i + '">Pegar</button></span></div><textarea data-campo="texto" data-i="' + i + '" rows="3" placeholder="Copie el texto en su Biblia digital y péguelo aquí">' + esc(r.texto) + '</textarea>';
     return '<label class="ld-op' + (marc ? ' on' : '') + '"><div class="ld-op-cab"><input type="radio" name="ld_sel" value="' + i + '"' + (marc ? ' checked' : '') + '><b>' + esc(r.ref) + '</b>' + (r.categoria ? '<span class="ld-cat">' + esc(r.categoria) + '</span>' : '') + (el === r ? '<span class="ld-chip ok">Elegido</span>' : '') + '</div>' +
-      campo('texto', 'Texto del versículo', 2, 'Pegue aquí el texto desde su Biblia') + campo('idea', 'Idea central', 2) + campo('recuerda', 'Recuerda', 2) + campo('aplicacion', 'Aplicación', 2) + campo('imagen', 'Sugerencia para la imagen', 2) + '</label>';
+      campoTexto + campo('idea', 'Idea central', 2) + campo('recuerda', 'Recuerda', 2) + campo('aplicacion', 'Aplicación', 2) + campo('imagen', 'Sugerencia para la imagen', 2) + '</label>';
   }
   function salida(r) {
     return (App.ultimaAccion ? '<div class="ld-ok">✅ ' + esc(App.ultimaAccion) + '</div>' : '') +
