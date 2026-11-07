@@ -682,6 +682,6 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
   }
   // Funciones que usa el generador (js/generador.js)
   window.MKT = { dia, hoyISO, sumarDias, lunesDe, fLarga, fCorta, pad, temaDe, utm, redDeCanal, copiar, rutaUrl, chipCanal, chipEstado, opciones, nombreCorto, parecido, metVacia,
-    eventos, ronda, aprobadores, miDecision, guardarPub, soyAprobador, pintarEncabezado };
+    eventos, ronda, aprobadores, miDecision, guardarPub, soyAprobador, pintarEncabezado, subirPiezas };
   window.addEventListener('DOMContentLoaded', arrancar);
 })();

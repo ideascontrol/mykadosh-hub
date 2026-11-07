@@ -27,7 +27,7 @@ window.MKT_PROMPTS = {
     '• Fondos limpios: blanco, gris muy claro o azul oscuro, con buen contraste.',
     '• Tipografía sans-serif moderna (estilo Montserrat o Inter), en negrilla para el titular.',
     '• Estilo profesional, limpio y corporativo; nada recargado ni con apariencia de infografía.',
-    '• Deja libre la esquina superior izquierda para poner el logo después. No dibujes logos, marcas ni sellos.',
+    '• Deja libre y despejada la esquina superior izquierda (aprox. 25 % del ancho): ahí se pone después el logo real. No dibujes ni inventes logos, marcas, sellos ni nombres de empresa.',
     '',
     '3. Composición',
     '• El texto de la imagen es el protagonista: titular grande y, si hay, una línea de apoyo pequeña.',

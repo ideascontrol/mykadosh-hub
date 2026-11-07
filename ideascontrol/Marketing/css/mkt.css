@@ -188,3 +188,5 @@ th.mkt-ord.on .mkt-flecha { opacity: 1; }
 .img-fila { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #edf0f4; }
 .img-fila .img-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .img-fila .img-txt b { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.img-prev { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; max-height: 52vh; overflow: auto; }
+.img-lienzo { max-width: 260px; max-height: 340px; width: auto; height: auto; border: 1px solid #e3e8ef; border-radius: 8px; background: #fff; }
