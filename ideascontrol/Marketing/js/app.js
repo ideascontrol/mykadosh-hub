@@ -411,12 +411,23 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     c.innerHTML = hijos.length ? hijos.map((h) => {
       const u = h['@microsoft.graph.downloadUrl'], img = /^image\//.test((h.file || {}).mimeType || ''), vid = /^video\//.test((h.file || {}).mimeType || '');
       return '<figure>' + (img ? '<img src="' + esc(u) + '" alt="">' : vid ? '<video src="' + esc(u) + '" controls preload="metadata"></video>' : '<div class="doc">' + esc((h.name.split('.').pop() || '').toUpperCase()) + '</div>') +
-        '<figcaption><a href="' + esc(h.webUrl) + '" target="_blank" rel="noopener">' + esc(h.name) + '</a><span>' + Math.max(1, Math.round(n0(h.size) / 1024)).toLocaleString('es-CO') + ' KB</span><button class="cal-x" data-del="' + esc(h.id) + '" title="Quitar">×</button></figcaption></figure>';
-    }).join('') : '<p class="ic-vacio" style="padding:8px 0">Aún no hay archivos. Suba la pieza final (de ChatGPT, Canva o CapCut).</p>';
+        '<figcaption><a href="' + esc(h.webUrl) + '" target="_blank" rel="noopener">' + esc(h.name) + '</a><span>' + Math.max(1, Math.round(n0(h.size) / 1024)).toLocaleString('es-CO') + ' KB</span><a class="mkt-bajar" href="' + esc(u) + '" download="' + esc(h.name) + '" title="Descargar para publicar">⬇</a><button class="cal-x" data-del="' + esc(h.id) + '" title="Quitar">×</button></figcaption></figure>';
+    }).join('') + (hijos.length > 1 ? '<p style="flex-basis:100%;margin:4px 0 0"><button class="ic-btn sec chico" id="bBajarTodo">⬇ Descargar todos (' + hijos.length + ')</button></p>' : '') : '<p class="ic-vacio" style="padding:8px 0">Aún no hay archivos. Suba la pieza final (de ChatGPT, Canva o CapCut).</p>';
+    const bt = c.querySelector('#bBajarTodo'); if (bt) bt.onclick = () => bajarArchivos(hijos);
     c.querySelectorAll('[data-del]').forEach((b) => { b.onclick = async () => {
       if (!(await U.confirmar('Quitar archivo', 'Se envía a la papelera de SharePoint (se puede recuperar).', 'Quitar', true))) return;
       try { await G.llamar('DELETE', '/sites/' + await G.sitio(CFG.sitio.host, CFG.sitio.ruta) + '/drive/items/' + b.dataset.del); await marcarCambioPieza(p); pintarPiezas(raiz, p); } catch (e) { U.aviso(U.mensajeError(e), 'err'); }
     }; });
+  }
+  // Descarga los archivos de la pieza (en orden de nombre: lámina 1, 2, 3…)
+  function bajarArchivos(hijos) {
+    hijos.filter((h) => h['@microsoft.graph.downloadUrl']).sort((a, b) => a.name.localeCompare(b.name, 'es', { numeric: true })).forEach((h, i) => setTimeout(() => {
+      const a = document.createElement('a'); a.href = h['@microsoft.graph.downloadUrl']; a.download = h.name; document.body.appendChild(a); a.click(); setTimeout(() => a.remove(), 1000);
+    }, i * 700));
+  }
+  async function archivosDe(p) {
+    try { return (await G.llamar('GET', '/sites/' + await G.sitio(CFG.sitio.host, CFG.sitio.ruta) + '/drive/root:/' + rutaUrl(carpeta(p)) + ':/children?$top=50')).value || []; }
+    catch (e) { if (e.status === 404) return []; throw e; }
   }
   async function subirGrande(ruta, archivo) {
     const sid = await G.sitio(CFG.sitio.host, CFG.sitio.ruta);
@@ -783,6 +794,6 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
   }
   // Funciones que usa el generador (js/generador.js)
   window.MKT = { dia, hoyISO, sumarDias, lunesDe, fLarga, fCorta, pad, temaDe, utm, redDeCanal, copiar, rutaUrl, chipCanal, chipEstado, opciones, nombreCorto, parecido, metVacia,
-    eventos, ronda, aprobadores, miDecision, guardarPub, soyAprobador, pintarEncabezado, semanaDe, conSemana, opcionesCopy, elegirOpcion };
+    eventos, ronda, aprobadores, miDecision, guardarPub, soyAprobador, pintarEncabezado, semanaDe, conSemana, opcionesCopy, elegirOpcion, archivosDe, bajarArchivos };
   window.addEventListener('DOMContentLoaded', arrancar);
 })();

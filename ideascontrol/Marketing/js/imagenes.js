@@ -130,7 +130,7 @@ window.MKT_IMG = (function () {
       const L = laminasDe(p), img = conImagen(p);
       return '<div class="img-fila">' + M().chipCanal(p.canal) + '<div class="img-txt"><a href="#pub/' + esc(p.Title) + '"><b>' + esc(limpio(p.titulo) || p.Title) + '</b></a><span class="sec">' +
           esc((p.formato || 'Imagen') + (img ? ' · ' + medidas(p) : '')) + (img && !diseno(p).descripcion ? ' · sin diseño de Claude' : '') + (p.copy ? '' : ' · sin copy') + '</span></div>' +
-        '<div class="img-btns">' + (p.copy ? '<button class="ic-btn sec chico" data-copy="' + esc(p.Title) + '">Copy</button>' : '') +
+        '<div class="img-btns">' + (p.copy ? '<button class="ic-btn sec chico" data-copy="' + esc(p.Title) + '">Copy</button>' : '') + '<button class="ic-btn sec chico" data-bajar="' + esc(p.Title) + '" title="Descargar la pieza subida (imagen o video) para publicarla">⬇ Pieza</button>' +
           (!img ? '' : L.length ? L.map((x, n) => '<button class="ic-btn chico" data-cop="' + esc(p.Title) + '" data-k="' + (n + 1) + '" title="' + esc(x) + '">Lám. ' + (n + 1) + '</button>').join('')
             : '<button class="ic-btn chico" data-cop="' + esc(p.Title) + '">Prompt imagen</button>') +
           (img ? '<button class="ic-btn sec chico" data-ver="' + esc(p.Title) + '" title="Ver el prompt">👁</button>' : '') + '</div></div>';
@@ -150,6 +150,10 @@ window.MKT_IMG = (function () {
       c.querySelectorAll('[data-copy]').forEach((b) => { b.onclick = () => { M().copiar(pub(b.dataset.copy).copy, 'Copy copiado: ' + b.dataset.copy); b.textContent = 'Copy ✔'; }; });
       c.querySelectorAll('[data-cop]').forEach((b) => { b.onclick = () => { const k = +b.dataset.k || 0; M().copiar(prompt(pub(b.dataset.cop), base, k), 'Prompt copiado: ' + b.dataset.cop + (k ? ' · lámina ' + k : '')); b.textContent = (k ? 'Lám. ' + k : 'Prompt') + ' ✔'; }; });
       c.querySelectorAll('[data-ver]').forEach((b) => { b.onclick = () => verUno(pub(b.dataset.ver)); });
+      c.querySelectorAll('[data-bajar]').forEach((b) => { b.onclick = () => U.conCarga(b, async () => {
+        try { const hs = await M().archivosDe(pub(b.dataset.bajar)); if (!hs.length) { U.aviso('Todavía no hay pieza subida en ' + b.dataset.bajar + '. Súbala en su ficha.', 'warn', 6000); return; } M().bajarArchivos(hs); U.aviso('Descargando ' + hs.length + ' archivo(s)', 'ok'); }
+        catch (e) { U.aviso(U.mensajeError(e), 'err'); }
+      }); });
       c.querySelectorAll('.img-txt a').forEach((x) => { x.onclick = () => U.cerrarModal(); });
       c.querySelector('#imEd').onclick = () => editar(() => semana(lunes));
       c.querySelector('#imCerrar').onclick = U.cerrarModal;
