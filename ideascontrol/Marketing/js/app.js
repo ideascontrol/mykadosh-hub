@@ -288,7 +288,9 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
         '</div><div class="ic-acciones"><button class="ic-btn" id="bGuardar">Guardar</button></div></form></div></section>' +
         MKT_IMG.seccion(p) +
         '<section class="ic-bloque"><div class="cab"><h2>Pieza</h2><span class="sec">Imagen, carrusel o video final</span></div><div class="cuerpo"><div id="piezas" class="mkt-piezas"><div class="ic-spinner"></div></div>' +
-          '<label class="ic-btn sec chico mkt-subir">Subir archivo(s)<input type="file" id="archivo" multiple accept="image/*,video/*,.pdf,.docx" hidden></label></div></section>' +
+          '<div class="gen-acc" style="align-items:center"><label class="ic-btn sec chico mkt-subir">Subir archivo(s)<input type="file" id="archivo" multiple accept="image/*,video/*,.pdf,.docx" hidden></label>' +
+          '<label class="sec" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="optImg"' + (optimizarSiempre() ? ' checked' : '') + '> Optimizar las imágenes al subir (peso y tamaño ' + esc(MKT_IMG.medidas(p).split(' (')[0]) + ')</label>' +
+          '<a class="sec" href="/ideascontrol/Imagenes/" target="_blank" rel="noopener">🗜️ Optimizar varias ↗</a></div></div></section>' +
         '<section class="ic-bloque"><div class="cab"><h2>Enlace con UTM</h2><span class="sec">Para saber qué publicación trae cada lead</span></div><div class="cuerpo"><div class="ic-form"><div class="ic-campos">' +
           '<div class="ic-campo c6"><label for="u_dest">Destino</label><select id="u_dest">' + CFG.destinos.map((d) => '<option value="' + esc(d[1]) + '">' + esc(d[0]) + '</option>').join('') + '</select></div>' +
           '<div class="ic-campo c3"><label for="u_med">Tipo</label><select id="u_med"><option value="organico">Orgánico</option><option value="pago">Pago</option></select></div>' +
@@ -341,7 +343,12 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     raiz.querySelectorAll('tr[data-m]').forEach((tr) => { tr.onclick = () => formMetrica(App.mets.find((m) => m.Title === tr.dataset.m), () => vistaPub(raiz)); });
     pintarAprobacion(raiz, p);
     pintarPiezas(raiz, p);
-    raiz.querySelector('#archivo').onchange = (e) => subirPiezas(raiz, p, Array.from(e.target.files || []));
+    raiz.querySelector('#optImg').onchange = (e) => { try { localStorage.setItem('mkt_optimizar', e.target.checked ? '1' : '0'); } catch (er) { /* sin almacenamiento */ } };
+    raiz.querySelector('#archivo').onchange = async (e) => {
+      let fs = Array.from(e.target.files || []);
+      if (raiz.querySelector('#optImg').checked) fs = await optimizar(fs, p);
+      subirPiezas(raiz, p, fs);
+    };
   }
 
   function pintarAprobacion(raiz, p) {
@@ -420,6 +427,18 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
       const r = await fetch(s.uploadUrl, { method: 'PUT', headers: { 'Content-Range': 'bytes ' + ini + '-' + (fin - 1) + '/' + archivo.size }, body: archivo.slice(ini, fin) });
       if (!r.ok && r.status !== 202) throw new Error('No se pudo subir ' + archivo.name + ' (' + r.status + ')');
     }
+  }
+  // Optimiza las imágenes (como TinyPNG) antes de subirlas: peso y, si son más grandes, las medidas de la red
+  const optimizarSiempre = () => { try { return localStorage.getItem('mkt_optimizar') !== '0'; } catch (e) { return true; } };
+  async function optimizar(archivos, p) {
+    const m = (MKT_IMG.medidas(p).match(/(\d+)\s*×\s*(\d+)/) || []).slice(1).map(Number), out = []; let antes = 0, despues = 0;
+    for (const f of archivos) {
+      if (!/^image\/(png|jpeg|webp)$/.test(f.type)) { out.push(f); continue; }
+      try { const r = await IC.comprimir(f, { formato: 'auto', calidad: 0.82, maxAncho: m[0] || 0, maxAlto: m[1] || 0 }); out.push(r.file); antes += r.antes; despues += r.despues; }
+      catch (e) { out.push(f); }
+    }
+    if (antes) U.aviso('Imágenes optimizadas: ' + IC.comprimir.kb(antes) + ' → ' + IC.comprimir.kb(despues) + ' (−' + Math.max(0, Math.round(100 * (1 - despues / antes))) + ' %)', 'ok', 5000);
+    return out;
   }
   async function subirPiezas(raiz, p, archivos) {
     if (!archivos.length) return;

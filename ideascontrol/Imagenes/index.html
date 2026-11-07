@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Optimizar imágenes · Ideas Control</title>
+<link rel="icon" href="/ideascontrol/assets/ideascontrol.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/css/ic.css?v=0.4.0">
+<style>
+  .op-zona { display: block; width: 100%; box-sizing: border-box; border: 2px dashed #b9c7d6; border-radius: 14px; background: #fff; padding: 34px 18px; text-align: center; cursor: pointer; transition: .15s; }
+  .op-zona.sobre { border-color: #0E76BC; background: #eef6fc; }
+  .op-zona b { font-size: 18px; color: #0B2945; display: block; margin-bottom: 6px; }
+  .op-opc { display: flex; flex-wrap: wrap; gap: 12px; margin: 14px 0; align-items: end; }
+  .op-opc label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #445; }
+  .op-opc select { min-width: 190px; }
+  .op-lista { margin-top: 14px; }
+  .op-fila { display: grid; grid-template-columns: 56px 1fr auto auto; gap: 12px; align-items: center; padding: 10px 12px; background: #fff; border: 1px solid #e3e8ef; border-radius: 10px; margin-bottom: 8px; }
+  .op-fila img { width: 56px; height: 56px; object-fit: cover; border-radius: 6px; background: #f2f4f7; }
+  .op-fila .nom { min-width: 0; } .op-fila .nom b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+  .op-fila .nom span { font-size: 12px; color: #667; }
+  .op-ahorro { font-weight: 700; color: #138a4e; white-space: nowrap; } .op-ahorro.no { color: #8a6a00; }
+  .op-total { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 12px; }
+  @media (max-width: 560px) { .op-fila { grid-template-columns: 44px 1fr; } .op-fila img { width: 44px; height: 44px; } .op-fila .op-ahorro, .op-fila a { grid-column: 2; } }
+</style>
+</head>
+<body>
+<header class="ic-header"><img class="logo" src="/ideascontrol/assets/ideascontrol.webp" alt="Ideas Control"><div class="app-nombre"><b>Optimizar imágenes</b><span>Reduce el peso de las piezas antes de publicarlas</span></div><span class="espacio"></span></header>
+<main class="ic-main">
+  <h1 class="ic-titulo">Optimizar imágenes</h1>
+  <p class="ic-subtitulo">Suelte todas las imágenes que quiera (no hay límite de 3). Se procesan aquí mismo en su navegador: no se suben a ningún servicio.</p>
+  <div class="op-opc">
+    <label>Formato<select id="oFmt"><option value="auto">Automático (JPG; PNG si tiene transparencia)</option><option value="jpg">JPG (lo más liviano)</option><option value="png">PNG optimizado (256 colores, como TinyPNG)</option><option value="webp">WebP</option></select></label>
+    <label>Calidad<select id="oCal"><option value="0.9">Alta (90)</option><option value="0.82" selected>Recomendada (82)</option><option value="0.72">Más liviana (72)</option></select></label>
+    <label>Tamaño máximo<select id="oTam"><option value="0x0">Mantener el tamaño</option><option value="1080x1350">Facebook / Instagram · 1080 × 1350</option><option value="1080x1920">TikTok / historias · 1080 × 1920</option><option value="546x312">LinkedIn · 546 × 312</option><option value="1200x1200">Máximo 1200 px</option><option value="2000x2000">Máximo 2000 px</option></select></label>
+  </div>
+  <div class="op-zona" id="zona" role="button" tabindex="0"><b>Arrastre aquí las imágenes</b><span class="sec">o haga clic para elegirlas · PNG, JPG o WebP</span></div>
+  <input type="file" id="archivos" accept="image/png,image/jpeg,image/webp" multiple hidden>
+  <div class="op-lista" id="lista"></div>
+  <div class="op-total" id="total" hidden></div>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="../shared/js/comprimir.js?v=0.1.0"></script>
+<script>
+(function () {
+  const $ = (s) => document.querySelector(s), kb = IC.comprimir.kb, res = [];
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const opciones = () => { const [w, h] = $('#oTam').value.split('x').map(Number); return { formato: $('#oFmt').value, calidad: +$('#oCal').value, maxAncho: w, maxAlto: h }; };
+  function total() {
+    const ok = res.filter((r) => r.res);
+    if (!ok.length) { $('#total').hidden = true; return; }
+    const a = ok.reduce((s, r) => s + r.res.antes, 0), d = ok.reduce((s, r) => s + r.res.despues, 0);
+    $('#total').hidden = false;
+    $('#total').innerHTML = '<b>' + ok.length + ' imagen(es): ' + kb(a) + ' → ' + kb(d) + ' (−' + Math.max(0, Math.round(100 * (1 - d / a))) + ' %)</b>' +
+      '<button class="ic-btn" id="bZip">Descargar todas (.zip)</button><button class="ic-btn sec" id="bLimpiar">Limpiar</button>';
+    $('#bZip').onclick = async () => {
+      const z = new JSZip(), usados = {};
+      ok.forEach((r) => { let n = r.res.file.name; if (usados[n]) n = n.replace(/(\.[^.]+)$/, '-' + (++usados[n]) + '$1'); else usados[n] = 1; z.file(n, r.res.file); });
+      const b = await z.generateAsync({ type: 'blob' }), u = URL.createObjectURL(b), x = document.createElement('a');
+      x.href = u; x.download = 'imagenes_optimizadas.zip'; document.body.appendChild(x); x.click(); setTimeout(() => { URL.revokeObjectURL(u); x.remove(); }, 2000);
+    };
+    $('#bLimpiar').onclick = () => { res.length = 0; $('#lista').innerHTML = ''; total(); };
+  }
+  async function procesar(files) {
+    const o = opciones();
+    for (const f of files) {
+      if (!/^image\//.test(f.type)) continue;
+      const fila = document.createElement('div'); fila.className = 'op-fila';
+      fila.innerHTML = '<img alt=""><div class="nom"><b>' + esc(f.name) + '</b><span>' + kb(f.size) + ' · optimizando…</span></div><span class="op-ahorro"></span><span></span>';
+      $('#lista').appendChild(fila); const r = { f }; res.push(r);
+      try {
+        r.res = await IC.comprimir(f, o);
+        const u = URL.createObjectURL(r.res.file), p = Math.round(100 * (1 - r.res.despues / r.res.antes));
+        fila.querySelector('img').src = u;
+        fila.querySelector('.nom').innerHTML = '<b>' + esc(r.res.file.name) + '</b><span>' + r.res.ancho + ' × ' + r.res.alto + ' px · ' + kb(r.res.antes) + ' → ' + kb(r.res.despues) + '</span>';
+        const ah = fila.querySelector('.op-ahorro'); ah.textContent = r.res.igual ? 'Ya estaba optimizada' : '−' + Math.max(0, p) + ' %'; if (r.res.igual || p < 5) ah.classList.add('no');
+        fila.lastElementChild.innerHTML = '<a class="ic-btn sec chico" href="' + u + '" download="' + esc(r.res.file.name) + '">Descargar</a>';
+      } catch (e) { fila.querySelector('.nom span').textContent = e.message; }
+      total();
+    }
+  }
+  const z = $('#zona');
+  $('#archivos').onchange = (e) => { procesar(Array.from(e.target.files || [])); e.target.value = ''; };
+  z.addEventListener('click', () => $('#archivos').click());
+  z.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('#archivos').click(); } });
+  z.addEventListener('dragover', (e) => { e.preventDefault(); z.classList.add('sobre'); });
+  z.addEventListener('dragleave', () => z.classList.remove('sobre'));
+  z.addEventListener('drop', (e) => { e.preventDefault(); z.classList.remove('sobre'); procesar(Array.from(e.dataTransfer.files || [])); });
+})();
+</script>
+</body>
+</html>

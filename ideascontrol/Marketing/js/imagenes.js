@@ -145,7 +145,7 @@ window.MKT_IMG = (function () {
       (pubs.length ? '<p class="sec" style="margin-top:0">Por cada publicación: <b>Copy</b> copia el texto para la red y <b>Prompt imagen</b> el prompt para la IA (en carruseles, uno por lámina: péguelos en orden en la misma conversación). ' +
           'Medidas: Facebook e Instagram ' + esc(CFG.medidasImagen.Facebook) + ' · LinkedIn ' + esc(CFG.medidasImagen.LinkedIn) + ' · TikTok ' + esc(CFG.medidasImagen.TikTok) + '.</p>' + html
         : '<p class="ic-vacio">No hay publicaciones esta semana. Genere primero el contenido de la semana en «Generar».</p>') +
-      '<div class="ic-acciones"><button class="ic-btn sec" id="imEd">Editar plantilla de imágenes</button><span class="espacio"></span><button class="ic-btn sec" id="imCerrar">Cerrar</button></div></div>', (c) => {
+      '<div class="ic-acciones"><button class="ic-btn sec" id="imEd">Editar plantilla de imágenes</button><a class="ic-btn sec" href="/ideascontrol/Imagenes/" target="_blank" rel="noopener">🗜️ Optimizar imágenes ↗</a><span class="espacio"></span><button class="ic-btn sec" id="imCerrar">Cerrar</button></div></div>', (c) => {
       const pub = (id) => pubs.find((x) => x.Title === id);
       c.querySelectorAll('[data-copy]').forEach((b) => { b.onclick = () => { M().copiar(pub(b.dataset.copy).copy, 'Copy copiado: ' + b.dataset.copy); b.textContent = 'Copy ✔'; }; });
       c.querySelectorAll('[data-cop]').forEach((b) => { b.onclick = () => { const k = +b.dataset.k || 0; M().copiar(prompt(pub(b.dataset.cop), base, k), 'Prompt copiado: ' + b.dataset.cop + (k ? ' · lámina ' + k : '')); b.textContent = (k ? 'Lám. ' + k : 'Prompt') + ' ✔'; }; });
