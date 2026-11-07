@@ -70,23 +70,38 @@ window.MKT_IMG = (function () {
 
   // ---------- el prompt de una publicación (o de una lámina del carrusel: k = 1…N) ----------
   // Varias imágenes: carrusel, o cualquier pieza (p. ej. TikTok en fotos) cuyo diseño trae 2 o más láminas
-  const laminasDe = (p) => { const l = diseno(p).laminas; return !esVideo(p) && (esCarrusel(p) || l.length > 1) ? l : []; };
+  // Tramos del video guardados al generar (VIDEO …: • Hook 0–3 s: pantalla «…» · voz «…» y las líneas «Canva …» de cada segmento)
+  function tramos(p) {
+    const L = String(p.notas || '').split(/\r?\n/), i = L.findIndex((x) => /^VIDEO \(/.test(x)); if (i < 0) return [];
+    const t = [], clips = [];
+    for (let k = i + 1; k < L.length && L[k].trim(); k++) {
+      const x = L[k];
+      if (/^•/.test(x.trim())) t.push(x.trim().replace(/^•\s*/, ''));
+      else if (/^\s*Canva /.test(x)) clips.push(x.trim().replace(/^Canva\s*/, ''));
+    }
+    return t.map((x) => { const nom = x.split(/[\s:]/)[0], c = clips.find((y) => U.norm(y).indexOf(U.norm(nom)) === 0); return x + (c ? ' — escena sugerida: ' + c.replace(/^[^:]*:\s*/, '') : ''); });
+  }
+  // Varias imágenes: carrusel, pieza con 2+ láminas (p. ej. TikTok en fotos) o los tramos de un video
+  const laminasDe = (p) => { if (esVideo(p)) return tramos(p); const l = diseno(p).laminas; return esCarrusel(p) || l.length > 1 ? l : []; };
+  const etq = (p) => esVideo(p) ? 'Tramo' : 'Lámina';
   const variasImg = (p) => laminasDe(p).length > 0;
   function prompt(p, base, k) {
-    const t = M().temaDe(p.tema_id) || {}, d = diseno(p), md = medidas(p), N = d.laminas.length;
+    const t = M().temaDe(p.tema_id) || {}, d = diseno(p), md = medidas(p), partes = laminasDe(p), N = partes.length, vid = esVideo(p);
     const lam = variasImg(p) && k && N;
     const L = ['', '═══════════════════════════════', 'INFORMACIÓN DE ESTA PIEZA',
       'Red: ' + (p.canal || ''),
-      'Medidas: ' + md,
-      'Formato: ' + (p.formato || 'Imagen') + (esVideo(p) ? ' → genera la PORTADA del video' : lam ? ' → imagen ' + k + ' de ' + N + ' (todas con la misma línea visual)' : esCarrusel(p) ? ' → genera UNA IMAGEN POR LÁMINA, todas con la misma línea visual' : ''),
+      'Medidas: ' + (lam ? md.replace(' — portada del video', '') : md),
+      'Formato: ' + (p.formato || 'Imagen') + (vid && lam ? ' → imagen para el TRAMO ' + k + ' de ' + N + ' del video (se usa como clip en CapCut; todas con la misma línea visual)' : vid ? ' → genera la PORTADA del video' : lam ? ' → imagen ' + k + ' de ' + N + ' (todas con la misma línea visual)' : esCarrusel(p) ? ' → genera UNA IMAGEN POR LÁMINA, todas con la misma línea visual' : ''),
       'Fecha de publicación: ' + M().fLarga(p.fecha),
       'Tema: ' + limpio(p.titulo || t.tema || '')];
-    L.push('Qué se ve' + (lam ? ' (línea visual de todo el carrusel)' : '') + ': ' + (d.descripcion || 'propón una escena que represente el tema con personas reales en un contexto laboral colombiano'));
+    L.push('Qué se ve' + (lam ? ' (línea visual de todas las imágenes)' : '') + ': ' + (d.descripcion || 'propón una escena que represente el tema con personas reales en un contexto laboral colombiano'));
     if (lam) {
-      if (d.texto) L.push('Textos generales del carrusel: ' + d.texto);
-      L.push('Láminas del carrusel:'); d.laminas.forEach((x, n) => L.push((n + 1 === k ? '→ ' : '• ') + x));
-      L.push('', 'ESTA IMAGEN: LÁMINA ' + k + ' DE ' + N + ' → ' + d.laminas[k - 1],
-        k === 1 ? 'Es la primera lámina (portada del carrusel): usa el logo adjunto y define la línea visual que seguirán las demás.'
+      if (d.texto) L.push('Textos generales: ' + d.texto);
+      const E = vid ? 'TRAMO' : 'LÁMINA';
+      L.push(vid ? 'Tramos del video:' : 'Láminas del carrusel:'); partes.forEach((x, n) => L.push((n + 1 === k ? '→ ' : '• ') + x));
+      L.push('', 'ESTA IMAGEN: ' + E + ' ' + k + ' DE ' + N + ' → ' + partes[k - 1],
+        vid ? 'Imagen vertical para este tramo del video: el texto «pantalla» va grande y legible; la «voz» es solo contexto (no la escribas). ' + (k === 1 ? 'Usa el logo adjunto y define la línea visual de los demás tramos.' : 'Mantén la misma línea visual de los tramos anteriores de esta conversación.')
+          : k === 1 ? 'Es la primera lámina (portada del carrusel): usa el logo adjunto y define la línea visual que seguirán las demás.'
           : 'Mantén exactamente la misma línea visual de las láminas anteriores de esta conversación: colores, tipografía, estilo de fotografía, ubicación del logo y número de lámina.');
     } else {
       L.push('Texto en la imagen (exacto): ' + (d.texto || limpio(t.hook) || 'propón un titular corto (máximo 8 palabras) a partir del tema'));
@@ -101,22 +116,23 @@ window.MKT_IMG = (function () {
   function seccion(p) {
     return '<section class="ic-bloque"><div class="cab"><h2>🖼️ Prompt para la imagen</h2><span class="sec">' + esc(medidas(p)) + '</span></div><div class="cuerpo">' +
       '<p class="sec" style="margin:0 0 8px">Cópielo y péguelo en la IA de imágenes (ChatGPT, Gemini, Canva…). Toma el diseño que propuso Claude para esta pieza' + (diseno(p).descripcion ? '' : ' (esta no lo tiene: la IA propondrá la escena)') + '.</p>' +
-      (laminasDe(p).length ? '<p class="sec" style="margin:0 0 8px">Carrusel de ' + laminasDe(p).length + ' láminas: un prompt por lámina. Péguelos en orden en la misma conversación.</p><div class="gen-acc">' +
-        laminasDe(p).map((x, n) => '<button class="ic-btn' + (n ? ' sec' : '') + ' chico" type="button" data-img-lam="' + (n + 1) + '" title="' + esc(x) + '">Lámina ' + (n + 1) + '</button>').join('') + '</div>' : '') +
+      (laminasDe(p).length ? '<p class="sec" style="margin:0 0 8px">' + (esVideo(p) ? 'Video de ' + laminasDe(p).length + ' tramos: un prompt para la portada y uno por tramo (imágenes para armar el video en CapCut).' : 'Carrusel de ' + laminasDe(p).length + ' láminas: un prompt por lámina.') + ' Péguelos en orden en la misma conversación.</p><div class="gen-acc">' +
+        (esVideo(p) ? '<button class="ic-btn chico" type="button" data-img-copiar>Portada</button>' : '') +
+        laminasDe(p).map((x, n) => '<button class="ic-btn' + (n || esVideo(p) ? ' sec' : '') + ' chico" type="button" data-img-lam="' + (n + 1) + '" title="' + esc(x) + '">' + etq(p) + ' ' + (n + 1) + '</button>').join('') + '</div>' : '') +
       '<div class="gen-acc"' + (laminasDe(p).length ? ' style="margin-top:8px"' : '') + '>' + (laminasDe(p).length ? '' : '<button class="ic-btn" type="button" data-img-copiar>Copiar prompt</button>') +
         '<button class="ic-btn sec" type="button" data-img-ver>Ver</button><button class="ic-btn sec" type="button" data-img-editar>Editar plantilla</button></div></div></section>';
   }
   function enlazar(raiz, p) {
     if (!raiz.querySelector('[data-img-ver]')) return;
     const c = raiz.querySelector('[data-img-copiar]'); if (c) c.onclick = async () => M().copiar(await promptDe(p), 'Prompt de la imagen copiado');
-    raiz.querySelectorAll('[data-img-lam]').forEach((b) => { b.onclick = async () => { M().copiar(await promptDe(p, +b.dataset.imgLam), 'Prompt de la lámina ' + b.dataset.imgLam + ' copiado'); b.textContent = 'Lámina ' + b.dataset.imgLam + ' ✔'; }; });
+    raiz.querySelectorAll('[data-img-lam]').forEach((b) => { b.onclick = async () => { M().copiar(await promptDe(p, +b.dataset.imgLam), 'Prompt: ' + etq(p).toLowerCase() + ' ' + b.dataset.imgLam + ' copiado'); b.textContent = etq(p) + ' ' + b.dataset.imgLam + ' ✔'; }; });
     raiz.querySelector('[data-img-ver]').onclick = async () => verUno(p);
     raiz.querySelector('[data-img-editar]').onclick = async () => { await plantilla(); editar(); };
   }
   async function verUno(p, k) {
-    if (!k && laminasDe(p).length) k = 1;
+    if (!k && laminasDe(p).length && !esVideo(p)) k = 1;
     const txt = await promptDe(p, k);
-    U.modal('Prompt de la imagen · ' + p.Title + (k ? ' · lámina ' + k + ' de ' + laminasDe(p).length : ''), '<div class="ic-form"><p class="sec" style="margin-top:0">' + esc(p.canal) + ' · ' + esc(medidas(p)) + '</p><pre class="mkt-pre">' + esc(txt) + '</pre>' +
+    U.modal('Prompt de la imagen · ' + p.Title + (k ? ' · ' + etq(p).toLowerCase() + ' ' + k + ' de ' + laminasDe(p).length : ''), '<div class="ic-form"><p class="sec" style="margin-top:0">' + esc(p.canal) + ' · ' + esc(medidas(p)) + '</p><pre class="mkt-pre">' + esc(txt) + '</pre>' +
       '<div class="ic-acciones"><span class="espacio"></span><button class="ic-btn" id="imC">Copiar</button></div></div>', (c) => { c.querySelector('#imC').onclick = () => M().copiar(txt, 'Prompt de la imagen copiado'); });
   }
 
@@ -132,7 +148,7 @@ window.MKT_IMG = (function () {
       return '<div class="img-fila">' + M().chipCanal(p.canal) + '<div class="img-txt"><a href="#pub/' + esc(p.Title) + '"><b>' + esc(limpio(p.titulo) || p.Title) + '</b></a><span class="sec">' +
           esc((p.formato || 'Imagen') + (img ? ' · ' + medidas(p) : '')) + (img && !diseno(p).descripcion ? ' · sin diseño de Claude' : '') + (p.copy ? '' : ' · sin copy') + '</span></div>' +
         '<div class="img-btns">' + (p.copy ? '<button class="ic-btn sec chico" data-copy="' + esc(p.Title) + '">Copy</button>' : '') + '<button class="ic-btn sec chico" data-bajar="' + esc(p.Title) + '" title="Descargar la pieza subida (imagen o video) para publicarla">⬇ Pieza</button>' +
-          (!img ? '' : L.length ? L.map((x, n) => '<button class="ic-btn chico" data-cop="' + esc(p.Title) + '" data-k="' + (n + 1) + '" title="' + esc(x) + '">Lám. ' + (n + 1) + '</button>').join('')
+          (!img ? '' : L.length ? (esVideo(p) ? '<button class="ic-btn chico" data-cop="' + esc(p.Title) + '">Portada</button>' : '') + L.map((x, n) => '<button class="ic-btn chico" data-cop="' + esc(p.Title) + '" data-k="' + (n + 1) + '" title="' + esc(x) + '">' + (esVideo(p) ? 'Tr. ' : 'Lám. ') + (n + 1) + '</button>').join('')
             : '<button class="ic-btn chico" data-cop="' + esc(p.Title) + '">Prompt imagen</button>') +
           (img ? '<button class="ic-btn sec chico" data-ver="' + esc(p.Title) + '" title="Ver el prompt">👁</button>' : '') + '</div></div>';
     };
