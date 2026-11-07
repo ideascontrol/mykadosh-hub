@@ -130,7 +130,7 @@ const App = { usuario: null, ex: null, plan: null, word: null, dia: '', lect: nu
     const meta = await G.llamar('GET', item(CFG.word));
     const r = await fetch(meta['@microsoft.graph.downloadUrl']); if (!r.ok) throw new Error('No se pudo descargar el Word (' + r.status + ').');
     const zip = await Z.loadAsync(await r.arrayBuffer());
-    const xml = await zip.file('word/document.xml').async('string');
+    const xml = (await zip.file('word/document.xml').async('string')).replace(/^\uFEFF/, '');   // Word para la web guarda con BOM
     const doc = new DOMParser().parseFromString(xml, 'application/xml');
     if (doc.getElementsByTagName('parsererror').length) throw new Error('No se pudo leer el contenido del Word.');
     App.word = { zip, doc, meta };
@@ -339,7 +339,7 @@ const App = { usuario: null, ex: null, plan: null, word: null, dia: '', lect: nu
   async function limpiarEncabezados(zip) {
     let n = 0;
     for (const nom of Object.keys(zip.files).filter((k) => /^word\/(header|footer)\d*\.xml$/.test(k))) {
-      const d = new DOMParser().parseFromString(await zip.file(nom).async('string'), 'application/xml');
+      const d = new DOMParser().parseFromString((await zip.file(nom).async('string')).replace(/^\uFEFF/, ''), 'application/xml');
       let cambio = false;
       Array.from(d.getElementsByTagNameNS(W, 'p')).forEach((pp) => {
         if (!RE_HASH.test(textoP(pp).trim())) return;

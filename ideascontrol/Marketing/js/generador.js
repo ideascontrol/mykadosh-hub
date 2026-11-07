@@ -558,6 +558,32 @@ window.MKT_GEN = (function () {
   }
 
 
+  // ---------- Fechas del Word de la semana: pone en cada pieza (por su PUB-…) la fecha de publicación actual ----------
+  const RE_DIA = /(Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo) \d{1,2} de [a-záéíóúñ]+/;
+  async function fechasEnWord(t) {
+    const W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main', docs = (await hijos(GC.carpetaSemanas + '/' + lunesTema(t))).filter((x) => /\.docx$/i.test(x.name));
+    const Z = window.JSZip || (await IC_DOCX.cargarZip()), out = [];
+    for (const w of docs) {
+      const r = await fetch(w['@microsoft.graph.downloadUrl']); if (!r.ok) continue;
+      const zip = await Z.loadAsync(await r.arrayBuffer()), doc = new DOMParser().parseFromString((await zip.file('word/document.xml').async('string')).replace(/^\uFEFF/, ''), 'application/xml');   // Word para la web guarda con BOM
+      if (doc.getElementsByTagName('parsererror').length) { out.push(w.name + ' (no se pudo leer)'); continue; }
+      const ps = Array.from(doc.getElementsByTagNameNS(W, 'p')), txt = (p) => Array.from(p.getElementsByTagNameNS(W, 't')).map((x) => x.textContent).join('');
+      let n = 0;
+      const poner = (p, nuevo) => { for (const tn of p.getElementsByTagNameNS(W, 't')) { if (RE_DIA.test(tn.textContent)) { const v = tn.textContent.replace(RE_DIA, nuevo); if (v !== tn.textContent) { tn.textContent = v; n++; } return; } } };
+      ps.forEach((p, i) => {
+        const m = txt(p).match(/PUB-\d{3,}/); if (!m || !RE_DIA.test(txt(p))) return;
+        const pub = App.pubs.find((x) => x.Title === m[0]); if (!pub) return;
+        const nuevo = diaTitulo(M().dia(pub.fecha)); poner(p, nuevo);
+        for (let k = i - 1; k >= Math.max(0, i - 2); k--) { const tt = txt(ps[k]).trim(); if (/^(Lunes|Martes|Miércoles|Jueves|Viernes|Sábado|Domingo) \d{1,2} de [a-záéíóúñ]+$/.test(tt)) { poner(ps[k], nuevo); break; } }
+      });
+      if (!n) continue;
+      zip.file('word/document.xml', new TextEncoder().encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n' + new XMLSerializer().serializeToString(doc.documentElement)));
+      await G.subirArchivo(GC.carpetaSemanas + '/' + lunesTema(t) + '/' + w.name, await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }));
+      out.push(w.name + ' (' + n + ')');
+    }
+    return out;
+  }
+
   // ---------- ¿cambió el tema después de generar? ----------
   // Al generar se guarda una «foto» de la matriz del tema; si después cambia, se avisa para volver a generar.
   const CAMPOS_MATRIZ = [['tema', 'Tema'], ['kpis', 'KPIs'], ['hook', 'Hook / guion'], ['problema', 'Problema'], ['autoridad', 'Autoridad'], ['solucion', 'Solución'], ['cta', 'CTA'],
@@ -592,5 +618,5 @@ window.MKT_GEN = (function () {
       '<a class="ic-btn chico" href="#generar/' + esc(t.Title) + '/' + x.tipo + '">Volver a generar</a></div>').join('');
   }
 
-  return { vista, avisoCambios, cambiosTema, _slots: slots, _leer: leer, _armarPrompt: armarPrompt };
+  return { vista, avisoCambios, cambiosTema, fechasEnWord, _slots: slots, _leer: leer, _armarPrompt: armarPrompt };
 })();

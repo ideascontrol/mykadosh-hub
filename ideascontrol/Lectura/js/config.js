@@ -5,7 +5,7 @@
    Dejar de heredar permisos y dejar solo tu cuenta.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'PER-01', nombre: 'De Dios para el camino', version: '0.2.3' },
+  app: { id: 'PER-01', nombre: 'De Dios para el camino', version: '0.2.4' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',

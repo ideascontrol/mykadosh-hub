@@ -758,16 +758,32 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     const grupos = {}; activas.filter((p) => fbig.indexOf(p) < 0).forEach((p) => { const k = semanaDe(p) + '|' + p.canal + '|' + dia(p.fecha); (grupos[k] = grupos[k] || []).push(p); });
     const vacias = []; Object.keys(grupos).forEach((k) => { const g = grupos[k]; if (g.length > 1) g.filter((p) => borrable(p) && !String(p.copy || '').trim() && (p.estado || 'Planeada') === 'Planeada').slice(0, g.length - 1).forEach((p) => vacias.push(p)); });
     const fila = (k, p, txt) => '<label class="mkt-org"><input type="checkbox" data-org="' + k + '" data-id="' + esc(p.Title) + '" checked><span><b>' + esc(p.Title) + '</b> · ' + esc(fLarga(p.fecha)) + ' · ' + esc(p.canal) + ' · ' + esc(p.estado || '') + ' — ' + esc(txt) + '<span class="sec">' + esc((p.titulo || '').slice(0, 90)) + '</span></span></label>';
-    if (!fbig.length && !renombrar.length && !vacias.length) { U.aviso('Todo está organizado: no hay «Facebook / Instagram», ni LinkedIn sin nombre, ni duplicados vacíos.', 'ok', 6000); return; }
+    // Instagram va de martes a viernes: semanas (de esta en adelante) con Instagram el lunes → cada una un día después
+    const igMover = [];
+    Array.from(new Set(activas.filter((p) => p.canal === 'Instagram' && semanaDe(p) >= desde).map(semanaDe))).forEach((s) => {
+      const ig = activas.filter((p) => p.canal === 'Instagram' && semanaDe(p) === s).sort((a, b) => dia(a.fecha).localeCompare(dia(b.fecha)));
+      if (ig.some((p) => dia(p.fecha) === s)) ig.forEach((p, k) => igMover.push({ p, s, a: k < 4 ? sumarDias(s, k + 1) : '' }));   // propuesta: martes, miércoles, jueves, viernes en orden
+    });
+    if (!fbig.length && !renombrar.length && !vacias.length && !igMover.length) { U.aviso('Todo está organizado: no hay «Facebook / Instagram», ni LinkedIn sin nombre, ni duplicados vacíos.', 'ok', 6000); return; }
     U.modal('Organizar redes', '<div class="ic-form"><p class="sec" style="margin-top:0">Marque lo que quiere aplicar. Solo se borra de la semana del ' + esc(fCorta(desde)) + ' en adelante; lo publicado, lo programado y lo que tiene métricas no se toca. Lo que se borra va a la papelera de SharePoint (se puede recuperar).</p>' +
       (fbig.length ? '<h3 class="img-dia">Quitar «Facebook / Instagram» (' + fbig.length + ')</h3><p class="sec" style="margin:0 0 4px">Si ese día ya hay una publicación de Facebook, se borra; si no, se convierte en la de Facebook de ese día (conserva el tema y la fecha).</p>' +
         fbig.map((p) => hayFb(p) ? fila('borrar', p, 'se borra (ya hay Facebook ese día)') : fila('ren:Facebook', p, 'pasa a «Facebook»')).join('') : '') +
       (renombrar.length ? '<h3 class="img-dia">Nombrar los LinkedIn (' + renombrar.length + ')</h3>' + renombrar.map((x) => fila('ren:' + x.a, x.p, 'pasa a «' + x.a + '»')).join('') : '') +
+      (igMover.length ? '<h3 class="img-dia">Instagram de martes a viernes (' + igMover.length + ')</h3><p class="sec" style="margin:0 0 4px">Elija el día de cada una tal como la programó en Instagram. Las fechas también se corrigen en el Word de la semana.</p>' +
+        igMover.map((x) => '<div class="mkt-org"><span style="flex:1"><b>' + esc(x.p.Title) + '</b> · hoy: ' + esc(fLarga(x.p.fecha)) + ' · ' + esc(x.p.formato || '') + '<span class="sec">' + esc((x.p.titulo || '').slice(0, 90)) + '</span></span>' +
+          '<select data-igm="' + esc(x.p.Title) + '"><option value="">No cambiar</option>' + [0, 1, 2, 3, 4, 5, 6].map((d) => { const f = sumarDias(x.s, d); return '<option value="' + f + '"' + (f === x.a ? ' selected' : '') + '>' + esc(fLarga(f)) + '</option>'; }).join('') + '<option value="borrar">Borrar</option></select></div>').join('') : '') +
       (vacias.length ? '<h3 class="img-dia">Duplicados vacíos: misma red y día, sin copy (' + vacias.length + ')</h3>' + vacias.map((p) => fila('borrar', p, 'se borra')).join('') : '') +
       '<div class="ic-acciones"><span class="espacio"></span><button class="ic-btn sec" id="oCancel">Cancelar</button><button class="ic-btn" id="oOk">Aplicar</button></div></div>', (m) => {
       m.querySelector('#oCancel').onclick = U.cerrarModal;
       m.querySelector('#oOk').onclick = () => U.conCarga(m.querySelector('#oOk'), async () => {
-        let b = 0, r = 0; const err = [];
+        let b = 0, r = 0; const err = [], temasW = new Set();
+        for (const s of m.querySelectorAll('[data-igm]')) {
+          const p = pubDe(s.dataset.igm); if (!p || !s.value) continue;
+          try {
+            if (s.value === 'borrar') { await G.eliminar(L.pubs, p._id); App.pubs = App.pubs.filter((y) => y !== p); b++; }
+            else if (s.value !== dia(p.fecha)) { await guardarPub(p, conSemana({ fecha: s.value }, semanaDe(p))); temasW.add(p.tema_id); r++; }
+          } catch (e) { err.push(p.Title + ': ' + U.mensajeError(e)); }
+        }
         for (const x of m.querySelectorAll('[data-org]:checked')) {
           const p = pubDe(x.dataset.id); if (!p) continue;
           try {
@@ -775,7 +791,9 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
             else { await guardarPub(p, { canal: x.dataset.org.slice(4) }); r++; }
           } catch (e) { err.push(p.Title + ': ' + U.mensajeError(e)); }
         }
-        U.cerrarModal(); U.aviso(b + ' borrada(s) · ' + r + ' cambiada(s) de red' + (err.length ? ' · ' + err.join(' · ') : ''), err.length ? 'warn' : 'ok', 8000);
+        const words = [];
+        for (const id of temasW) { const t = temaDe(id); if (t) { try { words.push.apply(words, await MKT_GEN.fechasEnWord(t)); } catch (e) { err.push('Word ' + id + ': ' + U.mensajeError(e)); } } }
+        U.cerrarModal(); U.aviso(b + ' borrada(s) · ' + r + ' cambiada(s)' + (words.length ? ' · Word corregido: ' + words.join(', ') : '') + (err.length ? ' · ' + err.join(' · ') : ''), err.length ? 'warn' : 'ok', 8000);
         pintarEncabezado(); if (despues) despues();
       });
     });

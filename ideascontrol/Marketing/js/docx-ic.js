@@ -408,5 +408,5 @@ window.IC_DOCX = (function () {
     return empacar(doc);
   }
 
-  return { cargar, contenido, newsletter, informe };
+  return { cargar, cargarZip, contenido, newsletter, informe };
 })();
