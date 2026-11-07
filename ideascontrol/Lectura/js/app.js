@@ -82,7 +82,10 @@ const App = { usuario: null, ex: null, plan: null, word: null, dia: '', lect: nu
     plantilla.split(/(\{referencia\}|\{texto\}|\{aplicacion\}|\{sugerencia\})/).forEach((p) => {
       const k = (p.match(/^\{(\w+)\}$/) || [])[1];
       if (k && refs[k]) partes.push(refs[k] + fila);
-      else if (p) for (let i = 0; i < p.length; i += 200) partes.push('"' + p.slice(i, i + 200).replace(/"/g, '""') + '"');
+      else if (p) p.replace(/\r/g, '').split('\n').forEach((l, j) => {
+        if (j) partes.push('CHAR(10)');
+        for (let i = 0; i < l.length; i += 200) partes.push('"' + l.slice(i, i + 200).replace(/"/g, '""') + '"');
+      });
     });
     return '=' + partes.join('&');
   }
