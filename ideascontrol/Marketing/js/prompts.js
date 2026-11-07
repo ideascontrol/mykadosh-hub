@@ -27,7 +27,7 @@ window.MKT_PROMPTS = {
     '• Fondos limpios: blanco, gris muy claro o azul oscuro, con buen contraste.',
     '• Tipografía sans-serif moderna (estilo Montserrat o Inter), en negrilla para el titular.',
     '• Estilo profesional, limpio y corporativo; nada recargado ni con apariencia de infografía.',
-    '• Deja libre la esquina superior izquierda para poner el logo después. No dibujes logos, marcas ni sellos.',
+    '• Logo: usa el logo de Ideas Control que te adjunto, sin modificarlo (ni colores, ni letras, ni proporciones), en la esquina superior izquierda. Si ya lo tienes de una imagen anterior en esta conversación, úsalo igual. No inventes otros logos, marcas ni sellos.',
     '',
     '3. Composición',
     '• El texto de la imagen es el protagonista: titular grande y, si hay, una línea de apoyo pequeña.',
@@ -44,7 +44,7 @@ window.MKT_PROMPTS = {
     '• Reel / video: la portada del video, con el gancho como titular.',
     '• LinkedIn (horizontal): titular a un lado e imagen al otro.',
     '',
-    '6. Antes de entregar, verifica: medidas correctas, texto completo y bien escrito dentro de los márgenes, contraste legible y colores de marca.',
+    '6. Antes de entregar, verifica: medidas correctas, logo igual al adjunto, texto completo y bien escrito dentro de los márgenes, contraste legible y colores de marca.',
     '',
     '7. Genera directamente la imagen terminada, sin explicaciones ni alternativas.'
   ].join('\n'),
