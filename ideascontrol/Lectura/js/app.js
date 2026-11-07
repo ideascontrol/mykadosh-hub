@@ -335,8 +335,23 @@ const App = { usuario: null, ex: null, plan: null, word: null, dia: '', lect: nu
     actualizarIndice(doc, App.word && App.word.paginas);
     return info;
   }
+  // Quita los hashtags del encabezado/pie de página (deja logos e imágenes). Devuelve cuántos archivos cambió.
+  async function limpiarEncabezados(zip) {
+    let n = 0;
+    for (const nom of Object.keys(zip.files).filter((k) => /^word\/(header|footer)\d*\.xml$/.test(k))) {
+      const d = new DOMParser().parseFromString(await zip.file(nom).async('string'), 'application/xml');
+      let cambio = false;
+      Array.from(d.getElementsByTagNameNS(W, 'p')).forEach((pp) => {
+        if (!RE_HASH.test(textoP(pp).trim())) return;
+        Array.from(pp.getElementsByTagNameNS(W, 'r')).forEach((r) => { if (r.getElementsByTagNameNS(W, 't').length && !r.getElementsByTagNameNS(W, 'drawing').length && r.parentNode) { r.parentNode.removeChild(r); cambio = true; } });
+      });
+      if (cambio) { zip.file(nom, new TextEncoder().encode(xmlDe(d))); n++; }
+    }
+    return n;
+  }
   const xmlDe = (doc) => '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n' + new XMLSerializer().serializeToString(doc.documentElement);
   async function subirWord() {
+    await limpiarEncabezados(App.word.zip);
     App.word.zip.file('word/document.xml', new TextEncoder().encode(xmlDe(App.word.doc)));
     const blob = await App.word.zip.generateAsync({ type: 'blob', compression: 'DEFLATE', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
     const r = await G.subirArchivo(CFG.word, blob);
@@ -408,6 +423,7 @@ const App = { usuario: null, ex: null, plan: null, word: null, dia: '', lect: nu
         if (!quedan.length) { U.aviso('No hay entradas documentadas entre el ' + dmy(desde) + ' y el ' + dmy(hasta) + '.', 'warn', 7000); return; }
         E.lista.filter((s) => quedan.indexOf(s) < 0).forEach(quitarEntrada);
         quitarHashtags(doc); asegurarMarcadores(doc); actualizarIndice(doc, null);
+        await limpiarEncabezados(zip);
         const subir = async () => { zip.file('word/document.xml', new TextEncoder().encode(xmlDe(doc))); await G.subirArchivo(tmp, await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' })); };
         await subir();
         let buf = await pdfDe(tmp);
