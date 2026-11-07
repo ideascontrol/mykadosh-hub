@@ -141,6 +141,7 @@ const App = { usuario: null, ex: null, plan: null, word: null, dia: '', lect: nu
   const estiloP = (p) => { const pp = hijosW(p, 'pPr')[0], ps = pp && hijosW(pp, 'pStyle')[0]; return ps ? ps.getAttributeNS(W, 'val') : ''; };
   const RE_FECHA = /^\s*(\d{2})\/(\d{2})\/(\d{4})\s*[–—-]/;
   const RE_HASH = /^#[^\s#]+(\s+#[^\s#]+)*$/;
+  const RE_CIERRE = /^¡?\s*dios te bendiga\s*[.!]*$/i;      // va en Facebook, no en el Word
   const PENDIENTE = 'Pendiente';
   const MESES = { ene: 1, feb: 2, mar: 3, abr: 4, may: 5, jun: 6, jul: 7, ago: 8, sep: 9, set: 9, oct: 10, nov: 11, dic: 12 };
   const esSalto = (el) => Array.from(el.getElementsByTagNameNS(W, 'br')).some((b) => b.getAttributeNS(W, 'type') === 'page');
@@ -167,7 +168,7 @@ const App = { usuario: null, ex: null, plan: null, word: null, dia: '', lect: nu
     lista.forEach((s, k) => { s.els = todos.slice(s.i + 1, k + 1 < lista.length ? lista[k + 1].i : (fin >= 0 ? fin : todos.length)); });
     return { body, todos, estilo, lista };
   }
-  const contenido = (s) => s.els.filter((el) => el.localName !== 'p' || textoP(el).trim()).map((el) => el.localName === 'p' ? textoP(el).trim() : '[tabla]').filter((t) => t !== CFG.cierre && !RE_HASH.test(t));
+  const contenido = (s) => s.els.filter((el) => el.localName !== 'p' || textoP(el).trim()).map((el) => el.localName === 'p' ? textoP(el).trim() : '[tabla]').filter((t) => !RE_CIERRE.test(t) && !RE_HASH.test(t));
   const esPendiente = (s) => { const c = contenido(s); return !c.length || c[0] === PENDIENTE || c[0].indexOf(CFG.relleno) === 0; };
   function estadoWord(f) {
     if (!App.word) return '';
@@ -197,11 +198,11 @@ const App = { usuario: null, ex: null, plan: null, word: null, dia: '', lect: nu
     const doc = App.word.doc, E = entradas(doc);
     if (!E.estilo) throw new Error('No encontré en el Word las entradas por fecha («DD/MM/AAAA – Lectura»).');
     // Modelo de formato: la entrada documentada más reciente
-    const modelo = E.lista.find((e) => e.propia && !esPendiente(e) && e.els.some((el) => textoP(el).trim() === CFG.cierre)) || E.lista.find((e) => e.propia) || E.lista[0];
+    const modelo = E.lista.find((e) => e.propia && !esPendiente(e)) || E.lista.find((e) => e.propia) || E.lista[0];
     const mb = modelo.els.filter((el) => el.localName === 'p' && textoP(el).trim());
-    const mTexto = mb[0] || null, mCierre = mb.find((el) => textoP(el).trim() === CFG.cierre) || mTexto;
+    const mTexto = mb[0] || null;
     const nuevos = [parrafo(doc, modelo.p, tituloDia(f))].concat(r
-      ? [parrafo(doc, mTexto, (r.ref + ' ' + (r.texto || '')).trim()), parrafo(doc, mTexto, r.idea), parrafo(doc, mTexto, r.recuerda), parrafo(doc, mTexto, r.aplicacion), parrafo(doc, mCierre, CFG.cierre)]
+      ? [parrafo(doc, mTexto, (r.ref + ' ' + (r.texto || '')).trim()), parrafo(doc, mTexto, r.idea), parrafo(doc, mTexto, r.recuerda), parrafo(doc, mTexto, r.aplicacion)]
       : [parrafo(doc, mTexto, PENDIENTE)]);
     const mismas = E.lista.filter((e) => e.propia === f);
     if (mismas.length) {
@@ -225,9 +226,10 @@ const App = { usuario: null, ex: null, plan: null, word: null, dia: '', lect: nu
   }
 
   // ---------- Reglas del Word: hasta el domingo de la semana a publicar, sin hashtags, índice al día ----------
+  // Quita de las entradas los hashtags y el «Dios te bendiga» (esos van solo en Facebook)
   function quitarHashtags(doc) {
     const E = entradas(doc); let n = 0;
-    E.lista.forEach((s) => s.els.forEach((el) => { if (el.localName === 'p' && RE_HASH.test(textoP(el).trim())) { el.parentNode.removeChild(el); n++; } }));
+    E.lista.forEach((s) => s.els.forEach((el) => { const t = el.localName === 'p' ? textoP(el).trim() : ''; if (t && (RE_HASH.test(t) || RE_CIERRE.test(t))) { el.parentNode.removeChild(el); n++; } }));
     return n;
   }
   // Entradas después del domingo de la semana a publicar
@@ -280,13 +282,21 @@ const App = { usuario: null, ex: null, plan: null, word: null, dia: '', lect: nu
   }
   function actualizarIndice(doc, paginas) {
     const filas = filasIndice(doc); if (!filas) return false;
-    const plantilla = filas.find((p) => p.getElementsByTagNameNS(W, 'hyperlink').length === 1 && p.getElementsByTagNameNS(W, 't').length === 2);
+    const conCampo = (p) => Array.from(p.getElementsByTagNameNS(W, 'instrText')).some((t) => /^\s*TOC\b/.test(t.textContent));
+    const plantilla = filas.find((p) => !conCampo(p) && p.getElementsByTagNameNS(W, 'hyperlink').length === 1 && p.getElementsByTagNameNS(W, 't').length === 2)
+      || filas.find((p) => p.getElementsByTagNameNS(W, 'hyperlink').length === 1 && p.getElementsByTagNameNS(W, 't').length === 2);
     if (!plantilla) return false;
     const pags = Object.assign(estimarPaginas(doc), paginas || {});
     const primero = filas[0], h0 = primero.getElementsByTagNameNS(W, 'hyperlink')[0];
-    const prefijo = Array.from(primero.childNodes).filter((n) => n.nodeType === 1 && n.localName !== 'pPr' && (!h0 || (n.compareDocumentPosition(h0) & 4)));   // inicio del campo TOC
+    // inicio del campo TOC (begin, instrText, separate) una sola vez
+    const prefijo = []; let listo = false;
+    Array.from(primero.childNodes).forEach((n) => {
+      if (listo || n.nodeType !== 1 || n.localName === 'pPr' || (h0 && !(n.compareDocumentPosition(h0) & 4))) return;
+      prefijo.push(n); if (Array.from(n.getElementsByTagNameNS(W, 'fldChar')).some((c) => c.getAttributeNS(W, 'fldCharType') === 'separate')) listo = true;
+    });
     const nuevas = entradas(doc).lista.filter((s) => s.ancla).map((s) => {
       const p = plantilla.cloneNode(true);
+      Array.from(p.childNodes).forEach((n) => { if (n.nodeType === 1 && n.localName !== 'pPr' && n.localName !== 'hyperlink') p.removeChild(n); });
       ['paraId', 'textId'].forEach((a) => p.removeAttributeNS('http://schemas.microsoft.com/office/word/2010/wordml', a));
       p.getElementsByTagNameNS(W, 'hyperlink')[0].setAttributeNS(W, 'w:anchor', s.ancla);
       const ts = p.getElementsByTagNameNS(W, 't'); ts[0].textContent = s.titulo; ts[ts.length - 1].textContent = String(pags[s.ancla] || 1);
@@ -726,7 +736,7 @@ const App = { usuario: null, ex: null, plan: null, word: null, dia: '', lect: nu
     try {
       await App.cola; await leerWord();
       const info = await guardarWord();
-      U.aviso('Word actualizado hasta el ' + dmy(domingoPub()) + (info.quitadas.length ? ' · quitadas: ' + info.quitadas.length : '') + (info.creadas.length ? ' · agregadas: ' + info.creadas.join(', ') : '') + (info.hashtags ? ' · hashtags quitados: ' + info.hashtags : ''), 'ok', 9000);
+      U.aviso('Word actualizado hasta el ' + dmy(domingoPub()) + (info.quitadas.length ? ' · quitadas: ' + info.quitadas.length : '') + (info.creadas.length ? ' · agregadas: ' + info.creadas.join(', ') : '') + (info.hashtags ? ' · líneas de hashtags / «Dios te bendiga» quitadas: ' + info.hashtags : ''), 'ok', 9000);
       if (despues) despues();
       return info;
     } catch (e) { console.error(e); App.word = null; U.aviso(errorArchivo(e), 'err', 10000); return null; }
