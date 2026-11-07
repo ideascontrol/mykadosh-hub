@@ -47,3 +47,11 @@
 .ld-mini a { color: #0E76BC; font-weight: 600; text-decoration: none; }
 .ld-pegar { font: inherit; font-size: 12px; font-weight: 700; color: #fff; background: #0E76BC; border: 0; border-radius: 6px; padding: 3px 10px; cursor: pointer; }
 .ld-pegar:hover { filter: brightness(1.1); }
+
+/* v0.2.0 · vista previa en vivo, semanas */
+.ld-prev { margin: 12px 0 0; padding: 10px 14px; border-radius: 10px; background: #fff8e6; border: 1px solid #f1d38a; color: #6b4e00; font-size: 14px; }
+.ic-btn.pulso { box-shadow: 0 0 0 3px rgba(240, 170, 40, .35); }
+.ld-semsel { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 12px; }
+.ld-semsel .espacio { flex: 1; }
+.ld-sem td { background: #f3f6fa; font-weight: 600; color: #234; }
+.ld-hash { display: block; font-weight: 400; font-size: 12px; color: #6a7684; margin-top: 2px; }
