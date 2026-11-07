@@ -4,7 +4,7 @@
    Datos: MKT_Temas, MKT_Publicaciones, MKT_Metricas (IC Apps). Piezas: Documentos/Marketing/Piezas/<PUB>/
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-112', nombre: 'Marketing', version: '0.10.0' },
+  app: { id: 'APP-112', nombre: 'Marketing', version: '0.10.1' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -85,7 +85,7 @@ window.CFG = {
       { grupo: 'Instagram', canal: 'Instagram', dia: 4, hashtags: 'instagram' },
       // TikTok: martes · video corto, imagen única o carrusel de fotos (1080×1920)
       { grupo: 'TikTok', canal: 'TikTok', dia: 1, principal: true, seccion: 'TT Copy y pieza', hashtags: 'tiktok',
-        nota: 'Elige el mejor formato para TikTok: video corto (30 s), imagen única o carrusel de fotos, todo vertical 1080×1920. Si es carrusel, describe cada lámina en "laminas".' }
+        nota: 'Elige el mejor formato para TikTok: video corto (30 s), imagen única o carrusel de fotos, todo vertical 1080×1920. Si es carrusel de fotos, pon "formato": "Carrusel" y describe cada imagen en "laminas" (una entrada por imagen, con su texto exacto).' }
     ],
     // Bloque de contacto (Facebook y TikTok, como en el formato semanal)
     contacto: '📍 Conócenos aquí:\n📲 +57 321 318 4853\n📧 info@ideascontrol.com\n🌐 www.ideascontrol.com',

@@ -203,7 +203,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     const meses = Array.from(new Set(App.pubs.map((p) => dia(p.fecha).slice(0, 7)))).sort();
     const semanas = Array.from(new Set(App.pubs.map(semanaDe).concat([lunesDe(hoyISO())]))).sort().reverse();
     raiz.innerHTML = '<div class="ic-barra"><div><h1 class="ic-titulo">Publicaciones</h1><p class="ic-subtitulo" style="margin:0">Todas las publicaciones por red y fecha.</p></div><span class="espacio"></span>' +
-      '<button class="ic-btn sec" id="bOrg">Organizar redes</button><button class="ic-btn sec" id="bExcel">Descargar Excel</button><button class="ic-btn" id="bNueva">+ Publicación</button></div>' +
+      '<button class="ic-btn peligro" id="bBorrarSel" hidden></button><button class="ic-btn sec" id="bOrg">Organizar redes</button><button class="ic-btn sec" id="bExcel">Descargar Excel</button><button class="ic-btn" id="bNueva">+ Publicación</button></div>' +
       '<div class="ic-filtros"><div class="ic-buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="fq" placeholder="Buscar tema, copy, notas…" value="' + esc(F.q) + '" autocomplete="off"></div>' +
       '<select id="fSem" title="Semana de la campaña"><option value="*">Todas las semanas</option>' + semanas.map((s) => '<option value="' + s + '"' + (s === F.sem ? ' selected' : '') + '>Semana del ' + esc(fCorta(s)) + (s === lunesDe(hoyISO()) ? ' (esta)' : '') + '</option>').join('') + '</select>' +
       '<select id="fMes" title="Mes de publicación"><option value="*">Todos los meses</option>' + meses.map((m) => '<option value="' + m + '"' + (m === F.mes ? ' selected' : '') + '>' + esc(new Date(m + '-15T12:00:00').toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })) + '</option>').join('') + '</select>' +
@@ -213,11 +213,33 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
       const lista = App.pubs.filter((p) => (F.sem === '*' || semanaDe(p) === F.sem) && (F.mes === '*' || dia(p.fecha).slice(0, 7) === F.mes) && (!F.canal || p.canal === F.canal) && (!F.estado || p.estado === F.estado) &&
         t.every((x) => U.norm([p.Title, p.titulo, p.copy, p.notas, (temaDe(p.tema_id) || {}).tema].join(' ')).indexOf(x) >= 0));
       lista.sort((a, b) => semanaDe(b).localeCompare(semanaDe(a)) || ordenRed(a.canal) - ordenRed(b.canal) || dia(a.fecha).localeCompare(dia(b.fecha)) || String(a.Title).localeCompare(String(b.Title)));
-      raiz.querySelector('#tabla').innerHTML = '<p class="ic-conteo">' + lista.length + ' publicaciones</p><div class="ic-tabla-caja mkt-scroll"><table class="ic-tabla"><thead><tr><th>Semana</th><th>Red</th><th>Fecha de publicación</th><th>Publicación</th><th>Formato</th><th>Estado</th><th>Link</th></tr></thead><tbody>' +
-        (lista.map((p) => '<tr data-id="' + esc(p.Title) + '"><td class="nw">' + esc(fCorta(semanaDe(p))) + '</td><td>' + chipCanal(p.canal) + '</td><td class="nw">' + esc(fLarga(p.fecha)) + '</td><td><b>' + esc(p.titulo || (temaDe(p.tema_id) || {}).tema || '') + '</b><span class="sec">' + esc(p.Title) + '</span></td>' +
+      raiz.querySelector('#tabla').innerHTML = '<p class="ic-conteo">' + lista.length + ' publicaciones</p><div class="ic-tabla-caja mkt-scroll"><table class="ic-tabla"><thead><tr><th class="mkt-chk"><input type="checkbox" id="selTodo" title="Seleccionar todas las de la lista"></th><th>Semana</th><th>Red</th><th>Fecha de publicación</th><th>Publicación</th><th>Formato</th><th>Estado</th><th>Link</th></tr></thead><tbody>' +
+        (lista.map((p) => '<tr data-id="' + esc(p.Title) + '"><td class="mkt-chk"><input type="checkbox" data-sel="' + esc(p.Title) + '"' + (SEL.has(p.Title) ? ' checked' : '') + '></td><td class="nw">' + esc(fCorta(semanaDe(p))) + '</td><td>' + chipCanal(p.canal) + '</td><td class="nw">' + esc(fLarga(p.fecha)) + '</td><td><b>' + esc(p.titulo || (temaDe(p.tema_id) || {}).tema || '') + '</b><span class="sec">' + esc(p.Title) + '</span></td>' +
           '<td>' + esc(p.formato || '—') + '</td><td>' + chipEstado(p.estado) + (p.estado === 'En aprobación' ? '<span class="sec">' + aprobadores(p).length + '/' + CFG.minAprobaciones + '</span>' : '') + '</td><td>' + (p.link ? '<a href="' + esc(p.link) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">Ver</a>' : '') + '</td></tr>').join('') ||
-          '<tr><td colspan="7" class="ic-vacio">Sin publicaciones con ese filtro.</td></tr>') + '</tbody></table></div>';
-      raiz.querySelectorAll('tr[data-id]').forEach((tr) => { tr.onclick = () => { location.hash = 'pub/' + tr.dataset.id; }; });
+          '<tr><td colspan="8" class="ic-vacio">Sin publicaciones con ese filtro.</td></tr>') + '</tbody></table></div>';
+      raiz.querySelectorAll('tr[data-id]').forEach((tr) => { tr.onclick = (e) => { if (e.target.closest('.mkt-chk')) return; location.hash = 'pub/' + tr.dataset.id; }; });
+      raiz.querySelectorAll('[data-sel]').forEach((c) => { c.onchange = () => { if (c.checked) SEL.add(c.dataset.sel); else SEL.delete(c.dataset.sel); barraSel(); }; });
+      const st = raiz.querySelector('#selTodo');
+      st.checked = lista.length > 0 && lista.every((p) => SEL.has(p.Title));
+      st.onchange = () => { lista.forEach((p) => { if (st.checked) SEL.add(p.Title); else SEL.delete(p.Title); }); pintar(); };
+      barraSel();
+    };
+    // Selección para borrar
+    const SEL = App.selPubs = App.selPubs || new Set();
+    const barraSel = () => {
+      const b = raiz.querySelector('#bBorrarSel'); const n = Array.from(SEL).filter((id) => pubDe(id)).length;
+      b.hidden = !n; b.textContent = '🗑 Borrar seleccionadas (' + n + ')';
+    };
+    raiz.querySelector('#bBorrarSel').onclick = async () => {
+      const ps = Array.from(SEL).map(pubDe).filter(Boolean); if (!ps.length) return;
+      const pub = ps.filter((p) => ['Programada', 'Publicada'].indexOf(p.estado) >= 0), conMet = ps.filter((p) => App.mets.some((m) => m.publicacion_id === p.Title));
+      if (!(await U.confirmar('Borrar ' + ps.length + ' publicación(es)', ps.map((p) => p.Title + ' · ' + fCorta(p.fecha) + ' · ' + p.canal).join('\n') +
+        (pub.length ? '\n\n⚠️ ' + pub.length + ' ya está(n) programada(s) o publicada(s).' : '') + (conMet.length ? '\n⚠️ ' + conMet.length + ' tiene(n) métricas (las métricas se conservan).' : '') +
+        '\n\nVan a la papelera de SharePoint (se pueden recuperar). Los archivos de la pieza se conservan.', 'Borrar', true))) return;
+      let n = 0; const err = [];
+      for (const p of ps) { try { await G.eliminar(L.pubs, p._id); App.pubs = App.pubs.filter((x) => x !== p); SEL.delete(p.Title); n++; } catch (e) { err.push(p.Title + ': ' + U.mensajeError(e)); } }
+      U.aviso(n + ' publicación(es) borrada(s)' + (err.length ? ' · ' + err.join(' · ') : ''), err.length ? 'warn' : 'ok', 7000);
+      pintarEncabezado(); pintar();
     };
     raiz.querySelector('#fq').addEventListener('input', (e) => { F.q = e.target.value; pintar(); });
     raiz.querySelector('#fMes').onchange = (e) => { F.mes = e.target.value; pintar(); };

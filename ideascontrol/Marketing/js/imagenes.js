@@ -69,14 +69,16 @@ window.MKT_IMG = (function () {
   }
 
   // ---------- el prompt de una publicación (o de una lámina del carrusel: k = 1…N) ----------
-  const laminasDe = (p) => esCarrusel(p) ? diseno(p).laminas : [];
+  // Varias imágenes: carrusel, o cualquier pieza (p. ej. TikTok en fotos) cuyo diseño trae 2 o más láminas
+  const laminasDe = (p) => { const l = diseno(p).laminas; return !esVideo(p) && (esCarrusel(p) || l.length > 1) ? l : []; };
+  const variasImg = (p) => laminasDe(p).length > 0;
   function prompt(p, base, k) {
     const t = M().temaDe(p.tema_id) || {}, d = diseno(p), md = medidas(p), N = d.laminas.length;
-    const lam = esCarrusel(p) && k && N;
+    const lam = variasImg(p) && k && N;
     const L = ['', '═══════════════════════════════', 'INFORMACIÓN DE ESTA PIEZA',
       'Red: ' + (p.canal || ''),
       'Medidas: ' + md,
-      'Formato: ' + (p.formato || 'Imagen') + (esVideo(p) ? ' → genera la PORTADA del video' : lam ? ' → lámina ' + k + ' de ' + N : esCarrusel(p) ? ' → genera UNA IMAGEN POR LÁMINA, todas con la misma línea visual' : ''),
+      'Formato: ' + (p.formato || 'Imagen') + (esVideo(p) ? ' → genera la PORTADA del video' : lam ? ' → imagen ' + k + ' de ' + N + ' (todas con la misma línea visual)' : esCarrusel(p) ? ' → genera UNA IMAGEN POR LÁMINA, todas con la misma línea visual' : ''),
       'Fecha de publicación: ' + M().fLarga(p.fecha),
       'Tema: ' + limpio(p.titulo || t.tema || '')];
     L.push('Qué se ve' + (lam ? ' (línea visual de todo el carrusel)' : '') + ': ' + (d.descripcion || 'propón una escena que represente el tema con personas reales en un contexto laboral colombiano'));
