@@ -4,7 +4,7 @@
    Datos: MKT_Temas, MKT_Publicaciones, MKT_Metricas (IC Apps). Piezas: Documentos/Marketing/Piezas/<PUB>/
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-112', nombre: 'Marketing', version: '0.9.1' },
+  app: { id: 'APP-112', nombre: 'Marketing', version: '0.10.0' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -33,7 +33,9 @@ window.CFG = {
     ['Publicada', 'Ya salió. Registre el link publicado.'],
     ['Cancelada', 'No se publicará.']
   ],
-  canales: ['Facebook / Instagram', 'Facebook', 'Instagram', 'LinkedIn Newsletter', 'LinkedIn', 'TikTok / Youtube', 'TikTok', 'YouTube'],
+  canales: ['LinkedIn Newsletter', 'LinkedIn Copy', 'LinkedIn Pg IC', 'Facebook', 'Instagram', 'TikTok', 'YouTube'],
+  // Orden de las redes en listas, calendario y revisión
+  ordenCanales: ['LinkedIn Newsletter', 'LinkedIn Copy', 'LinkedIn Pg IC', 'Facebook', 'Instagram', 'TikTok', 'YouTube'],
   redes: ['Facebook', 'Instagram', 'LinkedIn', 'TikTok', 'YouTube'],
   formatos: ['Imagen', 'Carrusel', 'Reel / video corto', 'Historia', 'Artículo / Newsletter', 'Texto', 'Video largo'],
   tipos: ['Orgánico', 'Pago'],
@@ -66,21 +68,23 @@ window.CFG = {
     },
     // Estructura estándar de la semana (como el Word «Contenido Sem ddmmaaaa IC»). dia: 0 = lunes … 4 = viernes.
     // principal: pieza principal de la red (ahí cae la publicación del plan de Excel de esa red).
+    // Orden: LinkedIn (miércoles y jueves), Facebook lunes a jueves, Instagram martes a viernes, TikTok martes.
+    // El LinkedIn Newsletter (miércoles) se genera aparte, en «Generar › Newsletter».
     semana: [
-      { grupo: 'LinkedIn Personal', canal: 'LinkedIn', dia: 2, principal: true, seccion: 'Copy para el Newsletter', hashtags: 'linkedinPersonal',
-        nota: 'Post personal de opinión dirigido a gerentes que acompaña el newsletter. En "variantes" incluye «Variante estilo Isra Bravo» (frases muy cortas, storytelling) y «Formato Frogmatter» (el mismo mensaje con diseño para LinkedIn: separadores y un emoji por línea).' },
-      { grupo: 'LinkedIn Ideas Control', canal: 'LinkedIn', dia: 2, seccion: 'Share with comments', hashtags: 'linkedinIC', nota: 'Desde la página de Ideas Control: compartir el newsletter o el post con un comentario de la empresa.' },
-      // Facebook e Instagram: lunes a jueves, una pieza distinta por red cada día (copy e imagen propios)
+      { grupo: 'LinkedIn Copy', canal: 'LinkedIn Copy', dia: 2, principal: true, seccion: 'Copy para el Newsletter', hashtags: 'linkedinPersonal',
+        nota: 'Post personal de opinión dirigido a gerentes que acompaña el newsletter (se publica el mismo miércoles). En "variantes" incluye «Variante estilo Isra Bravo» (frases muy cortas, storytelling) y «Formato Frogmatter» (el mismo mensaje con diseño para LinkedIn: separadores y un emoji por línea).' },
+      { grupo: 'LinkedIn Pg IC', canal: 'LinkedIn Pg IC', dia: 3, seccion: 'Share with comments', hashtags: 'linkedinIC', nota: 'Desde la página de Ideas Control (jueves): compartir el newsletter o el post con un comentario de la empresa.' },
+      // Facebook: lunes a jueves · Instagram: martes a viernes (una pieza distinta por red cada día)
       { grupo: 'Facebook', canal: 'Facebook', dia: 0, principal: true, seccion: 'FB Copy', hashtags: 'facebook', nota: 'Post principal de Facebook de la semana (también sirve como anuncio de pauta).' },
       { grupo: 'Facebook', canal: 'Facebook', dia: 1, hashtags: 'facebook' },
       { grupo: 'Facebook', canal: 'Facebook', dia: 2, hashtags: 'facebook' },
       { grupo: 'Facebook', canal: 'Facebook', dia: 3, hashtags: 'facebook' },
-      { grupo: 'Instagram', canal: 'Instagram', dia: 0, principal: true, seccion: 'Ins Copy', hashtags: 'instagram', nota: 'Post principal de Instagram de la semana. Pieza distinta a la de Facebook del mismo día.' },
-      { grupo: 'Instagram', canal: 'Instagram', dia: 1, hashtags: 'instagram', nota: 'Pieza distinta a la de Facebook del mismo día.' },
+      { grupo: 'Instagram', canal: 'Instagram', dia: 1, principal: true, seccion: 'Ins Copy', hashtags: 'instagram', nota: 'Post principal de Instagram de la semana. Pieza distinta a la de Facebook.' },
       { grupo: 'Instagram', canal: 'Instagram', dia: 2, hashtags: 'instagram', nota: 'Pieza distinta a la de Facebook del mismo día.' },
       { grupo: 'Instagram', canal: 'Instagram', dia: 3, hashtags: 'instagram', nota: 'Pieza distinta a la de Facebook del mismo día.' },
-      // TikTok: video corto, imagen única o carrusel de fotos (1080×1920)
-      { grupo: 'TikTok', canal: 'TikTok', dia: 4, principal: true, seccion: 'TT Copy y pieza', hashtags: 'tiktok',
+      { grupo: 'Instagram', canal: 'Instagram', dia: 4, hashtags: 'instagram' },
+      // TikTok: martes · video corto, imagen única o carrusel de fotos (1080×1920)
+      { grupo: 'TikTok', canal: 'TikTok', dia: 1, principal: true, seccion: 'TT Copy y pieza', hashtags: 'tiktok',
         nota: 'Elige el mejor formato para TikTok: video corto (30 s), imagen única o carrusel de fotos, todo vertical 1080×1920. Si es carrusel, describe cada lámina en "laminas".' }
     ],
     // Bloque de contacto (Facebook y TikTok, como en el formato semanal)

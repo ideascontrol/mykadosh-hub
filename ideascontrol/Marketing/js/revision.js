@@ -11,7 +11,7 @@ window.MKT_REV = (function () {
   const M = () => window.MKT;
   const ST = { temaId: '' };
   const MARCA = '── Generado con Claude ──';
-  const ordRed = (c) => { const n = U.norm(c || ''); const i = CFG.redes.findIndex((r) => n.indexOf(U.norm(r)) >= 0); return /newsletter/.test(n) ? 50 : i < 0 ? 99 : i; };
+  const ordRed = (c) => M().ordenRed(c);
   const evento = (tipo, comentario) => ({ tipo, email: App.usuario.email, nombre: App.usuario.nombre, fecha: new Date().toISOString(), comentario: comentario || '' });
   const lunesTema = (t) => M().lunesDe(M().dia(t.semana_inicio) || M().hoyISO());
 

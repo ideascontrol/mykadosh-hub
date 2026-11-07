@@ -119,12 +119,11 @@ window.MKT_IMG = (function () {
   }
 
   // ---------- la semana, día por día: copy y prompt(s) de imagen de cada publicación ----------
-  const ORDEN = ['facebook / instagram', 'facebook', 'instagram', 'linkedin', 'linkedin newsletter', 'tiktok / youtube', 'tiktok', 'youtube'];
   const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
   async function semana(lunes) {
     const base = (await plantilla()).texto, fin = M().sumarDias(lunes, 6);
     const pubs = App.pubs.filter((p) => M().dia(p.fecha) >= lunes && M().dia(p.fecha) <= fin && p.estado !== 'Cancelada')
-      .sort((a, b) => M().dia(a.fecha).localeCompare(M().dia(b.fecha)) || ORDEN.indexOf(U.norm(a.canal || '')) - ORDEN.indexOf(U.norm(b.canal || '')));
+      .sort((a, b) => M().dia(a.fecha).localeCompare(M().dia(b.fecha)) || M().ordenRed(a.canal) - M().ordenRed(b.canal));
     const conImagen = (p) => !/^texto$|newsletter/i.test(p.formato || '') && !/newsletter/i.test(p.canal || '');
     const fila = (p) => {
       const L = laminasDe(p), img = conImagen(p);

@@ -199,3 +199,5 @@ th.mkt-ord.on .mkt-flecha { opacity: 1; }
 .rev-opacc { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .gen-aviso.tema-cambio { background: #fff4e5; border: 1px solid #f3c27a; color: #6b4300; }
 .mkt-bajar { text-decoration: none; font-weight: 700; color: #0E76BC; padding: 0 4px; }
+.mkt-org { display: flex; gap: 10px; align-items: flex-start; padding: 6px 0; border-bottom: 1px solid #edf0f4; font-size: 14px; }
+.mkt-org .sec { display: block; }

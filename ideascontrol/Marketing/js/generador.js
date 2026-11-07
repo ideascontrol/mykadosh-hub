@@ -69,7 +69,8 @@ window.MKT_GEN = (function () {
     const ocupar = (s, p) => { s.pub = p; s.canal = p.canal || s.canal; s.fecha = M().dia(p.fecha) || s.fecha; if (p.formato) s.formato_planeado = p.formato; if (!s.principal) s.seccion = diaTitulo(s.fecha); };
     ps.forEach((p) => {
       const rs = redesPub(p.canal), f = M().dia(p.fecha), libres = out.filter((s) => !s.pub && rs.indexOf(s.red) >= 0);
-      const s = libres.find((x) => x.principal && x.fecha === f) || libres.find((x) => x.fecha === f) || libres.find((x) => x.principal);
+      const mismo = libres.filter((x) => x.canal === p.canal), pref = mismo.length ? mismo : libres;   // LinkedIn Copy ≠ LinkedIn Pg IC
+      const s = pref.find((x) => x.fecha === f) || pref.find((x) => x.principal) || pref[0];
       if (s) ocupar(s, p);
       else out.push({ grupo: p.canal || rs[0], canal: p.canal, red: rs[0], fecha: f, seccion: diaTitulo(f), hashtags: '', nota: '', formato_planeado: p.formato || '', pub: p });
     });
@@ -77,7 +78,7 @@ window.MKT_GEN = (function () {
     out.forEach((s) => {
       s.id = s.pub ? s.pub.Title : 'NUEVA-' + (++k);
       const r = s.red;
-      if (!s.hashtags) s.hashtags = r === 'Instagram' ? GC.hashtags.instagram : r === 'TikTok' ? GC.hashtags.tiktok : r === 'LinkedIn' ? GC.hashtags.linkedinPersonal : GC.hashtags.facebook;
+      if (!s.hashtags) s.hashtags = r === 'Instagram' ? GC.hashtags.instagram : r === 'TikTok' ? GC.hashtags.tiktok : r === 'LinkedIn' ? (/pg ic/i.test(s.canal || '') ? GC.hashtags.linkedinIC : GC.hashtags.linkedinPersonal) : GC.hashtags.facebook;
       s.contacto = (r === 'Facebook' || r === 'TikTok') ? GC.contacto : '';
       const video = /reel|video/i.test(s.formato_planeado || '');   // TikTok decide Claude: video, imagen o carrusel
       if (video && !/video/.test(s.nota)) s.nota = (s.nota ? s.nota + ' ' : '') + 'Es video: incluye el objeto "video" (guion por tramos, clips de Canva para CapCut o avatar y guion para HeyGen) y "solo_guion".';

@@ -28,6 +28,12 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
   const opciones = (lista, sel, vacio) => (vacio !== undefined ? '<option value="">' + esc(vacio) + '</option>' : '') +
     lista.concat(sel && lista.indexOf(sel) < 0 ? [sel] : []).map((x) => '<option' + (x === sel ? ' selected' : '') + '>' + esc(x) + '</option>').join('');
   const temaDe = (id) => App.temas.find((t) => t.Title === id);
+  // Orden de las redes: LinkedIn Newsletter, LinkedIn Copy, LinkedIn Pg IC, Facebook, Instagram, TikTok, YouTube
+  function ordenRed(c) {
+    const i = CFG.ordenCanales.indexOf(c); if (i >= 0) return i;
+    const n = U.norm(c || '');
+    return /newsletter/.test(n) ? 0 : /pg ic|pagina|ideas control/.test(n) ? 2 : /linkedin/.test(n) ? 1 : /facebook/.test(n) ? 3 : /instagram/.test(n) ? 4 : /tiktok/.test(n) ? 5 : /youtube/.test(n) ? 6 : 9;
+  }
   const pubDe = (id) => App.pubs.find((p) => p.Title === id);
   const interacciones = (m) => n0(m.reacciones) + n0(m.comentarios) + n0(m.compartidos) + n0(m.guardados) + n0(m.clics);
   const soyAprobador = () => !!CFG.usuarios[App.usuario.email];
@@ -148,7 +154,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
       (temaSem && deTema < 6 ? '<div class="gen-aviso mkt-noimp" style="margin:0 0 12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center"><span>Esta semana tiene ' + deTema + ' publicación(es) en el portal. Las piezas diarias (Facebook, Instagram, LinkedIn, TikTok) se crean al generar el contenido de la semana.</span><a class="ic-btn chico" href="#generar/' + esc(temaSem.Title) + '/contenido">✨ Generar la semana</a></div>' : '') +
       '<div id="cCambio"></div><p class="sec mkt-noimp" style="margin:0 0 8px">Arrastre una publicación a otro día para cambiar su fecha. Use + para crear una en ese día.</p>' +
       '<div class="mkt-semana">' + DIAS.map((d, i) => {
-        const f = sumarDias(ini, i), del = semana.filter((p) => dia(p.fecha) === f);
+        const f = sumarDias(ini, i), del = semana.filter((p) => dia(p.fecha) === f).sort((a, b) => ordenRed(a.canal) - ordenRed(b.canal));
         return '<div class="mkt-dia' + (f === hoyISO() ? ' hoy' : '') + '" data-fecha="' + f + '"><div class="cab"><b>' + d + '</b> ' + esc(fCorta(f)) + '<button class="mkt-mas" data-nueva="' + f + '" title="Nueva publicación el ' + esc(fLarga(f)) + '" aria-label="Nueva publicación el ' + esc(fLarga(f)) + '">+</button></div>' +
           (del.map(tarjeta).join('') || '<p class="mkt-libre">—</p>') + '</div>';
       }).join('') + '</div>';
@@ -197,7 +203,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     const meses = Array.from(new Set(App.pubs.map((p) => dia(p.fecha).slice(0, 7)))).sort();
     const semanas = Array.from(new Set(App.pubs.map(semanaDe).concat([lunesDe(hoyISO())]))).sort().reverse();
     raiz.innerHTML = '<div class="ic-barra"><div><h1 class="ic-titulo">Publicaciones</h1><p class="ic-subtitulo" style="margin:0">Todas las publicaciones por red y fecha.</p></div><span class="espacio"></span>' +
-      '<button class="ic-btn sec" id="bExcel">Descargar Excel</button><button class="ic-btn" id="bNueva">+ Publicación</button></div>' +
+      '<button class="ic-btn sec" id="bOrg">Organizar redes</button><button class="ic-btn sec" id="bExcel">Descargar Excel</button><button class="ic-btn" id="bNueva">+ Publicación</button></div>' +
       '<div class="ic-filtros"><div class="ic-buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="fq" placeholder="Buscar tema, copy, notas…" value="' + esc(F.q) + '" autocomplete="off"></div>' +
       '<select id="fSem" title="Semana de la campaña"><option value="*">Todas las semanas</option>' + semanas.map((s) => '<option value="' + s + '"' + (s === F.sem ? ' selected' : '') + '>Semana del ' + esc(fCorta(s)) + (s === lunesDe(hoyISO()) ? ' (esta)' : '') + '</option>').join('') + '</select>' +
       '<select id="fMes" title="Mes de publicación"><option value="*">Todos los meses</option>' + meses.map((m) => '<option value="' + m + '"' + (m === F.mes ? ' selected' : '') + '>' + esc(new Date(m + '-15T12:00:00').toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })) + '</option>').join('') + '</select>' +
@@ -206,8 +212,9 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
       const t = U.norm(F.q).split(/\s+/).filter(Boolean);
       const lista = App.pubs.filter((p) => (F.sem === '*' || semanaDe(p) === F.sem) && (F.mes === '*' || dia(p.fecha).slice(0, 7) === F.mes) && (!F.canal || p.canal === F.canal) && (!F.estado || p.estado === F.estado) &&
         t.every((x) => U.norm([p.Title, p.titulo, p.copy, p.notas, (temaDe(p.tema_id) || {}).tema].join(' ')).indexOf(x) >= 0));
-      raiz.querySelector('#tabla').innerHTML = '<p class="ic-conteo">' + lista.length + ' publicaciones</p><div class="ic-tabla-caja mkt-scroll"><table class="ic-tabla"><thead><tr><th>Semana</th><th>Fecha de publicación</th><th>Red</th><th>Publicación</th><th>Formato</th><th>Estado</th><th>Link</th></tr></thead><tbody>' +
-        (lista.map((p) => '<tr data-id="' + esc(p.Title) + '"><td class="nw">' + esc(fCorta(semanaDe(p))) + '</td><td class="nw">' + esc(fLarga(p.fecha)) + '</td><td>' + chipCanal(p.canal) + '</td><td><b>' + esc(p.titulo || (temaDe(p.tema_id) || {}).tema || '') + '</b><span class="sec">' + esc(p.Title) + '</span></td>' +
+      lista.sort((a, b) => semanaDe(b).localeCompare(semanaDe(a)) || ordenRed(a.canal) - ordenRed(b.canal) || dia(a.fecha).localeCompare(dia(b.fecha)) || String(a.Title).localeCompare(String(b.Title)));
+      raiz.querySelector('#tabla').innerHTML = '<p class="ic-conteo">' + lista.length + ' publicaciones</p><div class="ic-tabla-caja mkt-scroll"><table class="ic-tabla"><thead><tr><th>Semana</th><th>Red</th><th>Fecha de publicación</th><th>Publicación</th><th>Formato</th><th>Estado</th><th>Link</th></tr></thead><tbody>' +
+        (lista.map((p) => '<tr data-id="' + esc(p.Title) + '"><td class="nw">' + esc(fCorta(semanaDe(p))) + '</td><td>' + chipCanal(p.canal) + '</td><td class="nw">' + esc(fLarga(p.fecha)) + '</td><td><b>' + esc(p.titulo || (temaDe(p.tema_id) || {}).tema || '') + '</b><span class="sec">' + esc(p.Title) + '</span></td>' +
           '<td>' + esc(p.formato || '—') + '</td><td>' + chipEstado(p.estado) + (p.estado === 'En aprobación' ? '<span class="sec">' + aprobadores(p).length + '/' + CFG.minAprobaciones + '</span>' : '') + '</td><td>' + (p.link ? '<a href="' + esc(p.link) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">Ver</a>' : '') + '</td></tr>').join('') ||
           '<tr><td colspan="7" class="ic-vacio">Sin publicaciones con ese filtro.</td></tr>') + '</tbody></table></div>';
       raiz.querySelectorAll('tr[data-id]').forEach((tr) => { tr.onclick = () => { location.hash = 'pub/' + tr.dataset.id; }; });
@@ -218,6 +225,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     raiz.querySelector('#fCanal').onchange = (e) => { F.canal = e.target.value; pintar(); };
     raiz.querySelector('#fEstado').onchange = (e) => { F.estado = e.target.value; pintar(); };
     raiz.querySelector('#bNueva').onclick = () => nuevaPublicacion({});
+    raiz.querySelector('#bOrg').onclick = () => organizar(() => vistaLista(raiz));
     raiz.querySelector('#bExcel').onclick = () => exportar().catch((e) => U.aviso(U.mensajeError(e), 'err'));
     pintar();
   }
@@ -714,6 +722,44 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
 
 
   // =====================================================================
+  // ORGANIZAR REDES: quita «Facebook / Instagram», nombra los LinkedIn (Copy / Pg IC) y limpia duplicados vacíos
+  // =====================================================================
+  function organizar(despues) {
+    // Solo se borra de esta semana en adelante y nunca lo publicado/programado ni lo que tiene métricas (el historial se conserva)
+    const desde = lunesDe(hoyISO()), conMet = new Set(App.mets.map((m) => m.publicacion_id));
+    const activas = App.pubs.filter((p) => p.estado !== 'Cancelada');
+    const borrable = (p) => semanaDe(p) >= desde && ['Programada', 'Publicada'].indexOf(p.estado) < 0 && !conMet.has(p.Title);
+    const fbig = activas.filter((p) => /facebook/i.test(p.canal || '') && /instagram/i.test(p.canal || '') && borrable(p));
+    const hayFb = (p) => activas.some((x) => x !== p && x.canal === 'Facebook' && dia(x.fecha) === dia(p.fecha));
+    const li = activas.filter((p) => /^linkedin$/i.test(String(p.canal || '').trim()));
+    const renombrar = li.map((p) => ({ p, a: /#GestionHumana|página de Ideas Control|Share with comments/i.test((p.copy || '') + ' ' + (p.notas || '')) ? 'LinkedIn Pg IC' : 'LinkedIn Copy' }));
+    const grupos = {}; activas.filter((p) => fbig.indexOf(p) < 0).forEach((p) => { const k = semanaDe(p) + '|' + p.canal + '|' + dia(p.fecha); (grupos[k] = grupos[k] || []).push(p); });
+    const vacias = []; Object.keys(grupos).forEach((k) => { const g = grupos[k]; if (g.length > 1) g.filter((p) => borrable(p) && !String(p.copy || '').trim() && (p.estado || 'Planeada') === 'Planeada').slice(0, g.length - 1).forEach((p) => vacias.push(p)); });
+    const fila = (k, p, txt) => '<label class="mkt-org"><input type="checkbox" data-org="' + k + '" data-id="' + esc(p.Title) + '" checked><span><b>' + esc(p.Title) + '</b> · ' + esc(fLarga(p.fecha)) + ' · ' + esc(p.canal) + ' · ' + esc(p.estado || '') + ' — ' + esc(txt) + '<span class="sec">' + esc((p.titulo || '').slice(0, 90)) + '</span></span></label>';
+    if (!fbig.length && !renombrar.length && !vacias.length) { U.aviso('Todo está organizado: no hay «Facebook / Instagram», ni LinkedIn sin nombre, ni duplicados vacíos.', 'ok', 6000); return; }
+    U.modal('Organizar redes', '<div class="ic-form"><p class="sec" style="margin-top:0">Marque lo que quiere aplicar. Solo se borra de la semana del ' + esc(fCorta(desde)) + ' en adelante; lo publicado, lo programado y lo que tiene métricas no se toca. Lo que se borra va a la papelera de SharePoint (se puede recuperar).</p>' +
+      (fbig.length ? '<h3 class="img-dia">Quitar «Facebook / Instagram» (' + fbig.length + ')</h3><p class="sec" style="margin:0 0 4px">Si ese día ya hay una publicación de Facebook, se borra; si no, se convierte en la de Facebook de ese día (conserva el tema y la fecha).</p>' +
+        fbig.map((p) => hayFb(p) ? fila('borrar', p, 'se borra (ya hay Facebook ese día)') : fila('ren:Facebook', p, 'pasa a «Facebook»')).join('') : '') +
+      (renombrar.length ? '<h3 class="img-dia">Nombrar los LinkedIn (' + renombrar.length + ')</h3>' + renombrar.map((x) => fila('ren:' + x.a, x.p, 'pasa a «' + x.a + '»')).join('') : '') +
+      (vacias.length ? '<h3 class="img-dia">Duplicados vacíos: misma red y día, sin copy (' + vacias.length + ')</h3>' + vacias.map((p) => fila('borrar', p, 'se borra')).join('') : '') +
+      '<div class="ic-acciones"><span class="espacio"></span><button class="ic-btn sec" id="oCancel">Cancelar</button><button class="ic-btn" id="oOk">Aplicar</button></div></div>', (m) => {
+      m.querySelector('#oCancel').onclick = U.cerrarModal;
+      m.querySelector('#oOk').onclick = () => U.conCarga(m.querySelector('#oOk'), async () => {
+        let b = 0, r = 0; const err = [];
+        for (const x of m.querySelectorAll('[data-org]:checked')) {
+          const p = pubDe(x.dataset.id); if (!p) continue;
+          try {
+            if (x.dataset.org === 'borrar') { await G.eliminar(L.pubs, p._id); App.pubs = App.pubs.filter((y) => y !== p); b++; }
+            else { await guardarPub(p, { canal: x.dataset.org.slice(4) }); r++; }
+          } catch (e) { err.push(p.Title + ': ' + U.mensajeError(e)); }
+        }
+        U.cerrarModal(); U.aviso(b + ' borrada(s) · ' + r + ' cambiada(s) de red' + (err.length ? ' · ' + err.join(' · ') : ''), err.length ? 'warn' : 'ok', 8000);
+        pintarEncabezado(); if (despues) despues();
+      });
+    });
+  }
+
+  // =====================================================================
   // OPCIONES DE COPY (Opción 1 = versión A, Opción 2 = versión B, y las variantes que entregó Claude)
   // =====================================================================
   const MARCA_GEN = '── Generado con Claude ──';
@@ -794,6 +840,6 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
   }
   // Funciones que usa el generador (js/generador.js)
   window.MKT = { dia, hoyISO, sumarDias, lunesDe, fLarga, fCorta, pad, temaDe, utm, redDeCanal, copiar, rutaUrl, chipCanal, chipEstado, opciones, nombreCorto, parecido, metVacia,
-    eventos, ronda, aprobadores, miDecision, guardarPub, soyAprobador, pintarEncabezado, semanaDe, conSemana, opcionesCopy, elegirOpcion, archivosDe, bajarArchivos };
+    eventos, ronda, aprobadores, miDecision, guardarPub, soyAprobador, pintarEncabezado, semanaDe, conSemana, opcionesCopy, elegirOpcion, archivosDe, bajarArchivos, ordenRed };
   window.addEventListener('DOMContentLoaded', arrancar);
 })();
