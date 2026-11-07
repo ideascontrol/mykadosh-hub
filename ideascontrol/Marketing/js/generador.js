@@ -304,7 +304,7 @@ window.MKT_GEN = (function () {
         await G.actualizar(L.pubs, p._id, campos); Object.assign(p, campos);
       } else {
         nueva = true;
-        p = await G.crear(L.pubs, Object.assign({ Title: id, tema_id: t.Title, fecha: s.fecha, canal: s.canal, estado: 'En producción', responsable: App.usuario.nombre, notas: notasGeneradas(s, url) }, campos));
+        p = await G.crear(L.pubs, M().conSemana(Object.assign({ Title: id, tema_id: t.Title, fecha: s.fecha, canal: s.canal, estado: 'En producción', responsable: App.usuario.nombre, notas: notasGeneradas(s, url) }, campos), lunesTema(t)));
         App.pubs.push(p);
       }
       hechos.push({ id, nueva, canal: s.canal, fecha: s.fecha, grupo: s.grupo });
@@ -318,6 +318,7 @@ window.MKT_GEN = (function () {
     // Respaldo de la respuesta, con el número real de publicación de cada pieza (para «Usar la respuesta guardada»)
     lectura.slots.forEach((s) => { if (s.pieza && s.pubId) s.pieza.pub_id = s.pubId; });
     try { await G.subirArchivo(carpeta + '/' + archivo.replace(/\.docx$/i, '') + '.json', new Blob([JSON.stringify(lectura.datos, null, 2)], { type: 'application/json' })); } catch (e) { /* respaldo opcional */ }
+    await fotoTema(t, 'contenido');
     return { hechos, web, blob, archivo, carpeta };
   }
   async function guardarNewsletter(t, lectura, archivo, progreso) {
@@ -342,7 +343,7 @@ window.MKT_GEN = (function () {
       await G.actualizar(L.pubs, p._id, campos); Object.assign(p, campos);
     } else if (!p) {
       nueva = true;
-      p = await G.crear(L.pubs, Object.assign({ Title: id, tema_id: t.Title, fecha: fechaPub, canal: 'LinkedIn Newsletter', estado: 'En producción', responsable: App.usuario.nombre, notas }, campos));
+      p = await G.crear(L.pubs, M().conSemana(Object.assign({ Title: id, tema_id: t.Title, fecha: fechaPub, canal: 'LinkedIn Newsletter', estado: 'En producción', responsable: App.usuario.nombre, notas }, campos), lunesTema(t)));
       App.pubs.push(p);
     }
     progreso('Creando el Word…');
@@ -350,6 +351,7 @@ window.MKT_GEN = (function () {
     progreso('Guardando el Word en SharePoint…');
     const web = await subir(CFG.carpetaPiezas + '/' + id + '/' + archivo, blob);
     try { await G.subirArchivo(GC.carpetaNewsletters + '/' + lunesTema(t) + '/' + archivo.replace(/\.docx$/i, '') + '.json', new Blob([JSON.stringify(n, null, 2)], { type: 'application/json' })); } catch (e) { /* respaldo opcional */ }
+    await fotoTema(t, 'newsletter');
     return { hechos: [{ id, nueva, canal: 'LinkedIn Newsletter', fecha: fechaPub, grupo: 'Newsletter', sinCambio: !editable }], web, blob, archivo, aviso: editable ? '' : 'La publicación ' + id + ' ya está ' + p.estado + ': no se cambió. El Word nuevo quedó en sus piezas.' };
   }
 
@@ -380,7 +382,7 @@ window.MKT_GEN = (function () {
       (t ? '<section class="ic-bloque gen-paso"><div class="cab"><h2><span class="gen-n">2</span> ¿Qué vamos a generar?</h2></div><div class="cuerpo"><div class="gen-tipos">' +
         '<button class="gen-tipo' + (ST.tipo === 'contenido' ? ' on' : '') + '" data-tipo="contenido"><b>Contenido de la semana</b><span>Copies por red y día sin repetir, formato recomendado, diseño de cada pieza, guiones para CapCut o HeyGen y estrategia.</span></button>' +
         '<button class="gen-tipo' + (ST.tipo === 'newsletter' ? ' on' : '') + '" data-tipo="newsletter"><b>Newsletter de LinkedIn</b><span>Artículo con el diseño de IC, ficha editorial y SEO. Queda como publicación «LinkedIn Newsletter».</span></button>' +
-      '</div>' + (ST.tipo === 'contenido' ? listaSlots(t) : infoNewsletter(t)) + '<div id="gYa"></div></div></section>' +
+      '</div>' + (ST.tipo === 'contenido' ? listaSlots(t) : infoNewsletter(t)) + '<div id="gCambio" style="margin-top:12px"></div><div id="gYa"></div></div></section>' +
       '<section class="ic-bloque gen-paso"><div class="cab"><h2><span class="gen-n">3</span> Llevar el prompt a Claude</h2></div><div class="cuerpo">' +
         '<p class="sec" style="margin-top:0">Copie el prompt, péguelo en un chat nuevo de Claude y espere la respuesta. Claude responde con un bloque de código: use su botón «Copiar».</p>' +
         '<div class="gen-acc"><button class="ic-btn" id="gCopiar">Copiar prompt</button><a class="ic-btn sec" href="https://claude.ai/new" target="_blank" rel="noopener">Abrir Claude ↗</a><button class="ic-btn sec" id="gVer">Ver prompt</button><button class="ic-btn sec" id="gEditar">Editar plantilla</button></div>' +
@@ -426,6 +428,7 @@ window.MKT_GEN = (function () {
     };
     if (ST.lectura) pintarPrevia(raiz, t);
     pintarYa(raiz, t);
+    avisoCambios(raiz.querySelector('#gCambio'), t);
   }
   function pintarSinTema(raiz, l) {
     pintar(raiz);
@@ -553,5 +556,40 @@ window.MKT_GEN = (function () {
     };
   }
 
-  return { vista, _slots: slots, _leer: leer, _armarPrompt: armarPrompt };
+
+  // ---------- ¿cambió el tema después de generar? ----------
+  // Al generar se guarda una «foto» de la matriz del tema; si después cambia, se avisa para volver a generar.
+  const CAMPOS_MATRIZ = [['tema', 'Tema'], ['kpis', 'KPIs'], ['hook', 'Hook / guion'], ['problema', 'Problema'], ['autoridad', 'Autoridad'], ['solucion', 'Solución'], ['cta', 'CTA'],
+    ['valor', 'Valor agregado'], ['seo', 'SEO'], ['objetivo', 'Objetivo'], ['enfoque', 'Enfoque'], ['proposito', 'Propósito'], ['promesa', 'Promesa'], ['microapp', 'Microapp sugerida'],
+    ['cta_microapp', 'CTA con microapp'], ['palabras', 'Palabras clave'], ['categoria', 'Categoría'], ['hashtags', 'Hashtags'], ['semana_inicio', 'Semana']];
+  const valorTema = (t, k) => k === 'semana_inicio' ? M().dia(t[k]) : String(t[k] || '').replace(/\s+/g, ' ').trim();
+  const rutaFoto = (t, tipo) => (tipo === 'contenido' ? GC.carpetaSemanas : GC.carpetaNewsletters) + '/' + lunesTema(t) + '/Tema_generado_' + tipo + '.json';
+  async function fotoTema(t, tipo) {
+    const campos = {}; CAMPOS_MATRIZ.forEach((c) => { campos[c[0]] = valorTema(t, c[0]); });
+    try { await G.subirArchivo(rutaFoto(t, tipo), new Blob([JSON.stringify({ tema_id: t.Title, fecha: new Date().toISOString(), por: App.usuario.nombre, campos }, null, 2)], { type: 'application/json' })); }
+    catch (e) { console.warn('No se guardó la foto del tema', e); }
+  }
+  async function cambiosTema(t) {
+    const out = [];
+    for (const tipo of ['contenido', 'newsletter']) {
+      try {
+        const sid = await G.sitio(CFG.sitio.host, CFG.sitio.ruta);
+        const meta = await G.llamar('GET', '/sites/' + sid + '/drive/root:/' + M().rutaUrl(rutaFoto(t, tipo)));
+        const r = await fetch(meta['@microsoft.graph.downloadUrl']); if (!r.ok) continue;
+        const f = JSON.parse(await r.text()), dif = CAMPOS_MATRIZ.filter((c) => (f.campos || {})[c[0]] !== undefined && f.campos[c[0]] !== valorTema(t, c[0])).map((c) => c[1]);
+        if (dif.length) out.push({ tipo, fecha: f.fecha, por: f.por, campos: dif });
+      } catch (e) { /* no se ha generado o no hay foto */ }
+    }
+    return out;
+  }
+  // Pinta el aviso en un contenedor (si hay cambios)
+  async function avisoCambios(el, t) {
+    if (!el || !t) return;
+    const c = await cambiosTema(t); if (!el.isConnected) return;
+    el.innerHTML = c.map((x) => '<div class="gen-aviso tema-cambio" style="margin:0 0 12px">⚠️ <b>El tema cambió después de generar ' + (x.tipo === 'contenido' ? 'el contenido de la semana' : 'el newsletter') + '</b> (' +
+      esc(new Date(x.fecha).toLocaleString('es-CO', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })) + '). Cambió: ' + esc(x.campos.join(', ')) + '. ' +
+      '<a class="ic-btn chico" href="#generar/' + esc(t.Title) + '/' + x.tipo + '">Volver a generar</a></div>').join('');
+  }
+
+  return { vista, avisoCambios, cambiosTema, _slots: slots, _leer: leer, _armarPrompt: armarPrompt };
 })();

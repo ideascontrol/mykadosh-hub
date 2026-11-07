@@ -98,9 +98,10 @@ window.MKT_REV = (function () {
         '<div class="gen-acc">' + (listas.length ? '<button class="ic-btn" id="rEnviar">Enviar a aprobación (' + listas.length + ')</button>' : '') +
           (aprobador && faltanMias.length ? '<button class="ic-btn" id="rTodas">Aprobar todas las que me faltan (' + faltanMias.length + ')</button>' : '') +
           '<button class="ic-btn sec" id="rAvisar">Avisar a gerencia ✉</button><a class="ic-btn sec" href="#tema/' + esc(t.Title) + '">Ver el tema</a></div>' +
-        '<p class="sec" id="rWords" style="margin:0"></p></div>' +
+        '<p class="sec" id="rWords" style="margin:0"></p></div><div id="rCambio"></div>' +
       (ps.length ? '<div class="rev-lista">' + ps.map((p) => tarjeta(p, yo, aprobador)).join('') + '</div>' : '<div class="ic-tabla-caja"><p class="ic-vacio">Esta semana no tiene publicaciones. Genérelas en <a href="#generar/' + esc(t.Title) + '/contenido">Generar</a>.</p></div>');
     pintarWords(raiz.querySelector('#rWords'), t, ps);
+    MKT_GEN.avisoCambios(raiz.querySelector('#rCambio'), t);
     raiz.querySelector('#rTema').onchange = (e) => { ST.temaId = e.target.value; history.replaceState(null, '', '#revision/' + ST.temaId); pintar(raiz); };
     // Enviar a aprobación las que tienen copy
     const be = raiz.querySelector('#rEnviar');
@@ -125,6 +126,28 @@ window.MKT_REV = (function () {
       const cuerpo = 'Hola,\n\nYa está lista para revisión la semana del ' + M().fLarga(t.semana_inicio) + ': «' + t.tema + '».\n\n' + cuenta('En aprobación') + ' publicaciones esperan aprobación (cada una necesita ' + CFG.minAprobaciones + ' aprobaciones).\n\nRevísela aquí (con su cuenta de Ideas Control):\n' + url + '\n\nPueden aprobar cada pieza o pedir cambios con un comentario.\n\nGracias,\n' + App.usuario.nombre;
       location.href = 'mailto:' + para.join(';') + '?subject=' + encodeURIComponent('Revisión de contenido · semana del ' + M().fCorta(t.semana_inicio) + ' · ' + t.tema) + '&body=' + encodeURIComponent(cuerpo);
     };
+    // Opción 1 / Opción 2 / variantes del copy
+    raiz.querySelectorAll('[data-op]').forEach((b) => {
+      b.onclick = () => {
+        const p = App.pubs.find((x) => x.Title === b.dataset.id), o = M().opcionesCopy(p), n = +b.dataset.op, x = o.lista.find((y) => y.n === n), card = b.closest('.rev-card');
+        card.querySelectorAll('[data-op]').forEach((y) => y.classList.toggle('on', y === b));
+        card.querySelector('[data-copy-de]').textContent = n === o.elegida ? p.copy : [x.texto].concat(o.sufijo).join('\n\n');
+        const acc = card.querySelector('[data-opacc]');
+        if (n === o.elegida) { acc.innerHTML = ''; return; }
+        const puede = ['Planeada', 'En producción', 'En aprobación'].indexOf(p.estado) >= 0;
+        acc.innerHTML = (x.nota ? '<p class="sec" style="margin:0 0 6px">' + esc(x.nota) + '</p>' : '') + (!puede ? '<p class="sec">Ya está ' + esc(p.estado) + ': no se cambia el copy.</p>' :
+          (p.estado === 'En aprobación' && M().soyAprobador() ? '<button class="ic-btn sec chico" data-prefiero="' + n + '">Pedir esta opción</button> ' : '') +
+          '<button class="ic-btn chico" data-usar="' + n + '">Usar la ' + esc(x.nombre.split(' · ')[0].toLowerCase()) + '</button>' +
+          (p.estado === 'En aprobación' ? '<span class="sec"> Al cambiar el copy vuelve a «En producción» y se envía otra vez a aprobación.</span>' : ''));
+        const bu = acc.querySelector('[data-usar]');
+        if (bu) bu.onclick = () => U.conCarga(bu, async () => {
+          try { await M().elegirOpcion(p, n); U.aviso(p.Title + ': ahora usa la ' + x.nombre.split(' · ')[0].toLowerCase(), 'ok'); } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
+          M().pintarEncabezado(); pintar(raiz);
+        });
+        const bp = acc.querySelector('[data-prefiero]');
+        if (bp) bp.onclick = () => { const ta = card.querySelector('textarea'); if (ta) { ta.value = 'Prefiero la ' + x.nombre.split(' · ')[0].toLowerCase() + '.'; ta.focus(); } U.aviso('Escrito en el comentario: pulse «Pedir cambios»', 'ok'); };
+      };
+    });
     // Acciones por publicación
     raiz.querySelectorAll('[data-acc]').forEach((b) => {
       b.onclick = async () => {
@@ -143,7 +166,7 @@ window.MKT_REV = (function () {
   }
 
   function tarjeta(p, yo, aprobador) {
-    const ap = M().aprobadores(p), mia = M().miDecision(p), cambios = ultimosCambios(p);
+    const ap = M().aprobadores(p), mia = M().miDecision(p), cambios = ultimosCambios(p), op = M().opcionesCopy(p);
     const notas = String(p.notas || ''), i = notas.indexOf(MARCA);
     const detalle = i >= 0 ? notas.slice(i + MARCA.length).replace(/^\s*[\d/]+\s*/, '').replace(/\n*El Word de la semana tiene el detalle con formato\.\s*$/, '').trim() : '';
     const manual = (i >= 0 ? notas.slice(0, i) : notas).trim();
@@ -162,8 +185,10 @@ window.MKT_REV = (function () {
       '<header>' + M().chipCanal(p.canal) + '<span class="rev-fecha">' + esc(M().fLarga(p.fecha)) + '</span>' + (p.formato ? '<span class="sec">' + esc(p.formato) + '</span>' : '') + '<span class="espacio"></span>' + M().chipEstado(p.estado) + '</header>' +
       '<h3>' + esc(p.titulo || p.Title) + ' <a class="sec" href="#pub/' + esc(p.Title) + '">' + esc(p.Title) + ' ›</a></h3>' +
       (cambios && p.estado === 'En producción' ? '<div class="rev-cambios"><b>Cambios pedidos por ' + esc(cambios.nombre) + ':</b> ' + esc(cambios.comentario) + '</div>' : '') +
-      (p.copy ? '<div class="rev-copy">' + esc(p.copy) + '</div>' : '<p class="sec">Sin copy todavía.</p>') +
-      (detalle ? '<details class="rev-det"><summary>Versión B, diseño y video</summary><div class="rev-copy chico">' + esc(detalle) + '</div></details>' : '') +
+      (op.lista.length ? '<div class="rev-ops" role="tablist">' + op.lista.map((x) => '<button type="button" class="rev-op' + (x.n === op.elegida ? ' on' : '') + '" data-op="' + x.n + '" data-id="' + esc(p.Title) + '">' + esc(x.nombre) + (x.n === op.elegida ? ' ✔' : '') + '</button>').join('') + '</div>' : '') +
+      (p.copy ? '<div class="rev-copy" data-copy-de="' + esc(p.Title) + '">' + esc(p.copy) + '</div>' : '<p class="sec">Sin copy todavía.</p>') +
+      (op.lista.length ? '<div class="rev-opacc" data-opacc="' + esc(p.Title) + '"></div>' : '') +
+      (detalle ? '<details class="rev-det"><summary>Notas de Claude: versiones, diseño y video</summary><div class="rev-copy chico">' + esc(detalle) + '</div></details>' : '') +
       (manual ? '<p class="sec" style="margin:6px 0 0">Notas: ' + esc(manual.slice(0, 300)) + '</p>' : '') +
       (p.utm_url ? '<p class="sec rev-enl">🔗 Enlace: <a href="' + esc(p.utm_url) + '" target="_blank" rel="noopener">' + esc(String(p.utm_url).replace(/^https?:\/\/(www\.)?/, '').split('?')[0]) + '</a></p>' : '') +
       '<footer><div class="rev-pers">' + personas + '<span class="sec">' + ap.length + ' de ' + CFG.minAprobaciones + '</span></div><div class="rev-acc">' + acc + '</div></footer></article>';

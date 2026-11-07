@@ -56,8 +56,25 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     // Columnas de MKT_Metricas (las nuevas —fecha_corte, enlace_post, post_id— llegan con el instalador)
     try { const r = await G.llamar('GET', '/sites/' + await G.sitio(CFG.sitio.host, CFG.sitio.ruta) + '/lists/' + await G.listaId(L.mets) + '/columns?$select=name&$top=200'); App.colsMet = (r.value || []).map((c) => c.name); }
     catch (e) { App.colsMet = null; }
+    try { const r = await G.llamar('GET', '/sites/' + await G.sitio(CFG.sitio.host, CFG.sitio.ruta) + '/lists/' + await G.listaId(L.pubs) + '/columns?$select=name&$top=200'); App.colsPub = (r.value || []).map((c) => c.name); }
+    catch (e) { App.colsPub = null; }
   }
   const tieneCol = (c) => !App.colsMet || App.colsMet.indexOf(c) >= 0;
+  // Semana de la campaña (lunes) ≠ fecha de publicación. Columna fecha_semana (llega con el instalador);
+  // mientras no exista o esté vacía, se toma la semana del tema y, si no, el lunes de la fecha de publicación.
+  const hayColSemana = () => !!(App.colsPub && App.colsPub.indexOf('fecha_semana') >= 0);
+  function semanaDe(p) {
+    if (p.fecha_semana) return dia(p.fecha_semana);
+    const t = temaDe(p.tema_id); if (t && dia(t.semana_inicio)) return lunesDe(dia(t.semana_inicio));
+    return lunesDe(dia(p.fecha) || hoyISO());
+  }
+  const conSemana = (campos, lunes) => { if (hayColSemana()) campos.fecha_semana = lunes; return campos; };
+  // Completa fecha_semana en las publicaciones que no la tienen (una sola vez, en segundo plano)
+  async function completarSemanas() {
+    if (!hayColSemana()) return;
+    const faltan = App.pubs.filter((p) => !p.fecha_semana);
+    for (const p of faltan) { try { await guardarPub(p, { fecha_semana: semanaDe(p) }); } catch (e) { console.warn('fecha_semana', p.Title, e); return; } }
+  }
   // Parecido entre dos textos (0 a 1): palabras de más de 3 letras en común
   function parecido(a, b) {
     const pal = (t) => U.norm(String(t || '').replace(/\*\*/g, '')).replace(/[^a-z0-9ñ ]+/g, ' ').split(' ').filter((w) => w.length > 3).slice(0, 40);
@@ -89,6 +106,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     return t.length > 90 ? t.slice(0, 87).replace(/\s+\S*$/, '') + '…' : t;
   }
   async function guardarPub(p, campos) {
+    if ('fecha_semana' in campos && !hayColSemana()) { campos = Object.assign({}, campos); delete campos.fecha_semana; }
     await G.actualizar(L.pubs, p._id, campos);
     Object.assign(p, campos);
   }
@@ -128,7 +146,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
       '<div class="ic-filtros"><select id="fCanal">' + opciones(CFG.canales, F.canal, 'Todas las redes') + '</select><select id="fEstado">' + opciones(ESTADOS, F.estado, 'Todos los estados') + '</select></div>' +
       (temasSem.length ? '<div class="mkt-temasem">' + temasSem.map((t) => '<a href="#tema/' + esc(t.Title) + '"><span>Tema de la semana</span><b>' + esc(t.tema) + '</b></a>').join('') + '</div>' : '') +
       (temaSem && deTema < 6 ? '<div class="gen-aviso mkt-noimp" style="margin:0 0 12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center"><span>Esta semana tiene ' + deTema + ' publicación(es) en el portal. Las piezas diarias (Facebook, Instagram, LinkedIn, TikTok) se crean al generar el contenido de la semana.</span><a class="ic-btn chico" href="#generar/' + esc(temaSem.Title) + '/contenido">✨ Generar la semana</a></div>' : '') +
-      '<p class="sec mkt-noimp" style="margin:0 0 8px">Arrastre una publicación a otro día para cambiar su fecha. Use + para crear una en ese día.</p>' +
+      '<div id="cCambio"></div><p class="sec mkt-noimp" style="margin:0 0 8px">Arrastre una publicación a otro día para cambiar su fecha. Use + para crear una en ese día.</p>' +
       '<div class="mkt-semana">' + DIAS.map((d, i) => {
         const f = sumarDias(ini, i), del = semana.filter((p) => dia(p.fecha) === f);
         return '<div class="mkt-dia' + (f === hoyISO() ? ' hoy' : '') + '" data-fecha="' + f + '"><div class="cab"><b>' + d + '</b> ' + esc(fCorta(f)) + '<button class="mkt-mas" data-nueva="' + f + '" title="Nueva publicación el ' + esc(fLarga(f)) + '" aria-label="Nueva publicación el ' + esc(fLarga(f)) + '">+</button></div>' +
@@ -140,6 +158,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     raiz.querySelector('#fCanal').onchange = (e) => { F.canal = e.target.value; vistaCalendario(raiz); };
     raiz.querySelector('#fEstado').onchange = (e) => { F.estado = e.target.value; vistaCalendario(raiz); };
     raiz.querySelector('#bNueva').onclick = () => nuevaPublicacion({ fecha: ini, tema_id: temaSem ? temaSem.Title : '' });
+    if (temaSem) MKT_GEN.avisoCambios(raiz.querySelector('#cCambio'), temaSem);
     raiz.querySelector('#bImgs').onclick = (ev) => U.conCarga(ev.currentTarget, () => MKT_IMG.semana(ini));
     raiz.querySelectorAll('[data-nueva]').forEach((b) => { b.onclick = (ev) => { ev.preventDefault(); nuevaPublicacion({ fecha: b.dataset.nueva, tema_id: temaSem ? temaSem.Title : '' }); }; });
     // Arrastrar y soltar: cambia la fecha (y la campaña del UTM si cambia de semana)
@@ -156,8 +175,8 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
         if (!p || dia(p.fecha) === f) return;
         if (['Programada', 'Publicada'].indexOf(p.estado) >= 0 && !(await U.confirmar('Cambiar fecha', p.Title + ' está ' + p.estado + '. Si cambia la fecha aquí, recuerde cambiarla también en Meta Business Suite o la red.', 'Cambiar'))) return;
         const campos = { fecha: f };
-        if (p.utm_url && lunesDe(dia(p.fecha)) !== lunesDe(f)) { try { const u = new URL(p.utm_url); u.searchParams.set('utm_campaign', 'sem-' + lunesDe(f)); campos.utm_url = u.toString(); } catch (e) { /* enlace no válido: se deja */ } }
-        try { await guardarPub(p, campos); U.aviso(p.Title + ' movida al ' + fLarga(f), 'ok'); } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
+        if (!p.fecha_semana) conSemana(campos, semanaDe(p));   // la semana de la campaña se queda; solo cambia la fecha de publicación
+        try { await guardarPub(p, campos); U.aviso(p.Title + ': se publica el ' + fLarga(f) + ' (sigue en la campaña de la semana del ' + fCorta(semanaDe(p)) + ')', 'ok', 5000); } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
         vistaCalendario(raiz);
       });
     });
@@ -165,7 +184,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
   function tarjeta(p) {
     const ap = p.estado === 'En aprobación' ? '<span class="mkt-ap">' + aprobadores(p).length + '/' + CFG.minAprobaciones + ' aprob.</span>' : '';
     return '<a class="mkt-tarjeta ' + claseEstado(p.estado) + '" href="#pub/' + esc(p.Title) + '" draggable="true" data-id="' + esc(p.Title) + '">' + chipCanal(p.canal) +
-      '<b>' + esc(p.titulo || (temaDe(p.tema_id) || {}).tema || p.Title) + '</b><span class="pie">' + chipEstado(p.estado) + (p.formato ? '<i>' + esc(p.formato) + '</i>' : '') + ap + '</span></a>';
+      '<b>' + esc(p.titulo || (temaDe(p.tema_id) || {}).tema || p.Title) + '</b>' + (semanaDe(p) !== lunesDe(dia(p.fecha)) ? '<span class="mkt-otrasem">Campaña sem. ' + esc(fCorta(semanaDe(p))) + '</span>' : '') + '<span class="pie">' + chipEstado(p.estado) + (p.formato ? '<i>' + esc(p.formato) + '</i>' : '') + ap + '</span></a>';
   }
 
   // =====================================================================
@@ -173,25 +192,29 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
   // =====================================================================
   function vistaLista(raiz) {
     const F = App.filtro;
-    if (!F.mes) F.mes = hoyISO().slice(0, 7);
+    if (!F.mes) F.mes = '*';
+    if (!F.sem) F.sem = lunesDe(hoyISO());
     const meses = Array.from(new Set(App.pubs.map((p) => dia(p.fecha).slice(0, 7)))).sort();
+    const semanas = Array.from(new Set(App.pubs.map(semanaDe).concat([lunesDe(hoyISO())]))).sort().reverse();
     raiz.innerHTML = '<div class="ic-barra"><div><h1 class="ic-titulo">Publicaciones</h1><p class="ic-subtitulo" style="margin:0">Todas las publicaciones por red y fecha.</p></div><span class="espacio"></span>' +
       '<button class="ic-btn sec" id="bExcel">Descargar Excel</button><button class="ic-btn" id="bNueva">+ Publicación</button></div>' +
       '<div class="ic-filtros"><div class="ic-buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="fq" placeholder="Buscar tema, copy, notas…" value="' + esc(F.q) + '" autocomplete="off"></div>' +
-      '<select id="fMes"><option value="*">Todos los meses</option>' + meses.map((m) => '<option value="' + m + '"' + (m === F.mes ? ' selected' : '') + '>' + esc(new Date(m + '-15T12:00:00').toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })) + '</option>').join('') + '</select>' +
+      '<select id="fSem" title="Semana de la campaña"><option value="*">Todas las semanas</option>' + semanas.map((s) => '<option value="' + s + '"' + (s === F.sem ? ' selected' : '') + '>Semana del ' + esc(fCorta(s)) + (s === lunesDe(hoyISO()) ? ' (esta)' : '') + '</option>').join('') + '</select>' +
+      '<select id="fMes" title="Mes de publicación"><option value="*">Todos los meses</option>' + meses.map((m) => '<option value="' + m + '"' + (m === F.mes ? ' selected' : '') + '>' + esc(new Date(m + '-15T12:00:00').toLocaleDateString('es-CO', { month: 'long', year: 'numeric' })) + '</option>').join('') + '</select>' +
       '<select id="fCanal">' + opciones(CFG.canales, F.canal, 'Todas las redes') + '</select><select id="fEstado">' + opciones(ESTADOS, F.estado, 'Todos los estados') + '</select></div><div id="tabla"></div>';
     const pintar = () => {
       const t = U.norm(F.q).split(/\s+/).filter(Boolean);
-      const lista = App.pubs.filter((p) => (F.mes === '*' || dia(p.fecha).slice(0, 7) === F.mes) && (!F.canal || p.canal === F.canal) && (!F.estado || p.estado === F.estado) &&
+      const lista = App.pubs.filter((p) => (F.sem === '*' || semanaDe(p) === F.sem) && (F.mes === '*' || dia(p.fecha).slice(0, 7) === F.mes) && (!F.canal || p.canal === F.canal) && (!F.estado || p.estado === F.estado) &&
         t.every((x) => U.norm([p.Title, p.titulo, p.copy, p.notas, (temaDe(p.tema_id) || {}).tema].join(' ')).indexOf(x) >= 0));
-      raiz.querySelector('#tabla').innerHTML = '<p class="ic-conteo">' + lista.length + ' publicaciones</p><div class="ic-tabla-caja mkt-scroll"><table class="ic-tabla"><thead><tr><th>Fecha</th><th>Red</th><th>Publicación</th><th>Formato</th><th>Estado</th><th>Link</th></tr></thead><tbody>' +
-        (lista.map((p) => '<tr data-id="' + esc(p.Title) + '"><td class="nw">' + esc(fLarga(p.fecha)) + '</td><td>' + chipCanal(p.canal) + '</td><td><b>' + esc(p.titulo || (temaDe(p.tema_id) || {}).tema || '') + '</b><span class="sec">' + esc(p.Title) + '</span></td>' +
+      raiz.querySelector('#tabla').innerHTML = '<p class="ic-conteo">' + lista.length + ' publicaciones</p><div class="ic-tabla-caja mkt-scroll"><table class="ic-tabla"><thead><tr><th>Semana</th><th>Fecha de publicación</th><th>Red</th><th>Publicación</th><th>Formato</th><th>Estado</th><th>Link</th></tr></thead><tbody>' +
+        (lista.map((p) => '<tr data-id="' + esc(p.Title) + '"><td class="nw">' + esc(fCorta(semanaDe(p))) + '</td><td class="nw">' + esc(fLarga(p.fecha)) + '</td><td>' + chipCanal(p.canal) + '</td><td><b>' + esc(p.titulo || (temaDe(p.tema_id) || {}).tema || '') + '</b><span class="sec">' + esc(p.Title) + '</span></td>' +
           '<td>' + esc(p.formato || '—') + '</td><td>' + chipEstado(p.estado) + (p.estado === 'En aprobación' ? '<span class="sec">' + aprobadores(p).length + '/' + CFG.minAprobaciones + '</span>' : '') + '</td><td>' + (p.link ? '<a href="' + esc(p.link) + '" target="_blank" rel="noopener" onclick="event.stopPropagation()">Ver</a>' : '') + '</td></tr>').join('') ||
-          '<tr><td colspan="6" class="ic-vacio">Sin publicaciones con ese filtro.</td></tr>') + '</tbody></table></div>';
+          '<tr><td colspan="7" class="ic-vacio">Sin publicaciones con ese filtro.</td></tr>') + '</tbody></table></div>';
       raiz.querySelectorAll('tr[data-id]').forEach((tr) => { tr.onclick = () => { location.hash = 'pub/' + tr.dataset.id; }; });
     };
     raiz.querySelector('#fq').addEventListener('input', (e) => { F.q = e.target.value; pintar(); });
     raiz.querySelector('#fMes').onchange = (e) => { F.mes = e.target.value; pintar(); };
+    raiz.querySelector('#fSem').onchange = (e) => { F.sem = e.target.value; pintar(); };
     raiz.querySelector('#fCanal').onchange = (e) => { F.canal = e.target.value; pintar(); };
     raiz.querySelector('#fEstado').onchange = (e) => { F.estado = e.target.value; pintar(); };
     raiz.querySelector('#bNueva').onclick = () => nuevaPublicacion({});
@@ -205,7 +228,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     U.modal('Nueva publicación', '<form class="ic-form" id="fNueva"><div class="ic-campos">' +
       '<div class="ic-campo c12"><label for="n_tema">Tema <span class="req">*</span></label><select id="n_tema" name="tema_id">' + (o.tema_id ? '' : '<option value="">Seleccione…</option>') +
         temasOp.map((t) => '<option value="' + esc(t.Title) + '"' + (t.Title === o.tema_id ? ' selected' : '') + '>' + esc(t.tema) + ' · ' + esc(fCorta(t.semana_inicio)) + '</option>').join('') + '</select></div>' +
-      U.campo({ name: 'fecha', label: 'Fecha', t: 'date', valor: o.fecha || hoyISO(), req: true, c: 'c4' }) +
+      U.campo({ name: 'fecha', label: 'Fecha de publicación', t: 'date', valor: o.fecha || hoyISO(), req: true, c: 'c4' }) +
       '<div class="ic-campo c4"><label for="n_canal">Red <span class="req">*</span></label><select id="n_canal" name="canal">' + opciones(CFG.canales, o.canal || '', 'Seleccione…') + '</select></div>' +
       '<div class="ic-campo c4"><label for="n_formato">Formato</label><select id="n_formato" name="formato">' + opciones(CFG.formatos, '', 'Seleccione…') + '</select></div>' +
       '</div><div class="ic-acciones"><button type="button" class="ic-btn sec" id="nCancel">Cancelar</button><button class="ic-btn" id="nOk">Crear</button></div></form>', (c) => {
@@ -220,7 +243,8 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
           try {
             const id = 'PUB-' + pad(await G.siguiente('PUB'), 5);
             const t = temaDe(v.tema_id);
-            const p = await G.crear(L.pubs, { Title: id, tema_id: v.tema_id, fecha: v.fecha, canal: v.canal, formato: v.formato, titulo: t ? t.tema : '', estado: 'Planeada', responsable: App.usuario.nombre });
+            const p = await G.crear(L.pubs, conSemana({ Title: id, tema_id: v.tema_id, fecha: v.fecha, canal: v.canal, formato: v.formato, titulo: t ? t.tema : '', estado: 'Planeada', responsable: App.usuario.nombre },
+              t && dia(t.semana_inicio) ? lunesDe(dia(t.semana_inicio)) : lunesDe(v.fecha)));
             App.pubs.push(p); App.pubs.sort((a, b) => dia(a.fecha).localeCompare(dia(b.fecha)));
             U.cerrarModal(); U.aviso('Publicación ' + id + ' creada', 'ok'); location.hash = 'pub/' + id;
           } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
@@ -250,7 +274,10 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
         '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="ic-btn sec" id="bBrief">Copiar prompt de la imagen</button><button class="ic-btn peligro" id="bDel">Eliminar</button></div></div>' +
       '<div class="mkt-ficha"><div class="mkt-col">' +
         '<section class="ic-bloque"><div class="cab"><h2>Contenido</h2></div><div class="cuerpo"><form class="ic-form" id="fPub"><div class="ic-campos">' +
-          U.campo({ name: 'fecha', label: 'Fecha', t: 'date', valor: dia(p.fecha), req: true, c: 'c4' }) +
+          '<div class="ic-campo c12 mkt-fechas"><span><b>Semana de la campaña:</b> ' + esc(fLarga(semanaDe(p))) + ' al ' + esc(fCorta(sumarDias(semanaDe(p), 6))) + '</span>' +
+            (hayColSemana() ? '' : '<span class="sec">(tomada del tema; para guardarla aparte ejecute el instalador)</span>') + '</div>' +
+          (hayColSemana() ? U.campo({ name: 'fecha_semana', label: 'Semana (lunes)', t: 'date', valor: semanaDe(p), c: 'c4' }) : '') +
+          U.campo({ name: 'fecha', label: 'Fecha de publicación', t: 'date', valor: dia(p.fecha), req: true, c: 'c4' }) +
           '<div class="ic-campo c4"><label for="p_canal">Red</label><select id="p_canal" name="canal">' + opciones(CFG.canales, p.canal) + '</select></div>' +
           '<div class="ic-campo c4"><label for="p_formato">Formato</label><select id="p_formato" name="formato">' + opciones(CFG.formatos, p.formato || '', 'Sin definir') + '</select></div>' +
           U.campo({ name: 'titulo', label: 'Título de trabajo', valor: p.titulo || t.tema || '', c: 'c12', max: 250 }) +
@@ -288,6 +315,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
       if (!v.fecha) { U.marcarErrores(f, { fecha: 'Obligatorio' }); return; }
       if (v.estado === 'Publicada' && !v.link && !(await U.confirmar('Sin link publicado', '¿Marcar como Publicada sin el link? Lo puede agregar después.', 'Sí, marcar'))) return;
       const campos = { fecha: v.fecha, canal: v.canal, formato: v.formato, titulo: v.titulo, copy: v.copy, estado: v.estado, link: v.link, notas: v.notas };
+      if (hayColSemana()) campos.fecha_semana = v.fecha_semana ? lunesDe(v.fecha_semana) : semanaDe(p);
       if (v.copy !== (p.copy || '') && ['En aprobación', 'Aprobada'].indexOf(p.estado) >= 0) {
         if (!(await U.confirmar('Cambió el copy', 'La publicación está «' + p.estado + '». Al cambiar el copy vuelve a «En producción» y hay que enviarla otra vez a aprobación.', 'Guardar cambios'))) return;
         campos.estado = 'En producción';
@@ -418,7 +446,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
   // ---------- UTM, brief y copiar ----------
   function redDeCanal(c) { const n = U.norm(c); return n.indexOf('linkedin') >= 0 ? 'LinkedIn' : n.indexOf('tiktok') >= 0 ? 'TikTok' : n.indexOf('youtube') >= 0 ? 'YouTube' : n.indexOf('instagram') >= 0 && n.indexOf('facebook') < 0 ? 'Instagram' : 'Facebook'; }
   function utm(p, destino, medio) {
-    const src = redDeCanal(p.canal).toLowerCase(), sem = 'sem-' + lunesDe(dia(p.fecha));
+    const src = redDeCanal(p.canal).toLowerCase(), sem = 'sem-' + semanaDe(p);
     const u = new URL(destino);
     u.searchParams.set('utm_source', src); u.searchParams.set('utm_medium', medio); u.searchParams.set('utm_campaign', sem); u.searchParams.set('utm_content', p.Title);
     return u.toString();
@@ -459,12 +487,13 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     const ps = nuevo ? [] : App.pubs.filter((p) => p.tema_id === t.Title);
     raiz.innerHTML = '<a class="ic-volver" href="#temas">← Temas</a><div class="ic-ficha-cab"><div class="principal">' + (nuevo ? '' : '<span class="ic-tag" style="background:#E6F0FA;color:#0A5A90">' + esc(t.Title) + '</span>') +
       '<h1>' + esc(nuevo ? 'Nuevo tema' : t.tema) + '</h1></div>' + (nuevo ? '' : '<div class="gen-acc"><a class="ic-btn" href="#generar/' + esc(t.Title) + '/contenido">✨ Generar contenido</a><a class="ic-btn sec" href="#generar/' + esc(t.Title) + '/newsletter">Generar newsletter</a><button class="ic-btn sec" id="bPub">+ Publicación</button></div>') + '</div>' +
-      '<div class="mkt-ficha"><div class="mkt-col"><section class="ic-bloque"><div class="cab"><h2>Definición</h2></div><div class="cuerpo"><form class="ic-form" id="fTema"><div class="ic-campos">' +
+      (nuevo ? '' : '<div id="tCambio"></div>') + '<div class="mkt-ficha"><div class="mkt-col"><section class="ic-bloque"><div class="cab"><h2>Definición</h2></div><div class="cuerpo"><form class="ic-form" id="fTema"><div class="ic-campos">' +
         CAMPOS_TEMA.map((c) => U.campo({ name: c[0], label: c[1], t: c[2] === 'm' ? 'textarea' : c[2] === 'date' ? 'date' : 'text', valor: c[2] === 'date' ? dia(t[c[0]]) : (t[c[0]] || ''), c: c[2] === 'm' || c[0] === 'tema' ? 'c12' : 'c4', filas: 2, req: c[0] === 'tema', max: c[2] === 't' ? 250 : undefined })).join('') +
       '</div><div class="ic-acciones"><button class="ic-btn" id="bGuardar">Guardar</button></div></form></div></section></div>' +
       '<div class="mkt-col"><section class="ic-bloque"><div class="cab"><h2>Publicaciones</h2></div><div class="cuerpo">' +
         (ps.length ? ps.map((p) => '<a class="ic-item" href="#pub/' + esc(p.Title) + '"><div><div class="titulo">' + esc(fLarga(p.fecha)) + ' · ' + esc(p.canal) + '</div><div class="sec">' + esc(p.formato || 'Formato sin definir') + '</div></div>' + chipEstado(p.estado) + '</a>').join('') : '<p class="ic-vacio" style="padding:8px 0">Sin publicaciones.</p>') +
       '</div></section></div></div>';
+    if (!nuevo) MKT_GEN.avisoCambios(raiz.querySelector('#tCambio'), t);
     const f = raiz.querySelector('#fTema');
     f.onsubmit = async (ev) => {
       ev.preventDefault();
@@ -644,13 +673,65 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     await cargarXLSX();
     const fe = (v) => v ? new Date(dia(v) + 'T12:00:00') : '';
     const ws1 = XLSX.utils.json_to_sheet(App.temas.map((t) => Object.assign({ ID: t.Title, Semana: fe(t.semana_inicio) }, ...CAMPOS_TEMA.filter((c) => c[0] !== 'semana_inicio').map((c) => ({ [c[1]]: t[c[0]] || '' })))), { cellDates: true });
-    const ws2 = XLSX.utils.json_to_sheet(App.pubs.map((p) => ({ ID: p.Title, Fecha: fe(p.fecha), Red: p.canal, Formato: p.formato || '', Tema: (temaDe(p.tema_id) || {}).tema || '', 'Título': p.titulo || '', Estado: p.estado || '',
+    const ws2 = XLSX.utils.json_to_sheet(App.pubs.map((p) => ({ ID: p.Title, 'Semana (lunes)': fe(semanaDe(p)), 'Fecha de publicación': fe(p.fecha), Red: p.canal, Formato: p.formato || '', Tema: (temaDe(p.tema_id) || {}).tema || '', 'Título': p.titulo || '', Estado: p.estado || '',
       Aprobaciones: aprobadores(p).map((a) => a.nombre).join(', '), 'Link publicado': p.link || '', 'Enlace UTM': p.utm_url || '', Copy: p.copy || '', Notas: p.notas || '' })), { cellDates: true });
     const ws3 = XLSX.utils.json_to_sheet(App.mets.map((m) => Object.assign({ ID: m.Title, 'Fecha de corte': fe(m.fecha_campana), 'Fecha publicación': fe(m.fecha_publicacion), Red: m.red || '', Tipo: m.tipo || '', 'Publicación / campaña': m.nombre || '', Objetivo: m.objetivo || '', 'Publicación ID': m.publicacion_id || '' },
       ...CAMPOS_MET.map((c) => ({ [c[1]]: m[c[0]] === undefined || m[c[0]] === '' ? '' : Number(m[c[0]]) })), { 'Interacciones totales': interacciones(m), Notas: m.notas || '' })), { cellDates: true });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws2, 'Publicaciones'); XLSX.utils.book_append_sheet(wb, ws1, 'Temas'); XLSX.utils.book_append_sheet(wb, ws3, 'Métricas');
     XLSX.writeFile(wb, 'Marketing_IC_' + hoyISO() + '.xlsx');
+  }
+
+
+  // =====================================================================
+  // OPCIONES DE COPY (Opción 1 = versión A, Opción 2 = versión B, y las variantes que entregó Claude)
+  // =====================================================================
+  const MARCA_GEN = '── Generado con Claude ──';
+  const RE_CAB = /^(VERSIÓN [A-Z](?: \(ANTERIOR\))?|[A-ZÁÉÍÓÚÑÜ0-9][A-ZÁÉÍÓÚÑÜ0-9 «»().,'\-]{2,}):$/;
+  function partirCopy(copy) {   // texto del post | contacto y hashtags que agrega la app
+    const partes = String(copy || '').replace(/\r/g, '').split(/\n{2,}/), suf = [];
+    while (partes.length > 1) { const u = partes[partes.length - 1].trim(); if (/^#\S/.test(u) || /Conócenos aquí|info@ideascontrol\.com/.test(u)) suf.unshift(partes.pop()); else break; }
+    return { cuerpo: partes.join('\n\n').trim(), sufijo: suf };
+  }
+  function opcionesCopy(p) {
+    const notas = String(p.notas || '').replace(/\r/g, ''), i = notas.indexOf(MARCA_GEN);
+    const actual = partirCopy(p.copy);
+    const out = { lista: [], elegida: 1, sufijo: actual.sufijo };
+    if (i < 0) return out;
+    const L = notas.slice(i).split('\n'), bloques = []; let b = null;
+    L.forEach((x) => {
+      if (/^🔗 Enlace para/.test(x) || /^El Word de la semana/.test(x)) { b = null; return; }
+      if (RE_CAB.test(x.trim()) && !/^DISEÑO|^VIDEO/.test(x)) { b = { cab: x.trim().slice(0, -1), lin: [] }; bloques.push(b); return; }
+      if (b) b.lin.push(x);
+    });
+    const m = notas.match(/^Opción elegida: (\d+)/m); if (m) out.elegida = +m[1];
+    const limpiar = (lin) => { const t = lin.join('\n').trim(), k = t.lastIndexOf('\n('); return (k > 0 && /\)$/.test(t) ? t.slice(0, k) : t).trim(); };
+    const notaDe = (lin) => { const t = lin.join('\n').trim(), k = t.lastIndexOf('\n('); return k > 0 && /\)$/.test(t) ? t.slice(k + 2, -1) : ''; };
+    const A = bloques.find((x) => /^VERSIÓN A/.test(x.cab)), B = bloques.find((x) => x.cab === 'VERSIÓN B');
+    out.lista.push({ n: 1, nombre: 'Opción 1', texto: A ? limpiar(A.lin) : (out.elegida === 1 ? actual.cuerpo : '') });
+    if (B) out.lista.push({ n: 2, nombre: 'Opción 2 · versión B', texto: limpiar(B.lin), nota: notaDe(B.lin) });
+    bloques.filter((x) => x !== A && x !== B).forEach((x) => out.lista.push({ n: out.lista.length + 1, nombre: 'Opción ' + (out.lista.length + 1) + ' · ' + x.cab.charAt(0) + x.cab.slice(1).toLowerCase(), texto: limpiar(x.lin) }));
+    if (!out.lista[0].texto && out.elegida !== 1) out.lista[0].texto = '(no guardada)';
+    return out.lista.length > 1 ? out : { lista: [], elegida: 1, sufijo: actual.sufijo };
+  }
+  // Pone la opción n como copy final (guarda la opción 1 original en las notas para poder volver)
+  async function elegirOpcion(p, n) {
+    const o = opcionesCopy(p), op = o.lista.find((x) => x.n === n);
+    if (!op || n === o.elegida) return false;
+    if (['Aprobada', 'Programada', 'Publicada'].indexOf(p.estado) >= 0) throw new Error(p.Title + ' ya está ' + p.estado + ': no se cambia el copy.');
+    let notas = String(p.notas || '').replace(/\r/g, '');
+    if (!/^VERSIÓN A:/m.test(notas)) {   // guarda la versión A antes de reemplazarla
+      const a1 = o.elegida === 1 ? partirCopy(p.copy).cuerpo : (o.lista[0] || {}).texto || '';
+      notas = notas.replace(/^VERSIÓN B:/m, 'VERSIÓN A:\n' + a1 + '\n\nVERSIÓN B:');
+    }
+    notas = /^Opción elegida: \d+/m.test(notas) ? notas.replace(/^Opción elegida: \d+.*$/m, 'Opción elegida: ' + n) : notas.replace(/(── Generado con Claude ──[^\n]*)/, '$1\nOpción elegida: ' + n);
+    const campos = { copy: [op.texto].concat(o.sufijo).join('\n\n'), notas };
+    if (p.estado === 'En aprobación') {
+      campos.estado = 'En producción';
+      campos.aprobaciones = JSON.stringify(eventos(p).concat([{ tipo: 'EDICION', email: App.usuario.email, nombre: App.usuario.nombre, fecha: new Date().toISOString(), comentario: 'Eligió la ' + op.nombre }]));
+    }
+    await guardarPub(p, campos);
+    return true;
   }
 
   // =====================================================================
@@ -670,6 +751,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
       U.pantalla(raiz, { logo: CFG.logo, cargando: true, titulo: 'Cargando el plan…', texto: 'Temas, publicaciones y métricas' });
       await G.sitio(CFG.sitio.host, CFG.sitio.ruta);
       await cargar();
+      completarSemanas().catch(() => { /* se reintenta en la próxima carga */ });
       pintarEncabezado();
       U.enrutar({ '': () => vistaCalendario(raiz), lista: () => vistaLista(raiz), pub: () => vistaPub(raiz), temas: () => vistaTemas(raiz), tema: () => vistaTema(raiz),
         aprobar: () => vistaAprobar(raiz), metricas: () => vistaMetricas(raiz), resumen: () => vistaResumen(raiz), generar: () => MKT_GEN.vista(raiz), importar: () => MKT_IMP.vista(raiz), revision: () => MKT_REV.vista(raiz) }, marcarNav);
@@ -682,6 +764,6 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
   }
   // Funciones que usa el generador (js/generador.js)
   window.MKT = { dia, hoyISO, sumarDias, lunesDe, fLarga, fCorta, pad, temaDe, utm, redDeCanal, copiar, rutaUrl, chipCanal, chipEstado, opciones, nombreCorto, parecido, metVacia,
-    eventos, ronda, aprobadores, miDecision, guardarPub, soyAprobador, pintarEncabezado };
+    eventos, ronda, aprobadores, miDecision, guardarPub, soyAprobador, pintarEncabezado, semanaDe, conSemana, opcionesCopy, elegirOpcion };
   window.addEventListener('DOMContentLoaded', arrancar);
 })();

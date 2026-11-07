@@ -179,8 +179,8 @@ const LISTAS = [
     ['tema', 't'], ['semana_inicio', 'd', null, 1], ['categoria', 't'], ['hook', 'm'], ['problema', 'm'], ['autoridad', 'm'], ['solucion', 'm'], ['cta', 'm'],
     ['valor', 'm'], ['seo', 't'], ['objetivo', 'm'], ['enfoque', 'm'], ['proposito', 'm'], ['promesa', 'm'], ['kpis', 'm'], ['microapp', 't'], ['cta_microapp', 'm'],
     ['hashtags', 'm'], ['palabras', 'm'], ['estado', 't'], ['orden', 'n']] },
-  { n: 'MKT_Publicaciones', title: 'publicacion_id', d: 'Publicaciones por red y fecha: copy, pieza, aprobaciones (mínimo 2), estado y link publicado', cols: [
-    ['tema_id', 't', null, 1], ['fecha', 'd', null, 1], ['canal', 't', null, 1], ['formato', 't'], ['titulo', 't'], ['copy', 'm'], ['estado', 't', null, 1],
+  { n: 'MKT_Publicaciones', title: 'publicacion_id', d: 'Publicaciones por red: semana de la campaña (lunes), fecha de publicación, copy, pieza, aprobaciones (mínimo 2), estado y link publicado', cols: [
+    ['tema_id', 't', null, 1], ['fecha_semana', 'd'], ['fecha', 'd', null, 1], ['canal', 't', null, 1], ['formato', 't'], ['titulo', 't'], ['copy', 'm'], ['estado', 't', null, 1],
     ['link', 't'], ['utm_url', 'm'], ['pieza_ruta', 't'], ['aprobaciones', 'm'], ['notas', 'm'], ['origen_id', 'n'], ['responsable', 't']] },
   { n: 'MKT_Metricas', title: 'metrica_id', d: 'Resultados de cada publicación o campaña (orgánica o paga) por fecha de corte', cols: [
     ['publicacion_id', 't', null, 1], ['tema_id', 't'], ['nombre', 't'], ['red', 't', null, 1], ['tipo', 't'], ['objetivo', 't'], ['fecha_campana', 'd'],
