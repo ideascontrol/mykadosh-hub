@@ -1,0 +1,33 @@
+/* =====================================================================
+   De Dios para el camino · Lectura diaria — configuración (uso personal)
+   Trabaja sobre TU Excel y TU Word en SharePoint (sitio IC Apps, biblioteca Documentos).
+   Para que nadie más los vea: en SharePoint, carpeta «Personal» › Gestionar acceso ›
+   Dejar de heredar permisos y dejar solo tu cuenta.
+   ===================================================================== */
+window.CFG = {
+  app: { id: 'PER-01', nombre: 'De Dios para el camino', version: '0.1.1' },
+  auth: {
+    clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
+    tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
+    redirectPath: '/ideascontrol/Portal/',
+    scopes: ['User.Read', 'Sites.ReadWrite.All']
+  },
+  sitio: { host: 'ideascontrolsas.sharepoint.com', ruta: '/sites/ICApps' },
+  logo: '/ideascontrol/assets/ideascontrol.webp',
+  usuarios: ['operaciones@ideascontrol.com'],           // solo tú
+
+  carpeta: 'Personal/Lectura diaria',
+  excel: 'Personal/Lectura diaria/Lectura_Diaria_2026.xlsx',
+  word: 'Personal/Lectura diaria/Lectura_Diaria_2026.docx',
+  hojas: { plan: 'Plan Lectura', contenido: 'Contenido' },
+  // Columnas de la hoja Contenido (igual a tu Excel)
+  col: { publicado: 'B', prompt: 'C', fecha: 'D', ref: 'E', texto: 'F', categoria: 'G', idea: 'H', recuerda: 'I', aplicacion: 'J', imagen: 'K' },
+  formatoFecha: 'dd\\-mm\\-yy',
+
+  // Entrada del Word y publicación de Facebook
+  cierre: 'Dios te bendiga',
+  hashtags: '#Devocional #Reflexion #Fe #MensajeBiblico #Biblia #Propósito',
+  relleno: 'Miqueas 4:3',                                 // texto de las entradas de relleno que se reemplazan
+  facebook: 'https://www.facebook.com/bendicionesencamino',
+  categorias: ['Promesas de Dios', 'Confianza', 'Sabiduría', 'Fortaleza', 'Liderazgo', 'Consuelo']
+};
