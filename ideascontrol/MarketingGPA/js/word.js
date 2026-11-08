@@ -68,10 +68,13 @@ window.GPA_DOC = (function () {
         children: secciones }] });
   }
 
+  // Logo de GPA (PNG 900×478) o, si no carga, el nombre
+  const portada = (logo) => logo ? new D.Paragraph({ children: [new D.ImageRun({ data: logo, transformation: { width: 190, height: 101 } })], spacing: { after: 120 } })
+    : new D.Paragraph({ children: emo('GROWTH PATH ACADEMY', { bold: true, size: 18, color: C.teal }), spacing: { after: 40 } });
   async function semana(d) {
     await cargar();
     const e = d.estrategia || {}, out = [];
-    out.push(new D.Paragraph({ children: emo('GROWTH PATH ACADEMY', { bold: true, size: 18, color: C.teal }), spacing: { after: 40 } }));
+    out.push(portada(d.logo));
     out.push(new D.Paragraph({ children: emo('Contenido de la semana del ' + d.fechaTxt, { bold: true, size: 40, color: C.navy }), spacing: { after: 120 } }));
     if (e.tema) out.push(caja('Estrategia de la semana', [P('**Tema:** ' + e.tema), e.objetivo ? P('**Objetivo:** ' + e.objetivo) : null, e.angulos ? P('**Ángulos:** ' + e.angulos) : null, e.cta ? P('**CTA recomendado:** ' + e.cta, { despues: 0 }) : null].filter(Boolean), C.teal, C.tealClaro));
     let diaAnt = '';
@@ -96,7 +99,7 @@ window.GPA_DOC = (function () {
 
   async function informe(d) {
     await cargar();
-    const out = [new D.Paragraph({ children: emo('GROWTH PATH ACADEMY', { bold: true, size: 18, color: C.teal }), spacing: { after: 40 } }),
+    const out = [portada(d.logo),
       new D.Paragraph({ children: emo(d.titulo, { bold: true, size: 38, color: C.navy }), spacing: { after: 60 } }), P(d.periodo, { color: C.gris })];
     if (d.kpis && d.kpis.length) {
       out.push(new D.Table({ width: { size: 100, type: D.WidthType.PERCENTAGE }, rows: d.kpis.map((k) => new D.TableRow({ children: [

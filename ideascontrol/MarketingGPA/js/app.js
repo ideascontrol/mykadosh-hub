@@ -208,7 +208,7 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
   const NAV = [['', 'Semana'], ['lista', 'Publicaciones'], ['mejorar', 'Mejorar'], ['metricas', 'Métricas'], ['leads', 'Leads'], ['pauta', 'Pauta'], ['resumen', 'Resumen'], ['plan', 'Plan'], ['archivos', 'Archivos']];
   function pintarEncabezado() {
     const u = App.usuario;
-    document.getElementById('encabezado').innerHTML = '<a href="#" class="g-marca"><span class="g-logo">GPA</span></a>' +
+    document.getElementById('encabezado').innerHTML = '<a href="#" class="g-marca"><img class="g-logo-img" src="' + CFG.icono + '" alt="GPA"></a>' +
       '<div class="app-nombre"><b>' + esc(CFG.app.nombre) + '</b><span>Growth Path Academy · v' + CFG.app.version + '</span></div><div class="espacio"></div>' +
       '<nav class="g-nav">' + NAV.map((n) => '<a href="#' + n[0] + '" data-r="' + n[0] + '">' + n[1] + '</a>').join('') + '</nav>' +
       '<div class="ic-user">' + IC.portal.boton() + '<div class="datos"><b>' + esc(u.nombre) + '</b><span>Uso personal</span></div><div class="ic-avatar">' + esc(u.iniciales) + '</div><button class="ic-btn sec chico" id="btnSalir">Salir</button></div>';
@@ -243,7 +243,7 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
         '<div class="g-btns"><button class="ic-btn sec chico" data-copy="' + esc(p.id) + '">Copy</button>' + botonesPrompt(p, 'data-pi') + '<button class="ic-btn sec chico" data-bajar="' + esc(p.id) + '">⬇ Pieza</button></div></article>').join('') || '<p class="sec">Sin publicaciones.</p>') + '</section>';
     }
     raiz.innerHTML = '<div class="g-cab"><div><h1 class="ic-titulo">Semana</h1><div class="g-sel"><button class="ic-btn sec chico" id="sAnt">‹</button>' + selSemana('sSem', l) + '<button class="ic-btn sec chico" id="sSig">›</button><button class="ic-btn sec chico" id="sHoy">Esta semana</button></div></div>' +
-      '<div class="g-acc"><a class="ic-btn" href="#mejorar/' + l + '">✨ Mejorar con Claude</a><button class="ic-btn sec" id="sWord">📄 Word de la semana</button><a class="ic-btn sec" href="/ideascontrol/Imagenes/" target="_blank" rel="noopener">🗜️ Optimizar imágenes</a></div></div>' +
+      '<div class="g-acc"><a class="ic-btn" href="#mejorar/' + l + '">✨ Mejorar con Claude</a><button class="ic-btn sec" id="sWord">📄 Word de la semana</button><a class="ic-btn sec" href="/ideascontrol/Imagenes/" target="_blank" rel="noopener">🗜️ Optimizar imágenes</a><a class="ic-btn sec" href="' + CFG.logo + '" download="Logo_GPA.png" title="Para adjuntarlo en la IA de imágenes">⬇ Logo GPA</a></div></div>' +
       cajaEstrategia(l) +
       '<p class="g-cuenta">' + ps.length + ' publicaciones · ' + CFG.estados.filter((e) => cuenta[e]).map((e) => chipEstado(e) + ' ' + cuenta[e]).join(' ') + '</p>' +
       '<div class="g-dias">' + dias + '</div>';
@@ -260,11 +260,13 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
     enlazarPrompts(raiz, 'data-pi');
   }
 
+  let logoBuf = null;
+  async function logoDoc() { if (logoBuf) return logoBuf; try { const r = await fetch(CFG.logo); if (r.ok) logoBuf = await r.arrayBuffer(); } catch (e) { /* sin logo */ } return logoBuf; }
   // Word de la semana (se guarda en SharePoint y se descarga)
   async function wordSemana(l) {
     try {
       const ps = App.pubs.filter((p) => p.semana === l && p.estado !== 'Cancelada').sort(ordenar);
-      const blob = await GPA_DOC.semana({ fechaTxt: fd(l, { day: 'numeric', month: 'long', year: 'numeric' }), estrategia: App.estrategia[l], piezas: ps.map((p) => ({
+      const blob = await GPA_DOC.semana({ logo: await logoDoc(), fechaTxt: fd(l, { day: 'numeric', month: 'long', year: 'numeric' }), estrategia: App.estrategia[l], piezas: ps.map((p) => ({
         pub: p, diaTxt: fDia(p.fecha), copy: copyPublicar(p), enlace: utm(p), guion: guion(p), diseno: dis(p).descripcion || p.direccion, textoImg: dis(p).texto_en_imagen || '', partes: partes(p), medidas: medidas(p) })) });
       const nombre = 'GPA_Semana_' + l.slice(8, 10) + l.slice(5, 7) + l.slice(0, 4) + '.docx';
       let web = '';
@@ -326,7 +328,7 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
           (guion(p) ? '<details class="g-det" open><summary>🎬 Guion del video</summary><pre class="g-pre">' + esc(guion(p)) + '</pre><button class="ic-btn sec chico" id="pGuion">Copiar guion</button></details>' : '') + '</div></section>' +
         '<section class="ic-bloque"><div class="cab"><h2>🖼️ Prompt para la imagen</h2><span class="sec">' + esc(medidas(p)) + '</span></div><div class="cuerpo">' +
           '<p class="sec" style="margin:0 0 8px">' + (ps.length ? (esVideo(p) ? 'Video de ' + ps.length + ' tramos: portada y un prompt por tramo.' : ps.length + ' láminas: un prompt por lámina.') + ' Péguelos en orden en la misma conversación y adjunte el logo en el primero.' : 'Copie el prompt, péguelo en la IA de imágenes y adjunte el logo de GPA.') + '</p>' +
-          '<div class="g-btns">' + botonesPrompt(p, 'data-pi') + '<button class="ic-btn sec chico" id="pVer">Ver</button><button class="ic-btn sec chico" id="pPlant">Editar plantilla</button></div>' +
+          '<div class="g-btns">' + botonesPrompt(p, 'data-pi') + '<button class="ic-btn sec chico" id="pVer">Ver</button><button class="ic-btn sec chico" id="pPlant">Editar plantilla</button><a class="ic-btn sec chico" href="' + CFG.logo + '" download="Logo_GPA.png">⬇ Logo GPA</a></div>' +
           '<p class="sec" style="margin:10px 0 0"><b>Qué se ve:</b> ' + esc(dis(p).descripcion || p.direccion || '—') + '</p></div></section>' +
         '<section class="ic-bloque"><div class="cab"><h2>Pieza</h2></div><div class="cuerpo"><div id="pArch" class="g-arch"><p class="sec">Cargando archivos…</p></div>' +
           '<div class="g-btns" style="align-items:center;margin-top:8px"><label class="ic-btn sec chico">Subir archivo(s)<input type="file" id="pSubir" multiple accept="image/*,video/*,.pdf" hidden></label>' +
@@ -632,7 +634,7 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
     raiz.querySelector('#aWord').onclick = (e) => U.conCarga(e.currentTarget, async () => {
       const t = raiz.querySelector('#aResp').value.trim(); if (t.length < 40) { U.aviso('Pegue primero la respuesta de Claude', 'warn'); return; }
       try {
-        const blob = await GPA_DOC.informe({ titulo: 'Informe de resultados', periodo: 'Del ' + fLarga(F.rd) + ' al ' + fLarga(F.rh), texto: t,
+        const blob = await GPA_DOC.informe({ logo: await logoDoc(), titulo: 'Informe de resultados', periodo: 'Del ' + fLarga(F.rd) + ' al ' + fLarga(F.rh), texto: t,
           kpis: [['Publicadas / planeadas', k.pub + ' / ' + k.plan], ['Alcance', fmtN(k.alcance)], ['Interacciones', fmtN(k.int)], ['Clics', fmtN(k.clics)], ['Leads / calificados / reuniones', k.leads + ' / ' + k.calif + ' / ' + k.reun], ['Inversión pauta', U.fmt.cop(k.inv)]] });
         const nombre = 'Informe_GPA_' + F.rd + '_a_' + F.rh + '.docx';
         await G.subirArchivo(CFG.carpeta + '/Informes/' + nombre, blob);

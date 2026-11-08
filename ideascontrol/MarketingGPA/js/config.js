@@ -6,7 +6,7 @@
    Dejar de heredar permisos y dejar solo tu cuenta.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'PER-02', nombre: 'Marketing GPA', version: '0.1.0' },
+  app: { id: 'PER-02', nombre: 'Marketing GPA', version: '0.1.1' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -14,7 +14,8 @@ window.CFG = {
     scopes: ['User.Read', 'Sites.ReadWrite.All']
   },
   sitio: { host: 'ideascontrolsas.sharepoint.com', ruta: '/sites/ICApps' },
-  logo: '/ideascontrol/assets/ideascontrol.webp',
+  logo: '/ideascontrol/MarketingGPA/img/gpa-logo.png',
+  icono: '/ideascontrol/MarketingGPA/img/gpa-icono.png',
   usuarios: ['operaciones@ideascontrol.com'],           // solo tú
 
   carpeta: 'Personal/Marketing GPA',

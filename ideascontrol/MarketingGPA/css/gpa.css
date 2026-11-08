@@ -64,3 +64,4 @@
   .g-nav { order: 9; width: 100%; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
   .g-nav a { white-space: nowrap; }
 }
+.g-logo-img { width: 42px; height: 42px; object-fit: contain; display: block; }
