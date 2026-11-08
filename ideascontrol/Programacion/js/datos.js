@@ -40,7 +40,11 @@ window.Ope = (function () {
   }
 
   // ---------- Catálogos ----------
+  // Los catálogos se vuelven a leer si tienen más de 1 minuto (cambios hechos en Administración desde otra pestaña o por otra persona)
+  let catalogosEn = 0;
+  async function catalogosFrescos(seg) { if (Date.now() - catalogosEn > (seg == null ? 60 : seg) * 1000) { try { await cargarCatalogos(); } catch (e) { /* se valida con lo que hay */ } } }
   async function cargarCatalogos() {
+    catalogosEn = Date.now();
     const [tec, tip, fes] = await Promise.all([
       G.items('OPE_Tecnicos'), G.items('OPE_Tipos'), G.items('SYS_Festivos', { top: 999 }).catch(() => [])
     ]);
@@ -50,8 +54,8 @@ window.Ope = (function () {
   }
   const tec = (id) => D.tecnicos.find((t) => t.Title === id) || null;
   const tipo = (cod) => D.tipos.find((t) => t.Title === cod) || null;
-  const habilidades = (t) => String((t && t.habilidades) || '').split(/[;,\s]+/).filter(Boolean);
-  const puede = (t, cod) => habilidades(t).indexOf(cod) >= 0;
+  const habilidades = (t) => String((t && t.habilidades) || '').toUpperCase().split(/[;,\s]+/).filter(Boolean);
+  const puede = (t, cod) => habilidades(t).indexOf(String(cod || '').trim().toUpperCase()) >= 0;
   const usaEquipos = (cod) => { const t = tipo(cod); return !!(t && Number(t.max_equipos) > 0); };
   const diasPref = (t) => String((t && t.dias_preferentes) || '').split(/[;,\s]+/).filter(Boolean).map(Number);
   const tecnicosActivos = () => D.tecnicos.filter((t) => t.estado !== 'INACTIVO');
@@ -124,7 +128,7 @@ window.Ope = (function () {
     if (a.tipo !== 'AUS' && wd > 5 && !a.autorizado) E('Fin de semana');
     if (a.tipo === 'OFI' && t && t.vinculacion !== 'IDEAS_CONTROL') E('Solo los técnicos de Ideas Control rotan en oficina');
     if (a.tipo === 'OFI' && a.tecnico_id && dd.filter((x) => x.tipo === 'OFI' && x.tecnico_id).length > 1) E('Más de un técnico de turno ese día (los técnicos sin asignación no se registran como Oficina)');
-    if (a.tipo && a.tipo !== 'OFI' && t && !puede(t, a.tipo)) E(t.nombre + ' no realiza ' + nombreTipo(a.tipo));
+    if (a.tipo && a.tipo !== 'OFI' && t && !puede(t, a.tipo)) { E(t.nombre + ' no realiza ' + nombreTipo(a.tipo) + ' (' + a.tipo + ')'); out.faltaHab = { tecnico: t.Title, tipo: a.tipo }; }
     if (t && t.vinculacion === 'TECNICO_CAMPO' && /bogot/.test(IC.ui.norm(a.ciudad))) E('Técnico de campo solo para trabajos fuera de Bogotá');
     if (usaEquipos(a.tipo) && !(Number(a.equipos) >= 1)) E('Indique la cantidad de equipos');
     if (a.tipo === 'INV' && dd.filter((x) => x.tipo === 'INV').length < 2) E('El inventario debe programarse con más de 1 técnico ese día');
@@ -225,7 +229,7 @@ window.Ope = (function () {
   return {
     D, ESTADOS, VINCULOS, DIAS, DIAS_CORTOS, MESES,
     dia, pad, hoy, aFecha, sumar, dow, lunesDe, ym, finDeMes, esFestivo, esHabil, diasHabilesMes, textoFecha,
-    cargarCatalogos, tec, tipo, habilidades, puede, usaEquipos, diasPref, tecnicosActivos, tecnicosIC, nombreTec, nombreTipo, nombreEstado,
+    cargarCatalogos, catalogosFrescos, tec, tipo, habilidades, puede, usaEquipos, diasPref, tecnicosActivos, tecnicosIC, nombreTec, nombreTipo, nombreEstado,
     cargarMes, cargarRango, delRango, delDia, activa, buscar, recordar, orden,
     cargaDia, validar, etiqueta, resumenDia, empresas, sitiosConocidos, auditar, crearActividad, actualizarActividad
   };

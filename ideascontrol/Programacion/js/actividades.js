@@ -113,13 +113,30 @@
         if (!p.fecha) return;
         try { await Ope.cargarMes(Ope.ym(p.fecha)); } catch (e) { /* sin conexión: se valida con lo que hay */ }
         if (n !== turno) return;
+        await Ope.catalogosFrescos(60);
+        if (n !== turno) return;
         const v = Ope.validar(p);
         cuerpo.querySelector('#ayCarga').textContent = v.carga !== null ? 'Carga del día: ' + Math.round(v.carga * 100) + ' %' : '';
         const finde = Ope.dow(p.fecha) > 5 || Ope.esFestivo(p.fecha);
         cuerpo.querySelector('#cAut').hidden = !(App.esAdmin() && finde);
         cuerpo.querySelector('#valPanel').innerHTML = !Ope.activa(p) ? '' :
-          (v.errores.length ? '<div class="ope-v err"><b>⚠ Conflictos</b><ul>' + v.errores.map((x) => '<li>' + esc(x) + '</li>').join('') + '</ul></div>' : '<div class="ope-v ok">✔ Sin conflictos</div>') +
+          (v.errores.length ? '<div class="ope-v err"><b>⚠ Conflictos</b><ul>' + v.errores.map((x) => '<li>' + esc(x) + '</li>').join('') + '</ul>' +
+            (v.faltaHab && App.esAdmin() ? '<button type="button" class="ic-btn sec chico" id="bHab">Habilitar a ' + esc(Ope.nombreTec(v.faltaHab.tecnico)) + ' para ' + esc(Ope.nombreTipo(v.faltaHab.tipo)) + '</button>' : '') + '</div>' : '<div class="ope-v ok">✔ Sin conflictos</div>') +
           (v.avisos.length ? '<div class="ope-v warn"><b>ℹ Para revisar</b><ul>' + v.avisos.map((x) => '<li>' + esc(x) + '</li>').join('') + '</ul></div>' : '');
+        const bh = cuerpo.querySelector('#bHab');
+        if (bh) bh.onclick = () => U.conCarga(bh, async () => {
+          try {
+            await Ope.cargarCatalogos();
+            const t = Ope.tec(v.faltaHab.tecnico);
+            if (t && !Ope.puede(t, v.faltaHab.tipo)) {
+              const hab = Ope.habilidades(t).concat([v.faltaHab.tipo]).join(';');
+              await IC.graph.actualizar('OPE_Tecnicos', t._id, { habilidades: hab }, t._etag);
+              await Ope.auditar('TECNICO', t.Title, 'ACTUALIZAR', { habilidades: t.habilidades }, { habilidades: hab });
+              await Ope.cargarCatalogos();
+            }
+            U.aviso('Habilidad agregada en la matriz', 'ok'); refrescar();
+          } catch (e) { U.aviso(U.mensajeError(e), 'err', 7000); }
+        });
         const otras = Ope.delDia(p.fecha).filter((x) => x.Title !== a.Title && Ope.activa(x)).sort(Ope.orden);
         const r = Ope.resumenDia(p.fecha);
         cuerpo.querySelector('#diaPanel').innerHTML = '<b>' + esc(Ope.textoFecha(p.fecha, true)) + (Ope.esFestivo(p.fecha) ? ' · ' + esc(Ope.D.festivos[p.fecha]) : '') + '</b>' +
@@ -138,6 +155,7 @@
         if (!p.tipo) err.tipo = 'Elija el tipo';
         if (!U.marcarErrores(f, err)) return;
         await Ope.cargarMes(Ope.ym(p.fecha));
+        await Ope.catalogosFrescos(5);
         const v = Ope.validar(p);
         if (v.errores.length && Ope.activa(p) && !(await U.confirmar('Guardar con conflictos', 'La actividad tiene conflictos:\n• ' + v.errores.join('\n• ') + '\n\n¿Guardarla de todas formas? Quedará marcada con ⚠ hasta que se corrija.', 'Guardar con conflictos'))) {
           App.abrirActividad(Object.assign({}, a, p), alCambiar, nueva); return;

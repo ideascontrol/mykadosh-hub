@@ -142,8 +142,9 @@ async function arrancar() {
     pintarEncabezado();
     const rutas = { '': () => vistaMenu(raiz) };
     MENU.forEach((g) => g.items.forEach((i) => {
-      rutas[i.ruta] = () => {
+      rutas[i.ruta] = async () => {
         if ((i.admin && !App.esAdmin()) || (i.roles && i.roles.indexOf(App.usuario.rol) < 0)) { location.hash = ''; return; }
+        if (i.ruta !== 'admin') await Ope.catalogosFrescos(60);   // técnicos y habilidades al día (cambios desde otra pestaña)
         const fn = App.vistas[i.ruta];
         if (fn) fn(raiz, App.params()); else raiz.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a><p>Módulo en construcción.</p>';
       };
