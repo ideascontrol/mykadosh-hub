@@ -68,6 +68,25 @@ window.MKT_IMG = (function () {
     });
   }
 
+  // ---------- Variedad entre publicaciones: personas y ubicación del logo (fijas por pieza, distintas entre piezas seguidas) ----------
+  const PERSONAS = [
+    'mujer de unos 30 años, cabello negro largo y liso, blusa azul claro',
+    'hombre de unos 50 años, canoso, barba corta, camisa blanca y chaleco',
+    'mujer de unos 45 años, cabello rizado castaño, gafas, blazer gris',
+    'hombre joven de unos 25 años, piel morena, cabello corto rizado, polo de trabajo',
+    'mujer de unos 55 años, cabello corto canoso, saco vino tinto',
+    'hombre de unos 35 años, piel trigueña, sin barba, camisa a cuadros',
+    'mujer joven de unos 28 años, piel morena, trenzas, camisa de dotación',
+    'hombre de unos 40 años, calvo, gafas de marco negro, suéter azul marino',
+    'grupo de tres personas de edades y rasgos distintos conversando',
+    'mujer de unos 38 años, cabello recogido, chaleco de supervisora de planta',
+    'hombre de unos 60 años, bigote, camisa manga larga beige',
+    'mujer de unos 33 años, cabello ondulado rojizo, chaqueta de jean'
+  ];
+  const POS_LOGO = ['abajo a la izquierda', 'arriba a la izquierda', 'abajo a la derecha', 'arriba a la derecha', 'abajo al centro', 'arriba al centro'];
+  const numDe = (id) => { const m = String(id || '').match(/(\d+)\s*$/); if (m) return +m[1]; let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) % 9973; return h; };
+  const variedad = (id) => { const n = numDe(id); return { personas: PERSONAS[n % PERSONAS.length], logo: POS_LOGO[(n * 5) % POS_LOGO.length] }; };
+
   // ---------- el prompt de una publicación (o de una lámina del carrusel: k = 1…N) ----------
   // Varias imágenes: carrusel, o cualquier pieza (p. ej. TikTok en fotos) cuyo diseño trae 2 o más láminas
   // Tramos del video guardados al generar (VIDEO …: • Hook 0–3 s: pantalla «…» · voz «…» y las líneas «Canva …» de cada segmento)
@@ -95,6 +114,10 @@ window.MKT_IMG = (function () {
       'Fecha de publicación: ' + M().fLarga(p.fecha),
       'Tema: ' + limpio(p.titulo || t.tema || '')];
     L.push('Qué se ve' + (lam ? ' (línea visual de todas las imágenes)' : '') + ': ' + (d.descripcion || 'propón una escena que represente el tema con personas reales en un contexto laboral colombiano'));
+    const va = variedad(p.Title);
+    L.push('Ubicación del logo (obligatoria en esta pieza): ' + va.logo + (N > 1 ? ', la misma en todas las imágenes de esta pieza' : ''));
+    L.push('Personas (si la pieza lleva personas): ' + va.personas + '. ' + (N > 1 ? 'Son las mismas personas en todas las imágenes de esta pieza.' : 'Deben ser personas DISTINTAS a las de las imágenes anteriores de esta conversación: otra cara, edad, peinado y ropa.'));
+
     if (lam) {
       if (d.texto) L.push('Textos generales: ' + d.texto);
       const E = vid ? 'TRAMO' : 'LÁMINA';

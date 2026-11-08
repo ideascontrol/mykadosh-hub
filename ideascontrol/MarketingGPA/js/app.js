@@ -120,6 +120,24 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
     return '';
   }
   const limpio = (s) => String(s || '').replace(/\*\*/g, '').replace(/\s+/g, ' ').trim();
+  // ---------- Variedad entre publicaciones: personas y ubicación del logo (fijas por pieza, distintas entre piezas seguidas) ----------
+  const PERSONAS = [
+    'mujer de unos 30 años, cabello negro largo y liso, blusa azul claro',
+    'hombre de unos 50 años, canoso, barba corta, camisa blanca y chaleco',
+    'mujer de unos 45 años, cabello rizado castaño, gafas, blazer gris',
+    'hombre joven de unos 25 años, piel morena, cabello corto rizado, polo de trabajo',
+    'mujer de unos 55 años, cabello corto canoso, saco vino tinto',
+    'hombre de unos 35 años, piel trigueña, sin barba, camisa a cuadros',
+    'mujer joven de unos 28 años, piel morena, trenzas, camisa de dotación',
+    'hombre de unos 40 años, calvo, gafas de marco negro, suéter azul marino',
+    'grupo de tres personas de edades y rasgos distintos conversando',
+    'mujer de unos 38 años, cabello recogido, chaleco de supervisora de planta',
+    'hombre de unos 60 años, bigote, camisa manga larga beige',
+    'mujer de unos 33 años, cabello ondulado rojizo, chaqueta de jean'
+  ];
+  const POS_LOGO = ['abajo a la izquierda', 'arriba a la izquierda', 'abajo a la derecha', 'arriba a la derecha', 'abajo al centro', 'arriba al centro'];
+  const numDe = (id) => { const m = String(id || '').match(/(\d+)\s*$/); if (m) return +m[1]; let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) % 9973; return h; };
+  const variedad = (id) => { const n = numDe(id); return { personas: PERSONAS[n % PERSONAS.length], logo: POS_LOGO[(n * 5) % POS_LOGO.length] }; };
   // Prompt de la imagen (k = lámina o tramo; sin k = la pieza o la portada del video)
   function promptImagen(p, k) {
     const ps = partes(p), N = ps.length, lam = k && N, vid = esVideo(p), e = App.estrategia[p.semana] || {};
@@ -128,6 +146,10 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
       'Formato: ' + p.formato + (vid && lam ? ' → imagen para el TRAMO ' + k + ' de ' + N + ' del video (clip para CapCut)' : vid ? ' → PORTADA del video' : lam ? ' → lámina ' + k + ' de ' + N : esCarrusel(p) ? ' → una imagen por lámina' : ''),
       'Fecha de publicación: ' + fLarga(p.fecha), 'Tema de la semana: ' + (e.tema || ''), 'Etapa del embudo: ' + (p.etapa || '')];
     L.push('Qué se ve: ' + (dis(p).descripcion || p.direccion || 'propón una escena que represente el mensaje'));
+    const va = variedad(p.id);
+    L.push('Ubicación del logo (obligatoria en esta pieza): ' + va.logo + (N > 1 ? ', la misma en todas las imágenes de esta pieza' : ''));
+    L.push('Personas (si la pieza lleva personas): ' + va.personas + '. ' + (N > 1 ? 'Son las mismas personas en todas las imágenes de esta pieza.' : 'Deben ser personas DISTINTAS a las de las imágenes anteriores de esta conversación: otra cara, edad, peinado y ropa.'));
+
     L.push('Texto en la imagen (exacto): ' + (dis(p).texto_en_imagen || (lam ? '' : limpio(ganchoDe(p)))));
     if (lam) {
       L.push(vid ? 'Tramos del video:' : 'Láminas:'); ps.forEach((x, n) => L.push((n + 1 === k ? '→ ' : '• ') + x));
