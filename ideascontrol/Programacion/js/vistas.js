@@ -24,6 +24,7 @@
   // AGENDA (sábana-calendario)
   // =====================================================================
   App.vistas.agenda = async function (c) {
+    App._agendaLeida = false;   // al entrar a la agenda se leen los datos más recientes
     const tecOps = Ope.D.tecnicos.map((t) => '<option value="' + esc(t.Title) + '"' + (App.estado.tec === t.Title ? ' selected' : '') + '>' + esc(t.nombre) + '</option>').join('');
     const tipoOps = Ope.D.tipos.map((t) => '<option value="' + esc(t.Title) + '"' + (App.estado.tipo === t.Title ? ' selected' : '') + '>' + esc(t.nombre) + '</option>').join('');
     c.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a>' +
@@ -42,7 +43,7 @@
       c.querySelector('#fTec').onchange = (e) => { App.estado.tec = e.target.value; dibujar(); };
       conectarMes(c, pintar);
       const k = mesActual(), ini = Ope.lunesDe(k + '-01'), [y, m] = k.split('-').map(Number), fin = Ope.sumar(Ope.lunesDe(Ope.finDeMes(y, m)), 6);
-      try { await Ope.cargarRango(ini, fin); } catch (e) { c.querySelector('#cal').innerHTML = errorCaja(e); return; }
+      try { await Ope.cargarRango(ini, fin, !App._agendaLeida); App._agendaLeida = true; } catch (e) { c.querySelector('#cal').innerHTML = errorCaja(e); return; }
       dibujar();
     }
     function dibujar() {
@@ -88,9 +89,9 @@
         pintar();
       };
     });
-    c.querySelector('#bImprimir').onclick = () => window.print();
+    c.querySelector('#bImprimir').onclick = (e) => U.conCarga(e.currentTarget, async () => { await pintar(true); setTimeout(() => window.print(), 150); });
     c.querySelector('#bCopiar').onclick = async () => {
-      try { await navigator.clipboard.writeText(texto()); U.aviso('Texto copiado: péguelo en el correo o en el chat del equipo', 'ok'); }
+      try { await pintar(true); await navigator.clipboard.writeText(texto()); U.aviso('Texto copiado: péguelo en el correo o en el chat del equipo', 'ok'); }
       catch (e) { U.modal('Texto de la programación', '<textarea style="width:100%;height:360px">' + esc(texto()) + '</textarea>'); }
     };
     const dias = () => { const ini = App.estado.semana; const d = [0, 1, 2, 3, 4].map((i) => Ope.sumar(ini, i)); [5, 6].forEach((i) => { const s = Ope.sumar(ini, i); if (Ope.delDia(s).some(Ope.activa)) d.push(s); }); return d; };
@@ -111,13 +112,15 @@
       });
       return t;
     }
-    async function pintar() {
+    async function pintar(forzar) {
       const ini = App.estado.semana, fin = Ope.sumar(ini, 6);
       c.querySelector('#lblSem').textContent = 'Semana ' + semanaISO(ini) + ' · ' + Ope.textoFecha(ini) + ' – ' + Ope.textoFecha(Ope.sumar(ini, 4));
-      try { await Ope.cargarRango(ini, fin); } catch (e) { c.querySelector('#sem').innerHTML = errorCaja(e); return; }
+      // Siempre lo último de SharePoint (lo que otros cambiaron después de abrir la app); la agenda usa estos mismos datos
+      try { await Ope.cargarRango(ini, fin, forzar !== false); } catch (e) { c.querySelector('#sem').innerHTML = errorCaja(e); return; }
       const ds = dias();
       const acts = Ope.delRango(ini, fin).filter(Ope.activa);
       const tecs = Ope.D.tecnicos.filter((t) => (t.estado !== 'INACTIVO' && t.vinculacion === 'IDEAS_CONTROL') || acts.some((a) => a.tecnico_id === t.Title));
+      Array.from(new Set(acts.filter((a) => a.tecnico_id && !Ope.tec(a.tecnico_id)).map((a) => a.tecnico_id))).forEach((id) => tecs.push({ Title: id, nombre: id + ' (no está en Técnicos)' }));
       const sinTec = acts.filter((a) => !a.tecnico_id && a.tipo !== 'OFI');
       let html = '<div class="ope-print-cab"><img src="' + CFG.logo + '" alt=""><div><b>Programación de Operaciones</b><span>Semana del ' + esc(Ope.textoFecha(ini)) + ' al ' + esc(Ope.textoFecha(Ope.sumar(ini, 4))) + '</span></div></div>' +
         '<div class="ic-tabla-caja ope-scroll"><table class="ic-tabla ope-semana"><thead><tr><th>Técnico</th>' +
