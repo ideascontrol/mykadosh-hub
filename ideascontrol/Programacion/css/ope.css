@@ -174,3 +174,32 @@
 
 /* Proveedores: columnas numéricas */
 .ic-tabla th.num, .ic-tabla td.num { text-align: right; white-space: nowrap; }
+
+/* Acta de equipos instalados (#acta) */
+.ope-acta { background: #fff; border: 1px solid var(--ic-borde); border-radius: var(--ic-radio); box-shadow: var(--ic-sombra); padding: 24px 28px; }
+.ope-acta-cab { display: flex; align-items: center; gap: 14px; border-bottom: 3px solid var(--ic-dorado, #C9A227); padding-bottom: 12px; margin-bottom: 14px; }
+.ope-acta-cab img { height: 42px; }
+.ope-acta-cab b { display: block; font-size: 18px; letter-spacing: .03em; color: var(--ic-azul); }
+.ope-acta-cab span { font-size: 12.5px; color: var(--ic-gris); }
+.ope-acta-datos { display: grid; grid-template-columns: 130px 1fr; gap: 4px 12px; font-size: 14px; margin: 0 0 14px; }
+.ope-acta-datos dt { color: var(--ic-gris); font-weight: 600; }
+.ope-acta-datos dd { margin: 0; }
+.ope-acta-tabla td, .ope-acta-tabla th { font-size: 13px; }
+.ope-acta-tabla tfoot td { border-top: 2px solid var(--ic-borde); background: #F8FAFC; }
+.ope-acta-tabla tr.ope-acta-fuera td { opacity: .45; text-decoration: line-through; text-decoration-color: rgba(0,0,0,.3); }
+.ope-acta-tabla tr.ope-acta-fuera td:first-child { opacity: 1; text-decoration: none; }
+.ope-acta-obs { margin-top: 14px; display: grid; gap: 6px; }
+.ope-acta-obs textarea { width: 100%; font: inherit; font-size: 13.5px; }
+.ope-acta-obs-imp { display: none; font-size: 13.5px; }
+.ope-acta-firmas { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 56px; }
+.ope-acta-firmas > div { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.ope-acta-firmas .linea { border-top: 1px solid var(--ic-tinta); margin-bottom: 6px; }
+.ope-acta-firmas span { color: var(--ic-gris); }
+@media print {
+  .ope-acta { border: 0; box-shadow: none; padding: 0; }
+  .ope-acta-tabla tr.ope-acta-fuera { display: none; }
+  .ope-acta-obs textarea { display: none; }
+  .ope-acta-obs-imp { display: block; min-height: 1em; }
+  .ope-acta-tabla { break-inside: auto; } .ope-acta-tabla tr { break-inside: avoid; }
+  .ope-acta-firmas { break-inside: avoid; }
+}

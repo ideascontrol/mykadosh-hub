@@ -25,6 +25,7 @@ const ICO = {
   politicas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>',
   admin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M19 8v6M16 11h6"/></svg>',
   vendors: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7h12v9H1z"/><path d="M13 10h4l3 3v3h-7"/><circle cx="5.5" cy="18" r="2"/><circle cx="17.5" cy="18" r="2"/></svg>',
+  acta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 14l2.5 2.5L16 11"/></svg>',
   yo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>'
 };
 
@@ -39,6 +40,7 @@ const MENU = [
     { ruta: 'resumen', titulo: 'Resumen ejecutivo', texto: 'Instalaciones del periodo: cumplimiento, equipos, clientes, técnicos, reprogramaciones y análisis con Claude.', icono: 'resumen', color: 'teal', roles: ['ADMIN', 'EDITOR', 'CONSULTA'] },
     { ruta: 'rotacion', titulo: 'Rotación de oficina', texto: 'Quién cubre la oficina cada día y quién está sin asignar (y debe estar en la oficina).', icono: 'oficina', color: 'teal' },
     { ruta: 'carga', titulo: 'Carga por técnico', texto: 'Actividades de cada técnico en el mes, por tipo.', icono: 'carga', color: 'teal' },
+    { ruta: 'acta', titulo: 'Acta de equipos instalados', texto: 'Listado tipo acta de las instalaciones de un periodo y cliente: quite las que no van, imprima o copie para el correo.', icono: 'acta', color: 'teal', roles: ['ADMIN', 'EDITOR', 'CONSULTA'] },
     { ruta: 'conflictos', titulo: 'Conflictos', texto: 'Actividades con alertas ⚠ que deben corregirse antes de publicar.', icono: 'alerta', color: 'teal' }
   ] },
   { grupo: 'Proveedores', items: [
@@ -148,7 +150,7 @@ async function arrancar() {
     MENU.forEach((g) => g.items.forEach((i) => {
       rutas[i.ruta] = async () => {
         if ((i.admin && !App.esAdmin()) || (i.roles && i.roles.indexOf(App.usuario.rol) < 0)) { location.hash = ''; return; }
-        if (i.ruta !== 'admin' && i.ruta !== 'vendors') await Ope.catalogosFrescos(60);   // técnicos y habilidades al día (cambios desde otra pestaña)
+        if (i.ruta !== 'admin' && i.ruta !== 'vendors' && i.ruta !== 'acta') await Ope.catalogosFrescos(60);   // técnicos y habilidades al día (cambios desde otra pestaña)
         const fn = App.vistas[i.ruta];
         if (fn) fn(raiz, App.params()); else raiz.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a><p>Módulo en construcción.</p>';
       };
