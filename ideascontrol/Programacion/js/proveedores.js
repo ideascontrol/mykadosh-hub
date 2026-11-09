@@ -544,7 +544,9 @@
       const costoAct = prod && existente ? cat.costos.find((x) => x.proveedor_id === existente.Title && x.producto_id === prod.Title && x.estado !== 'INACTIVO') : null;
       filas.push({ codigo, servicio, categoria: String(r['categoria'] || '').trim(), unidad, costo, venta, moneda: String(r['moneda'] || 'COP').toUpperCase() === 'USD' ? 'USD' : 'COP',
         desde: aFechaTxt(r['vigente desde']) || desdeDef, obs: String(r['observaciones'] || '').trim(), prod, pv, costoAct,
-        accion: !prod ? 'Nuevo' : (costoAct && Number(costoAct.costo) === costo && pv && Number(pv.valor) === venta ? 'Sin cambios' : 'Actualiza') });
+        // El precio de venta solo se fija al crear el producto o si cambia el costo; si no, se respeta el que tenga en Comercial
+        cambiaPrecio: !prod || !pv || !!(costoAct && Number(costoAct.costo) !== costo),
+        accion: !prod ? 'Nuevo' : (costoAct && Number(costoAct.costo) === costo ? 'Sin cambios' : 'Actualiza costo') });
     });
     if (!filas.length && !errores.length) errores.push('La hoja «Precios» no tiene filas.');
     return { prov, existente, filas, errores, avisos, margen, ok: !errores.length && filas.length > 0 };
@@ -555,10 +557,11 @@
     return (pl.errores.length ? '<div class="ope-v err"><b>Corrija el archivo y vuelva a revisar:</b><ul>' + pl.errores.slice(0, 30).map((e) => '<li>' + esc(e) + '</li>').join('') + '</ul></div>' : '') +
       (pl.avisos.length ? '<div class="ope-v warn" style="margin-top:8px"><ul>' + pl.avisos.slice(0, 20).map((e) => '<li>' + esc(e) + '</li>').join('') + '</ul></div>' : '') +
       '<div class="ope-v ok" style="margin-top:8px"><b>Proveedor:</b> ' + esc(pl.prov.razon_social) + ' — ' + (pl.existente ? 'ya existe (' + esc(pl.existente.Title) + ')' : 'se crea' + (pl.prov.nit && pl.prov.celular ? '' : ' con «Datos pendientes»')) +
-      '<br><b>Servicios:</b> ' + n('Nuevo') + ' nuevos · ' + n('Actualiza') + ' se actualizan · ' + n('Sin cambios') + ' sin cambios · margen ' + Math.round(pl.margen * 100) + ' %</div>' +
-      '<div class="ic-tabla-caja ope-scroll" style="max-height:340px;margin-top:10px"><table class="ic-tabla"><thead><tr><th>Código</th><th>Servicio</th><th class="num">Costo</th><th class="num">Precio de venta</th><th>Acción</th></tr></thead><tbody>' +
+      '<br><b>Servicios:</b> ' + n('Nuevo') + ' nuevos · ' + n('Actualiza costo') + ' cambian de costo · ' + n('Sin cambios') + ' sin cambios · margen ' + Math.round(pl.margen * 100) + ' %</div>' +
+      '<p class="ope-nota">Los servicios nuevos se crean en Comercial › Productos y precios con precio de venta = costo + ' + Math.round(pl.margen * 100) + ' %. Si cambia el costo de un servicio ya creado, su precio se recalcula; si el costo no cambia, se conserva el precio que tenga en Comercial.</p>' +
+      '<div class="ic-tabla-caja ope-scroll" style="max-height:340px;margin-top:10px"><table class="ic-tabla"><thead><tr><th>Código</th><th>Servicio</th><th class="num">Costo</th><th>Acción</th></tr></thead><tbody>' +
       pl.filas.map((f) => '<tr style="cursor:default"><td style="white-space:nowrap"><b>' + esc(f.codigo) + '</b></td><td>' + esc(f.servicio) + '<span class="sec">' + esc([f.categoria, f.unidad].filter(Boolean).join(' · ')) + '</span></td>' +
-        '<td class="num">' + U.fmt.cop(f.costo) + '</td><td class="num"><b>' + U.fmt.cop(f.venta) + '</b></td><td>' + esc(f.accion) + '</td></tr>').join('') + '</tbody></table></div>';
+        '<td class="num"><b>' + U.fmt.cop(f.costo) + '</b></td><td>' + esc(f.accion) + '</td></tr>').join('') + '</tbody></table></div>';
   }
 
   async function ejecutar(pl, paso) {
@@ -578,7 +581,7 @@
     // 2. Numeración en bloque
     const cambian = pl.filas.filter((f) => f.accion !== 'Sin cambios');
     const nuevosPrd = cambian.filter((f) => !f.prod).length;
-    const nuevosPre = cambian.filter((f) => !f.pv || Number(f.pv.valor) !== f.venta).length;
+    const nuevosPre = cambian.filter((f) => f.cambiaPrecio).length;
     const nuevosPvp = cambian.filter((f) => !f.costoAct || Number(f.costoAct.costo) !== f.costo).length;
     let nPrd = await G.reservar('PRD', nuevosPrd), nPre = await G.reservar('PRE', nuevosPre), nPvp = await G.reservar('PVP', nuevosPvp);
     // 3. Productos, precios de venta y costos
@@ -592,7 +595,7 @@
         prdId = 'PRD-' + pad(nPrd++, 6);
         await G.crear('MAE_Productos', Object.assign({ Title: prdId, codigo: f.codigo, maneja_inventario: false, aplica_iva: true, descripcion_editable: true, estado: 'ACTIVO' }, campos));
       }
-      if (!f.pv || Number(f.pv.valor) !== f.venta) {
+      if (f.cambiaPrecio) {
         const vig = cat.precios.filter((x) => x.producto_id === prdId && x.activo);
         for (const x of vig) { const ini = String(x.fecha_inicio || '').slice(0, 10); await G.actualizar('MAE_Precios', x._id, { activo: false, fecha_fin: f.desde > ini ? diaAnterior(f.desde) : ini }); }
         await G.crear('MAE_Precios', { Title: 'PRE-' + pad(nPre++, 6), producto_id: prdId, valor: f.venta, moneda: f.moneda, fecha_inicio: f.desde, activo: true });
