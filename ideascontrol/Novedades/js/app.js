@@ -71,6 +71,7 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
     lista: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>',
     bandeja: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 5h13L22 12v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-6z"/></svg>',
     calendario: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M8 15h3v3H8z"/></svg>',
+    reporte: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/><path d="M12 9v0"/></svg>',
     falta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>'
   };
   function menu() {
@@ -80,6 +81,7 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
     if (r === 'TECNICO') it.push(['mias', 'Mis solicitudes', 'El estado de sus solicitudes y la respuesta de la Dirección.', 'lista', '']);
     if (r === 'ADMIN') it.push(['bandeja', 'Bandeja de aprobación', 'Solicitudes pendientes con su impacto en la programación. Aprobar o rechazar.', 'bandeja', '']);
     if (r !== 'TECNICO') it.push(['todas', 'Solicitudes', 'Todas las solicitudes y su estado, con filtros.', 'lista', '']);
+    if (r !== 'TECNICO') it.push(['reporte', 'Reporte de novedades', 'Listado entre fechas para enviar por correo: Excel, PDF o copiar y pegar en el correo.', 'reporte', '']);
     if (r !== 'TECNICO') it.push(['calendario', 'Calendario de ausencias', 'Quién está ausente cada día del mes (aprobadas y pendientes).', 'calendario', 'teal']);
     if (r === 'ADMIN') it.push(['registrar', 'Registrar novedad', 'Registre una novedad a nombre de un técnico (por ejemplo, una incapacidad reportada por teléfono).', 'nueva', 'teal']);
     if (r === 'ADMIN') it.push(['faltas', 'Faltas', 'Registro de faltas del personal y resumen por técnico. Solo Dirección.', 'falta', 'dorado']);
@@ -376,9 +378,9 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
       const rutas = {
         '': () => vistaMenu(raiz), nueva: () => vistaForm(raiz, false), registrar: () => vistaForm(raiz, true), mias: () => vistaMias(raiz),
         bandeja: () => vistaBandeja(raiz), todas: () => vistaTodas(raiz), calendario: () => vistaCalendario(raiz),
-        faltas: () => App.vistas.faltas(raiz)
+        faltas: () => App.vistas.faltas(raiz), reporte: () => App.vistas.reporte(raiz)
       };
-      Object.keys(rutas).forEach((k) => { const fn = rutas[k]; rutas[k] = () => (permitidas.indexOf(k) >= 0 && (k !== 'todas' && k !== 'calendario' || !App.esTecnico()) ? fn() : (location.hash = '')); });
+      Object.keys(rutas).forEach((k) => { const fn = rutas[k]; rutas[k] = () => (permitidas.indexOf(k) >= 0 && (['todas', 'calendario', 'reporte'].indexOf(k) < 0 || !App.esTecnico()) ? fn() : (location.hash = '')); });
       const volver = IC.auth.volverA(); if (volver) location.hash = volver;
       U.enrutar(rutas);
     } catch (e) {

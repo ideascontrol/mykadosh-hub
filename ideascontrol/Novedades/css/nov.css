@@ -27,3 +27,4 @@
 .nov-grav.g-grave { background: rgba(183,121,31,.16); color: #8A5A10; }
 .nov-grav.g-gravisima { background: rgba(192,57,43,.12); color: var(--ic-err); }
 @media (max-width: 760px) { .nov-ficha { grid-template-columns: 1fr 1fr; } }
+.nov-lbl { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ic-gris); }
