@@ -137,7 +137,7 @@ const LISTAS = [
   { n: 'OPE_Tipos', title: 'codigo', d: 'Tipos de actividad, días preferentes y capacidad', cols: [
     ['nombre', 't'], ['dias_preferentes', 't'], ['max_equipos', 'n'], ['descripcion', 'm'], ['color', 't'], ['orden', 'n'], ['estado', 'c', ESTADO]] },
   { n: 'OPE_Tecnicos', title: 'tecnico_id', d: 'Técnicos, vinculación y matriz de habilidades', cols: [
-    ['nombre', 't'], ['iniciales', 't'], ['vinculacion', 'c', ['IDEAS_CONTROL', 'TECNICO_CAMPO']], ['email', 't', null, 1], ['celular', 't'],
+    ['nombre', 't'], ['iniciales', 't'], ['vinculacion', 'c', ['IDEAS_CONTROL', 'TECNICO_CAMPO', 'ADMINISTRATIVO']], ['email', 't', null, 1], ['celular', 't'],
     ['habilidades', 't'], ['horario_especial', 'm'], ['orden', 'n'], ['estado', 'c', ESTADO]] },
   { n: 'OPE_Actividades', title: 'actividad_id', d: 'Programación de técnicos: instalaciones, mantenimientos, soporte, turnos de oficina, ausencias', cols: [
     ['fecha', 'd', null, 1], ['tecnico_id', 't', null, 1], ['tipo', 't', null, 1], ['cliente', 't'], ['empresa_id', 't'], ['ciudad', 't'],

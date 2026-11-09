@@ -4,7 +4,7 @@
    del personal de Operaciones. Se tramitan solo con la Dirección de Operaciones.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-107', nombre: 'Novedades del personal', version: '0.1.1 · Etapa 1' },
+  app: { id: 'APP-107', nombre: 'Novedades del personal', version: '0.1.2 · Etapa 1' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -14,10 +14,10 @@ window.CFG = {
   sitio: { host: 'ideascontrolsas.sharepoint.com', ruta: '/sites/ICApps' },
   logo: '/ideascontrol/assets/ideascontrol.webp',
   manual: '1103-MAN-GER',
-  politica: 'Las solicitudes de permisos, vacaciones, licencias, cambios de horario y demás novedades del personal del área de Operaciones se tramitan y agendan exclusivamente a través de la Dirección de Operaciones. La Dirección validará su impacto en la programación de servicios y proyectos antes de su aprobación; ninguna ausencia se entenderá autorizada sin este trámite previo.'
+  politica: 'Las solicitudes de permisos, vacaciones, licencias, cambios de horario y demás novedades del personal se tramitan y agendan exclusivamente a través de la Dirección de Operaciones. La Dirección validará su impacto en la programación de servicios y proyectos antes de su aprobación; ninguna ausencia se entenderá autorizada sin este trámite previo.'
 };
 
-// Tipos de solicitud. ausencia: al aprobar, el técnico queda en Ausencia en la Programación (días hábiles).
+// Tipos de solicitud. ausencia: al aprobar, si es técnico queda en Ausencia en la Programación (días hábiles). El personal administrativo no se programa.
 window.TIPOS_NOV = [
   { id: 'PERMISO', nombre: 'Permiso', ausencia: true, horas: true, subtipos: ['Personal', 'Cita médica', 'Estudio', 'Trámite', 'Otro'] },
   { id: 'VACACIONES', nombre: 'Vacaciones', ausencia: true, subtipos: [] },

@@ -59,8 +59,8 @@
         const err = {};
         if (!v.nombre) err.nombre = 'Obligatorio';
         if (!/^[A-Z]{2,3}$/.test(v.iniciales)) err.iniciales = '2 o 3 letras';
-        else if (Ope.D.tecnicos.some((x) => x.Title !== t.Title && String(x.iniciales).toUpperCase() === v.iniciales)) err.iniciales = 'Ya las usa otro técnico';
-        if (v.email && Ope.D.tecnicos.some((x) => x.Title !== t.Title && String(x.email || '').toLowerCase() === v.email)) err.email = 'Ya está asociado a otro técnico';
+        else if (Ope.D.personal.some((x) => x.Title !== t.Title && String(x.iniciales).toUpperCase() === v.iniciales)) err.iniciales = 'Ya las usa otra persona (técnico o administrativo)';
+        if (v.email && Ope.D.personal.some((x) => x.Title !== t.Title && String(x.email || '').toLowerCase() === v.email)) err.email = 'Ya está asociado a otra persona';
         if (!U.marcarErrores(f, err)) return;
         const campos = { nombre: v.nombre, iniciales: v.iniciales, vinculacion: v.vinculacion, email: v.email, celular: v.celular, orden: v.orden, estado: v.estado, horario_especial: v.horario_especial, habilidades: v.habilidades };
         try {

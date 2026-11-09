@@ -29,9 +29,9 @@
   const tipoTxt = (s) => App.tipoNov(s.tipo).nombre + (s.subtipo ? ' · ' + s.subtipo : '');
   const fechasTxt = (s) => s.fecha_inicio === (s.fecha_fin || s.fecha_inicio) ? Ope.textoFecha(s.fecha_inicio, true) : Ope.textoFecha(s.fecha_inicio) + ' al ' + Ope.textoFecha(s.fecha_fin);
   const titulo = () => 'Novedades del personal · ' + Ope.textoFecha(F.desde) + ' al ' + Ope.textoFecha(F.hasta);
-  const filtrosTxt = () => [F.tec ? 'Técnico: ' + Ope.nombreTec(F.tec) : '', F.tipo ? 'Tipo: ' + App.tipoNov(F.tipo).nombre : '', 'Estado: ' + ESTADOS_REP.find((x) => x[0] === F.estado)[1]].filter(Boolean).join(' · ');
+  const filtrosTxt = () => [F.tec ? 'Colaborador: ' + Ope.nombreTec(F.tec) : '', F.tipo ? 'Tipo: ' + App.tipoNov(F.tipo).nombre : '', 'Estado: ' + ESTADOS_REP.find((x) => x[0] === F.estado)[1]].filter(Boolean).join(' · ');
 
-  // Resumen por técnico
+  // Resumen por colaborador
   function resumen(l) {
     const r = {};
     l.forEach((s) => {
@@ -51,14 +51,14 @@
   function tablaHtml(l, conMotivo) {
     const th = (t) => '<th style="' + ST.th + '">' + t + '</th>', td = (t, extra) => '<td style="' + ST.td + (extra || '') + '">' + t + '</td>';
     return '<table cellspacing="0" cellpadding="0" style="border-collapse:collapse;width:100%"><thead><tr>' +
-      th('Técnico') + th('Novedad') + th('Fechas') + th('Duración en el rango') + th('Estado') + (conMotivo ? th('Motivo') : '') + th('Respuesta de la Dirección') + th('N°') + '</tr></thead><tbody>' +
+      th('Colaborador') + th('Novedad') + th('Fechas') + th('Duración en el rango') + th('Estado') + (conMotivo ? th('Motivo') : '') + th('Respuesta de la Dirección') + th('N°') + '</tr></thead><tbody>' +
       l.map((s) => '<tr>' + td('<b>' + esc(Ope.nombreTec(s.tecnico_id)) + '</b>') + td(esc(tipoTxt(s))) + td(esc(fechasTxt(s)), ';white-space:nowrap') + td(esc(enRango(s).txt)) +
         td(esc(nombreEstado(s.estado))) + (conMotivo ? td(esc(s.motivo || '')) : '') + td(esc(s.respuesta || '')) + td(esc(s.Title), ';white-space:nowrap;color:#5B6770') + '</tr>').join('') + '</tbody></table>';
   }
   function resumenHtml(l) {
     const r = resumen(l); if (!r.length) return '';
     const th = (t, n) => '<th style="' + ST.th + (n ? ';text-align:center' : '') + '">' + t + '</th>', td = (t, n) => '<td style="' + ST.td + (n ? ';text-align:center' : '') + '">' + t + '</td>';
-    return '<table cellspacing="0" cellpadding="0" style="border-collapse:collapse;max-width:720px;margin-bottom:14px"><thead><tr>' + th('Técnico') + th('Novedades', 1) + th('Días hábiles', 1) + th('Horas', 1) + th('Detalle') + '</tr></thead><tbody>' +
+    return '<table cellspacing="0" cellpadding="0" style="border-collapse:collapse;max-width:720px;margin-bottom:14px"><thead><tr>' + th('Colaborador') + th('Novedades', 1) + th('Días hábiles', 1) + th('Horas', 1) + th('Detalle') + '</tr></thead><tbody>' +
       r.map((x) => '<tr>' + td('<b>' + esc(x.nombre) + '</b>') + td(x.n, 1) + td(x.dias || '', 1) + td(horasTxt(x.horas), 1) + td(esc(Object.keys(x.tipos).map((k) => k + ' (' + x.tipos[k] + ')').join(', '))) + '</tr>').join('') +
       '<tr>' + td('<b>Total</b>') + td('<b>' + l.length + '</b>', 1) + td('<b>' + r.reduce((s, x) => s + x.dias, 0) + '</b>', 1) + td('<b>' + horasTxt(r.reduce((s, x) => s + x.horas, 0)) + '</b>', 1) + td('') + '</tr></tbody></table>';
   }
@@ -71,7 +71,7 @@
       '<p class="ic-subtitulo" style="margin:0">Novedades con algún día dentro del rango. Descárguelo en Excel o PDF, o cópielo y péguelo directamente en el correo.</p></div></div>' +
       '<div class="ic-filtros">' +
       '<label class="nov-lbl">Desde <input type="date" id="rD" value="' + F.desde + '"></label><label class="nov-lbl">Hasta <input type="date" id="rH" value="' + F.hasta + '"></label>' +
-      '<select id="rT"><option value="">Todos los técnicos</option>' + Ope.D.tecnicos.map((t) => '<option value="' + esc(t.Title) + '">' + esc(t.nombre) + '</option>').join('') + '</select>' +
+      '<select id="rT"><option value="">Todo el personal</option>' + Ope.D.personal.map((t) => '<option value="' + esc(t.Title) + '">' + esc(t.nombre) + '</option>').join('') + '</select>' +
       '<select id="rTi"><option value="">Todos los tipos</option>' + TIPOS_NOV.map((t) => '<option value="' + t.id + '">' + esc(t.nombre) + '</option>').join('') + '</select>' +
       '<select id="rE">' + ESTADOS_REP.map((e) => '<option value="' + e[0] + '">' + esc(e[1]) + '</option>').join('') + '</select>' +
       '<label class="ic-check"><input type="checkbox" id="rM"' + (F.motivo ? ' checked' : '') + '> <span>Incluir motivo</span></label></div>' +
@@ -119,7 +119,7 @@
       '.pie{margin-top:14px;color:#8A96A0;font-size:10px}.barra{position:fixed;top:0;right:0;padding:10px}.barra button{font:inherit;font-weight:600;padding:8px 14px;border:0;border-radius:8px;background:#0E76BC;color:#fff;cursor:pointer}' +
       '@media print{.barra{display:none}}</style></head><body><div class="barra"><button onclick="window.print()">Imprimir / Guardar PDF</button></div>' +
       '<div class="cab"><img src="' + location.origin + CFG.logo + '" alt="Ideas Control"><div><h1>' + esc(titulo()) + '</h1><p>Dirección de Operaciones · ' + esc(filtrosTxt()) + ' · ' + l.length + ' novedad' + (l.length === 1 ? '' : 'es') + '</p></div></div>' +
-      '<h2>Resumen por técnico</h2>' + resumenHtml(l) + '<h2>Detalle</h2>' + tablaHtml(l, F.motivo) +
+      '<h2>Resumen por colaborador</h2>' + resumenHtml(l) + '<h2>Detalle</h2>' + tablaHtml(l, F.motivo) +
       '<p class="pie">Ideas Control Equipos y Soluciones S.A.S. · Generado ' + esc(new Date().toLocaleString('es-CO')) + ' por ' + esc(App.usuario.nombre) + '</p>' +
       '<script>window.addEventListener("load",function(){setTimeout(function(){window.print()},400)})<\/script></body></html>';
     const w = window.open('', '_blank');
@@ -138,7 +138,7 @@
       try {
         await cargarXLSX();
         const filas = l.map((s) => { const d = enRango(s); const o = {
-          'N°': s.Title, 'Técnico': Ope.nombreTec(s.tecnico_id), 'Tipo': App.tipoNov(s.tipo).nombre, 'Detalle': s.subtipo || '', 'Modalidad': s.modalidad === 'HORAS' ? 'Por horas' : 'Días completos',
+          'N°': s.Title, 'Colaborador': Ope.nombreTec(s.tecnico_id), 'Tipo': App.tipoNov(s.tipo).nombre, 'Detalle': s.subtipo || '', 'Modalidad': s.modalidad === 'HORAS' ? 'Por horas' : 'Días completos',
           'Desde': serial(s.fecha_inicio), 'Hasta': serial(s.fecha_fin || s.fecha_inicio), 'Hora inicio': s.hora_inicio || '', 'Hora fin': s.hora_fin || '',
           'Días hábiles en el rango': s.modalidad === 'HORAS' ? '' : d.dias, 'Días hábiles totales': s.modalidad === 'HORAS' ? '' : Number(s.dias_habiles) || '', 'Horas': d.horas ? Math.round(d.horas * 100) / 100 : '',
           'Estado': nombreEstado(s.estado) };
@@ -151,10 +151,10 @@
         ws['!autofilter'] = { ref: ws['!ref'] };
         XLSX.utils.book_append_sheet(wb, ws, 'Novedades');
         const r = resumen(l);
-        const ws2 = XLSX.utils.json_to_sheet(r.map((x) => ({ 'Técnico': x.nombre, 'Novedades': x.n, 'Días hábiles': x.dias, 'Horas': x.horas ? Math.round(x.horas * 100) / 100 : '', 'Detalle': Object.keys(x.tipos).map((k) => k + ' (' + x.tipos[k] + ')').join(', ') }))
-          .concat([{ 'Técnico': 'Total', 'Novedades': l.length, 'Días hábiles': r.reduce((s, x) => s + x.dias, 0), 'Horas': Math.round(r.reduce((s, x) => s + x.horas, 0) * 100) / 100 || '', 'Detalle': '' }]));
+        const ws2 = XLSX.utils.json_to_sheet(r.map((x) => ({ 'Colaborador': x.nombre, 'Novedades': x.n, 'Días hábiles': x.dias, 'Horas': x.horas ? Math.round(x.horas * 100) / 100 : '', 'Detalle': Object.keys(x.tipos).map((k) => k + ' (' + x.tipos[k] + ')').join(', ') }))
+          .concat([{ 'Colaborador': 'Total', 'Novedades': l.length, 'Días hábiles': r.reduce((s, x) => s + x.dias, 0), 'Horas': Math.round(r.reduce((s, x) => s + x.horas, 0) * 100) / 100 || '', 'Detalle': '' }]));
         ws2['!cols'] = [24, 11, 12, 8, 50].map((w) => ({ wch: w }));
-        XLSX.utils.book_append_sheet(wb, ws2, 'Resumen por técnico');
+        XLSX.utils.book_append_sheet(wb, ws2, 'Resumen por colaborador');
         const ws3 = XLSX.utils.aoa_to_sheet([['Novedades del personal · Ideas Control Equipos y Soluciones S.A.S.'], ['Rango', Ope.textoFecha(F.desde) + ' al ' + Ope.textoFecha(F.hasta)],
           ['Filtros', filtrosTxt()], ['Novedades', l.length], ['Nota', 'Los días hábiles se cuentan solo dentro del rango (sin fines de semana ni festivos).'], ['Generado', new Date().toLocaleString('es-CO') + ' por ' + App.usuario.nombre]]);
         ws3['!cols'] = [{ wch: 12 }, { wch: 80 }];

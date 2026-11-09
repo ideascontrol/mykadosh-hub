@@ -6,11 +6,13 @@
 window.Ope = (function () {
   const G = IC.graph;
   const D = {
-    tecnicos: [], tipos: [], festivos: {}, meses: {}, empresas: null
+    tecnicos: [], personal: [], tipos: [], festivos: {}, meses: {}, empresas: null
   };
 
   const ESTADOS = [['PROGRAMADO', 'Programado'], ['CONFIRMADO', 'Confirmado'], ['EJECUTADO', 'Ejecutado'], ['REPROGRAMADO', 'Reprogramado'], ['CANCELADO', 'Cancelado']];
   const VINCULOS = [['IDEAS_CONTROL', 'Ideas Control'], ['TECNICO_CAMPO', 'Técnico de campo']];
+  // Personal administrativo: está en OPE_Tecnicos solo para Novedades del personal; no se programa ni aparece en la Programación
+  const ADMINISTRATIVO = 'ADMINISTRATIVO';
   const DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
   const DIAS_CORTOS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
   const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -48,11 +50,12 @@ window.Ope = (function () {
     const [tec, tip, fes] = await Promise.all([
       G.items('OPE_Tecnicos'), G.items('OPE_Tipos'), G.items('SYS_Festivos', { top: 999 }).catch(() => [])
     ]);
-    D.tecnicos = tec.sort((a, b) => (Number(a.orden) || 99) - (Number(b.orden) || 99) || String(a.nombre).localeCompare(b.nombre));
+    D.personal = tec.sort((a, b) => (Number(a.orden) || 99) - (Number(b.orden) || 99) || String(a.nombre).localeCompare(b.nombre));
+    D.tecnicos = D.personal.filter((t) => t.vinculacion !== ADMINISTRATIVO);
     D.tipos = tip.sort((a, b) => (Number(a.orden) || 99) - (Number(b.orden) || 99));
     D.festivos = {}; fes.forEach((f) => { D.festivos[dia(f.fecha || f.Title)] = f.descripcion || 'Festivo'; });
   }
-  const tec = (id) => D.tecnicos.find((t) => t.Title === id) || null;
+  const tec = (id) => D.personal.find((t) => t.Title === id) || null;
   const tipo = (cod) => D.tipos.find((t) => t.Title === cod) || null;
   const habilidades = (t) => String((t && t.habilidades) || '').toUpperCase().split(/[;,\s]+/).filter(Boolean);
   const puede = (t, cod) => habilidades(t).indexOf(String(cod || '').trim().toUpperCase()) >= 0;
@@ -227,7 +230,7 @@ window.Ope = (function () {
   }
 
   return {
-    D, ESTADOS, VINCULOS, DIAS, DIAS_CORTOS, MESES,
+    D, ESTADOS, VINCULOS, ADMINISTRATIVO, DIAS, DIAS_CORTOS, MESES,
     dia, pad, hoy, aFecha, sumar, dow, lunesDe, ym, finDeMes, esFestivo, esHabil, diasHabilesMes, textoFecha,
     cargarCatalogos, catalogosFrescos, tec, tipo, habilidades, puede, usaEquipos, diasPref, tecnicosActivos, tecnicosIC, nombreTec, nombreTipo, nombreEstado,
     cargarMes, cargarRango, delRango, delDia, activa, buscar, recordar, orden,
