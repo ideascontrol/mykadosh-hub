@@ -141,7 +141,13 @@ window.Ope = (function () {
     }
     if (t && t.vinculacion === 'IDEAS_CONTROL' && a.tipo !== 'AUS') {
       const noAus = mismos.filter((x) => x.tipo !== 'AUS');
-      if (noAus.length > 1 && noAus.some((x) => !usaEquipos(x.tipo))) E('Solo instalaciones y mantenimientos pueden combinarse el mismo día (oficina y demás tipos van solos)');
+      if (noAus.length > 1 && noAus.some((x) => !usaEquipos(x.tipo))) {
+        // Se permite si otro técnico de Ideas Control está sin asignar ese día (capacidad libre para cubrir la oficina o el trabajo)
+        const libres = tecnicosIC().filter((o) => o.Title !== a.tecnico_id && !dd.some((x) => x.tecnico_id === o.Title));
+        const oficina = noAus.some((x) => x.tipo === 'OFI');
+        if (libres.length) W('Varias asignaciones el mismo día para ' + t.nombre + '. ' + (oficina ? 'La oficina la puede cubrir: ' : 'Hay capacidad libre en: ') + libres.map((o) => o.nombre).join(', '));
+        else E('Solo instalaciones y mantenimientos pueden combinarse el mismo día: no hay otro técnico de Ideas Control sin asignar ese día' + (oficina ? ' para cubrir la oficina' : ''));
+      }
     }
     if (a.tecnico_id && a.tipo !== 'AUS' && mismos.some((x) => x.tipo === 'AUS')) E('El técnico tiene ausencia ese día');
     if (a.tecnico_id && a.tipo === 'AUS' && mismos.some((x) => x.tipo !== 'AUS')) E('Tiene asignaciones durante su ausencia');
