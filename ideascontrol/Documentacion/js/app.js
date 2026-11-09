@@ -32,7 +32,7 @@
   };
   const ico = (n, s = 20) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONOS[n] || ''}</svg>`;
 
-  let usuario = null, DOCS = [], driveId = null, actualizado = '';
+  let usuario = null, DOCS = [], driveId = null, actualizado = '', CTX = {};
   const areas = CFG.areas;
 
   // ---------- Datos desde SharePoint ----------
@@ -51,11 +51,14 @@
     ['Codigo', 'Tipo_documento', 'Area', 'Grupo', 'Version_doc', 'Emision', 'Ultima_revision', 'Responsable', 'Resumen', 'Formato', 'Estado_documento'].forEach((n) => {
       const x = cols.find((k) => k.name === n) || propias.find((k) => clave(k.displayName) === clave(n)); real[n] = x ? x.name : n;
     });
-    const items = await G.todas('/sites/' + s.id + '/lists/' + lista.id + '/items?$expand=fields,driveItem($select=id,name,webUrl,size,file,lastModifiedDateTime)&$top=500');
+    CTX = { siteId: s.id, listaId: lista.id, real, carpetas: {} };
+    const items = await G.todas('/sites/' + s.id + '/lists/' + lista.id + '/items?$expand=fields,driveItem($select=id,name,webUrl,size,file,folder,lastModifiedDateTime,parentReference)&$top=500');
     const porCodigo = {};
     let ultima = '';
     items.forEach((it) => {
       const f = it.fields || {}, di = it.driveItem || {};
+      const padre = String((di.parentReference || {}).path || '').replace(/^.*?root:\/?/, '');
+      if (di.folder) { CTX.carpetas[(padre ? padre + '/' : '') + di.name] = CTX.carpetas[(padre ? padre + '/' : '') + di.name] || []; return; }
       if (!di.file) return;                                     // carpetas
       const v = (n) => f[real[n]] ?? f[n] ?? '';
       const nombre = di.name || f.FileLeafRef || '';
@@ -64,7 +67,8 @@
       if (/obsolet/i.test(v('Estado_documento'))) return;
       const esWord = /\.docx?$/i.test(nombre) || /plantilla/i.test(v('Formato'));
       const doc = porCodigo[codigo] || (porCodigo[codigo] = { codigo });
-      const dato = { id: di.id, nombre, webUrl: di.webUrl, size: di.size };
+      const dato = { id: di.id, nombre, webUrl: di.webUrl, size: di.size, carpeta: decodeURIComponent(padre), itemId: it.id };
+      (CTX.carpetas[decodeURIComponent(padre)] = CTX.carpetas[decodeURIComponent(padre)] || []).push(codigo);
       if (esWord) doc.plantilla = dato; else doc.pdf = dato;
       if (!esWord || !doc.titulo) {
         Object.assign(doc, {
@@ -144,6 +148,7 @@
   // ---------- Inicio ----------
   function vistaInicio(main) {
     encabezado();
+    if (window.GD_PUB && GD_PUB.puede(usuario)) setTimeout(() => GD_PUB.boton(main), 0);
     document.title = 'Gestión Documental · Ideas Control';
     const forms = DOCS.filter((d) => d.plantilla).length, activas = areas.filter((a) => docsDe(a).length).length;
     const herr = areas.flatMap((a) => a.herramientas || []);
@@ -332,5 +337,8 @@
         : 'Detalle: ' + e.message, 'Reintentar', () => location.reload());
     }
   }
+  // Para «Publicar documento» (publicar.js)
+  window.GD_APP = { get driveId() { return driveId; }, get ctx() { return CTX; }, get docs() { return DOCS; }, get usuario() { return usuario; }, areas, TIPOS, clave,
+    async recargar() { await cargar(); rutear(); } };
   window.addEventListener('DOMContentLoaded', arrancar);
 })();

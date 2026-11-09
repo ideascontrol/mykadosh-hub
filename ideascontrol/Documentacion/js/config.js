@@ -5,7 +5,9 @@
    cuenta de Microsoft de cada persona (sin claves compartidas).
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-105', nombre: 'Gestión documental', version: '1.0.5' },
+  app: { id: 'APP-105', nombre: 'Gestión documental', version: '1.1.0' },
+  // Quién puede publicar documentos aprobados desde la app (sube el PDF a la biblioteca con sus datos)
+  editores: ['operaciones@ideascontrol.com'],
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
