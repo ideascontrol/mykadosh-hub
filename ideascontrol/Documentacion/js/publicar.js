@@ -89,10 +89,14 @@ window.GD_PUB = (function () {
         campo('pResp', 'Responsable', leido.responsable || (ex && ex.responsable) || '', { ancho: 1 }) +
         campo('pRes', 'Resumen (para el buscador y la tarjeta)', leido.resumen || (ex && ex.resumen) || '', { ancho: 1, area: 1 }) +
         '<label class="pub-campo ancho"><span>Carpeta de la biblioteca</span><select id="pCarp"><option value="">(raíz de 00_Documentacion_Maestra)</option>' +
-        carpetas.map((c) => '<option value="' + esc(c) + '"' + (c === sug ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '</select></label>' +
+        carpetas.map((c) => '<option value="' + esc(c) + '"' + (c === sug ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '<option value="__nueva">+ Crear carpeta nueva…</option></select></label>' +
+        '<label class="pub-campo ancho" id="pNuevaCaja" style="display:none"><span>Nombre de la carpeta nueva (puede ser una subcarpeta: Carpeta/Subcarpeta)</span><input id="pNueva" value="' + esc(cod ? cod.slice(0, 1) + '000_' + (area ? area.nombre : '') : '') + '"></label>' +
         (esWord ? '<label class="pub-check ancho"><input type="checkbox" id="pPlant"' + (m && m[2] === 'FOR' ? ' checked' : '') + '> <span>Publicar también el Word como <b>plantilla descargable</b> (solo formatos para diligenciar)</span></label>' : '') +
         '</div><div class="pub-acc"><span id="pEstado" class="pub-estado"></span><button type="button" class="btn sec" id="pNo">Cancelar</button><button type="button" class="btn pri" id="pOk">Publicar</button></div>';
       $('#pNo', fondo).onclick = cerrar;
+      const verNueva = () => { $('#pNuevaCaja', fondo).style.display = $('#pCarp', fondo).value === '__nueva' ? '' : 'none'; };
+      $('#pCarp', fondo).onchange = verNueva;
+      $('#pArea', fondo).onchange = () => { const a = GD_APP.areas.find((x) => x.id === $('#pArea', fondo).value); if (a && /^\d000_/.test($('#pNueva', fondo).value)) $('#pNueva', fondo).value = a.bloque + '000_' + a.nombre; };
       $('#pOk', fondo).onclick = () => publicar(f, esWord, fondo, ex);
     };
   }
@@ -127,9 +131,10 @@ window.GD_PUB = (function () {
   }
   async function publicar(file, esWord, fondo, ex) {
     const v = (id) => ($('#' + id, fondo) ? $('#' + id, fondo).value.trim() : '');
-    const cod = v('pCod').toUpperCase(), tit = v('pTit'), carp = v('pCarp'), plantilla = !!($('#pPlant', fondo) && $('#pPlant', fondo).checked);
+    const cod = v('pCod').toUpperCase(), tit = v('pTit'), carp = v('pCarp') === '__nueva' ? v('pNueva').replace(/[\\:*?"<>|#%]/g, '').replace(/^\/+|\/+$/g, '').trim() : v('pCarp'), plantilla = !!($('#pPlant', fondo) && $('#pPlant', fondo).checked);
     if (!RE_COD.test(cod)) { alert('El código debe tener la forma 0000-XXX-XXX.'); return; }
     if (!tit) { alert('Escriba el título.'); return; }
+    if (v('pCarp') === '__nueva' && !carp) { alert('Escriba el nombre de la carpeta nueva.'); return; }
     const area = GD_APP.areas.find((a) => a.id === v('pArea')) || {};
     const grupo = (area.grupos || []).find((g) => g.serie && g.serie.slice(0, 2) === cod.slice(0, 2)) || (area.grupos || [])[0] || {};
     const base = cod + ' - ' + tit.replace(/[\\/:*?"<>|#%]/g, '').trim();
