@@ -26,9 +26,10 @@
     if (!App.esAdmin()) { location.hash = ''; return; }
     c.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a><div class="ic-barra"><div style="flex:1"><h1 class="ic-titulo">Personal</h1>' +
       '<p class="ic-subtitulo" style="margin:0">Todas las personas que pueden registrar novedades. Agregue aquí al personal administrativo; los técnicos se agregan en la Programación (Administración › Técnicos).</p></div>' +
-      '<button class="ic-btn" id="bNueva">+ Agregar persona administrativa</button></div><div id="t"><div class="ic-vacio">Cargando…</div></div>' +
+      '<button class="ic-btn sec" id="bTraer">Traer de las otras apps</button><button class="ic-btn" id="bNueva">+ Agregar persona administrativa</button></div><div id="t"><div class="ic-vacio">Cargando…</div></div>' +
       '<div class="ic-alerta chica" style="margin-top:12px"><b>Para que una persona nueva pueda entrar:</b> registre su correo de Microsoft de Ideas Control y luego abra el instalador (Programacion/Instalador/) › paso de permisos › «Aplicar permisos». Eso la agrega al grupo de SharePoint del personal.</div>';
     c.querySelector('#bNueva').onclick = () => form(null, pintar);
+    c.querySelector('#bTraer').onclick = (e) => traer(e.currentTarget, pintar);
     async function pintar() {
       try { await Ope.cargarCatalogos(); } catch (e) { c.querySelector('#t').innerHTML = '<div class="ic-alerta">' + esc(U.mensajeError(e)) + '</div>'; return; }
       const l = Ope.D.personal.slice().sort((a, b) => (a.vinculacion === Ope.ADMINISTRATIVO) - (b.vinculacion === Ope.ADMINISTRATIVO) || String(a.nombre).localeCompare(b.nombre));
@@ -41,6 +42,50 @@
     }
     pintar();
   };
+
+  // Personas que ya usan otras microapps (usuarios de Comercial y accesos) y aún no están en el personal
+  function inicialesLibres(nombre, usadas) {
+    const p = U.norm(nombre).replace(/[^a-z ]/g, '').split(' ').filter(Boolean);
+    const cands = [p.map((x) => x[0]).join('').slice(0, 3), (p[0] || '').slice(0, 2) + (p[1] || '').slice(0, 1), (p[0] || '').slice(0, 3)].map((x) => x.toUpperCase()).filter((x) => /^[A-Z]{2,3}$/.test(x));
+    for (const c of cands) if (!usadas.has(c)) return c;
+    for (let i = 0; i < 26; i++) { const c = ((p[0] || 'X')[0] + (p[1] || 'X')[0]).toUpperCase() + String.fromCharCode(65 + i); if (!usadas.has(c)) return c; }
+    return '';
+  }
+  async function traer(boton, alCambiar) {
+    let cand = [];
+    await U.conCarga(boton, async () => {
+      const [us, acc] = await Promise.all([G.items('SYS_Usuarios', { top: 999 }).catch(() => []), G.items('SYS_Accesos', { top: 999 }).catch(() => [])]);
+      const ya = new Set(Ope.D.personal.map((t) => String(t.email || '').toLowerCase()).filter(Boolean)), m = {};
+      us.filter((u) => u.estado !== 'INACTIVO').forEach((u) => { const e = String(u.email || '').toLowerCase(); if (e && !ya.has(e)) m[e] = { email: e, nombre: u.nombre || e, iniciales: u.iniciales, celular: u.celular, de: 'Comercial' + (u.cargo ? ' · ' + u.cargo : '') }; });
+      acc.filter((a) => a.estado !== 'INACTIVO').forEach((a) => { const e = String(a.email || '').toLowerCase(); if (e && !ya.has(e) && !m[e]) m[e] = { email: e, nombre: a.nombre || e, de: 'Acceso ' + (a.app_id || '') }; });
+      cand = Object.values(m).sort((a, b) => a.nombre.localeCompare(b.nombre));
+    });
+    if (!cand.length) { U.aviso('Todas las personas de las otras apps ya están en el personal.', 'ok', 6000); return; }
+    U.modal('Traer de las otras apps', '<div class="ic-form"><p style="margin-top:0">Estas personas usan otras microapps de IC Apps y aún no están en el personal. Marque las que deben poder registrar novedades; entran como <b>administrativas</b>.</p>' +
+      '<div class="ope-sal-lista">' + cand.map((x, i) => '<label class="ic-check"><input type="checkbox" data-i="' + i + '" checked> <span><b>' + esc(x.nombre) + '</b> <small>' + esc(x.email + ' · ' + x.de) + '</small></span></label>').join('') + '</div>' +
+      '<p class="ope-nota">Si alguna es técnico, no la marque: los técnicos se agregan en la Programación.</p>' +
+      '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="tNo">Cancelar</button><button type="button" class="ic-btn" id="tOk">Agregar</button></div></div>', (cu) => {
+      cu.querySelector('#tNo').onclick = U.cerrarModal;
+      const ok = cu.querySelector('#tOk');
+      ok.onclick = async () => {
+        const sel = Array.from(cu.querySelectorAll('[data-i]')).filter((x) => x.checked).map((x) => cand[+x.dataset.i]);
+        if (!sel.length) { U.aviso('Marque al menos una persona.', 'warn'); return; }
+        try {
+          await U.conCarga(ok, async () => {
+            await asegurarOpcion();
+            const usadas = new Set(Ope.D.personal.map((t) => String(t.iniciales || '').toUpperCase()));
+            for (const x of sel) {
+              let ini = String(x.iniciales || '').toUpperCase(); if (!/^[A-Z]{2,3}$/.test(ini) || usadas.has(ini)) ini = inicialesLibres(x.nombre, usadas); usadas.add(ini);
+              const n = await G.siguiente('TEC', 1), id = 'TEC-' + Ope.pad(n, 2);
+              const campos = { Title: id, nombre: x.nombre, iniciales: ini, email: x.email, celular: x.celular || '', estado: 'ACTIVO', vinculacion: Ope.ADMINISTRATIVO, habilidades: '' };
+              await G.crear('OPE_Tecnicos', campos); await Ope.auditar('PERSONAL', id, 'CREAR', null, campos);
+            }
+          });
+          U.aviso(sel.length + ' persona(s) agregada(s). Recuerde «Aplicar permisos» en el instalador.', 'ok', 8000); U.cerrarModal(); alCambiar();
+        } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); alCambiar(); }
+      };
+    });
+  }
 
   function form(t, alCambiar) {
     const nuevo = !t; t = t || { estado: 'ACTIVO' };
