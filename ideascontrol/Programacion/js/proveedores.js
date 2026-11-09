@@ -3,8 +3,10 @@
    Instaladores y aliados locales: datos, sedes y contactos. Misma estructura
    que Empresas y contactos de la app Comercial, pero en listas separadas.
    Rutas: #vendors · #vendors/nuevo · #vendors/PRV-000001 · #vendors/PRV-000001/editar
-   Listas: OPE_Proveedores · OPE_ProveedorSedes · OPE_ProveedorContactos
-   Ver: Director, Programador y Consulta · Editar: Director y Programador · Desactivar: Director
+   Listas: OPE_Proveedores · OPE_ProveedorSedes · OPE_ProveedorContactos · OPE_ProveedorPrecios
+   Lista de precios: el COSTO del proveedor vive en OPE_ProveedorPrecios; el producto y su precio de VENTA
+   en MAE_Productos / MAE_Precios (los mismos de Comercial). Un producto por servicio y proveedor.
+   Ver: Director, Programador y Consulta · Editar: Director y Programador · Desactivar e importar precios: Director
    ===================================================================== */
 (function () {
   const U = IC.ui, G = IC.graph, esc = U.esc;
@@ -22,7 +24,8 @@
   const nombreServicio = (cod) => (SERVICIOS.find((s) => s[0] === cod) || [cod, cod])[1];
   const idTexto = (p) => p.nit ? (p.tipo_id_fiscal === 'NIT' && p.dv !== undefined && p.dv !== '' && p.dv !== null ? p.nit + '-' + p.dv : p.nit) : '';
   const lugar = (o) => [o.ciudad, o.departamento].filter(Boolean).join(', ') + (o.pais && o.pais !== 'Colombia' ? ' · ' + o.pais : '');
-  const tagEstado = (p) => p.estado === 'INACTIVO' ? '<span class="ic-tag inactivo">Inactivo</span>' : '<span class="ic-tag cliente">Proveedor</span>';
+  const tagEstado = (p) => (p.estado === 'INACTIVO' ? '<span class="ic-tag inactivo">Inactivo</span>' : '<span class="ic-tag cliente">Proveedor</span>') +
+    (p.datos_pendientes ? ' <span class="ic-tag e-negociacion" title="Faltan NIT, celular u otros datos: complételos con Editar">Datos pendientes</span>' : '');
   const chipsServicios = (p) => servicios(p).map((s) => '<span class="ic-tag prospecto" style="margin:0 4px 4px 0">' + esc(nombreServicio(s)) + '</span>').join('');
   const mayus = (el) => el.addEventListener('input', function () {   // Regla IC: nombres de empresa en MAYÚSCULAS
     const a = el.selectionStart, b = el.selectionEnd, v = el.value.toLocaleUpperCase('es-CO');
@@ -78,7 +81,9 @@
     c.innerHTML =
       '<a class="ic-volver" href="#">← Menú principal</a>' +
       '<div class="ic-barra"><div><h1 class="ic-titulo">Proveedores (Vendors)</h1><p class="ic-subtitulo" style="margin:0">Instaladores y aliados de Ideas Control fuera de Bogotá: datos, sedes y contactos</p></div>' +
-      '<div class="espacio"></div>' + (App.puedeEditar() ? '<a class="ic-btn" href="#vendors/nuevo">+ Nuevo proveedor</a>' : '') + '</div>' +
+      '<div class="espacio"></div><div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        (App.esAdmin() ? '<button class="ic-btn sec" id="btnImportar">⬆ Importar lista de precios</button>' : '') +
+        (App.puedeEditar() ? '<a class="ic-btn" href="#vendors/nuevo">+ Nuevo proveedor</a>' : '') + '</div></div>' +
       '<div class="ic-filtros">' +
         '<div class="ic-buscar">' + ICO_BUSCAR + '<input id="fTexto" type="search" placeholder="Buscar por nombre, NIT, ciudad, cobertura, contacto o teléfono" value="' + esc(filtro.texto) + '"></div>' +
         '<select id="fServicio"><option value="">Todos los servicios</option>' + SERVICIOS.map((s) => '<option value="' + s[0] + '">' + esc(s[1]) + '</option>').join('') + '</select>' +
@@ -93,6 +98,7 @@
     U.$('#fServicio', c).onchange = (e) => { filtro.servicio = e.target.value; pintarTabla(c); };
     U.$('#fDepto', c).onchange = (e) => { filtro.depto = e.target.value; pintarTabla(c); };
     U.$('#fEstado', c).onchange = (e) => { filtro.estado = e.target.value; pintarTabla(c); };
+    const bi = U.$('#btnImportar', c); if (bi) bi.onclick = () => importarPrecios();
     pintarTabla(c);
     U.$('#fTexto', c).focus();
   }
@@ -118,7 +124,7 @@
       lista.map((p) => {
         const nc = datos.contactos.filter((x) => x.proveedor_id === p.Title && x.estado !== 'INACTIVO').length;
         return '<tr data-id="' + esc(p.Title) + '" class="' + (p.estado === 'INACTIVO' ? 'inactivo' : '') + '">' +
-          '<td><b>' + esc(p.razon_social) + '</b><span class="sec">' + esc(p.Title) + '</span></td>' +
+          '<td><b>' + esc(p.razon_social) + '</b><span class="sec">' + esc(p.Title) + (p.datos_pendientes ? ' · <span style="color:var(--ic-warn);font-weight:600">datos pendientes</span>' : '') + '</span></td>' +
           '<td>' + esc(idTexto(p)) + '</td>' +
           '<td>' + esc(lugar(p)) + '</td>' +
           '<td class="ocultar-movil">' + chipsServicios(p) + '</td>' +
@@ -203,7 +209,8 @@
             tipo_id_fiscal: v.tipo_id_fiscal, nit: v.nit, dv: v.tipo_id_fiscal === 'NIT' ? v.dv : '', razon_social: v.razon_social,
             pais: v.pais, departamento: v.departamento, ciudad: v.ciudad, direccion: v.direccion, telefono: v.telefono, celular: v.celular,
             email: v.email.toLowerCase(), web: v.web, servicios: v.servicios, cobertura: v.cobertura, condiciones_pago: v.condiciones_pago,
-            tiempo_respuesta: v.tiempo_respuesta, observaciones: v.observaciones
+            tiempo_respuesta: v.tiempo_respuesta, observaciones: v.observaciones,
+            datos_pendientes: false   // el formulario exige NIT y celular: al guardarlo, la ficha queda completa
           };
           let id = p.Title;
           if (nuevo) {
@@ -238,7 +245,7 @@
       '<a class="ic-volver" href="#vendors">← Proveedores</a>' +
       '<div class="ic-ficha-cab"><div class="principal">' + tagEstado(p) +
         '<h1>' + esc(p.razon_social) + '</h1>' +
-        '<div class="meta"><span>' + esc(p.tipo_id_fiscal) + ' ' + esc(idTexto(p)) + '</span><span>' + esc(lugar(p)) + '</span><span>' + esc(p.Title) + '</span></div></div>' +
+        '<div class="meta"><span>' + (idTexto(p) ? esc(p.tipo_id_fiscal) + ' ' + esc(idTexto(p)) : 'Identificación pendiente') + '</span><span>' + esc(lugar(p)) + '</span><span>' + esc(p.Title) + '</span></div></div>' +
         '<div style="display:flex;gap:8px;flex-wrap:wrap">' + (ed ? '<a class="ic-btn sec" href="#vendors/' + esc(id) + '/editar">Editar</a>' : '') +
         (App.esAdmin() ? '<button class="ic-btn ' + (p.estado === 'INACTIVO' ? 'sec' : 'peligro') + '" id="btnEstado">' + (p.estado === 'INACTIVO' ? 'Reactivar' : 'Desactivar') + '</button>' : '') +
         '</div></div>' +
@@ -268,8 +275,10 @@
             '</div></div>').join('') : '<div class="ic-vacio" style="padding:18px">La sede principal es la ciudad base del proveedor. Agregue sedes si opera desde otras ciudades.</div>') +
           '</div></div>' +
         '</div>' +
-      '</div>';
+      '</div>' +
+      '<div class="ic-bloque" style="margin-top:16px" id="zPrecios"><div class="cab"><h2>Lista de precios</h2></div><div class="cuerpo"><div class="ic-vacio" style="padding:18px">Cargando…</div></div></div>';
 
+    pintarPrecios(U.$('#zPrecios', c), p);
     if (ed) {
       U.$('#btnContacto', c).onclick = () => formContacto(p, null, sedes);
       U.$('#btnSede', c).onclick = () => formSede(p, null);
@@ -359,7 +368,7 @@
       U.campo({ name: 'ciudad', label: 'Ciudad o municipio', valor: s.ciudad, req: true }) +
       U.campo({ name: 'direccion', label: 'Dirección', valor: s.direccion, c: 'c8' }) +
       U.campo({ name: 'telefonos', label: 'Teléfonos', valor: s.telefonos, c: 'c4' }) +
-      '</div>' + (nueva ? '<p class="ayuda" style="font-size:12px;color:var(--ic-gris)">El código se asigna automáticamente: ' + esc(prv.nit) + '-001, -002…</p>' : '') +
+      '</div>' + (nueva ? '<p class="ayuda" style="font-size:12px;color:var(--ic-gris)">El código se asigna automáticamente: ' + esc(prv.nit || prv.Title) + '-001, -002…</p>' : '') +
       '<div class="ic-acciones">' +
       (!nueva ? '<button type="button" class="ic-btn peligro" id="btnEstadoSede" style="margin-right:auto">' + (s.estado === 'INACTIVO' ? 'Reactivar' : 'Desactivar') + '</button>' : '') +
       '<button type="button" class="ic-btn sec" id="btnCancelar">Cancelar</button><button class="ic-btn" type="submit" id="btnGuardarSede">' + (nueva ? 'Agregar sede' : 'Guardar') + '</button></div></form>';
@@ -382,7 +391,7 @@
               const actuales = await G.items('OPE_ProveedorSedes', { filtro: "fields/proveedor_id eq '" + prv.Title + "'" });
               const max = actuales.reduce((mx, o) => { const r = String(o.codigo_sede || '').match(/-(\d{3})$/); return r ? Math.max(mx, Number(r[1])) : mx; }, 0);
               const sid = 'PVS-' + pad(await G.siguiente('PVS'), 6);
-              await G.crear('OPE_ProveedorSedes', Object.assign({ Title: sid, proveedor_id: prv.Title, codigo_sede: prv.nit + '-' + pad(max + 1, 3), estado: 'ACTIVO' }, campos));
+              await G.crear('OPE_ProveedorSedes', Object.assign({ Title: sid, proveedor_id: prv.Title, codigo_sede: (prv.nit || prv.Title) + '-' + pad(max + 1, 3), estado: 'ACTIVO' }, campos));
             } else await G.actualizar('OPE_ProveedorSedes', s._id, campos, s._etag);
             U.cerrarModal(); U.aviso(nueva ? 'Sede agregada' : 'Sede actualizada', 'ok');
             await refrescarFicha(prv.Title);
@@ -397,5 +406,212 @@
     });
   }
 
-  App.proveedores = { calcularDV, cargar, datos, SERVICIOS };
+  // =====================================================================
+  // LISTA DE PRECIOS (costo del proveedor + precio de venta de IC)
+  // =====================================================================
+  const cat = { productos: [], precios: [], costos: [], en: 0 };
+  async function cargarCatalogo(forzar) {
+    if (!forzar && cat.en && Date.now() - cat.en < 60000) return;
+    const [pr, pv, co] = await Promise.all([G.items('MAE_Productos', { top: 5000 }), G.items('MAE_Precios', { top: 5000 }), G.items('OPE_ProveedorPrecios', { top: 5000 })]);
+    cat.productos = pr; cat.precios = pv; cat.costos = co; cat.en = Date.now();
+  }
+  const precioVenta = (prdId) => cat.precios.filter((x) => x.producto_id === prdId && x.activo).sort((a, b) => String(b.fecha_inicio).localeCompare(String(a.fecha_inicio)))[0] || null;
+
+  async function pintarPrecios(z, p) {
+    const cuerpo = z.querySelector('.cuerpo');
+    try {
+      await cargarCatalogo();
+      const filas = cat.costos.filter((x) => x.proveedor_id === p.Title && x.estado !== 'INACTIVO')
+        .sort((a, b) => String(a.categoria).localeCompare(String(b.categoria), 'es') || String(a.codigo).localeCompare(String(b.codigo)));
+      z.querySelector('.cab h2').textContent = 'Lista de precios (' + filas.length + ')';
+      if (!filas.length) { cuerpo.innerHTML = '<div class="ic-vacio" style="padding:18px">Sin lista de precios.' + (App.esAdmin() ? ' Cárguela con <b>⬆ Importar lista de precios</b> en la lista de proveedores.' : '') + '</div>'; return; }
+      const vig = filas.map((x) => String(x.vigente_desde || '').slice(0, 10)).filter(Boolean).sort().pop();
+      cuerpo.innerHTML = '<p class="ope-nota" style="margin:10px 0">Costo = lo que IC le paga al proveedor. Precio de venta = el del catálogo de Comercial (sin IVA).' + (vig ? ' Vigente desde ' + esc(U.fmt.fecha(vig + 'T12:00:00')) + '.' : '') + '</p>' +
+        '<div class="ic-tabla-caja ope-scroll"><table class="ic-tabla"><thead><tr><th>Código</th><th>Servicio</th><th class="ocultar-movil">Categoría</th><th>Unidad</th><th class="num">Costo proveedor</th><th class="num">Precio de venta IC</th><th class="num ocultar-movil">Margen</th></tr></thead><tbody>' +
+        filas.map((x) => {
+          const pv = precioVenta(x.producto_id), venta = pv ? Number(pv.valor) : null, costo = Number(x.costo || 0);
+          const margen = venta && costo ? (venta - costo) / costo : null;
+          return '<tr title="' + esc(x.observaciones || '') + '" style="cursor:default"><td style="white-space:nowrap"><b>' + esc(x.codigo) + '</b></td><td>' + esc(x.servicio) + (x.observaciones ? '<span class="sec">' + esc(x.observaciones) + '</span>' : '') + '</td>' +
+            '<td class="ocultar-movil">' + esc(x.categoria) + '</td><td>' + esc(x.unidad) + '</td>' +
+            '<td class="num">' + U.fmt.cop(costo) + '</td><td class="num"><b>' + (venta === null ? '—' : U.fmt.cop(venta)) + '</b></td>' +
+            '<td class="num ocultar-movil">' + (margen === null ? '—' : Math.round(margen * 100) + ' %') + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    } catch (e) {
+      cuerpo.innerHTML = '<div class="ic-vacio" style="padding:18px">' + (/No existe la lista OPE_ProveedorPrecios/.test(e.message)
+        ? 'Falta crear la lista OPE_ProveedorPrecios: abra el <a href="Instalador/">instalador</a> y haga clic en «Crear estructura».'
+        : 'No se pudo leer la lista de precios: ' + esc(U.mensajeError(e))) + '</div>';
+    }
+  }
+
+  // =====================================================================
+  // IMPORTAR LISTA DE PRECIOS (Excel con hojas «Proveedor» y «Precios»)
+  // Crea el proveedor si no existe (con «Datos pendientes»), un producto de IC por servicio
+  // (tipo SERVICIO), su precio de venta = costo × (1 + margen) redondeado a la centena, y el costo.
+  // Repetir la carga no duplica: actualiza lo que cambió y deja el histórico.
+  // =====================================================================
+  const XLSX_CDN = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+  function cargarXLSX() {
+    if (window.XLSX) return Promise.resolve();
+    return new Promise((ok, mal) => { const s = document.createElement('script'); s.src = XLSX_CDN; s.onload = ok; s.onerror = () => mal(new Error('No se pudo cargar el lector de Excel. Revise su conexión.')); document.head.appendChild(s); });
+  }
+  const UNIDADES = { UND: 'UND', UNIDAD: 'UND', UNIDADES: 'UND', SERVICIO: 'SERVICIO', DIA: 'DIA', DIAS: 'DIA', PAQUETE: 'PAQUETE', LICENCIA: 'LICENCIA' };
+  const normCod = (c) => String(c || '').trim().replace(/\s+/g, ' ').toUpperCase();
+  const hoyTxt = () => { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1, 2) + '-' + pad(d.getDate(), 2); };
+  const diaAnterior = (s) => { const d = new Date(s + 'T12:00:00'); d.setDate(d.getDate() - 1); return d.toISOString().slice(0, 10); };
+  const redondear = (n) => Math.ceil(n / 100) * 100;
+  function aFechaTxt(v) {
+    if (v instanceof Date) return v.toISOString().slice(0, 10);
+    if (typeof v === 'number') { const d = new Date(Math.round((v - 25569) * 86400000)); return d.toISOString().slice(0, 10); }
+    const m = String(v || '').trim().match(/^(\d{4})-(\d{2})-(\d{2})/) || String(v || '').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (!m) return '';
+    return m[1].length === 4 ? m[1] + '-' + m[2] + '-' + m[3] : m[3] + '-' + pad(m[2], 2) + '-' + pad(m[1], 2);
+  }
+  function hoja(wb, nombre) {
+    const n = wb.SheetNames.find((x) => U.norm(x) === U.norm(nombre));
+    if (!n) return null;
+    return XLSX.utils.sheet_to_json(wb.Sheets[n], { defval: '', raw: true }).map((r) => {
+      const o = {}; Object.keys(r).forEach((k) => { o[U.norm(k).replace(/\s+/g, ' ').trim()] = typeof r[k] === 'string' ? r[k].trim() : r[k]; }); return o;
+    });
+  }
+
+  function importarPrecios() {
+    const html = '<div class="ic-form" id="fImp"><p style="margin:0 0 12px;font-size:14px">Archivo de Excel con dos hojas: <b>Proveedor</b> (nombre, NIT, departamento, ciudad, celular…) y <b>Precios</b> (código, servicio, categoría, unidad, costo proveedor, observaciones). ' +
+      'Se crea un producto de IC por cada servicio con su precio de venta, y el costo queda en la ficha del proveedor.</p><div class="ic-campos">' +
+      '<div class="ic-campo c12"><label for="fArch">Archivo (.xlsx) <span class="req">*</span></label><input type="file" id="fArch" accept=".xlsx"></div>' +
+      U.campo({ name: 'margen', label: 'Margen sobre el costo (%)', valor: 35, c: 'c4', modo: 'decimal', ayuda: 'Precio de venta = costo + margen, redondeado a la centena' }) +
+      U.campo({ name: 'desde', label: 'Vigente desde', valor: hoyTxt(), t: 'date', c: 'c4', ayuda: 'Si el Excel no trae fecha' }) +
+      '</div><div id="impRes" style="margin-top:14px"></div><div class="ic-acciones"><button type="button" class="ic-btn sec" id="impNo">Cancelar</button>' +
+      '<button type="button" class="ic-btn sec" id="impRev">Revisar</button><button type="button" class="ic-btn" id="impOk" disabled>Importar</button></div></div>';
+    U.modal('Importar lista de precios de un proveedor', html, (m) => {
+      m.closest('.ic-modal').style.maxWidth = '980px';
+      let plan = null;
+      U.$('#impNo', m).onclick = U.cerrarModal;
+      U.$('#fArch', m).onchange = () => { plan = null; U.$('#impOk', m).disabled = true; U.$('#impRes', m).innerHTML = ''; };
+      U.$('#impRev', m).onclick = async () => {
+        const f = U.$('#fArch', m).files[0], res = U.$('#impRes', m);
+        if (!f) { U.aviso('Seleccione el archivo de Excel', 'warn'); return; }
+        const margen = Number(String(m.querySelector('[name=margen]').value).replace(',', '.'));
+        if (!(margen >= 0 && margen < 500)) { U.aviso('Margen no válido', 'warn'); return; }
+        res.innerHTML = '<div class="ic-vacio" style="padding:12px">Revisando…</div>';
+        try {
+          await cargarXLSX();
+          const wb = XLSX.read(await f.arrayBuffer(), { type: 'array', cellDates: true });
+          plan = await planear(wb, margen / 100, m.querySelector('[name=desde]').value || hoyTxt());
+          res.innerHTML = resumenPlan(plan);
+          U.$('#impOk', m).disabled = !plan.ok;
+          U.$('#impOk', m).textContent = 'Importar ' + plan.filas.length + ' servicios';
+        } catch (e) { console.error(e); plan = null; res.innerHTML = '<div class="ope-v err">' + esc(U.mensajeError(e)) + '</div>'; }
+      };
+      U.$('#impOk', m).onclick = async () => {
+        if (!plan || !plan.ok) return;
+        const b = U.$('#impOk', m); b.disabled = true; U.$('#impRev', m).disabled = true; U.$('#impNo', m).disabled = true;
+        try {
+          const id = await ejecutar(plan, (t) => { b.textContent = t; });
+          U.cerrarModal(); U.aviso('Lista de precios importada: ' + plan.filas.length + ' servicios', 'ok', 6000);
+          await cargar(true); await cargarCatalogo(true);
+          location.hash = 'vendors/' + id;
+        } catch (e) { console.error(e); U.aviso(U.mensajeError(e) + ' — puede volver a importar: lo ya cargado no se duplica.', 'err', 9000); b.disabled = false; U.$('#impRev', m).disabled = false; U.$('#impNo', m).disabled = false; b.textContent = 'Reintentar'; }
+      };
+    });
+  }
+
+  async function planear(wb, margen, desdeDef) {
+    const hp = hoja(wb, 'Proveedor'), hr = hoja(wb, 'Precios');
+    if (!hp || !hp.length) throw new Error('Falta la hoja «Proveedor» (o está vacía).');
+    if (!hr) throw new Error('Falta la hoja «Precios».');
+    const pr = hp[0], errores = [], avisos = [];
+    const prov = {
+      razon_social: String(pr['nombre o razon social'] || pr['nombre'] || pr['razon social'] || '').replace(/\s+/g, ' ').toLocaleUpperCase('es-CO'),
+      tipo_id_fiscal: String(pr['tipo identificacion'] || 'NIT').toUpperCase(), nit: String(pr['nit / numero'] || pr['nit'] || '').replace(/\D/g, ''),
+      departamento: pr['departamento'] || '', ciudad: pr['ciudad'] || '', celular: String(pr['celular'] || ''), email: String(pr['correo'] || '').toLowerCase(),
+      servicios: String(pr['servicios'] || '').toUpperCase().replace(/[\s,]+/g, ';'), cobertura: pr['cobertura'] || ''
+    };
+    if (!prov.razon_social) throw new Error('La hoja «Proveedor» no tiene el nombre del proveedor.');
+    await Promise.all([cargar(true), cargarCatalogo(true)]);
+    const existente = datos.proveedores.find((x) => (prov.nit && String(x.nit) === prov.nit) || U.norm(x.razon_social) === U.norm(prov.razon_social));
+    const porCodigo = {}; cat.productos.forEach((x) => { porCodigo[normCod(x.codigo)] = x; });
+    const vistos = {};
+    const filas = [];
+    hr.forEach((r, i) => {
+      const n = i + 2, codigo = normCod(r['codigo']), servicio = String(r['servicio'] || '').replace(/\s+/g, ' ').trim();
+      if (!codigo && !servicio) return;
+      const costo = Number(String(r['costo proveedor'] === undefined ? r['costo'] : r['costo proveedor']).replace(/[$\s.]/g, '').replace(',', '.'));
+      if (!codigo) { errores.push('Fila ' + n + ': falta el código'); return; }
+      if (!servicio) { errores.push('Fila ' + n + ': falta el servicio'); return; }
+      if (!(costo > 0)) { errores.push('Fila ' + n + ' (' + codigo + '): costo no válido'); return; }
+      if (vistos[codigo]) { errores.push('Fila ' + n + ': el código ' + codigo + ' está repetido'); return; }
+      vistos[codigo] = 1;
+      const uTxt = U.norm(r['unidad'] || 'UND').toUpperCase(), unidad = UNIDADES[uTxt] || 'UND';
+      if (!UNIDADES[uTxt]) avisos.push(codigo + ': unidad «' + r['unidad'] + '» no existe en el catálogo; se usa UND');
+      const prod = porCodigo[codigo] || null;
+      const venta = redondear(costo * (1 + margen)), pv = prod ? precioVenta(prod.Title) : null;
+      const costoAct = prod && existente ? cat.costos.find((x) => x.proveedor_id === existente.Title && x.producto_id === prod.Title && x.estado !== 'INACTIVO') : null;
+      filas.push({ codigo, servicio, categoria: String(r['categoria'] || '').trim(), unidad, costo, venta, moneda: String(r['moneda'] || 'COP').toUpperCase() === 'USD' ? 'USD' : 'COP',
+        desde: aFechaTxt(r['vigente desde']) || desdeDef, obs: String(r['observaciones'] || '').trim(), prod, pv, costoAct,
+        accion: !prod ? 'Nuevo' : (costoAct && Number(costoAct.costo) === costo && pv && Number(pv.valor) === venta ? 'Sin cambios' : 'Actualiza') });
+    });
+    if (!filas.length && !errores.length) errores.push('La hoja «Precios» no tiene filas.');
+    return { prov, existente, filas, errores, avisos, margen, ok: !errores.length && filas.length > 0 };
+  }
+
+  function resumenPlan(pl) {
+    const n = (a) => pl.filas.filter((f) => f.accion === a).length;
+    return (pl.errores.length ? '<div class="ope-v err"><b>Corrija el archivo y vuelva a revisar:</b><ul>' + pl.errores.slice(0, 30).map((e) => '<li>' + esc(e) + '</li>').join('') + '</ul></div>' : '') +
+      (pl.avisos.length ? '<div class="ope-v warn" style="margin-top:8px"><ul>' + pl.avisos.slice(0, 20).map((e) => '<li>' + esc(e) + '</li>').join('') + '</ul></div>' : '') +
+      '<div class="ope-v ok" style="margin-top:8px"><b>Proveedor:</b> ' + esc(pl.prov.razon_social) + ' — ' + (pl.existente ? 'ya existe (' + esc(pl.existente.Title) + ')' : 'se crea' + (pl.prov.nit && pl.prov.celular ? '' : ' con «Datos pendientes»')) +
+      '<br><b>Servicios:</b> ' + n('Nuevo') + ' nuevos · ' + n('Actualiza') + ' se actualizan · ' + n('Sin cambios') + ' sin cambios · margen ' + Math.round(pl.margen * 100) + ' %</div>' +
+      '<div class="ic-tabla-caja ope-scroll" style="max-height:340px;margin-top:10px"><table class="ic-tabla"><thead><tr><th>Código</th><th>Servicio</th><th class="num">Costo</th><th class="num">Precio de venta</th><th>Acción</th></tr></thead><tbody>' +
+      pl.filas.map((f) => '<tr style="cursor:default"><td style="white-space:nowrap"><b>' + esc(f.codigo) + '</b></td><td>' + esc(f.servicio) + '<span class="sec">' + esc([f.categoria, f.unidad].filter(Boolean).join(' · ')) + '</span></td>' +
+        '<td class="num">' + U.fmt.cop(f.costo) + '</td><td class="num"><b>' + U.fmt.cop(f.venta) + '</b></td><td>' + esc(f.accion) + '</td></tr>').join('') + '</tbody></table></div>';
+  }
+
+  async function ejecutar(pl, paso) {
+    // 1. Proveedor
+    let prvId;
+    if (pl.existente) prvId = pl.existente.Title;
+    else {
+      paso('Creando proveedor…');
+      prvId = 'PRV-' + pad(await G.siguiente('PRV'), 6);
+      const pendiente = !(pl.prov.nit && pl.prov.celular);
+      await G.crear('OPE_Proveedores', { Title: prvId, tipo_id_fiscal: ['NIT', 'CC', 'RUC', 'TAX ID', 'OTRO'].indexOf(pl.prov.tipo_id_fiscal) >= 0 ? pl.prov.tipo_id_fiscal : 'NIT',
+        nit: pl.prov.nit, dv: pl.prov.tipo_id_fiscal === 'NIT' && pl.prov.nit ? calcularDV(pl.prov.nit) : '', razon_social: pl.prov.razon_social, pais: 'Colombia',
+        departamento: pl.prov.departamento, ciudad: pl.prov.ciudad, celular: pl.prov.celular, email: pl.prov.email, servicios: pl.prov.servicios || 'INS;MTO',
+        cobertura: pl.prov.cobertura, estado: 'ACTIVO', datos_pendientes: pendiente });
+      auditar(prvId, 'CREAR', { origen: 'importación de lista de precios', datos_pendientes: pendiente });
+    }
+    // 2. Numeración en bloque
+    const cambian = pl.filas.filter((f) => f.accion !== 'Sin cambios');
+    const nuevosPrd = cambian.filter((f) => !f.prod).length;
+    const nuevosPre = cambian.filter((f) => !f.pv || Number(f.pv.valor) !== f.venta).length;
+    const nuevosPvp = cambian.filter((f) => !f.costoAct || Number(f.costoAct.costo) !== f.costo).length;
+    let nPrd = await G.reservar('PRD', nuevosPrd), nPre = await G.reservar('PRE', nuevosPre), nPvp = await G.reservar('PVP', nuevosPvp);
+    // 3. Productos, precios de venta y costos
+    let k = 0;
+    for (const f of cambian) {
+      paso('Importando ' + (++k) + ' de ' + cambian.length + '…');
+      const campos = { nombre: f.servicio, tipo: 'SERVICIO', categoria: f.categoria, descripcion_corta: f.servicio, unidad: f.unidad };
+      let prdId;
+      if (f.prod) { prdId = f.prod.Title; await G.actualizar('MAE_Productos', f.prod._id, campos); }
+      else {
+        prdId = 'PRD-' + pad(nPrd++, 6);
+        await G.crear('MAE_Productos', Object.assign({ Title: prdId, codigo: f.codigo, maneja_inventario: false, aplica_iva: true, descripcion_editable: true, estado: 'ACTIVO' }, campos));
+      }
+      if (!f.pv || Number(f.pv.valor) !== f.venta) {
+        const vig = cat.precios.filter((x) => x.producto_id === prdId && x.activo);
+        for (const x of vig) { const ini = String(x.fecha_inicio || '').slice(0, 10); await G.actualizar('MAE_Precios', x._id, { activo: false, fecha_fin: f.desde > ini ? diaAnterior(f.desde) : ini }); }
+        await G.crear('MAE_Precios', { Title: 'PRE-' + pad(nPre++, 6), producto_id: prdId, valor: f.venta, moneda: f.moneda, fecha_inicio: f.desde, activo: true });
+      }
+      const fila = { servicio: f.servicio, categoria: f.categoria, unidad: f.unidad, observaciones: f.obs, codigo: f.codigo };
+      if (f.costoAct && Number(f.costoAct.costo) === f.costo) await G.actualizar('OPE_ProveedorPrecios', f.costoAct._id, fila);
+      else {
+        if (f.costoAct) await G.actualizar('OPE_ProveedorPrecios', f.costoAct._id, { estado: 'INACTIVO', vigente_hasta: diaAnterior(f.desde) });
+        await G.crear('OPE_ProveedorPrecios', Object.assign({ Title: 'PVP-' + pad(nPvp++, 6), proveedor_id: prvId, producto_id: prdId, costo: f.costo, moneda: f.moneda,
+          margen_aplicado: pl.margen, vigente_desde: f.desde, estado: 'ACTIVO' }, fila));
+      }
+    }
+    auditar(prvId, 'ACTUALIZAR', { lista_precios: pl.filas.length + ' servicios', cambios: cambian.length, margen: pl.margen });
+    return prvId;
+  }
+
+  App.proveedores = { calcularDV, cargar, datos, SERVICIOS, planear, redondear };
 })();

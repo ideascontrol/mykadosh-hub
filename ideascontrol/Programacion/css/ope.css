@@ -171,3 +171,6 @@
 @media (max-width: 640px) { .ope-res-pre { justify-content: flex-start; } .ope-res2 { grid-template-columns: 1fr; } }
 .ope-rtab td:first-child { min-width: 180px; }
 @media (min-width: 900px) { .ope-res2 { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); } }
+
+/* Proveedores: columnas numéricas */
+.ic-tabla th.num, .ic-tabla td.num { text-align: right; white-space: nowrap; }
