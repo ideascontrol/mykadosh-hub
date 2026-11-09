@@ -420,22 +420,18 @@
   async function pintarPrecios(z, p) {
     const cuerpo = z.querySelector('.cuerpo');
     try {
-      await cargarCatalogo();
-      const filas = cat.costos.filter((x) => x.proveedor_id === p.Title && x.estado !== 'INACTIVO')
+      // Solo el costo del proveedor: el precio de venta y el margen de IC viven en Comercial (Productos y precios)
+      const filas = (await G.items('OPE_ProveedorPrecios', { filtro: "fields/proveedor_id eq '" + p.Title + "'" })).filter((x) => x.estado !== 'INACTIVO')
         .sort((a, b) => String(a.categoria).localeCompare(String(b.categoria), 'es') || String(a.codigo).localeCompare(String(b.codigo)));
       z.querySelector('.cab h2').textContent = 'Lista de precios (' + filas.length + ')';
       if (!filas.length) { cuerpo.innerHTML = '<div class="ic-vacio" style="padding:18px">Sin lista de precios.' + (App.esAdmin() ? ' Cárguela con <b>⬆ Importar lista de precios</b> en la lista de proveedores.' : '') + '</div>'; return; }
       const vig = filas.map((x) => String(x.vigente_desde || '').slice(0, 10)).filter(Boolean).sort().pop();
-      cuerpo.innerHTML = '<p class="ope-nota" style="margin:10px 0">Costo = lo que IC le paga al proveedor. Precio de venta = el del catálogo de Comercial (sin IVA).' + (vig ? ' Vigente desde ' + esc(U.fmt.fecha(vig + 'T12:00:00')) + '.' : '') + '</p>' +
-        '<div class="ic-tabla-caja ope-scroll"><table class="ic-tabla"><thead><tr><th>Código</th><th>Servicio</th><th class="ocultar-movil">Categoría</th><th>Unidad</th><th class="num">Costo proveedor</th><th class="num">Precio de venta IC</th><th class="num ocultar-movil">Margen</th></tr></thead><tbody>' +
-        filas.map((x) => {
-          const pv = precioVenta(x.producto_id), venta = pv ? Number(pv.valor) : null, costo = Number(x.costo || 0);
-          const margen = venta && costo ? (venta - costo) / costo : null;
-          return '<tr title="' + esc(x.observaciones || '') + '" style="cursor:default"><td style="white-space:nowrap"><b>' + esc(x.codigo) + '</b></td><td>' + esc(x.servicio) + (x.observaciones ? '<span class="sec">' + esc(x.observaciones) + '</span>' : '') + '</td>' +
-            '<td class="ocultar-movil">' + esc(x.categoria) + '</td><td>' + esc(x.unidad) + '</td>' +
-            '<td class="num">' + U.fmt.cop(costo) + '</td><td class="num"><b>' + (venta === null ? '—' : U.fmt.cop(venta)) + '</b></td>' +
-            '<td class="num ocultar-movil">' + (margen === null ? '—' : Math.round(margen * 100) + ' %') + '</td></tr>';
-        }).join('') + '</tbody></table></div>';
+      cuerpo.innerHTML = '<p class="ope-nota" style="margin:10px 0">Costo = lo que IC le paga al proveedor, sin margen.' + (vig ? ' Vigente desde ' + esc(U.fmt.fecha(vig + 'T12:00:00')) + '.' : '') + '</p>' +
+        '<div class="ic-tabla-caja ope-scroll"><table class="ic-tabla"><thead><tr><th>Código</th><th>Servicio</th><th class="ocultar-movil">Categoría</th><th>Unidad</th><th class="num">Costo</th></tr></thead><tbody>' +
+        filas.map((x) => '<tr title="' + esc(x.observaciones || '') + '" style="cursor:default"><td style="white-space:nowrap"><b>' + esc(x.codigo) + '</b></td><td>' + esc(x.servicio) +
+          (x.observaciones ? '<span class="sec">' + esc(x.observaciones) + '</span>' : '') + '</td>' +
+          '<td class="ocultar-movil">' + esc(x.categoria) + '</td><td>' + esc(x.unidad) + '</td><td class="num"><b>' + U.fmt.cop(x.costo) + '</b></td></tr>').join('') +
+        '</tbody></table></div>';
     } catch (e) {
       cuerpo.innerHTML = '<div class="ic-vacio" style="padding:18px">' + (/No existe la lista OPE_ProveedorPrecios/.test(e.message)
         ? 'Falta crear la lista OPE_ProveedorPrecios: abra el <a href="Instalador/">instalador</a> y haga clic en «Crear estructura».'
