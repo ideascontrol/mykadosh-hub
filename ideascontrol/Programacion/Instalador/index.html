@@ -69,7 +69,7 @@
       <div class="num">3</div>
       <div style="flex:1">
         <h2>Crear estructura</h2>
-        <p>Crea o completa <b id="lblListas"></b> listas (OPE_, NOV_, TAL_, SYS_Accesos y las SYS_ compartidas), carga las piezas de «Comunicaciones de servicio» en borrador, carga los 8 técnicos con su matriz de habilidades, los 12 tipos de actividad y los festivos que falten, registra la app en el catálogo de microapps y lo registra a usted como Director de Operaciones.</p>
+        <p>Crea o completa <b id="lblListas"></b> listas (OPE_ —incluidas las de Proveedores—, NOV_, TAL_, SYS_Accesos y las SYS_ compartidas), carga las piezas de «Comunicaciones de servicio» en borrador, carga los 8 técnicos con su matriz de habilidades, los 12 tipos de actividad y los festivos que falten, registra la app en el catálogo de microapps y lo registra a usted como Director de Operaciones.</p>
         <button id="btnCrear" disabled>Crear estructura</button>
         <div class="barra"><div id="bar"></div></div><div id="barText"></div>
       </div>
@@ -144,6 +144,16 @@ const LISTAS = [
     ['equipos', 'n'], ['hora_inicio', 't'], ['ticket_os', 't'],
     ['estado', 'c', ['PROGRAMADO', 'CONFIRMADO', 'EJECUTADO', 'REPROGRAMADO', 'CANCELADO'], 1],
     ['observaciones', 'm'], ['reprograma_de', 't'], ['autorizado', 'b'], ['motivo_cambio', 't'], ['origen', 't', null, 1], ['sitio', 't']] },
+  // APP-106 · Proveedores (Vendors) fuera de Bogotá: misma estructura que Empresas/Sedes/Contactos de Comercial, en listas separadas
+  { n: 'OPE_Proveedores', title: 'proveedor_id', d: 'Proveedores (vendors) de IC fuera de Bogotá: instaladores y aliados locales', cols: [
+    ['tipo_id_fiscal', 'c', ['NIT', 'CC', 'RUC', 'TAX ID', 'OTRO']], ['nit', 't', null, 1], ['dv', 't'], ['razon_social', 't', null, 1],
+    ['pais', 't'], ['departamento', 't', null, 1], ['ciudad', 't'], ['direccion', 't'], ['telefono', 't'], ['celular', 't'], ['email', 't'], ['web', 't'],
+    ['servicios', 't'], ['cobertura', 'm'], ['condiciones_pago', 't'], ['tiempo_respuesta', 't'], ['observaciones', 'm'], ['estado', 'c', ESTADO, 1]] },
+  { n: 'OPE_ProveedorSedes', title: 'sede_id', d: 'Sedes de cada proveedor', cols: [
+    ['proveedor_id', 't', null, 1], ['codigo_sede', 't', null, 1], ['nombre', 't'], ['departamento', 't'], ['ciudad', 't'], ['direccion', 't'], ['telefonos', 't'], ['estado', 'c', ESTADO]] },
+  { n: 'OPE_ProveedorContactos', title: 'contacto_id', d: 'Contactos de proveedores y sus sedes', cols: [
+    ['proveedor_id', 't', null, 1], ['sede_id', 't'], ['nombres', 't'], ['apellidos', 't'], ['cargo', 't'], ['area', 't'],
+    ['celular', 't'], ['telefono', 't'], ['extension', 't'], ['email', 't', null, 1], ['autoriza_datos', 'b'], ['estado', 'c', ESTADO]] },
   // APP-107 · Novedades del personal
   { n: 'NOV_Solicitudes', title: 'novedad_id', d: 'Permisos, vacaciones, licencias, incapacidades y cambios de horario del personal de Operaciones', cols: [
     ['tecnico_id', 't', null, 1], ['tipo', 'c', ['PERMISO', 'VACACIONES', 'LICENCIA', 'INCAPACIDAD', 'CAMBIO_HORARIO']], ['subtipo', 't'], ['modalidad', 'c', ['DIAS', 'HORAS']],

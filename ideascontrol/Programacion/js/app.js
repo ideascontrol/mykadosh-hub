@@ -24,6 +24,7 @@ const ICO = {
   alerta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>',
   politicas: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h5"/></svg>',
   admin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M19 8v6M16 11h6"/></svg>',
+  vendors: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7h12v9H1z"/><path d="M13 10h4l3 3v3h-7"/><circle cx="5.5" cy="18" r="2"/><circle cx="17.5" cy="18" r="2"/></svg>',
   yo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>'
 };
 
@@ -39,6 +40,9 @@ const MENU = [
     { ruta: 'rotacion', titulo: 'Rotación de oficina', texto: 'Quién cubre la oficina cada día y quién está sin asignar (y debe estar en la oficina).', icono: 'oficina', color: 'teal' },
     { ruta: 'carga', titulo: 'Carga por técnico', texto: 'Actividades de cada técnico en el mes, por tipo.', icono: 'carga', color: 'teal' },
     { ruta: 'conflictos', titulo: 'Conflictos', texto: 'Actividades con alertas ⚠ que deben corregirse antes de publicar.', icono: 'alerta', color: 'teal' }
+  ] },
+  { grupo: 'Proveedores', items: [
+    { ruta: 'vendors', titulo: 'Proveedores (Vendors)', texto: 'Instaladores y aliados de IC fuera de Bogotá: datos, servicios, cobertura, sedes y contactos.', icono: 'vendors', color: 'dorado', roles: ['ADMIN', 'EDITOR', 'CONSULTA'] }
   ] },
   { grupo: 'Herramientas', items: [
     { ruta: 'politicas', titulo: 'Políticas y ayuda', texto: 'Políticas de programación del manual ' + CFG.manual + ' y cómo usar la app.', icono: 'politicas', color: 'dorado' },
@@ -144,7 +148,7 @@ async function arrancar() {
     MENU.forEach((g) => g.items.forEach((i) => {
       rutas[i.ruta] = async () => {
         if ((i.admin && !App.esAdmin()) || (i.roles && i.roles.indexOf(App.usuario.rol) < 0)) { location.hash = ''; return; }
-        if (i.ruta !== 'admin') await Ope.catalogosFrescos(60);   // técnicos y habilidades al día (cambios desde otra pestaña)
+        if (i.ruta !== 'admin' && i.ruta !== 'vendors') await Ope.catalogosFrescos(60);   // técnicos y habilidades al día (cambios desde otra pestaña)
         const fn = App.vistas[i.ruta];
         if (fn) fn(raiz, App.params()); else raiz.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a><p>Módulo en construcción.</p>';
       };
