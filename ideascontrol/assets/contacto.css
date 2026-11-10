@@ -1,0 +1,41 @@
+/* Bloque de contacto compartido · Ideas Control
+   Usado en /ideascontrol/Herramientas/ y /ideascontrol/Recursos/ */
+.ic-contacto {
+  --c-azul: #0E76BC; --c-teal: #159090; --c-oro: #E0B93A; --c-navy: #0B2945;
+  --c-tinta: #1D2B36; --c-gris: #5B6770; --c-linea: #E3E8EC;
+  max-width: var(--c-ancho, 980px); margin: 0 auto 24px; padding: 0 var(--c-gutter, 0px);
+  font-family: Inter, system-ui, Arial, sans-serif; color: var(--c-tinta); scroll-margin-top: 16px;
+}
+.ic-contacto * { box-sizing: border-box; }
+.ic-contacto__caja {
+  display: grid; grid-template-columns: 1.1fr 1fr; gap: 36px; align-items: start;
+  background: #fff; border: 1px solid var(--c-linea); border-radius: 16px; padding: 30px 32px;
+  box-shadow: 0 8px 30px rgba(29, 43, 54, .05); position: relative; overflow: hidden;
+}
+.ic-contacto__caja::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 4px; background: linear-gradient(90deg, var(--c-azul), var(--c-teal), var(--c-oro)); }
+.ic-contacto__kicker { margin: 0 0 6px; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--c-teal); }
+.ic-contacto h2 { margin: 0 0 10px; font-size: 22px; line-height: 1.25; font-weight: 700; color: var(--c-navy); letter-spacing: -.2px; }
+.ic-contacto__texto { margin: 0 0 20px; font-size: 14.5px; line-height: 1.6; color: var(--c-gris); max-width: 46ch; }
+.ic-contacto__ctas { display: flex; flex-wrap: wrap; gap: 10px; }
+.ic-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 11px 18px; border-radius: 999px; font-weight: 600; font-size: 14px; text-decoration: none; transition: transform .15s, box-shadow .15s; }
+.ic-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(14, 118, 188, .18); }
+.ic-btn svg { width: 18px; height: 18px; fill: currentColor; }
+.ic-btn--wa { background: var(--c-teal); color: #fff; }
+.ic-btn--web { background: #fff; color: var(--c-azul); border: 1.5px solid var(--c-azul); }
+.ic-contacto__datos { display: grid; gap: 18px; }
+.ic-dato { display: flex; gap: 14px; align-items: flex-start; }
+.ic-dato__icono { flex: 0 0 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; background: #F4F7F9; border: 1px solid var(--c-linea); }
+.ic-dato__icono svg { width: 19px; height: 19px; fill: none; stroke: var(--c-azul); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ic-dato__label { margin: 0 0 2px; font-size: 15px; font-weight: 600; color: var(--c-azul); }
+.ic-dato a { display: block; color: var(--c-tinta); text-decoration: none; font-size: 14.5px; line-height: 1.7; }
+.ic-dato a:hover { color: var(--c-teal); }
+.ic-redes { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.ic-redes a { display: inline; border-bottom: 1px solid var(--c-oro); line-height: 1.6; }
+@media (max-width: 760px) {
+  .ic-contacto__caja { grid-template-columns: 1fr; gap: 26px; padding: 26px 20px; }
+  .ic-btn { flex: 1 1 100%; }
+}
+@media (max-width: 640px) {
+  .ic-contacto { padding: 0 16px; margin-top: 18px; }
+}
+@media print { .ic-contacto__ctas { display: none; } }
