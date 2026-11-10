@@ -84,10 +84,13 @@
       '<p class="ope-nota">Un día fuera de los preferentes es posible, pero genera un aviso ℹ. El máximo de equipos define la carga del día (instalaciones/3 + mantenimientos/4 ≤ 100 %).</p>';
     cuerpo.querySelectorAll('tr[data-id]').forEach((tr) => { tr.onclick = () => formTipo(Ope.tipo(tr.dataset.id), recargar); });
   }
+  // Códigos que la app usa por nombre (turno de oficina, ausencias, reglas de carga y combinación): no se pueden cambiar
+  const TIPOS_FIJOS = ['OFI', 'AUS', 'INS', 'MTO', 'PRE', 'OTR'];
   function formTipo(t, recargar) {
     const nuevo = !t; t = t || { estado: 'ACTIVO', dias_preferentes: '1;2;3;4;5' };
+    const fijo = !nuevo && TIPOS_FIJOS.indexOf(t.Title) >= 0;
     U.modal(nuevo ? 'Nuevo tipo de actividad' : t.nombre, '<form class="ic-form" id="fTp"><div class="ic-campos">' +
-      U.campo({ name: 'Title', label: 'Código', valor: t.Title, req: true, c: 'c3', max: 3, readonly: !nuevo, ayuda: '3 letras' }) +
+      U.campo({ name: 'Title', label: 'Código', valor: t.Title, req: true, c: 'c3', max: 3, readonly: fijo, ayuda: fijo ? 'Código del sistema: no se cambia' : '3 letras' + (nuevo ? '' : ' · al cambiarlo se actualizan sus actividades y habilidades') }) +
       U.campo({ name: 'nombre', label: 'Nombre', valor: t.nombre, req: true, c: 'c6' }) +
       '<div class="ic-campo c3"><label for="f_color">Color</label><input id="f_color" name="color" type="color" value="' + esc(t.color || App.colorTipo(t.Title)) + '"></div>' +
       U.campo({ name: 'max_equipos', label: 'Máx. equipos por técnico-día', valor: t.max_equipos, c: 'c6', modo: 'numeric', ayuda: 'Solo para tipos con equipos (instalación, mantenimiento). Vacío = no aplica.' }) +
@@ -105,16 +108,36 @@
         const v = U.leerForm(f); v.Title = v.Title.toUpperCase();
         const err = {};
         if (!/^[A-Z]{3}$/.test(v.Title)) err.Title = '3 letras';
-        else if (nuevo && Ope.tipo(v.Title)) err.Title = 'Ya existe';
+        else if ((nuevo || v.Title !== t.Title) && Ope.tipo(v.Title)) err.Title = 'Ya existe';
         if (!v.nombre) err.nombre = 'Obligatorio';
         if (v.max_equipos && !(Number(v.max_equipos) > 0)) err.max_equipos = 'Número mayor que 0';
         if (!U.marcarErrores(f, err)) return;
         const campos = { nombre: v.nombre, color: v.color, max_equipos: v.max_equipos === '' ? null : Number(v.max_equipos), orden: v.orden === '' ? null : Number(v.orden), estado: v.estado, descripcion: v.descripcion,
           dias_preferentes: Array.from(f.querySelectorAll('[data-dia]')).filter((x) => x.checked).map((x) => x.dataset.dia).join(';') };
+        const cambiaCod = !nuevo && !fijo && v.Title !== t.Title;
+        let actsCod = [], tecsCod = [];
+        if (cambiaCod) {
+          try { [actsCod, tecsCod] = await Promise.all([G.items('OPE_Actividades', { filtro: "fields/tipo eq '" + t.Title + "'", top: 999 }), G.items('OPE_Tecnicos')]); } catch (e) { U.aviso(U.mensajeError(e), 'err', 7000); return; }
+          tecsCod = tecsCod.filter((x) => Ope.puede(x, t.Title));
+          if (f.dataset.confirmado !== v.Title) {     // primera vez: se explica qué se va a cambiar y se pide confirmar
+            f.dataset.confirmado = v.Title;
+            let caja = f.querySelector('#avisoCod'); if (!caja) { caja = document.createElement('div'); caja.id = 'avisoCod'; caja.className = 'ic-alerta'; caja.style.marginTop = '14px'; f.querySelector('.ic-acciones').before(caja); }
+            caja.innerHTML = '<b>Cambiar el código ' + esc(t.Title) + ' → ' + esc(v.Title) + '.</b> También se actualizan ' + actsCod.length + ' actividad(es) de la Programación y la habilidad de ' + tecsCod.length + ' técnico(s). Dé clic en «Sí, cambiar código» para continuar.';
+            cu.querySelector('#pOk').textContent = 'Sí, cambiar código';
+            return;
+          }
+          campos.Title = v.Title;
+        }
         try {
           await U.conCarga(cu.querySelector('#pOk'), async () => {
             if (nuevo) { Object.keys(campos).forEach((k) => { if (campos[k] === null) delete campos[k]; }); await G.crear('OPE_Tipos', Object.assign({ Title: v.Title }, campos)); await Ope.auditar('TIPO', v.Title, 'CREAR', null, campos); }
-            else { await G.actualizar('OPE_Tipos', t._id, campos, t._etag); await Ope.auditar('TIPO', t.Title, 'ACTUALIZAR', null, campos); }
+            else {
+              await G.actualizar('OPE_Tipos', t._id, campos, t._etag); await Ope.auditar('TIPO', t.Title, cambiaCod ? 'CAMBIAR_CODIGO' : 'ACTUALIZAR', cambiaCod ? { Title: t.Title } : null, campos);
+              if (cambiaCod) {
+                for (const a of actsCod) await G.actualizar('OPE_Actividades', a._id, { tipo: v.Title });
+                for (const x of tecsCod) await G.actualizar('OPE_Tecnicos', x._id, { habilidades: String(x.habilidades || '').split(/[;,\s]+/).filter(Boolean).map((h) => (h.toUpperCase() === t.Title ? v.Title : h)).join(';') });
+              }
+            }
           });
           U.aviso('Tipo guardado' + (nuevo ? '. Habilítelo en la matriz de cada técnico.' : ''), 'ok'); U.cerrarModal(); recargar();
         } catch (e) { U.aviso(U.mensajeError(e), 'err', 7000); }
