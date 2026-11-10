@@ -121,9 +121,11 @@
           tecsCod = tecsCod.filter((x) => Ope.puede(x, t.Title));
           if (f.dataset.confirmado !== v.Title) {     // primera vez: se explica qué se va a cambiar y se pide confirmar
             f.dataset.confirmado = v.Title;
-            let caja = f.querySelector('#avisoCod'); if (!caja) { caja = document.createElement('div'); caja.id = 'avisoCod'; caja.className = 'ic-alerta'; caja.style.marginTop = '14px'; f.querySelector('.ic-acciones').before(caja); }
+            let caja = f.querySelector('#avisoCod'); if (!caja) { caja = document.createElement('div'); caja.id = 'avisoCod'; caja.className = 'ic-alerta'; caja.style.marginBottom = '14px'; f.prepend(caja); }
             caja.innerHTML = '<b>Cambiar el código ' + esc(t.Title) + ' → ' + esc(v.Title) + '.</b> También se actualizan ' + actsCod.length + ' actividad(es) de la Programación y la habilidad de ' + tecsCod.length + ' técnico(s). Dé clic en «Sí, cambiar código» para continuar.';
             cu.querySelector('#pOk').textContent = 'Sí, cambiar código';
+            caja.scrollIntoView({ block: 'nearest' });
+            U.aviso('Falta confirmar: dé clic en «Sí, cambiar código». Si cierra la ventana, el código no cambia.', 'warn', 8000);
             return;
           }
           campos.Title = v.Title;
