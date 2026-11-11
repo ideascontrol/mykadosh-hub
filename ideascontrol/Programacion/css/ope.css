@@ -234,3 +234,5 @@
 .ope-sit-k.verde{border-left:4px solid #2e8b57}.ope-sit-k.azul{border-left:4px solid #0E76BC}.ope-sit-k.dorado{border-left:4px solid #C9A227}.ope-sit-k.teal{border-left:4px solid #159090}.ope-sit-k.gris{border-left:4px solid #8a96a0}.ope-sit-k.rojo{border-left:4px solid #c0392b}
 .ope-sit-tag{display:inline-block;font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:99px;white-space:nowrap}
 .ope-sit-tag.verde{background:#e5f4ea;color:#23704a}.ope-sit-tag.azul{background:#e6f0f9;color:#0A5A90}.ope-sit-tag.dorado{background:#fbf3d9;color:#7a5f00}.ope-sit-tag.teal{background:#e3f4f4;color:#0f6f6f}.ope-sit-tag.gris{background:#eef1f4;color:#45525c}.ope-sit-tag.rojo{background:#fbe9e7;color:#a03024}
+.ope-sede-amb{display:flex;flex-direction:column;gap:6px;margin-top:8px}.ope-sede-fila{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.ope-sede-fila span{font-size:13px}.ope-sede-fila select{font:inherit;font-size:13px;padding:5px 8px;border:1px solid #d5dce1;border-radius:8px;max-width:100%}

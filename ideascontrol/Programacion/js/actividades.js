@@ -56,6 +56,7 @@
     const soloEjecutar = !edita && u.rol === 'TECNICO' && propia && !nueva;
     const lectura = !edita && !soloEjecutar;
     const empresas = edita ? await Ope.empresas() : [];
+    if (edita) await Ope.sedes();
 
     const tecOps = Ope.D.tecnicos.filter((t) => t.estado !== 'INACTIVO' || t.Title === a.tecnico_id)
       .map((t) => [t.Title, t.nombre + (t.vinculacion === 'TECNICO_CAMPO' ? ' (campo)' : '') + (t.estado === 'INACTIVO' ? ' — inactivo' : '')]);
@@ -71,6 +72,7 @@
         '<span class="ayuda" id="ayEmpresa"></span></div>' +
       '<div class="ic-campo c6"><label for="f_sitio">Sitio / cliente final (dónde se instala)</label><input id="f_sitio" name="sitio" list="dlSitios" value="' + esc(a.sitio || '') + '" placeholder="Ej.: Clínica Los Nogales · vacío si es el mismo cliente">' +
         '<datalist id="dlSitios"></datalist><span class="ayuda">Si el servicio es para un cliente de su cliente (p. ej. los clientes de Casa Limpia).</span></div>' +
+      '<div class="ic-campo c12" id="cSede" hidden><label for="f_sede">Sede</label><select id="f_sede" name="sede"></select><span class="ayuda" id="aySede"></span></div>' +
       U.campo({ name: 'ciudad', label: 'Ciudad', valor: a.ciudad, c: 'c3', ph: 'Siempre la ciudad' }) +
       '<div class="ic-campo c3" id="cEquipos"><label for="f_equipos">Equipos</label><input id="f_equipos" name="equipos" type="number" min="0" step="1" value="' + esc(a.equipos === undefined ? '' : a.equipos) + '"><span class="ayuda" id="ayCarga"></span></div>' +
       U.campo({ name: 'hora_inicio', label: 'Hora inicio', t: 'time', valor: a.hora_inicio, c: 'c3' }) +
@@ -102,6 +104,7 @@
         const v = U.leerForm(f);
         const p = Object.assign({}, a, v, { equipos: v.equipos === '' ? '' : Number(v.equipos), autorizado: !!v.autorizado });
         if (!p.estado) p.estado = a.estado || 'PROGRAMADO';
+        if (!v.sede && !a.sede) delete p.sede;      // sin sede: no se envía (la columna puede no existir aún)
         return p;
       };
       let turno = 0;
@@ -111,6 +114,16 @@
         const emp = empresas.find((e) => U.norm(e.razon_social) === U.norm(p.cliente));
         cuerpo.querySelector('#ayEmpresa').textContent = emp ? '✔ Empresa ' + emp.Title + ' de la app Comercial' : (p.cliente && U.norm(p.cliente) !== 'oficina' ? 'No está registrada en la app Comercial (se guarda como texto). Regístrela en Comercial › Empresas para que aparezca en la lista.' : '');
         cuerpo.querySelector('#dlSitios').innerHTML = Ope.sitiosConocidos(p.cliente).map((x) => '<option value="' + esc(x) + '">').join('');
+        // Sede de la empresa (lista de sedes registradas): se elige cuando la empresa tiene varias
+        const selS = cuerpo.querySelector('#f_sede'), cands = App.sedesCandidatas ? App.sedesCandidatas(Object.assign({}, p, { ciudad: '' })) : [];
+        const actual = selS.value || a.sede || '';
+        cuerpo.querySelector('#cSede').hidden = !cands.length && !actual;
+        if (cands.length || actual) {
+          const ops = cands.slice(); if (actual && !ops.some((x) => x.Title === actual)) { const x = (Ope.D.sedes || []).find((y) => y.Title === actual); if (x) ops.push(x); }
+          const sel = actual || (cands.length === 1 ? cands[0].Title : '');
+          selS.innerHTML = '<option value="">' + (cands.length > 1 ? '— elegir sede —' : '— sin sede —') + '</option>' + ops.map((x) => '<option value="' + esc(x.Title) + '"' + (x.Title === sel ? ' selected' : '') + '>' + esc(x.Title + ' · ' + (x.ciudad || '') + ' · ' + (x.direccion || '')) + '</option>').join('');
+          cuerpo.querySelector('#aySede').textContent = cands.length > 1 ? (p.sitio || p.cliente) + ' tiene ' + cands.length + ' sedes registradas: elija dónde es el servicio.' : '';
+        }
         if (!p.fecha) return;
         try { await Ope.cargarMes(Ope.ym(p.fecha)); } catch (e) { /* sin conexión: se valida con lo que hay */ }
         if (n !== turno) return;

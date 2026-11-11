@@ -143,7 +143,9 @@ const LISTAS = [
     ['fecha', 'd', null, 1], ['tecnico_id', 't', null, 1], ['tipo', 't', null, 1], ['cliente', 't'], ['empresa_id', 't'], ['ciudad', 't'],
     ['equipos', 'n'], ['hora_inicio', 't'], ['ticket_os', 't'],
     ['estado', 'c', ['PROGRAMADO', 'CONFIRMADO', 'EJECUTADO', 'REPROGRAMADO', 'CANCELADO'], 1],
-    ['observaciones', 'm'], ['reprograma_de', 't'], ['autorizado', 'b'], ['motivo_cambio', 't'], ['origen', 't', null, 1], ['sitio', 't']] },
+    ['observaciones', 'm'], ['reprograma_de', 't'], ['autorizado', 'b'], ['motivo_cambio', 't'], ['origen', 't', null, 1], ['sitio', 't'], ['sede', 't', null, 1]] },
+  { n: 'OPE_Sedes', title: 'sede_id', d: 'Sedes de los clientes finales (p. ej. las 33 sedes de los clientes de Casa Limpia): código de sede, dirección y estado registrado', cols: [
+    ['cod_cliente', 't'], ['cliente_principal', 't', null, 1], ['sitio', 't', null, 1], ['biometrico', 't'], ['ciudad', 't'], ['direccion', 't'], ['estado', 't'], ['notas', 'm'], ['estado_fila', 't']] },
   // APP-106 · Proveedores (Vendors) fuera de Bogotá: misma estructura que Empresas/Sedes/Contactos de Comercial, en listas separadas
   { n: 'OPE_Proveedores', title: 'proveedor_id', d: 'Proveedores (vendors) de IC fuera de Bogotá: instaladores y aliados locales', cols: [
     ['tipo_id_fiscal', 'c', ['NIT', 'CC', 'RUC', 'TAX ID', 'OTRO']], ['nit', 't', null, 1], ['dv', 't'], ['razon_social', 't', null, 1],
@@ -1190,7 +1192,7 @@ async function importar() {
 // Contribuir = leer y editar elementos · Leer = solo consulta
 const PERMISOS_TECNICOS = [
   ['OPE_Actividades', 3], ['OPE_Seguimiento', 3], ['SYS_Auditoria', 3], ['SYS_Secuencias', 3],
-  ['OPE_Tecnicos', 2], ['OPE_Tipos', 2], ['SYS_Festivos', 2], ['SYS_Accesos', 2], ['SYS_Microapps', 2],
+  ['OPE_Tecnicos', 2], ['OPE_Tipos', 2], ['OPE_Sedes', 2], ['SYS_Festivos', 2], ['SYS_Accesos', 2], ['SYS_Microapps', 2],
   ['NOV_Solicitudes', 3],       // además: cada técnico solo ve y edita sus propias solicitudes
   ['TAL_Programas', 2], ['TAL_Piezas', 2], ['TAL_Lecturas', 3]
 ];

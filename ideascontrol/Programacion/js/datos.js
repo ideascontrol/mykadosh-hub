@@ -197,7 +197,7 @@ window.Ope = (function () {
         entidad, registro_id: registro, accion, antes: antes ? JSON.stringify(antes) : '', despues: despues ? JSON.stringify(despues) : '' });
     } catch (e) { console.warn('Auditoría no registrada', e); }
   }
-  const CAMPOS_ACT = ['fecha', 'tecnico_id', 'tipo', 'cliente', 'empresa_id', 'ciudad', 'equipos', 'hora_inicio', 'ticket_os', 'estado', 'observaciones', 'reprograma_de', 'autorizado', 'motivo_cambio', 'origen', 'sitio'];
+  const CAMPOS_ACT = ['fecha', 'tecnico_id', 'tipo', 'cliente', 'empresa_id', 'ciudad', 'equipos', 'hora_inicio', 'ticket_os', 'estado', 'observaciones', 'reprograma_de', 'autorizado', 'motivo_cambio', 'origen', 'sitio', 'sede'];
   function soloCampos(o) { const r = {}; CAMPOS_ACT.forEach((k) => { if (o[k] !== undefined) r[k] = o[k]; }); return r; }
 
   // Cliente principal = quien contrata y paga (p. ej. Casa Limpia) · sitio = cliente final donde se instala
@@ -209,8 +209,16 @@ window.Ope = (function () {
     }));
     return Array.from(propios).sort().concat(Array.from(otros).filter((x) => !propios.has(x)).sort());
   }
+  // Sedes de clientes finales (OPE_Sedes): Title = código de sede
+  async function sedes(forzar) {
+    if (D.sedes && !forzar) return D.sedes;
+    try { D.sedes = (await G.items('OPE_Sedes', { top: 2000 })).filter((x) => x.estado_fila !== 'INACTIVO'); } catch (e) { D.sedes = []; D.sedesError = e; }
+    return D.sedes;
+  }
   // Si falta la columna nueva en SharePoint, se explica qué hacer
   function explicarColumna(e) {
+    if (/\bsede\b/i.test(String(e && e.message)) && /recogni|reconoc|not found|no existe|does not exist/i.test(String(e.message)))
+      return new Error('Falta actualizar las listas de SharePoint (columna «sede»). Abra el Instalador (Programacion/Instalador/) y haga clic en «Crear estructura».');
     if (/sitio/i.test(String(e && e.message)) && /recogni|reconoc|not found|no existe|does not exist/i.test(String(e.message)))
       return new Error('Falta actualizar las listas de SharePoint (columna «sitio»). Abra el Instalador (Programacion/Instalador/) y haga clic en «Crear estructura».');
     return e;
@@ -241,6 +249,6 @@ window.Ope = (function () {
     dia, pad, hoy, aFecha, sumar, dow, lunesDe, ym, finDeMes, esFestivo, esHabil, diasHabilesMes, textoFecha,
     cargarCatalogos, catalogosFrescos, tec, tipo, habilidades, puede, usaEquipos, diasPref, tecnicosActivos, tecnicosIC, nombreTec, nombreTipo, nombreEstado,
     cargarMes, cargarRango, delRango, delDia, activa, buscar, recordar, orden,
-    cargaDia, validar, etiqueta, resumenDia, empresas, sitiosConocidos, auditar, crearActividad, actualizarActividad
+    cargaDia, validar, etiqueta, resumenDia, empresas, sedes, sitiosConocidos, auditar, crearActividad, actualizarActividad
   };
 })();
