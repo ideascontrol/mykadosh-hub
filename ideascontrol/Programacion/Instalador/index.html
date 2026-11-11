@@ -1228,7 +1228,9 @@ async function aplicarPermisos() {
     for (const tipo of [2, 3]) roles[tipo] = (await sp('GET', 'web/roledefinitions/getbytype(' + tipo + ')?$select=Id,Name'));
     for (const [lista, tipo] of PERMISOS_TECNICOS) {
       const base = 'web/lists/getbytitle(' + lit(lista) + ')';
-      const l = await sp('GET', base + '?$select=HasUniqueRoleAssignments');
+      let l;
+      try { l = await sp('GET', base + '?$select=HasUniqueRoleAssignments'); }
+      catch (e) { if (e.status === 404 || /404|no existe/i.test(e.message)) { log(lista + ': la lista aún no existe — dé clic en «Crear estructura» (paso 3) y luego repita «Aplicar permisos»', 'warn'); continue; } throw e; }
       if (!l.HasUniqueRoleAssignments) await sp('POST', base + '/breakroleinheritance(copyRoleAssignments=true,clearSubscopes=true)');
       const asignados = ((await sp('GET', base + '/roleassignments?$select=PrincipalId')).value || []).map((x) => x.PrincipalId);
       const ya = asignados.indexOf(grupo.Id) >= 0;
