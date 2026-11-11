@@ -594,7 +594,7 @@ const App = { usuario: null, items: [], cat: [], docs: {}, docsOk: false, sel: n
       console.error(e);
       const falta = /No existe la lista CHK_/.test(e.message);
       U.pantalla(raiz, { logo: CFG.logo, titulo: falta ? 'Falta instalar la app' : 'No se pudo cargar la app',
-        texto: falta ? 'Las listas CHK_Items y CHK_Catalogo aún no existen en IC Apps. Abra el instalador (Programacion/Instalador/) y haga clic en «Crear estructura».' : U.mensajeError(e), boton: 'Reintentar', alClic: () => location.reload() });
+        texto: falta ? 'Las listas CHK_Items y CHK_Catalogo aún no existen en IC Apps. Abra el instalador (Programacion/Instalador/) y haga clic en «Crear estructura».' : U.mensajeError(e), boton: falta ? 'Abrir el instalador' : 'Reintentar', alClic: () => { if (falta) window.open('/ideascontrol/Programacion/Instalador/', '_blank'); else location.reload(); } });
     }
   }
   window.addEventListener('DOMContentLoaded', arrancar);

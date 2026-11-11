@@ -4,7 +4,7 @@
    está en la lista SYS_Microapps (columna url), esa tiene prioridad.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-100', nombre: 'Portal de microapps', version: '0.1.19' },
+  app: { id: 'APP-100', nombre: 'Portal de microapps', version: '0.1.20' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -18,6 +18,7 @@ window.CFG = {
   sitios: [
     { nombre: 'Ideas Control (documentos)', url: 'https://ideascontrolsas.sharepoint.com/sites/IdeasControl', texto: 'Bibliotecas de documentos: clientes, comercial, administración y documentación maestra.' },
     { nombre: 'IC Apps (datos de las microapps)', url: 'https://ideascontrolsas.sharepoint.com/sites/ICApps', texto: 'Listas de SharePoint donde guardan su información las microapps internas.' },
+    { nombre: 'Instalador IC Apps', url: '/ideascontrol/Programacion/Instalador/', texto: 'Crea o completa las listas de SharePoint de las microapps (Programación, Novedades, Talento, Clientes, Costos, Marketing, Checklist) y aplica permisos.' },
     { nombre: 'De Dios para el camino · Lectura diaria', url: '/ideascontrol/Lectura/', texto: 'Personal: 3 versículos por día con Claude, elegir uno, documentar el Word, prompt de la imagen y texto para Facebook.' },
     { nombre: 'Marketing GPA · Growth Path Academy', url: '/ideascontrol/MarketingGPA/', texto: 'Personal: plan de contenido GPA (288 publicaciones), mejorar la semana con Claude, copys, prompts de imagen, Word, métricas, leads y pauta.' }
   ]
