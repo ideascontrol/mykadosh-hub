@@ -20,7 +20,7 @@
   function sitios(acts) {
     const m = {}, hoy = Ope.hoy();
     acts.forEach((a) => {
-      const nombre = String(a.sitio || '').trim() || '(sin sitio: ' + (a.cliente || '—') + ')';
+      const nombre = String(a.sitio || '').trim() || String(a.cliente || '').trim() || '(sin cliente)';
       const k = n(nombre);
       const s = m[k] || (m[k] = { sitio: nombre, ciudades: new Set(), acts: [], tickets: new Set() });
       s.acts.push(a); if (a.ciudad) s.ciudades.add(a.ciudad); if (a.ticket_os) s.tickets.add(String(a.ticket_os).trim());
@@ -70,29 +70,58 @@
       todo = Ope.delRango(ST.desde, ST.hasta).filter((a) => a.tipo !== 'OFI' && a.tipo !== 'AUS');
       const cl = clientes(todo);
       if (!ST.cliente) { const cas = cl.find((x) => /casa limpia/.test(n(x.nombre))); ST.cliente = cas ? n(cas.nombre) : (cl[0] ? n(cl[0].nombre) : ''); }
-      c.querySelector('#sCli').innerHTML = cl.length ? cl.map((x) => '<option value="' + esc(n(x.nombre)) + '">' + esc(x.nombre) + ' (' + x.s.size + ' sitios)</option>').join('') : '<option value="">No hay actividades con «Sitio / cliente final»</option>';
+      const nDir = new Set(directas().map((a) => n(a.cliente))).size;
+      c.querySelector('#sCli').innerHTML = cl.map((x) => '<option value="' + esc(n(x.nombre)) + '">' + esc(x.nombre) + ' (' + x.s.size + ' sitios)</option>').join('') +
+        '<option value="__directos">Empresas sin cliente principal (' + nDir + ')</option>';
+      if (!cl.length && ST.cliente !== '__directos') ST.cliente = '__directos';
       c.querySelector('#sCli').value = ST.cliente;
       dibujar();
     }
+    // Actividades donde la empresa quedó como «Cliente» sin cliente principal (p. ej. importadas del Excel)
+    const directas = () => todo.filter((a) => a.cliente && !a.sitio);
+    const delCliente = () => ST.cliente === '__directos' ? directas() : todo.filter((a) => n(a.cliente) === ST.cliente);
     function lista() {
       const q = n(ST.q);
-      return sitios(todo.filter((a) => n(a.cliente) === ST.cliente))
+      return sitios(delCliente())
         .filter((s) => (!ST.estado || s.estado === ST.estado) && (!q || n(s.sitio + ' ' + s.ciudad + ' ' + s.ticket).indexOf(q) >= 0));
     }
     function dibujar() {
       const l = lista(), cont = {};
-      sitios(todo.filter((a) => n(a.cliente) === ST.cliente)).forEach((s) => { cont[s.estado] = (cont[s.estado] || 0) + 1; });
+      const dir = ST.cliente === '__directos';
+      sitios(delCliente()).forEach((s) => { cont[s.estado] = (cont[s.estado] || 0) + 1; });
       c.querySelector('#sRes').innerHTML =
         '<div class="ope-sit-resumen">' + ESTADOS_SITIO.filter((e) => cont[e[0]]).map((e) => '<button class="ope-sit-k ' + e[2] + (ST.estado === e[0] ? ' on' : '') + '" data-est="' + e[0] + '"><b>' + cont[e[0]] + '</b>' + esc(e[1]) + '</button>').join('') + '</div>' +
-        (l.length ? '<div class="ic-tabla-caja ope-scroll"><table class="ic-tabla"><thead><tr><th>Sitio / cliente final</th><th>Estado</th><th>Ciudad</th><th style="text-align:center">Instalaciones</th><th style="text-align:center">Equipos instalados</th><th style="text-align:center">Mantenimientos</th><th>Última actividad</th><th>Próxima actividad</th><th>Ticket / OS</th></tr></thead><tbody>' +
+        (dir && l.length ? '<div class="ic-alerta chica" style="margin-bottom:10px"><b>Estas empresas están como «Cliente» sin cliente principal.</b> Si son clientes de Casa Limpia (u otro), márquelas y páselas: el cliente queda como cliente principal y la empresa pasa a «Sitio / cliente final» en todas sus actividades.' +
+          '<div class="ic-barra" style="margin-top:8px;gap:8px;flex-wrap:wrap"><label class="ic-check"><input type="checkbox" id="sTodas"> <span>Marcar todas</span></label><span style="flex:1"></span>' +
+          '<input id="sPrin" list="dlPrin" placeholder="Cliente principal (p. ej. CASA LIMPIA)" style="min-width:260px"><datalist id="dlPrin"></datalist><button class="ic-btn" id="sPasar">Pasar las marcadas</button></div></div>' : '') +
+        (l.length ? '<div class="ic-tabla-caja ope-scroll"><table class="ic-tabla"><thead><tr>' + (dir ? '<th style="width:30px"></th>' : '') + '<th>' + (dir ? 'Empresa' : 'Sitio / cliente final') + '</th><th>Estado</th><th>Ciudad</th><th style="text-align:center">Instalaciones</th><th style="text-align:center">Equipos instalados</th><th style="text-align:center">Mantenimientos</th><th>Última actividad</th><th>Próxima actividad</th><th>Ticket / OS</th></tr></thead><tbody>' +
           l.map((s, i) => { const e = estNom(s.estado);
-            return '<tr data-i="' + i + '"><td><b>' + esc(s.sitio) + '</b></td><td><span class="ope-sit-tag ' + e[2] + '">' + esc(e[1]) + '</span></td><td>' + esc(s.ciudad) + '</td>' +
+            return '<tr data-i="' + i + '">' + (dir ? '<td><input type="checkbox" class="sMarca" data-i="' + i + '" aria-label="Marcar"></td>' : '') + '<td><b>' + esc(s.sitio) + '</b></td><td><span class="ope-sit-tag ' + e[2] + '">' + esc(e[1]) + '</span></td><td>' + esc(s.ciudad) + '</td>' +
               '<td style="text-align:center">' + s.insEj + (s.insPend ? ' <span class="sec">+' + s.insPend + ' prog.</span>' : '') + '</td><td style="text-align:center">' + (s.equiposInst || '') + (s.equiposProg ? ' <span class="sec">+' + s.equiposProg + ' prog.</span>' : '') + '</td>' +
               '<td style="text-align:center">' + (s.mto || '') + '</td><td>' + esc(actTxt(s.ultima)) + '</td><td>' + esc(actTxt(s.proxima)) + '</td><td>' + esc(s.ticket) + '</td></tr>'; }).join('') +
           '</tbody></table></div><p class="ope-nota">' + l.length + ' sitio(s). El estado sale de la programación: «Instalado» = tiene al menos una instalación ejecutada; «Instalación programada» = tiene instalación pendiente; canceladas y reprogramadas no cuentan.</p>'
           : '<div class="ic-tabla-caja"><div class="ic-vacio">No hay sitios con estos filtros.</div></div>');
       c.querySelectorAll('[data-est]').forEach((b) => { b.onclick = () => { ST.estado = ST.estado === b.dataset.est ? '' : b.dataset.est; c.querySelector('#sEst').value = ST.estado; dibujar(); }; });
-      c.querySelectorAll('tr[data-i]').forEach((tr) => { tr.onclick = () => detalle(l[+tr.dataset.i]); });
+      c.querySelectorAll('tr[data-i]').forEach((tr) => { tr.onclick = (e) => { if (e.target.classList.contains('sMarca')) return; detalle(l[+tr.dataset.i]); }; });
+      if (dir && l.length) {
+        Ope.empresas().then((emp) => { const dl = c.querySelector('#dlPrin'); if (dl) dl.innerHTML = emp.map((e) => '<option value="' + esc(e.razon_social) + '">').join(''); });
+        const cas = clientes(todo).find((x) => /casa limpia/.test(n(x.nombre))); if (cas) c.querySelector('#sPrin').value = cas.nombre;
+        c.querySelector('#sTodas').onchange = (e) => c.querySelectorAll('.sMarca').forEach((x) => { x.checked = e.target.checked; });
+        c.querySelector('#sPasar').onclick = async (ev) => {
+          const marcadas = Array.from(c.querySelectorAll('.sMarca')).filter((x) => x.checked).map((x) => l[+x.dataset.i]);
+          const prin = c.querySelector('#sPrin').value.trim().toUpperCase();
+          if (!marcadas.length) { U.aviso('Marque las empresas que pasan al cliente principal.', 'warn'); return; }
+          if (!prin) { U.aviso('Escriba el cliente principal.', 'warn'); c.querySelector('#sPrin').focus(); return; }
+          const emp = (await Ope.empresas()).find((x) => n(x.razon_social) === n(prin));
+          const acts = [].concat.apply([], marcadas.map((s) => s.acts));
+          const b = ev.currentTarget; b.disabled = true; let k = 0;
+          try {
+            for (const a of acts) { b.textContent = 'Actualizando ' + (++k) + ' de ' + acts.length + '…'; await Ope.actualizarActividad(a, { sitio: a.cliente, cliente: emp ? emp.razon_social : prin, empresa_id: emp ? emp.Title : '' }); }
+            U.aviso(marcadas.length + ' empresa(s) pasadas a ' + prin + ' (' + acts.length + ' actividades).', 'ok', 7000);
+            ST.cliente = n(emp ? emp.razon_social : prin); await cargar();
+          } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); b.disabled = false; b.textContent = 'Reintentar'; await cargar(); }
+        };
+      }
     }
     function detalle(s) {
       const acts = s.acts.slice().sort((a, b) => b.fecha.localeCompare(a.fecha));
@@ -113,7 +142,7 @@
       const b = ev.currentTarget; b.disabled = true;
       try {
         if (!window.XLSX) await new Promise((ok, mal) => { const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'; s.onload = ok; s.onerror = () => mal(new Error('No se pudo cargar la librería de Excel.')); document.head.appendChild(s); });
-        const cliNom = (todo.find((a) => n(a.cliente) === ST.cliente) || {}).cliente || ST.cliente;
+        const cliNom = ST.cliente === '__directos' ? 'Sin cliente principal' : (todo.find((a) => n(a.cliente) === ST.cliente) || {}).cliente || ST.cliente;
         const ws = XLSX.utils.json_to_sheet(l.map((s) => ({ 'Cliente principal': cliNom, 'Sitio / cliente final': s.sitio, 'Estado': estNom(s.estado)[1], 'Ciudad': s.ciudad,
           'Instalaciones ejecutadas': s.insEj, 'Instalaciones programadas': s.insPend, 'Equipos instalados': s.equiposInst, 'Equipos programados': s.equiposProg, 'Mantenimientos': s.mto,
           'Última actividad': actTxt(s.ultima), 'Próxima actividad': actTxt(s.proxima), 'Ticket / OS': s.ticket })));
