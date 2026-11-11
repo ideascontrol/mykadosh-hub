@@ -32,6 +32,7 @@ window.MatrizAccesos = (function () {
     { app: 'Gestión de Clientes (APP-109)', rol: 'cli', modulos: [['Resumen, tareas e importar', (r) => !!r]] },
     { app: 'Calculadora de costos y precios (APP-110)', rol: 'cal', modulos: [['Nuevo cálculo e historial', (r) => !!r], ['Eliminar del historial', (r) => r === 'Dirección de Operaciones']] },
     { app: 'Marketing (APP-112)', rol: 'mkt', modulos: [['Calendario, publicaciones y temas', (r) => !!r], ['Aprobar publicaciones (mínimo 2)', (r) => !!r], ['Métricas y resumen', (r) => !!r]] },
+    { app: 'Checklist de Operaciones (APP-113)', rol: 'chk', modulos: [['Resumen, checklist, tipos y áreas, Excel', (r) => !!r]] },
     { app: 'Portal', rol: 'por', modulos: [['Sitios de SharePoint', (r) => !!r], ['Matriz de accesos', (r) => !!r]] }
   ];
 
@@ -53,6 +54,7 @@ window.MatrizAccesos = (function () {
       cli: dueno ? 'Dirección' : '',
       mkt: ({ 'operaciones@ideascontrol.com': 'Dirección de Operaciones', 'patricia@ideascontrol.com': 'Gerencia General', 'margarita@ideascontrol.com': 'Dirección Comercial' })[email] || '',
       cal: ({ 'operaciones@ideascontrol.com': 'Dirección de Operaciones', 'patricia@ideascontrol.com': 'Gerencia General', 'margarita@ideascontrol.com': 'Dirección Comercial' })[email] || '',
+      chk: email === 'operaciones@ideascontrol.com' ? 'Dirección' : '',
       por: dueno ? 'Dirección' : '',
       _nombre: (usr && usr.nombre) || (mios[0] && mios[0].nombre) || (tec && tec.nombre) || '',
       _tipo: tec && !oficina ? 'Técnico' : oficina ? 'Oficina' : 'Sin registrar'
@@ -106,6 +108,7 @@ window.MatrizAccesos = (function () {
       ['Gestión de Clientes (APP-109)', 'Dirección', 'Solo operaciones@ideascontrol.com (configuración de la app).'],
       ['Calculadora de costos y precios (APP-110)', 'Gerencia General · Dirección Comercial · Dirección de Operaciones', 'Solo patricia@, margarita@ y operaciones@ (configuración de la app). Eliminar registros del historial: solo operaciones@.'],
       ['Marketing (APP-112)', 'Gerencia General · Dirección Comercial · Dirección de Operaciones', 'Solo patricia@, margarita@ y operaciones@ (configuración de la app). Cada publicación necesita mínimo 2 aprobaciones de ellos.'],
+      ['Checklist de Operaciones (APP-113)', 'Dirección', 'Solo operaciones@ideascontrol.com (configuración de la app). Los documentos se abren en Gestión documental.'],
       ['Portal', 'Dirección', 'Sitios de SharePoint y esta matriz: solo operaciones@ideascontrol.com.'],
       [], ['Generada', new Date().toLocaleString('es-CO')], ['Nota', 'La matriz refleja lo que muestran las apps. Los permisos de SharePoint (quién puede abrir los sitios directamente) se administran aparte.']]);
     ws3['!cols'] = [{ wch: 30 }, { wch: 52 }, { wch: 110 }];

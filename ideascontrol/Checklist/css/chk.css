@@ -1,0 +1,75 @@
+/* APP-113 · Checklist de Operaciones */
+.chk-nav { display: flex; gap: 4px; margin-right: 14px; }
+.chk-nav a { padding: 7px 12px; border-radius: 999px; font-weight: 600; font-size: 14px; color: var(--ic-gris); text-decoration: none; white-space: nowrap; }
+.chk-nav a:hover { background: var(--ic-fondo); }
+.chk-nav a.on { background: rgba(14, 118, 188, .1); color: var(--ic-azul); }
+.ic-campo.c10 { grid-column: span 10; }
+.chk-h2 { margin: 0 0 6px; font-size: 16px; color: var(--ic-azul); }
+.chk-scroll { overflow-x: auto; }
+.chk-kpis { grid-template-columns: repeat(6, 1fr); margin-bottom: 18px; }
+.chk-kpi { text-decoration: none; color: inherit; transition: border-color .15s; }
+a.chk-kpi:hover { border-color: var(--ic-azul); }
+.chk-kpi.verde .valor { color: var(--ic-teal); } .chk-kpi.amarillo .valor { color: #B7860B; } .chk-kpi.gris .valor { color: var(--ic-gris); }
+.chk-kpi .chk-barra { margin-top: 6px; }
+.chk-dos { display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; margin-top: 16px; align-items: start; }
+.chk-col { display: grid; gap: 16px; }
+.chk-res td, .chk-res th { padding: 8px 12px; }
+.chk-res tbody tr { cursor: default; }
+.chk-res a { color: inherit; text-decoration: none; } .chk-res a:hover { color: var(--ic-azul); text-decoration: underline; }
+.chk-res .num, .chk-cat .num { text-align: right; font-variant-numeric: tabular-nums; }
+.chk-res tr.tot td { background: #F8FAFC; font-weight: 700; }
+.chk-pct { min-width: 130px; display: flex; align-items: center; gap: 8px; }
+.chk-pct small { font-size: 12px; color: var(--ic-gris); min-width: 38px; text-align: right; }
+.chk-barra { height: 7px; background: #E9EEF2; border-radius: 99px; overflow: hidden; flex: 1; }
+.chk-barra i { display: block; height: 100%; background: var(--ic-teal); border-radius: 99px; }
+.chk-urg { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid var(--ic-borde); cursor: pointer; }
+.chk-urg:last-child { border-bottom: 0; }
+.chk-urg b { display: block; font-size: 14px; font-weight: 600; } .chk-urg .sec { font-size: 12px; color: var(--ic-gris); }
+.chk-urg:hover b { color: var(--ic-azul); }
+
+/* Estados */
+.chk-est { display: inline-block; white-space: nowrap; font-size: 12px; font-weight: 600; padding: 3px 9px; border-radius: 6px; background: #EEF1F4; color: #3D4A55; }
+.e-pendiente { background: #FFF4D6 !important; color: #8A6100 !important; }
+.e-encurso { background: #E6F0FA !important; color: #0A5A90 !important; }
+.e-completado { background: #E3F4EF !important; color: #0F766E !important; }
+.e-noaplica { background: #F2F2F2 !important; color: #7A7A7A !important; }
+select.chk-rapido { font: inherit; font-size: 12px; font-weight: 600; border: 1px solid transparent; border-radius: 6px; padding: 3px 4px; width: auto; min-width: 0; cursor: pointer; }
+select.chk-rapido:hover { border-color: var(--ic-borde); }
+.chk-pri { font-size: 12px; font-weight: 700; } .chk-pri.p-alta { color: #B42318; } .chk-pri.p-media { color: #8A6100; } .chk-pri.p-baja { color: #5B6770; }
+
+/* Tabla del checklist */
+.chk-tabla td, .chk-tabla th { padding: 9px 10px; }
+.chk-tabla td.nw { white-space: nowrap; }
+.chk-tabla .sec2, .chk-cat .sec2 { color: var(--ic-gris); font-size: 13px; }
+.chk-tabla td.venc { color: var(--ic-err); font-weight: 700; }
+.chk-tabla tr.cerrado td b { font-weight: 500; color: var(--ic-gris); }
+.chk-tabla .chk-c { width: 30px; }
+.chk-tabla tr.chk-grupo td { background: #F1F6FA; cursor: default; padding: 8px 10px; border-top: 1px solid var(--ic-borde); }
+.chk-tabla tr.chk-grupo b { color: var(--ic-azul); }
+.chk-tabla tr.chk-grupo span { margin-left: 10px; font-size: 12px; color: var(--ic-gris); }
+.chk-tabla tbody tr.chk-grupo:hover { background: #F1F6FA; }
+.chk-docs { display: flex; flex-wrap: wrap; gap: 4px; }
+.chk-doc { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 999px; text-decoration: none;
+  background: rgba(14, 118, 188, .08); color: var(--ic-azul); border: 1px solid rgba(14, 118, 188, .25); }
+.chk-doc.pub { background: var(--ic-azul); color: #fff; border-color: var(--ic-azul); }
+.chk-doc.pub:hover { background: var(--ic-azul-osc); }
+.chk-doc.no { background: #F3F5F7; color: var(--ic-gris); border: 1px dashed #C9D3DB; cursor: help; }
+.chk-masivo { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; background: #FFFBEA; border: 1px solid #EBD98A; border-radius: var(--ic-radio); padding: 10px 12px; margin-bottom: 12px; }
+.chk-masivo select, .chk-masivo input { width: auto; min-width: 120px; }
+.chk-meta { font-size: 12px; color: var(--ic-gris); margin: 10px 0 0; }
+
+/* Catálogos y calculadora */
+.chk-cats { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; align-items: start; }
+.chk-cats.tres { grid-template-columns: 1.2fr 1.2fr .8fr; }
+.chk-catb .cab small { color: var(--ic-gris); font-weight: 600; margin-left: 4px; }
+.chk-cat td, .chk-cat th { padding: 7px 10px; }
+.chk-calc-f { display: flex; flex-wrap: wrap; gap: 12px; margin: 10px 0 12px; }
+.chk-calc-f label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; }
+.chk-sug { display: flex; align-items: center; gap: 14px; background: #F1F6FA; border: 1px solid #CFE3F1; border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; width: fit-content; }
+.chk-sug small { display: block; font-size: 12px; color: var(--ic-gris); }
+.chk-sug b { font-size: 22px; color: var(--ic-azul); letter-spacing: .02em; }
+.ic-alerta.chica { background: #EEF6FB; border: 1px solid #CFE3F1; border-radius: 10px; padding: 10px 12px; margin: 10px 0; font-size: 14px; }
+
+@media (max-width: 1100px) { .chk-kpis { grid-template-columns: repeat(3, 1fr); } .chk-cats.tres { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 980px) { .chk-dos, .chk-cats, .chk-cats.tres { grid-template-columns: 1fr; } .ic-header { flex-wrap: wrap; } .chk-nav { order: 10; flex-basis: 100%; overflow-x: auto; margin: 6px 0 0; } }
+@media (max-width: 600px) { .chk-kpis { grid-template-columns: repeat(2, 1fr); } }

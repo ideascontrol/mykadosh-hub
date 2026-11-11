@@ -49,7 +49,7 @@
 <body>
 <header>
   <img src="/ideascontrol/assets/ideascontrol.webp" alt="Ideas Control" onerror="this.style.display='none'">
-  <div><h1>Instalador IC Apps · Programación (APP-106) · Novedades (APP-107) · Desarrollo de Talento (APP-108) · Seguimiento por cliente (APP-109) · Calculadora de costos (APP-110) · Marketing (APP-112)</h1><p>Crea las listas de SharePoint, carga técnicos y tipos, importa el Excel y da permisos a los técnicos. Puede repetirse sin duplicar.</p></div>
+  <div><h1>Instalador IC Apps · Programación (APP-106) · Novedades (APP-107) · Desarrollo de Talento (APP-108) · Seguimiento por cliente (APP-109) · Calculadora de costos (APP-110) · Marketing (APP-112) · Checklist de Operaciones (APP-113)</h1><p>Crea las listas de SharePoint, carga técnicos y tipos, importa el Excel y da permisos a los técnicos. Puede repetirse sin duplicar.</p></div>
 </header>
 <main>
   <div class="card">
@@ -183,6 +183,12 @@ const LISTAS = [
   { n: 'TAR_Tareas', title: 'tarea_id', d: 'Tareas y pendientes por cliente (plan de trabajo y seguimiento)', cols: [
     ['cliente_id', 't', null, 1], ['cliente_nombre', 't'], ['plan', 't'], ['item', 'm'], ['categoria', 't'], ['responsable', 't'], ['prioridad', 't'],
     ['estado', 't', null, 1], ['fecha_apertura', 'd'], ['fecha_inicio', 'd'], ['fecha_limite', 'd', null, 1], ['fecha_cierre', 'd'], ['progreso', 'n'], ['bitacora', 'm'], ['orden', 'n']] },
+  // APP-113 · Checklist de Operaciones (antes Checklist_Operaciones_IC.xlsx). estado, prioridad, categoría y tipo son texto: se reclasifican desde la app
+  { n: 'CHK_Items', title: 'item_id', d: 'Checklist de Operaciones: elementos del área (estructura, políticas, procesos, formatos, indicadores, gobierno)', cols: [
+    ['orden', 'n'], ['categoria', 't', null, 1], ['tipo', 't'], ['elemento', 'm'], ['prioridad', 't'], ['estado', 't', null, 1], ['responsable', 't'],
+    ['fecha_objetivo', 'd'], ['codigo_doc', 't'], ['observaciones', 'm'], ['fecha_completado', 'd']] },
+  { n: 'CHK_Catalogo', title: 'catalogo_id', d: 'Checklist de Operaciones: categorías, tipos de elemento, tipos de documento, áreas y series', cols: [
+    ['grupo', 't', null, 1], ['codigo', 't'], ['nombre', 't'], ['descripcion', 'm'], ['orden', 'n']] },
   // APP-110 · Calculadora de costos y precios. Cada cálculo guardado es un registro histórico; lineas = JSON con las líneas de costo
   { n: 'CAL_Costeos', title: 'costeo_id', d: 'Historial de cálculos de costo y precio (Calculadora de costos y precios)', cols: [
     ['fecha', 'dt', null, 1], ['producto', 't', null, 1], ['codigo', 't'], ['categoria', 't'], ['unidad', 't'], ['cantidad', 'n'],
@@ -837,7 +843,9 @@ SEMILLAS.SYS_Microapps = [
   { Title: 'APP-110', nombre: 'Calculadora de costos y precios', tipo: 'INTERNA', proposito: 'Precio sugerido a partir de los costos directos de un producto o servicio; cada cálculo queda en el historial (solo Gerencia, Dirección Comercial y Dirección de Operaciones).', estado: 'EN_CONSTRUCCION',
     plataforma: 'HTML (GitHub) + Microsoft Graph + listas de SharePoint', carpeta_actual: 'Costeo', url: 'https://www.mykadosh.com/ideascontrol/Costeo/' },
   { Title: 'APP-112', nombre: 'Marketing', tipo: 'INTERNA', proposito: 'Plan de contenidos de redes sociales: temas, publicaciones por red, aprobación (mínimo 2 de Gerencia, Dirección Comercial y Operaciones), métricas y resumen para gerencia.', estado: 'EN_CONSTRUCCION',
-    plataforma: 'HTML (GitHub) + Microsoft Graph + listas de SharePoint', carpeta_actual: 'Marketing', url: 'https://www.mykadosh.com/ideascontrol/Marketing/' }
+    plataforma: 'HTML (GitHub) + Microsoft Graph + listas de SharePoint', carpeta_actual: 'Marketing', url: 'https://www.mykadosh.com/ideascontrol/Marketing/' },
+  { Title: 'APP-113', nombre: 'Checklist de Operaciones', tipo: 'INTERNA', proposito: 'Lo que tiene y lo que le falta al área de Operaciones (antes Checklist_Operaciones_IC.xlsx): avance por categoría y tipo, reclasificación, catálogo de codificación documental y acceso a los manuales (solo Dirección de Operaciones).', estado: 'EN_CONSTRUCCION',
+    plataforma: 'HTML (GitHub) + Microsoft Graph + listas de SharePoint', carpeta_actual: 'Checklist', url: 'https://www.mykadosh.com/ideascontrol/Checklist/' }
 ];
 // URL que se completa en el catálogo si está vacía
 const URL_FALTANTE = { 'APP-105': 'https://www.mykadosh.com/ideascontrol/ICManuales/gestion-documental/index.html', 'APP-101': 'https://www.mykadosh.com/ideascontrol/Comercial/' };

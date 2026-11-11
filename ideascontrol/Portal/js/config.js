@@ -4,7 +4,7 @@
    está en la lista SYS_Microapps (columna url), esa tiene prioridad.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-100', nombre: 'Portal de microapps', version: '0.1.18' },
+  app: { id: 'APP-100', nombre: 'Portal de microapps', version: '0.1.19' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -56,6 +56,9 @@ window.APPS = [
   { grupo: 'Documentación', id: 'APP-105', nombre: 'Gestión documental', icono: 'docs', color: 'dorado',
     texto: 'Manuales, procedimientos, instructivos, formatos y políticas vigentes de Ideas Control.',
     url: '/ideascontrol/Documentacion/', datos: 'SHAREPOINT', fija: true },
+  { grupo: 'Documentación', id: 'APP-113', nombre: 'Checklist de Operaciones', icono: 'checklist', color: 'teal',
+    texto: 'Lo que tiene y lo que le falta al área: estructura, políticas, procesos, formatos, indicadores y gobierno, con avance y acceso directo a cada manual.',
+    url: '/ideascontrol/Checklist/', datos: 'SHAREPOINT', solo: ['operaciones@ideascontrol.com'] },
   { grupo: 'Próximamente', id: 'APP-104', nombre: 'Encuestas CSAT / NPS', icono: 'encuesta', color: '',
     texto: 'CSAT después de cada servicio; NPS cada 3 o 6 meses.', url: '', datos: 'SHAREPOINT', pronto: true, soloOficina: true }
 ];
