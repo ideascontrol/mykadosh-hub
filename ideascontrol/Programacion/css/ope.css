@@ -203,3 +203,26 @@
   .ope-acta-tabla { break-inside: auto; } .ope-acta-tabla tr { break-inside: avoid; }
   .ope-acta-firmas { break-inside: avoid; }
 }
+
+/* Seguimiento (bitácora) del caso */
+.seg-panel{border-top:2px solid var(--ic-borde,#dde5ec);padding:16px 22px 22px;background:#fafcfd}
+.seg-titulo{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;margin-bottom:10px}.seg-titulo h3{margin:0;font-size:16px;color:var(--ic-azul,#0E76BC)}
+.seg-caso{font-size:12.5px;color:var(--ic-gris,#5B6770)}.seg-caso .sec{font-size:12px}
+.seg-nuevo{display:grid;grid-template-columns:200px 1fr auto;gap:8px;align-items:start;margin-bottom:12px}
+.seg-nuevo select,.seg-nuevo textarea{font:inherit;font-size:14px;border:1px solid var(--ic-linea,#d5dce1);border-radius:8px;padding:8px 10px;background:#fff;color:inherit}
+.seg-nuevo textarea{resize:vertical;min-height:42px}
+.seg-lista{list-style:none;margin:0;padding:0 0 0 4px;max-height:340px;overflow:auto}
+.seg-item{position:relative;padding:0 0 12px 22px;border-left:2px solid #e3e9ef;margin-left:6px}
+.seg-item:last-child{border-left-color:transparent}
+.seg-punto{position:absolute;left:-7px;top:3px;width:12px;height:12px;border-radius:50%;background:#0E76BC;border:2px solid #fff;box-shadow:0 0 0 1px #c9d6e2}
+.seg-cab{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:12.5px;color:var(--ic-gris,#5B6770)}.seg-cab b{color:var(--ic-tinta,#1D2B36);font-size:13px}
+.seg-tag{font-size:11px;font-weight:700;padding:1px 8px;border-radius:99px;background:#e6f0f9;color:#0A5A90}
+.seg-ref{font-size:11px;padding:1px 6px;border-radius:6px;background:#f1f4f7;color:#5B6770}
+.seg-texto{margin-top:3px;font-size:14px;line-height:1.45;white-space:normal;word-break:break-word}
+.seg-punto.dorado,.seg-tag.dorado{background:#C9A227}.seg-tag.dorado{background:#fbf3d9;color:#7a5f00}
+.seg-punto.teal{background:#159090}.seg-tag.teal{background:#e3f4f4;color:#0f6f6f}
+.seg-punto.rojo{background:#c0392b}.seg-tag.rojo{background:#fbe9e7;color:#a03024}
+.seg-punto.verde{background:#2e8b57}.seg-tag.verde{background:#e5f4ea;color:#23704a}
+.seg-punto.gris{background:#5B6770}.seg-tag.gris{background:#eef1f4;color:#45525c}
+@media (max-width:700px){.seg-nuevo{grid-template-columns:1fr}}
+@media print{.seg-nuevo{display:none}.seg-lista{max-height:none;overflow:visible}}

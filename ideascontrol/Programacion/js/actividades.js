@@ -90,10 +90,11 @@
         (edita ? '<button type="submit" class="ic-btn" id="bGuardar">' + (nueva ? 'Programar' : 'Guardar cambios') + '</button>' : '') +
       '</div>' +
       (!nueva && a._modificado ? '<p class="ope-nota" style="text-align:right">Creado por ' + esc(a._autor) + ' · última modificación ' + esc(U.fmt.fechaHora(a._modificado)) + ' por ' + esc(a._editor) + '</p>' : '') +
-      '</form>';
+      '</form>' + (nueva ? '' : App.seguimiento.html());
 
     U.modal(titulo, html, (cuerpo) => {
       const f = cuerpo.querySelector('#fAct');
+      if (!nueva) App.seguimiento.montar(cuerpo, a);
       if (lectura || soloEjecutar) f.querySelectorAll('input,select,textarea').forEach((el) => { if (!(soloEjecutar && el.name === 'observaciones')) el.disabled = true; });
       f.querySelector('#bCerrar').onclick = U.cerrarModal;
 

@@ -165,6 +165,8 @@ const LISTAS = [
     ['fecha_inicio', 'd', null, 1], ['fecha_fin', 'd'], ['hora_inicio', 't'], ['hora_fin', 't'], ['dias_habiles', 'n'], ['motivo', 'm'],
     ['estado', 'c', ['SOLICITADA', 'APROBADA', 'RECHAZADA', 'ANULADA'], 1], ['respuesta', 'm'], ['resuelto_por', 't'], ['fecha_respuesta', 'dt'],
     ['actividades', 'm'], ['solicitante', 't'], ['registrado_por', 't']] },
+  { n: 'OPE_Seguimiento', title: 'seguimiento_id', d: 'Bitácora de seguimiento por caso (ticket / OS o actividad): comentarios con fecha, hora y autor; no se editan, se acumulan', cols: [
+    ['caso', 't', null, 1], ['actividad_id', 't', null, 1], ['fecha_hora', 'dt', null, 1], ['autor', 't'], ['autor_email', 't'], ['tipo_nota', 't'], ['texto', 'm'], ['cliente', 't']] },
   { n: 'NOV_Faltas', title: 'falta_id', d: 'Faltas del personal (confidencial: solo Dirección de Operaciones)', cols: [
     ['tecnico_id', 't', null, 1], ['fecha', 'd', null, 1],
     ['tipo_falta', 'c', ['RETARDO', 'INASISTENCIA', 'AUSENCIA_SIN_TRAMITE', 'PROCEDIMIENTO', 'PROGRAMACION', 'RECURSOS', 'TRATO', 'OTRA']],
@@ -1187,7 +1189,7 @@ async function importar() {
 // ====== PASO 5: PERMISOS DE LOS TÉCNICOS ======
 // Contribuir = leer y editar elementos · Leer = solo consulta
 const PERMISOS_TECNICOS = [
-  ['OPE_Actividades', 3], ['SYS_Auditoria', 3], ['SYS_Secuencias', 3],
+  ['OPE_Actividades', 3], ['OPE_Seguimiento', 3], ['SYS_Auditoria', 3], ['SYS_Secuencias', 3],
   ['OPE_Tecnicos', 2], ['OPE_Tipos', 2], ['SYS_Festivos', 2], ['SYS_Accesos', 2], ['SYS_Microapps', 2],
   ['NOV_Solicitudes', 3],       // además: cada técnico solo ve y edita sus propias solicitudes
   ['TAL_Programas', 2], ['TAL_Piezas', 2], ['TAL_Lecturas', 3]

@@ -82,7 +82,8 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
     const r = App.usuario.rol;
     const it = [];
     if (r === 'TECNICO') it.push(['nueva', 'Nueva solicitud', 'Solicite un permiso, vacaciones, licencia, reporte una incapacidad o pida un cambio de horario.', 'nueva', '']);
-    if (r === 'TECNICO') it.push(['mias', 'Mis solicitudes', 'El estado de sus solicitudes y la respuesta de la Dirección.', 'lista', '']);
+    if (r === 'TECNICO') it.push(['mias', 'Mis solicitudes', 'Su histórico de solicitudes: estado y respuesta de la Dirección.', 'lista', '']);
+    if (r === 'TECNICO') it.push(['reporte', 'Mi reporte de novedades', 'Sus novedades entre fechas para enviar por correo: Excel, PDF o directo al correo.', 'reporte', '']);
     if (r === 'ADMIN') it.push(['bandeja', 'Bandeja de aprobación', 'Solicitudes pendientes con su impacto en la programación. Aprobar o rechazar.', 'bandeja', '']);
     if (r !== 'TECNICO') it.push(['todas', 'Solicitudes', 'Todas las solicitudes y su estado, con filtros.', 'lista', '']);
     if (r !== 'TECNICO') it.push(['reporte', 'Reporte de novedades', 'Listado entre fechas para enviar por correo: Excel, PDF o copiar y pegar en el correo.', 'reporte', '']);
@@ -385,7 +386,7 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
         bandeja: () => vistaBandeja(raiz), todas: () => vistaTodas(raiz), calendario: () => vistaCalendario(raiz),
         faltas: () => App.vistas.faltas(raiz), personal: () => App.vistas.personal(raiz), reporte: () => App.vistas.reporte(raiz)
       };
-      Object.keys(rutas).forEach((k) => { const fn = rutas[k]; rutas[k] = () => (permitidas.indexOf(k) >= 0 && (['todas', 'calendario', 'reporte'].indexOf(k) < 0 || !App.esTecnico()) ? fn() : (location.hash = '')); });
+      Object.keys(rutas).forEach((k) => { const fn = rutas[k]; rutas[k] = () => (permitidas.indexOf(k) >= 0 && (['todas', 'calendario'].indexOf(k) < 0 || !App.esTecnico()) ? fn() : (location.hash = '')); });
       const volver = IC.auth.volverA(); if (volver) location.hash = volver;
       U.enrutar(rutas);
     } catch (e) {

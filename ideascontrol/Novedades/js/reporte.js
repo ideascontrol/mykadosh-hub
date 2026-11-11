@@ -65,18 +65,20 @@
 
   // ---------- Vista ----------
   App.vistas.reporte = async function (c) {
-    if (App.esTecnico()) { location.hash = ''; return; }
+    const propio = App.esTecnico();          // cada colaborador: solo sus novedades
+    if (propio) F.tec = App.usuario.tecnico ? App.usuario.tecnico.Title : '__nadie';
     if (!F.desde) { const k = Ope.ym(Ope.hoy()), [y, m] = k.split('-').map(Number); F.desde = k + '-01'; F.hasta = Ope.finDeMes(y, m); }
-    c.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a><div class="ic-barra"><div style="flex:1"><h1 class="ic-titulo">Reporte de novedades</h1>' +
+    c.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a><div class="ic-barra"><div style="flex:1"><h1 class="ic-titulo">' + (propio ? 'Mi reporte de novedades' : 'Reporte de novedades') + '</h1>' +
       '<p class="ic-subtitulo" style="margin:0">Novedades con algún día dentro del rango. Descárguelo en Excel o PDF, o cópielo y péguelo directamente en el correo.</p></div></div>' +
       '<div class="ic-filtros">' +
       '<label class="nov-lbl">Desde <input type="date" id="rD" value="' + F.desde + '"></label><label class="nov-lbl">Hasta <input type="date" id="rH" value="' + F.hasta + '"></label>' +
-      '<select id="rT"><option value="">Todo el personal</option>' + Ope.D.personal.map((t) => '<option value="' + esc(t.Title) + '">' + esc(t.nombre) + '</option>').join('') + '</select>' +
+      (propio ? '<input type="hidden" id="rT">' : '<select id="rT"><option value="">Todo el personal</option>' + Ope.D.personal.map((t) => '<option value="' + esc(t.Title) + '">' + esc(t.nombre) + '</option>').join('') + '</select>') +
       '<select id="rTi"><option value="">Todos los tipos</option>' + TIPOS_NOV.map((t) => '<option value="' + t.id + '">' + esc(t.nombre) + '</option>').join('') + '</select>' +
       '<select id="rE">' + ESTADOS_REP.map((e) => '<option value="' + e[0] + '">' + esc(e[1]) + '</option>').join('') + '</select>' +
       '<label class="ic-check"><input type="checkbox" id="rM"' + (F.motivo ? ' checked' : '') + '> <span>Incluir motivo</span></label></div>' +
       '<div class="ic-acciones" style="border:0;padding-top:0;justify-content:flex-start;flex-wrap:wrap">' +
-      '<button class="ic-btn" id="rCopiar">Copiar para el correo</button><button class="ic-btn sec" id="rXls">Descargar Excel</button><button class="ic-btn sec" id="rPdf">PDF / Imprimir</button></div>' +
+      '<label class="nov-lbl" style="flex:1;min-width:260px">Enviar a <input type="email" id="rPara" multiple placeholder="correo@ideascontrol.com; otro@…" style="flex:1"></label>' +
+      '<button class="ic-btn" id="rCorreo">Abrir correo</button><button class="ic-btn sec" id="rCopiar">Copiar para el correo</button><button class="ic-btn sec" id="rXls">Descargar Excel</button><button class="ic-btn sec" id="rPdf">PDF / Imprimir</button></div>' +
       '<div id="rRes"><div class="ic-vacio">Cargando…</div></div>';
     c.querySelector('#rT').value = F.tec; c.querySelector('#rTi').value = F.tipo; c.querySelector('#rE').value = F.estado;
     const leer = () => {
@@ -93,20 +95,29 @@
     c.querySelectorAll('.ic-filtros input, .ic-filtros select').forEach((el) => { el.onchange = dibujar; });
     const conLista = (fn) => () => { if (!leer()) { dibujar(); return; } const l = lista(); if (!l.length) { U.aviso('No hay novedades para el reporte con estos filtros.', 'warn'); return; } fn(l); };
     c.querySelector('#rCopiar').onclick = conLista(copiar);
+    try { c.querySelector('#rPara').value = localStorage.getItem('nov_rep_para') || ''; } catch (e) { /* sin almacenamiento */ }
+    c.querySelector('#rCorreo').onclick = conLista(async (l) => {
+      const para = c.querySelector('#rPara').value.split(/[;,\s]+/).map((x) => x.trim()).filter(Boolean);
+      if (!para.length || para.some((x) => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x))) { U.aviso('Escriba el correo de quien debe recibir el reporte.', 'warn'); c.querySelector('#rPara').focus(); return; }
+      try { localStorage.setItem('nov_rep_para', para.join('; ')); } catch (e) { /* sin almacenamiento */ }
+      await copiar(l, true);
+      const cuerpo = 'Buen día,\n\nComparto el reporte de novedades del ' + Ope.textoFecha(F.desde) + ' al ' + Ope.textoFecha(F.hasta) + '.\n\n[Pegue aquí el reporte con Ctrl + V]\n\nCordialmente,\n' + App.usuario.nombre;
+      location.href = 'mailto:' + para.join(';') + '?subject=' + encodeURIComponent(titulo()) + '&body=' + encodeURIComponent(cuerpo);
+    });
     c.querySelector('#rXls').onclick = conLista((l) => excel(l, c.querySelector('#rXls')));
     c.querySelector('#rPdf').onclick = conLista(imprimir);
     try { await App.cargarSolicitudes(); dibujar(); } catch (e) { c.querySelector('#rRes').innerHTML = '<div class="ic-alerta">' + esc(U.mensajeError(e)) + '</div>'; }
   };
 
   // ---------- Copiar como tabla (se pega con formato en Outlook / Gmail) ----------
-  async function copiar(l) {
+  async function copiar(l, paraCorreo) {
     const html = '<div style="font-family:Arial,sans-serif;color:#1D2B36"><p style="font-size:14px;margin:0 0 4px"><b>' + esc(titulo()) + '</b></p>' +
       '<p style="font-size:12px;color:#5B6770;margin:0 0 10px">' + esc(filtrosTxt()) + ' · ' + l.length + ' novedad' + (l.length === 1 ? '' : 'es') + '</p>' + resumenHtml(l) + tablaHtml(l, F.motivo) + '</div>';
     const texto = titulo() + '\n' + filtrosTxt() + '\n\n' + l.map((s) => [Ope.nombreTec(s.tecnico_id), tipoTxt(s), fechasTxt(s), enRango(s).txt, nombreEstado(s.estado), F.motivo ? s.motivo || '' : null, s.respuesta || ''].filter((x) => x !== null).join(' | ')).join('\n');
     try {
       if (window.ClipboardItem) await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([texto], { type: 'text/plain' }) })]);
       else await navigator.clipboard.writeText(texto);
-      U.aviso('Reporte copiado: abra un correo nuevo y péguelo (Ctrl + V).', 'ok', 6000);
+      U.aviso(paraCorreo ? 'Se abrió su correo y el reporte ya está copiado: péguelo en el mensaje con Ctrl + V.' : 'Reporte copiado: abra un correo nuevo y péguelo (Ctrl + V).', 'ok', 9000);
     } catch (e) { U.aviso('No se pudo copiar. Use «Descargar Excel» o «PDF» y adjúntelo.', 'warn', 7000); }
   }
 
