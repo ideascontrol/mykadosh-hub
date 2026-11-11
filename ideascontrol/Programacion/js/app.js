@@ -121,7 +121,8 @@ async function resolverAcceso(cuenta) {
     const a = acc.find((x) => String(x.email || '').toLowerCase() === email && x.estado !== 'INACTIVO');
     if (a) rol = a.rol;
   } catch (e) { if (e.status !== 404 && !/No existe la lista/.test(e.message)) throw e; }
-  const t = Ope.D.tecnicos.find((x) => String(x.email || '').toLowerCase() === email && x.estado !== 'INACTIVO') || null;
+  // Técnicos y personal administrativo registrado (Novedades › Personal): entran con el mismo acceso de los técnicos
+  const t = Ope.D.personal.find((x) => String(x.email || '').toLowerCase() === email && x.estado !== 'INACTIVO') || null;
   if (!rol && t) rol = 'TECNICO';
   return { nombre, email, rol, usuario_id: email, iniciales: t ? t.iniciales : IC.ui.fmt.iniciales(nombre), tecnico: t };
 }
