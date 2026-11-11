@@ -42,6 +42,28 @@
     pintar();
   };
 
+  // ---------- Bitácora de la falta (confidencial: se guarda en la misma falta, columna «bitacora») ----------
+  // Cada comentario: { fh: fecha-hora ISO, autor, tipo, texto }. No se editan ni se borran: se acumulan.
+  const TIPOS_COM = ['Seguimiento', 'Descargos', 'Compromiso', 'Llamado de atención', 'Cierre'];
+  function bitacoraDe(f) {
+    let l = [];
+    try { l = JSON.parse(f.bitacora || '[]'); if (!Array.isArray(l)) l = []; } catch (e) { l = []; }
+    // Texto del campo anterior «Seguimiento» (antes de la bitácora): se muestra como primera nota
+    if (f.seguimiento && String(f.seguimiento).trim()) l.push({ fh: f._creado || '', autor: f.registrado_por || '', tipo: 'Nota anterior', texto: String(f.seguimiento).trim(), antigua: true });
+    return l.sort((a, b) => String(b.fh || '').localeCompare(String(a.fh || '')));
+  }
+  const comHtml = (x) => '<li class="seg-item"><span class="seg-punto ' + (x.tipo === 'Cierre' ? 'gris' : x.tipo === 'Descargos' ? 'dorado' : x.tipo === 'Compromiso' ? 'verde' : x.tipo === 'Llamado de atención' ? 'rojo' : 'azul') + '"></span>' +
+    '<div class="seg-cab"><b>' + esc(x.autor || '—') + '</b><span>' + esc(x.fh ? U.fmt.fechaHora(x.fh) : '') + '</span><span class="seg-tag">' + esc(x.tipo || 'Seguimiento') + '</span></div>' +
+    '<div class="seg-texto">' + esc(x.texto || '').replace(/\n/g, '<br>') + '</div></li>';
+  const panelHtml = (nueva) => '<div class="seg-panel" id="segPanel"><div class="seg-titulo"><h3>Bitácora de la falta</h3><span class="seg-caso">Comentarios con fecha, hora y autor. No se editan ni se borran. Confidencial (solo Dirección).</span></div>' +
+    '<div class="seg-nuevo"><select id="segTipo" aria-label="Tipo de comentario">' + TIPOS_COM.map((t) => '<option>' + esc(t) + '</option>').join('') + '</select>' +
+    '<textarea id="segTexto" rows="2" placeholder="' + (nueva ? 'Comentario inicial (opcional): se guarda con la falta.' : 'Escriba el comentario: seguimiento, descargos, compromisos…') + '"></textarea>' +
+    (nueva ? '<span></span>' : '<button type="button" class="ic-btn" id="segAgregar">Agregar comentario</button>') + '</div>' +
+    '<ul class="seg-lista" id="segLista"></ul></div>';
+  const nuevoCom = (cu) => ({ fh: new Date().toISOString(), autor: App.usuario.nombre, tipo: cu.querySelector('#segTipo').value, texto: cu.querySelector('#segTexto').value.trim() });
+  const sinColumna = (e) => /bitacora/i.test(String((e && e.message) || ''));
+  const MSJ_COL = 'Falta la columna «bitacora» en NOV_Faltas: abra el instalador de la Programación y dé clic en «Crear estructura».';
+
   function form(f, alCambiar) {
     const nueva = !f; f = f || { fecha: Ope.hoy(), gravedad: 'LEVE', accion: 'REGISTRO', estado: 'ABIERTA', tecnico_id: filtroTec };
     const tecOps = Ope.D.personal.filter((t) => t.estado !== 'INACTIVO' || t.Title === f.tecnico_id).map((t) => [t.Title, t.nombre]);
@@ -53,12 +75,30 @@
       U.campo({ name: 'descripcion', label: 'Descripción de los hechos', t: 'textarea', valor: f.descripcion, req: true, c: 'c12', filas: 3 }) +
       U.campo({ name: 'referencia', label: 'Referencia (ticket, OS, actividad PRG-…)', valor: f.referencia, c: 'c6' }) +
       U.campo({ name: 'accion', label: 'Acción tomada', t: 'select', op: FALTAS.acciones, valor: f.accion, vacio: false, c: 'c6' }) +
-      U.campo({ name: 'seguimiento', label: 'Seguimiento / descargos / compromisos', t: 'textarea', valor: f.seguimiento, c: 'c12', filas: 2 }) +
       U.campo({ name: 'estado', label: 'Estado', t: 'select', op: FALTAS.estados, valor: f.estado, vacio: false, c: 'c4' }) +
       '</div>' + (!nueva ? '<p class="ope-nota">Registrada por ' + esc(f.registrado_por || f._autor) + ' · ' + esc(U.fmt.fechaHora(f._creado)) + (f._modificado !== f._creado ? ' · modificada ' + esc(U.fmt.fechaHora(f._modificado)) : '') + '</p>' : '') +
-      '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="fNo">Cancelar</button><button class="ic-btn" id="fOk">Guardar</button></div></form>',
+      '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="fNo">Cancelar</button><button class="ic-btn" id="fOk">Guardar</button></div></form>' + panelHtml(nueva),
     (cu) => {
       const fm = cu.querySelector('#fF');
+      const pintarBit = () => { const l = bitacoraDe(f); cu.querySelector('#segLista').innerHTML = l.length ? l.map(comHtml).join('') : '<li class="ic-vacio">' + (nueva ? 'Al guardar la falta, el comentario inicial queda como primera nota.' : 'Aún no hay comentarios.') + '</li>'; };
+      pintarBit();
+      const bAg = cu.querySelector('#segAgregar');
+      if (bAg) bAg.onclick = () => {
+        const c = nuevoCom(cu); if (!c.texto) { U.aviso('Escriba el comentario.', 'warn'); cu.querySelector('#segTexto').focus(); return; }
+        U.conCarga(bAg, async () => {
+          try {
+            // Se relee la falta para no perder comentarios que otro haya agregado
+            const act = (await G.items('NOV_Faltas', { filtro: "fields/Title eq '" + f.Title + "'" }))[0] || f;
+            let l = []; try { l = JSON.parse(act.bitacora || '[]'); if (!Array.isArray(l)) l = []; } catch (e) { l = []; }
+            l.push(c);
+            await G.actualizar('NOV_Faltas', act._id, { bitacora: JSON.stringify(l) }, act._etag);
+            await Ope.auditar('FALTA', f.Title, 'COMENTARIO', null, { tipo: c.tipo });
+            f.bitacora = JSON.stringify(l);
+            cu.querySelector('#segTexto').value = ''; pintarBit(); U.aviso('Comentario agregado a la bitácora.', 'ok');
+            const nuevaVersion = (await G.items('NOV_Faltas', { filtro: "fields/Title eq '" + f.Title + "'" }))[0]; if (nuevaVersion) Object.assign(f, nuevaVersion);
+          } catch (e) { U.aviso(sinColumna(e) ? MSJ_COL : U.mensajeError(e), 'err', 9000); }
+        });
+      };
       cu.querySelector('#fNo').onclick = U.cerrarModal;
       fm.onsubmit = async (ev) => {
         ev.preventDefault();
@@ -72,7 +112,8 @@
           await U.conCarga(cu.querySelector('#fOk'), async () => {
             if (nueva) {
               const n = await G.siguiente('FAL'); const id = 'FAL-' + Ope.pad(n, 6);
-              await G.crear('NOV_Faltas', Object.assign({ Title: id, registrado_por: App.usuario.nombre }, v));
+              const c0 = nuevoCom(cu);
+              await G.crear('NOV_Faltas', Object.assign({ Title: id, registrado_por: App.usuario.nombre }, v, c0.texto ? { bitacora: JSON.stringify([c0]) } : {}));
               await Ope.auditar('FALTA', id, 'CREAR', null, { tecnico_id: v.tecnico_id, fecha: v.fecha });   // sin el detalle: queda solo en NOV_Faltas
             } else {
               await G.actualizar('NOV_Faltas', f._id, v, f._etag);
@@ -80,7 +121,7 @@
             }
           });
           U.aviso('Falta guardada', 'ok'); U.cerrarModal(); alCambiar();
-        } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
+        } catch (e) { U.aviso(sinColumna(e) ? MSJ_COL : U.mensajeError(e), 'err', 8000); }
       };
     });
   }
