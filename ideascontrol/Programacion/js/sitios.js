@@ -6,6 +6,7 @@
    ===================================================================== */
 (function () {
   const U = IC.ui, esc = U.esc;
+  const INICIO = '2026-10-26';
   const ST = { cliente: '', desde: '', hasta: '', q: '', estado: '' };
   const n = (s) => U.norm(String(s || '')).replace(/\s+/g, ' ').trim();
   const eq = (a) => Number(a.equipos) || 0;
@@ -54,7 +55,8 @@
 
   App.vistas.sitios = async function (c) {
     if (App.usuario.rol === 'TECNICO') { location.hash = ''; return; }
-    if (!ST.desde) { const h = Ope.hoy(); ST.desde = Ope.sumar(h, -365); ST.hasta = Ope.sumar(h, 120); }
+    // Desde el inicio de la programación en la app (26 oct 2026)
+    if (!ST.desde) { ST.desde = INICIO; ST.hasta = Ope.sumar(Ope.hoy(), 120); }
     c.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a><h1 class="ic-titulo">Clientes y sitios</h1>' +
       '<p class="ic-subtitulo">Los sitios (clientes finales) de un cliente principal, por ejemplo los clientes de Casa Limpia, con su estado según la programación. Clic en un sitio para ver todas sus actividades.</p>' +
       '<div class="ic-filtros"><select id="sCli"><option value="">Cargando clientes…</option></select>' +
