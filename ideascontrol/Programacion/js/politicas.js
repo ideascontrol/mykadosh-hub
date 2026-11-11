@@ -12,7 +12,7 @@
     'Solo los técnicos de Ideas Control rotan en la oficina. El técnico de turno es el responsable de la oficina y de la bitácora.',
     'Todo técnico de Ideas Control que no tenga asignación ese día debe estar en la oficina, apoyando al técnico de turno.',
     'El técnico de turno cumple las funciones del rol según su perfil de habilidades; lo que no le corresponda queda en la bitácora para el siguiente turno.',
-    'El turno de oficina es la única asignación del técnico ese día. Fuera de instalaciones y mantenimientos, un técnico de Ideas Control tiene una sola asignación por día, salvo que otro técnico de Ideas Control esté sin asignar ese día y pueda cubrir (oficina o trabajo): en ese caso la app solo muestra un aviso.',
+    'Se puede agendar cualquier tipo de actividad el mismo día. Si un técnico de Ideas Control tiene varias asignaciones ese día (fuera de instalaciones y mantenimientos, o junto con el turno de oficina), la app muestra un aviso con quién está sin asignar para cubrir; no lo bloquea.',
     'Cada técnico solo se programa en los tipos de actividad habilitados para él en la matriz de habilidades (Administración › Técnicos).',
     'Andrés Bernal hace implementaciones de las apps, soporte virtual de software y desarrollos. No hace instalaciones, mantenimientos ni soporte presencial.',
     'Las implementaciones de las apps las hace Andrés Bernal.',
