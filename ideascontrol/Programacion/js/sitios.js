@@ -15,7 +15,9 @@
     ['MANT', 'Con mantenimiento', 'teal'], ['OTRO', 'Con actividades', 'gris'], ['REPROG', 'Por reprogramar', 'dorado'], ['CANCELADO', 'Stand By', 'rojo'], ['SIN_PROG', 'Sin programar', 'gris']
   ];
   // Estado registrado en la lista de sedes (texto libre del Excel) -> clave
-  const estDeTexto = (t) => { t = n(t); return !t ? '' : /stand/.test(t) ? 'CANCELADO' : /instalad/.test(t) ? 'INSTALADO' : /reprogram/.test(t) ? 'REPROG' : /program/.test(t) ? 'INS_PROG' : /visita|costeo/.test(t) ? 'VISITA' : 'OTRO'; };
+  // Opciones del «Estado registrado» de una sede (lo que se anota a mano)
+  const ESTADOS_REG = ['Stand By', 'Sin programar', 'Programada', 'Por reprogramar', 'En visita / costeo', 'Instalada'];
+  const estDeTexto = (t) => { t = n(t); return !t ? '' : /stand/.test(t) ? 'CANCELADO' : /sin program/.test(t) ? 'SIN_PROG' : /instalad/.test(t) ? 'INSTALADO' : /reprogram/.test(t) ? 'REPROG' : /program/.test(t) ? 'INS_PROG' : /visita|costeo/.test(t) ? 'VISITA' : 'OTRO'; };
   const estNom = (k) => (ESTADOS_SITIO.find((x) => x[0] === k) || [k, k, 'gris']);
 
   // Resumen de un grupo de actividades (un sitio o una sede)
@@ -143,7 +145,7 @@
     const sedesDel = () => listaSedes.filter((x) => n(x.cliente_principal || '(sin cliente principal)') === ST.cliente.slice(6));
     function filasSedes() {
       const cr = cruzar(sedesDel(), todo), q = n(ST.q);
-      cr.filas.forEach((f) => { f.registrado = estDeTexto(f.sede.estado); f.final = f.acts.length && f.estado !== 'CANCELADO' ? f.estado : (f.registrado || f.estado); });
+      cr.filas.forEach((f) => { f.registrado = estDeTexto(f.sede.estado); f.final = f.registrado === 'CANCELADO' ? 'CANCELADO' : f.acts.length && f.estado !== 'CANCELADO' ? f.estado : (f.registrado || f.estado); });
       cr.lista = cr.filas.filter((f) => (!ST.estado || f.final === ST.estado) &&
         (!q || n([f.sede.sitio, f.sede.Title, f.sede.ciudad, f.sede.direccion, f.sede.cod_cliente, f.sede.notas].join(' ')).indexOf(q) >= 0))
         .sort((a, b) => String(a.sede.sitio).localeCompare(b.sede.sitio) || String(a.sede.Title).localeCompare(b.sede.Title));
@@ -165,7 +167,7 @@
               '<td><span class="ope-sit-tag ' + e[2] + '">' + esc(e[1]) + '</span></td><td>' + (r ? '<span class="sec">' + esc(f.sede.estado) + '</span>' : '') + '</td>' +
               '<td>' + esc(fechaCorta(f.fechaProg)) + '</td><td>' + esc(fechaCorta(f.fechaInst)) + '</td><td style="text-align:center">' + (f.equiposInst || '') + (f.equiposProg ? ' <span class="sec">+' + f.equiposProg + ' prog.</span>' : '') + '</td>' +
               '<td>' + esc(actTxt(f.ultima)) + (f.proxima ? '<span class="sec">Próxima: ' + esc(actTxt(f.proxima)) + '</span>' : '') + '</td><td>' + esc(f.sede.notas || '') + '</td></tr>'; }).join('') +
-          '</tbody></table></div><p class="ope-nota">' + l.length + ' de ' + cr.filas.length + ' sede(s). El estado sale de la programación (desde ' + esc(Ope.textoFecha(ST.desde)) + '); si la sede no tiene actividades vigentes se usa el estado registrado en la lista. «Stand By» = solo tiene actividades canceladas o así quedó registrada. Clic en una sede para ver sus actividades y editar su estado o notas.</p>'
+          '</tbody></table></div><p class="ope-nota">' + l.length + ' de ' + cr.filas.length + ' sede(s). El estado sale de la programación (desde ' + esc(Ope.textoFecha(ST.desde)) + '); si la sede no tiene actividades vigentes se usa el estado registrado. «Stand By» = así se registró (manda siempre) o solo tiene actividades canceladas. Clic en una sede para ver sus actividades y editar su estado o notas.</p>'
           : '<div class="ic-tabla-caja"><div class="ic-vacio">' + (cr.filas.length ? 'No hay sedes con estos filtros.' : 'No hay sedes registradas.') + '</div></div>');
       c.querySelectorAll('[data-est]').forEach((b) => { b.onclick = () => { ST.estado = b.dataset.est === ST.estado ? '' : b.dataset.est; c.querySelector('#sEst').value = ST.estado; dibujar(); }; });
       c.querySelectorAll('tr[data-s]').forEach((tr) => { tr.onclick = () => detalleSede(l[+tr.dataset.s]); });
@@ -178,7 +180,7 @@
     function detalleSede(f) {
       const sd = f.sede, acts = f.acts.slice().sort((a, b) => b.fecha.localeCompare(a.fecha)), edita = App.usuario.rol !== 'CONSULTA';
       U.modal(sd.sitio + ' · sede ' + sd.Title, '<div class="ic-form"><p style="margin-top:0">' + esc([sd.ciudad, sd.direccion].filter(Boolean).join(' · ')) + ' · Estado: <b>' + esc(estNom(f.final)[1]) + '</b> · ' + acts.length + ' actividad(es)</p>' +
-        (edita ? '<div class="ic-campos">' + U.campo({ name: 'estado', label: 'Estado registrado', valor: sd.estado, c: 'c4', ph: 'Stand By, Instalada…' }) + U.campo({ name: 'notas', label: 'Notas', valor: sd.notas, c: 'c8' }) + '</div>' : '') +
+        (edita ? '<div class="ic-campos">' + U.campo({ name: 'estado', label: 'Estado registrado', t: 'select', op: ESTADOS_REG.concat(sd.estado && ESTADOS_REG.indexOf(sd.estado) < 0 ? [sd.estado] : []).map((x) => [x, x]), valor: sd.estado, c: 'c4', vacio: '— según la programación —' }) + U.campo({ name: 'notas', label: 'Notas', valor: sd.notas, c: 'c8' }) + '</div>' : '') +
         '<div id="sDet" style="margin-top:10px"></div><div class="ic-acciones"><button type="button" class="ic-btn sec" id="sCerrar">Cerrar</button>' + (edita ? '<button type="button" class="ic-btn" id="sGuardar">Guardar estado y notas</button>' : '') + '</div></div>', (cu) => {
         cu.querySelector('#sDet').innerHTML = acts.length ? App.tablaActividades(acts) : '<div class="ic-vacio">Esta sede no tiene actividades en la programación (desde ' + esc(Ope.textoFecha(ST.desde)) + ').</div>';
         if (acts.length) App.conectarTabla(cu.querySelector('#sDet'), () => cargar());
