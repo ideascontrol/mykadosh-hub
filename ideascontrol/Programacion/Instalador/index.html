@@ -142,7 +142,7 @@ const LISTAS = [
   { n: 'OPE_Actividades', title: 'actividad_id', d: 'Programación de técnicos: instalaciones, mantenimientos, soporte, turnos de oficina, ausencias', cols: [
     ['fecha', 'd', null, 1], ['tecnico_id', 't', null, 1], ['tipo', 't', null, 1], ['cliente', 't'], ['empresa_id', 't'], ['ciudad', 't'],
     ['equipos', 'n'], ['hora_inicio', 't'], ['ticket_os', 't'],
-    ['estado', 'c', ['PROGRAMADO', 'CONFIRMADO', 'EJECUTADO', 'REPROGRAMADO', 'CANCELADO'], 1],
+    ['estado', 'c', ['PROGRAMADO', 'CONFIRMADO', 'EJECUTADO', 'REPROGRAMADO', 'CANCELADO', 'STANDBY'], 1],
     ['observaciones', 'm'], ['reprograma_de', 't'], ['autorizado', 'b'], ['motivo_cambio', 't'], ['origen', 't', null, 1], ['sitio', 't'], ['sede', 't', null, 1]] },
   { n: 'OPE_Sedes', title: 'sede_id', d: 'Sedes de los clientes finales (p. ej. las 33 sedes de los clientes de Casa Limpia): código de sede, dirección y estado registrado', cols: [
     ['cod_cliente', 't'], ['cliente_principal', 't', null, 1], ['sitio', 't', null, 1], ['biometrico', 't'], ['ciudad', 't'], ['direccion', 't'], ['estado', 't'], ['notas', 'm'], ['estado_fila', 't']] },
@@ -1030,10 +1030,16 @@ async function crearOActualizarLista(def) {
     id = l.id; listasExistentes[def.n] = id;
     log(def.n + ': lista creada con ' + def.cols.length + ' columnas', 'ok');
   } else {
-    const cols = await graphAll('/sites/' + sitio.id + '/lists/' + id + '/columns?$select=name');
+    const cols = await graphAll('/sites/' + sitio.id + '/lists/' + id + '/columns?$select=id,name,choice');
     const nombres = cols.map((c) => c.name);
     const faltan = def.cols.filter((c) => nombres.indexOf(c[0]) < 0);
     for (const c of faltan) await graph('POST', '/sites/' + sitio.id + '/lists/' + id + '/columns', columna(c));
+    // Columnas de opciones que ya existían: se agregan las opciones nuevas (p. ej. «STANDBY» en el estado de la actividad)
+    for (const c of def.cols.filter((x) => x[1] === 'c' && Array.isArray(x[2]))) {
+      const ex = cols.find((x) => x.name === c[0]); if (!ex || !ex.choice) continue;
+      const nuevas = c[2].filter((o) => (ex.choice.choices || []).indexOf(o) < 0);
+      if (nuevas.length) { await graph('PATCH', '/sites/' + sitio.id + '/lists/' + id + '/columns/' + ex.id, { choice: Object.assign({}, ex.choice, { choices: (ex.choice.choices || []).concat(nuevas) }) }); log(def.n + '.' + c[0] + ': opciones agregadas (' + nuevas.join(', ') + ')', 'ok'); }
+    }
     log(def.n + ': ya existía' + (faltan.length ? '; se agregaron ' + faltan.length + ' columnas (' + faltan.map((c) => c[0]).join(', ') + ')' : '; columnas completas'), faltan.length ? 'warn' : 'ok');
   }
   try {

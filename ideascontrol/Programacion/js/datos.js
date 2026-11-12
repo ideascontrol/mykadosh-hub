@@ -9,7 +9,7 @@ window.Ope = (function () {
     tecnicos: [], personal: [], tipos: [], festivos: {}, meses: {}, empresas: null
   };
 
-  const ESTADOS = [['PROGRAMADO', 'Programado'], ['CONFIRMADO', 'Confirmado'], ['EJECUTADO', 'Ejecutado'], ['REPROGRAMADO', 'Reprogramado'], ['CANCELADO', 'Cancelado']];
+  const ESTADOS = [['PROGRAMADO', 'Programado'], ['CONFIRMADO', 'Confirmado'], ['EJECUTADO', 'Ejecutado'], ['REPROGRAMADO', 'Reprogramado'], ['CANCELADO', 'Cancelado'], ['STANDBY', 'Stand By']];
   const VINCULOS = [['IDEAS_CONTROL', 'Ideas Control'], ['TECNICO_CAMPO', 'Técnico de campo']];
   // Personal administrativo: está en OPE_Tecnicos solo para Novedades del personal; no se programa ni aparece en la Programación
   const ADMINISTRATIVO = 'ADMINISTRATIVO';
@@ -92,7 +92,8 @@ window.Ope = (function () {
       String(a.hora_inicio || '99').localeCompare(String(b.hora_inicio || '99')) || nombreTec(a.tecnico_id).localeCompare(nombreTec(b.tecnico_id));
   }
   const delDia = (s) => (D.meses[ym(s)] || []).filter((a) => a.fecha === s);
-  const activa = (a) => a.estado !== 'CANCELADO' && a.estado !== 'REPROGRAMADO';
+  // Stand By: queda en pausa, no ocupa al técnico ni cuenta en la carga
+  const activa = (a) => a.estado !== 'CANCELADO' && a.estado !== 'REPROGRAMADO' && a.estado !== 'STANDBY';
   const buscar = (id) => { for (const k of Object.keys(D.meses)) { const a = D.meses[k].find((x) => x.Title === id); if (a) return a; } return null; };
   // Mantiene la memoria al día después de guardar
   function recordar(a) {
