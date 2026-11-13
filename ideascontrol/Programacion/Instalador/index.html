@@ -49,7 +49,7 @@
 <body>
 <header>
   <img src="/ideascontrol/assets/ideascontrol.webp" alt="Ideas Control" onerror="this.style.display='none'">
-  <div><h1>Instalador IC Apps · Programación (APP-106) · Novedades (APP-107) · Desarrollo de Talento (APP-108) · Seguimiento por cliente (APP-109) · Calculadora de costos (APP-110) · Marketing (APP-112) · Checklist de Operaciones (APP-113)</h1><p>Crea las listas de SharePoint, carga técnicos y tipos, importa el Excel y da permisos a los técnicos. Puede repetirse sin duplicar.</p></div>
+  <div><h1>Instalador IC Apps · Programación (APP-106) · Novedades (APP-107) · Desarrollo de Talento (APP-108) · Seguimiento por cliente (APP-109) · Calculadora de costos (APP-110) · Marketing (APP-112) · Checklist de Operaciones (APP-113) · Proyectos (APP-114)</h1><p>Crea las listas de SharePoint, carga técnicos y tipos, importa el Excel y da permisos a los técnicos. Puede repetirse sin duplicar.</p></div>
 </header>
 <main>
   <div class="card">
@@ -191,6 +191,37 @@ const LISTAS = [
   { n: 'CHK_Items', title: 'item_id', d: 'Checklist de Operaciones: elementos del área (estructura, políticas, procesos, formatos, indicadores, gobierno)', cols: [
     ['orden', 'n'], ['categoria', 't', null, 1], ['tipo', 't'], ['elemento', 'm'], ['prioridad', 't'], ['estado', 't', null, 1], ['responsable', 't'],
     ['fecha_objetivo', 'd'], ['codigo_doc', 't'], ['observaciones', 'm'], ['fecha_completado', 'd']] },
+  // APP-114 · Proyectos de implementación (manual 2600-MAN-OPE). Fechas en texto AAAA-MM-DD (días hábiles, sin zona horaria)
+  { n: 'PRY_Plantillas', title: 'plantilla_key', d: 'Proyectos: biblioteca de plantillas GNT por versión', cols: [
+    ['codigo', 't', null, 1], ['nombre', 't'], ['version', 't'], ['estado', 't'], ['registros', 'n'], ['fecha_aprobacion', 't'], ['aprobador', 't'], ['notas', 'm']] },
+  { n: 'PRY_PlantillaTareas', title: 'registro_key', d: 'Proyectos: fases, tareas, hitos y decisiones de cada plantilla', cols: [
+    ['plantilla', 't', null, 1], ['version', 't', null, 1], ['id_registro', 't'], ['id_padre', 't'], ['fase', 't'], ['actividad', 't'], ['tipo', 't'], ['descripcion', 'm'],
+    ['duracion', 'n'], ['estimada', 't'], ['predecesoras', 't'], ['organizacion', 't'], ['rol', 't'], ['criterio', 'm'], ['aplica', 't'], ['condicion', 'm'], ['obligatoria', 't'], ['comun', 't'], ['orden', 'n'], ['fuente', 'm']] },
+  { n: 'PRY_Proyectos', title: 'proyecto_id', d: 'Proyectos de implementación (T&A, TimeVision, biometría, puertas y torniquetes)', cols: [
+    ['empresa_id', 't', null, 1], ['cliente', 't'], ['nombre', 't'], ['descripcion', 'm'], ['os_numero', 't'], ['os_fecha', 't'], ['escenario', 't'], ['plantillas', 't'],
+    ['lider_email', 't', null, 1], ['lider', 't'], ['contacto_id', 't'], ['contacto', 't'], ['participantes', 'm'], ['inicio', 't'], ['cierre_estimado', 't'],
+    ['estado', 't', null, 1], ['salud', 't'], ['explicacion_salud', 'm'], ['avance', 'n'], ['alcance', 'm'], ['exclusiones', 'm'], ['supuestos', 'm'], ['entregables', 'm'],
+    ['carpeta', 't'], ['version_plan', 'n'], ['linea_base_fecha', 't'], ['creado_por', 't']] },
+  { n: 'PRY_Tareas', title: 'tarea_key', d: 'Proyectos: cronograma de cada proyecto (copiado de las plantillas + tareas propias)', cols: [
+    ['proyecto_id', 't', null, 1], ['tarea_id', 't'], ['plantilla', 't'], ['plantilla_version', 't'], ['id_padre', 't'], ['fase', 't'], ['actividad', 't'], ['tipo', 't'], ['descripcion', 'm'],
+    ['organizacion', 't'], ['responsable_email', 't', null, 1], ['responsable', 't'], ['rol', 't'], ['duracion', 'n'], ['estimada', 't'], ['predecesoras', 't'],
+    ['inicio_plan', 't'], ['fin_plan', 't'], ['inicio_real', 't'], ['fin_real', 't'], ['porcentaje', 'n'], ['estado', 't'], ['salud', 't'], ['explicacion_salud', 'm'],
+    ['criterio', 'm'], ['evidencia', 'm'], ['observaciones', 'm'], ['motivo_no_aplica', 'm'], ['obligatoria', 't'], ['comun', 't'], ['orden', 'n'], ['propia', 't'], ['visibilidad', 't']] },
+  { n: 'PRY_Planes', title: 'plan_key', d: 'Proyectos: línea base (versión 0) y versiones aprobadas del plan; datos = foto de fechas y duraciones (JSON)', cols: [
+    ['proyecto_id', 't', null, 1], ['version', 'n'], ['fecha', 't'], ['aprobador', 't'], ['cambio_id', 't'], ['motivo', 'm'], ['datos', 'm']] },
+  { n: 'PRY_Bitacora', title: 'bitacora_id', d: 'Proyectos: bitácora de cambios (usuario, fecha/hora, campo, valor anterior y nuevo)', cols: [
+    ['proyecto_id', 't', null, 1], ['tarea_id', 't'], ['fecha_hora', 't'], ['usuario', 't'], ['campo', 't'], ['anterior', 'm'], ['nuevo', 'm'], ['comentario', 'm'], ['evidencia', 'm']] },
+  { n: 'PRY_Reuniones', title: 'reunion_id', d: 'Proyectos: reuniones, comités y acuerdos', cols: [
+    ['proyecto_id', 't', null, 1], ['fecha', 't'], ['tipo', 't'], ['asistentes', 'm'], ['objetivo', 'm'], ['acuerdos', 'm'], ['decisiones', 'm'], ['acta', 't']] },
+  { n: 'PRY_Pendientes', title: 'pendiente_id', d: 'Proyectos: compromisos, riesgos y problemas', cols: [
+    ['proyecto_id', 't', null, 1], ['tipo', 't'], ['descripcion', 'm'], ['impacto', 'm'], ['responsable', 't'], ['accion', 'm'], ['fecha_objetivo', 't'], ['estado', 't'], ['evidencia', 'm'], ['reunion_id', 't']] },
+  { n: 'PRY_Cambios', title: 'cambio_id', d: 'Proyectos: solicitudes de control de cambios (2611-FOR-OPE)', cols: [
+    ['proyecto_id', 't', null, 1], ['fecha', 't'], ['solicitante', 't'], ['descripcion', 'm'], ['motivo', 'm'], ['impacto', 'm'], ['requiere_cotizacion', 't'], ['estado', 't'],
+    ['aprobacion_ic', 't'], ['aceptacion_cliente', 'm'], ['version_plan', 'n']] },
+  { n: 'PRY_Aprobaciones', title: 'aprobacion_id', d: 'Proyectos: aprobaciones (línea base, cambios, documentos, excepciones). Basta Martín Molina o Patricia Ramírez', cols: [
+    ['proyecto_id', 't', null, 1], ['objeto', 't'], ['objeto_id', 't'], ['aprobador', 't'], ['cargo', 't'], ['fecha_hora', 't'], ['decision', 't'], ['comentarios', 'm'], ['evidencia', 'm'], ['registrado_por', 't']] },
+  { n: 'PRY_Documentos', title: 'documento_id', d: 'Proyectos: documentos y evidencias del proyecto', cols: [
+    ['proyecto_id', 't', null, 1], ['formato', 't'], ['nombre', 't'], ['version', 't'], ['fecha', 't'], ['responsable', 't'], ['estado', 't'], ['enlace', 't']] },
   { n: 'CHK_Catalogo', title: 'catalogo_id', d: 'Checklist de Operaciones: categorías, tipos de elemento, tipos de documento, áreas y series', cols: [
     ['grupo', 't', null, 1], ['codigo', 't'], ['nombre', 't'], ['descripcion', 'm'], ['orden', 'n']] },
   // APP-110 · Calculadora de costos y precios. Cada cálculo guardado es un registro histórico; lineas = JSON con las líneas de costo
@@ -848,6 +879,8 @@ SEMILLAS.SYS_Microapps = [
     plataforma: 'HTML (GitHub) + Microsoft Graph + listas de SharePoint', carpeta_actual: 'Costeo', url: 'https://www.mykadosh.com/ideascontrol/Costeo/' },
   { Title: 'APP-112', nombre: 'Marketing', tipo: 'INTERNA', proposito: 'Plan de contenidos de redes sociales: temas, publicaciones por red, aprobación (mínimo 2 de Gerencia, Dirección Comercial y Operaciones), métricas y resumen para gerencia.', estado: 'EN_CONSTRUCCION',
     plataforma: 'HTML (GitHub) + Microsoft Graph + listas de SharePoint', carpeta_actual: 'Marketing', url: 'https://www.mykadosh.com/ideascontrol/Marketing/' },
+  { Title: 'APP-114', nombre: 'Proyectos', tipo: 'INTERNA', proposito: 'Proyectos de implementación (2600-MAN-OPE): plantillas GNT, cronograma con línea base, avance, reuniones, cambios y cierre.', estado: 'EN_CONSTRUCCION',
+    plataforma: 'HTML (GitHub) + Microsoft Graph + listas de SharePoint', carpeta_actual: 'Proyectos', url: 'https://www.mykadosh.com/ideascontrol/Proyectos/' },
   { Title: 'APP-113', nombre: 'Checklist de Operaciones', tipo: 'INTERNA', proposito: 'Lo que tiene y lo que le falta al área de Operaciones (antes Checklist_Operaciones_IC.xlsx): avance por categoría y tipo, reclasificación, catálogo de codificación documental y acceso a los manuales (solo Dirección de Operaciones).', estado: 'EN_CONSTRUCCION',
     plataforma: 'HTML (GitHub) + Microsoft Graph + listas de SharePoint', carpeta_actual: 'Checklist', url: 'https://www.mykadosh.com/ideascontrol/Checklist/' }
 ];
@@ -1099,6 +1132,7 @@ async function registrarDirector() {
   await registrarAcceso('APP-107');
   await registrarAcceso('APP-108');
   await registrarAcceso('APP-109');
+  await registrarAcceso('APP-114');
 }
 async function registrarAcceso(app) {
   const yo = await graph('GET', '/me?$select=displayName,mail,userPrincipalName');
@@ -1198,7 +1232,8 @@ async function importar() {
 // Contribuir = leer y editar elementos · Leer = solo consulta
 const PERMISOS_TECNICOS = [
   ['OPE_Actividades', 3], ['OPE_Seguimiento', 3], ['SYS_Auditoria', 3], ['SYS_Secuencias', 3],
-  ['OPE_Tecnicos', 2], ['OPE_Tipos', 2], ['OPE_Sedes', 2], ['SYS_Festivos', 2], ['SYS_Accesos', 2], ['SYS_Microapps', 2],
+  ['OPE_Tecnicos', 2], ['OPE_Tipos', 2], ['OPE_Sedes', 2],
+  ['PRY_Proyectos', 2], ['PRY_Tareas', 3], ['PRY_Bitacora', 3], ['PRY_Plantillas', 2], ['PRY_PlantillaTareas', 2], ['PRY_Planes', 2], ['PRY_Pendientes', 3], ['PRY_Reuniones', 2], ['PRY_Documentos', 2], ['SYS_Festivos', 2], ['SYS_Accesos', 2], ['SYS_Microapps', 2],
   ['NOV_Solicitudes', 3],       // además: cada técnico solo ve y edita sus propias solicitudes
   ['TAL_Programas', 2], ['TAL_Piezas', 2], ['TAL_Lecturas', 3]
 ];

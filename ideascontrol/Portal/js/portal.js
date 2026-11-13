@@ -117,6 +117,10 @@
         acceso.APP106 = a ? ({ ADMIN: 'Director de Operaciones', EDITOR: 'Programador', CONSULTA: 'Consulta' }[a.rol] || a.rol) : t ? 'Técnico' : false;
         // Novedades: Dirección (ADMIN) aprueba; los demás roles consultan; los técnicos solicitan
         acceso.APP107 = a7 ? (a7.rol === 'ADMIN' ? 'Dirección' : 'Consulta') : t ? 'Técnico' : false;
+        // Proyectos: rol en SYS_Accesos (APP-114) o la Dirección de Operaciones; el resto del personal ve solo los proyectos donde tiene tareas
+        const a14 = mios.find((x) => x.app_id === 'APP-114');
+        acceso.APP114 = a14 ? ({ ADMIN: 'Administrador', EDITOR: 'Líder de proyecto', CONSULTA: 'Consulta' }[a14.rol] || a14.rol)
+          : email === 'operaciones@ideascontrol.com' ? 'Administrador' : email === 'patricia@ideascontrol.com' ? 'Consulta' : t ? 'Responsable de tareas' : false;
         const a8 = mios.find((x) => x.app_id === 'APP-108') || a;
         acceso.APP108 = a8 && a8.rol === 'ADMIN' ? 'Administrador' : 'Personal IC';   // Talento: todo el personal la ve
         const extra = [];
