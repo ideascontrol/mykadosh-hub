@@ -18,6 +18,7 @@ const ICONOS = {
   tablero: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   actividad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>',
   carga: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>',
+  mapa: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>',
   admin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>'
 };
 
@@ -37,6 +38,7 @@ const MENU = [
   ] },
   { grupo: 'Herramientas', items: [
     { ruta: 'ayuda', titulo: 'Ayuda', texto: 'Cómo se hace cada cosa en la app: guías paso a paso y preguntas frecuentes.', icono: 'ayuda', etapa: 2, color: 'dorado' },
+    { url: '/ideascontrol/ICManuales/gestion-documental/infografia-3100-comercial.html', titulo: 'Proceso comercial', texto: 'Infografía del proceso: pasos, estados de la cotización, seguimiento y tablero. Para ver, imprimir o descargar en PDF.', icono: 'mapa', etapa: 2, color: 'dorado' },
     { ruta: 'actividad', titulo: 'Actividad reciente', texto: 'Quién creó o modificó información y cuándo.', icono: 'actividad', etapa: 1, color: 'dorado' },
     { ruta: 'carga', titulo: 'Carga masiva', texto: 'Plantillas de Excel para cargar empresas y productos.', icono: 'carga', etapa: 1, color: 'dorado', admin: true },
     { ruta: 'admin', titulo: 'Administración', texto: 'Usuarios, condiciones comerciales y parámetros de la cotización.', icono: 'admin', etapa: 1, color: 'dorado', admin: true }
@@ -81,7 +83,7 @@ function vistaMenu(c) {
     html += '<div class="ic-seccion">' + g.grupo + '</div><div class="ic-grid">';
     items.forEach((i) => {
       const pronto = i.etapa > ETAPA_ACTUAL;
-      html += '<a class="ic-card ' + (i.color || '') + (pronto ? ' deshabilitada' : '') + '" href="#' + i.ruta + '">' +
+      html += '<a class="ic-card ' + (i.color || '') + (pronto ? ' deshabilitada' : '') + '" href="' + (i.url ? i.url + '" target="ic_infografia' : '#' + i.ruta) + '">' +
         (pronto ? '<span class="ic-badge">Próximamente</span>' : (i.admin ? '<span class="ic-badge admin">Admin</span>' : '')) +
         '<div class="icono">' + ICONOS[i.icono] + '</div>' +
         '<h3>' + i.titulo + '</h3><p>' + i.texto + '</p></a>';
