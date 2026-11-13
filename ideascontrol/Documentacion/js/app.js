@@ -28,6 +28,7 @@
     carpeta: '<path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><path d="M3 11h18"/>',
     generar: '<path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z"/><path d="M14 3v6h6M12 12v6M9 15h6"/>',
     evaluar: '<path d="M9 11l2 2 4-4"/><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 17h8"/>',
+    mapa: '<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/>',
     movil: '<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10 18.5h4M9.5 8.5l2 2 3.5-3.5"/>'
   };
   const ico = (n, s = 20) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONOS[n] || ''}</svg>`;
@@ -164,6 +165,7 @@
         <div class="resultados" id="res"></div>
       </section>
       ${herr.length ? `<div class="seccion-t">Herramientas de consulta</div><section class="tools">${tarjetasHerr(herr)}</section>` : ''}
+      ${(CFG.infografias || []).length ? `<div class="seccion-t">Infografías de procesos</div><section class="tools">${tarjetasHerr(CFG.infografias.map((i) => Object.assign({}, i, { titulo: (i.serie ? i.serie + ' · ' : '') + i.titulo })))}</section>` : ''}
       <div class="seccion-t">Áreas de gestión</div>
       <section class="areas">${areas.map(tarjetaArea).join('')}</section>
     </div>`;
@@ -198,6 +200,7 @@
       <section class="hero" style="padding-top:18px"><div class="eyebrow">${area.serie ? 'Serie ' + esc(area.serie) : 'Área de gestión'}</div>
         <h1>${esc(area.nombre)}</h1><p>${esc(area.descripcion)}</p></section>
       ${area.herramientas ? `<div class="seccion-t" style="margin-top:22px">Herramientas de consulta</div><section class="tools">${tarjetasHerr(area.herramientas)}</section>` : ''}
+      ${(CFG.infografias || []).some((i) => i.area === area.id) ? `<div class="seccion-t" style="margin-top:22px">Infografías de procesos</div><section class="tools">${tarjetasHerr(CFG.infografias.filter((i) => i.area === area.id).map((i) => Object.assign({}, i, { titulo: (i.serie ? i.serie + ' · ' : '') + i.titulo })))}</section>` : ''}
       <div class="area-layout">
         <nav class="lateral" aria-label="Procesos"><div class="tit">Procesos</div>
           ${area.grupos.map((g) => `<a href="#/area/${area.id}" data-ir="${g.id}" data-g="${g.id}">${g.serie ? `<b class="serie-m">${esc(g.serie)}</b>` : ''}<span class="g-n">${esc(g.nombre)}</span><em>${docsDe(area, g).length || ''}</em></a>`).join('')}

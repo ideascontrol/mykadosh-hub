@@ -72,7 +72,8 @@
 
   /* ---------- Piezas comunes ---------- */
   function encabezado(usuario, subtitulo) {
-    const ini = (usuario?.nombre || '?').split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
+    const nk = String(usuario?.nombre || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '');
+    const ini = nk.indexOf('martinmolina') === 0 ? 'MEM' : (usuario?.nombre || '?').split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();   // iniciales fijas, igual que en las microapps
     return `<header class="top"><div class="wrap">
       <a class="logo" href="${APP_DOCS}" aria-label="Inicio"><img src="${B}assets/img/ideascontrol.webp" alt="Ideas Control Equipos y Soluciones S.A.S."></a>
       <div class="sistema"><b>Gestión Documental</b><span>${esc(subtitulo || 'Sistema de documentación interna')}</span></div>

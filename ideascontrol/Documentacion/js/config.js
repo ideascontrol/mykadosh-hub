@@ -5,7 +5,7 @@
    cuenta de Microsoft de cada persona (sin claves compartidas).
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-105', nombre: 'Gestión documental', version: '1.2.0' },
+  app: { id: 'APP-105', nombre: 'Gestión documental', version: '1.3.0' },
   // Quién puede publicar documentos aprobados desde la app (sube el PDF a la biblioteca con sus datos)
   editores: ['operaciones@ideascontrol.com'],
   auth: {
@@ -20,6 +20,10 @@ window.CFG = {
   // Herramientas interactivas que siguen en el portal de manuales anterior
   herramientasBase: '/ideascontrol/ICManuales/gestion-documental/',
   empresa: 'Ideas Control Equipos y Soluciones S.A.S.',
+  // Infografías de procesos: estructura de cada proceso en una vista (HTML + PDF carta en herramientasBase)
+  infografias: [
+    { area: 'operativa', serie: '2600', titulo: 'Proceso de proyectos de implementación', resumen: 'Las 11 fases con sus hitos y formatos, el seguimiento, el control de cambios y los códigos de la serie 2600.', pagina: 'infografia-2600-proyectos.html', icono: 'mapa' }
+  ],
   // Áreas y procesos (la serie del proceso = primeros 2 dígitos del código del documento)
   areas: [
     { id: 'comercial', nombre: 'Gestión Comercial', icono: 'comercial', descripcion: 'Relación con clientes, experiencia, fidelización y marketing.', bloque: '3',
