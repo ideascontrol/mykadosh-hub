@@ -97,3 +97,5 @@ td.gantt > i.hoy { position: absolute; top: 0; bottom: 0; width: 2px; background
 .pry-mini td:first-child { white-space: nowrap; }
 .pry-kpis6 .ic-kpi .valor { font-size: 20px; }
 .ic-header .pry-nav + .ic-user { margin-left: 0; }
+.pry-prog { border: 1px solid var(--ic-borde); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
+.pry-prog-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 6px; }

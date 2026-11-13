@@ -74,6 +74,9 @@ const App = { usuario: null, rol: '', proyectos: [], tareasTodas: [], vistas: {}
     c.querySelector('#fl').innerHTML = '<option value="">Todos los líderes</option>' + lideres.map((l) => '<option>' + esc(l) + '</option>').join('');
     c.querySelector('#fl').value = F.lider;
     const venc = {}; App.tareasTodas.forEach((t) => { if (PRY.vencida(t)) venc[t.proyecto_id] = (venc[t.proyecto_id] || 0) + 1; });
+    // El avance se calcula con las tareas (incluye lo completado desde la Programación de Operaciones)
+    const tareasDe = {}; App.tareasTodas.forEach((t) => { (tareasDe[t.proyecto_id] = tareasDe[t.proyecto_id] || []).push(t); });
+    const avanceDe = (p) => tareasDe[p.Title] ? PRY.avance(tareasDe[p.Title]) : p.avance;
     function pintar() {
       const q = U.norm(F.q);
       const L = App.proyectos.filter((p) => (F.estado === 'ACTIVOS' ? ['Cerrado', 'Cancelado'].indexOf(p.estado) < 0 : !F.estado || p.estado === F.estado) &&
@@ -87,7 +90,7 @@ const App = { usuario: null, rol: '', proyectos: [], tareasTodas: [], vistas: {}
         k(Object.keys(venc).filter((id) => act.some((p) => p.Title === id)).reduce((s, id) => s + venc[id], 0), 'Tareas vencidas', 'err') + '</div>';
       c.querySelector('#pfL').innerHTML = L.length ? '<div class="ic-tabla-caja pry-scroll"><table class="ic-tabla"><thead><tr><th>Proyecto</th><th>Cliente</th><th>Líder</th><th>Componentes</th><th>Avance</th><th>Estado</th><th>Salud</th><th>Inicio</th><th>Cierre estimado</th><th class="num">Vencidas</th></tr></thead><tbody>' +
         L.map((p) => '<tr data-id="' + esc(p.Title) + '"><td><b>' + esc(p.nombre) + '</b><span class="sec">' + esc(p.Title + (p.os_numero ? ' · OS ' + p.os_numero : '')) + '</span></td><td>' + esc(p.cliente) + '</td><td>' + esc(p.lider || '') + '</td>' +
-          '<td>' + esc(p.escenario || '') + '<span class="sec">' + esc(p.plantillas || '') + '</span></td><td class="pry-av">' + App.barra(p.avance) + '</td><td>' + App.tagEstado(p.estado) + '</td><td>' + App.tagSalud(p.salud) + '</td>' +
+          '<td>' + esc(p.escenario || '') + '<span class="sec">' + esc(p.plantillas || '') + '</span></td><td class="pry-av">' + App.barra(App.rol === 'TECNICO' ? p.avance : avanceDe(p)) + '</td><td>' + App.tagEstado(p.estado) + '</td><td>' + App.tagSalud(p.salud) + '</td>' +
           '<td>' + esc(PRY.textoFecha(p.inicio, true)) + '</td><td>' + esc(PRY.textoFecha(p.cierre_estimado, true)) + '</td><td class="num">' + (venc[p.Title] ? '<b class="err">' + venc[p.Title] + '</b>' : '') + '</td></tr>').join('') + '</tbody></table></div>'
         : '<div class="ic-tabla-caja"><div class="ic-vacio">' + (App.proyectos.length ? 'No hay proyectos con estos filtros.' : App.rol === 'TECNICO' ? 'No tiene tareas asignadas en ningún proyecto.' : 'Aún no hay proyectos. Cree el primero con «+ Nuevo proyecto».') + '</div></div>';
       c.querySelectorAll('tr[data-id]').forEach((tr) => { tr.onclick = () => { location.hash = '#p/' + tr.dataset.id; }; });

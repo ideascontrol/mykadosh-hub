@@ -19,6 +19,12 @@
       G.items('PRY_Planes', { filtro: "fields/proyecto_id eq '" + id + "'", top: 200 })
     ]);
     S.tareas = t.map(PRY.normal).sort((a, b) => a.orden - b.orden);
+    S.p = App.proyecto(id);
+    // Enlace con la Programación: actividades de cada tarea y tareas ya ejecutadas en Operaciones
+    await App.prog.cargar(id);
+    const nSinc = await App.prog.reconciliar(S.tareas.filter((x) => !PRY.esFase(x)), id, puedeTarea);
+    if (nSinc && editable()) { try { await sincronizarProyecto(); } catch (e) { /* se actualiza en el próximo cambio */ } }
+    if (nSinc) U.aviso(nSinc + ' tarea(s) completada(s) desde la Programación de Operaciones', 'ok', 6000);
     S.planes = pl.map((x) => Object.assign(x, { version: Number(x.version) || 0 })).sort((a, b) => a.version - b.version);
     const v0 = S.planes.find((x) => x.version === 0);
     S.base = null; if (v0) { try { S.base = JSON.parse(v0.datos || '{}'); } catch (e) { S.base = {}; } }
@@ -182,7 +188,7 @@
     const h = PRY.hoy(), lineaHoy = g0 && h >= g0 && h <= g1 ? '<i class="hoy" style="left:' + pos(h) + '%"></i>' : '';
     const fila = (t) => {
       const at = PRY.atraso(t, S.base);
-      return '<tr data-t="' + esc(t.tarea_id) + '" class="' + (PRY.esNA(t) ? 'pry-na' : '') + '"><td class="id">' + esc(t.tarea_id) + '</td><td class="act">' + esc(t.actividad) + (t.tipo !== 'Tarea' ? ' <span class="pry-tag gris">' + esc(t.tipo) + '</span>' : '') + (t.propia === 'Sí' ? ' <span class="pry-tag azul">propia</span>' : '') +
+      return '<tr data-t="' + esc(t.tarea_id) + '" class="' + (PRY.esNA(t) ? 'pry-na' : '') + '"><td class="id">' + esc(t.tarea_id) + '</td><td class="act">' + esc(t.actividad) + (t.tipo !== 'Tarea' ? ' <span class="pry-tag gris">' + esc(t.tipo) + '</span>' : '') + (t.propia === 'Sí' ? ' <span class="pry-tag azul">propia</span>' : '') + App.prog.etiqueta(t.tarea_id) +
         (t.estado === 'No aplica' ? '<span class="sec">No aplica: ' + esc(t.motivo_no_aplica || '') + '</span>' : '') + '</td><td>' + esc(t.responsable || '') + '<span class="sec">' + esc(t.organizacion || '') + '</span></td>' +
         '<td class="num">' + esc(t.duracion == null ? '—' : t.duracion) + (t.estimada === 'Sí' ? '<span class="sec">estimada</span>' : '') + '</td><td>' + esc(PRY.textoFecha(t.inicio_plan)) + '</td><td>' + esc(PRY.textoFecha(t.fin_plan)) + '</td>' +
         '<td class="num">' + (PRY.esNA(t) ? '' : t.estado === 'Completada' ? 100 : t.porcentaje) + '</td><td><span class="pry-est ' + U.norm(t.estado).replace(/\s+/g, '-') + '">' + esc(t.estado) + '</span>' + (t.salud !== 'Normal' ? ' ' + App.tagSalud(t.salud) : '') + '</td>' +
@@ -228,6 +234,7 @@
       '<div class="pry-ficha"><span>' + esc(t.plantilla ? t.plantilla + ' v' + t.plantilla_version : 'Tarea propia') + ' · ' + esc(t.tipo) + (t.obligatoria === 'Sí' ? ' · obligatoria' : '') + '</span>' +
         (t.descripcion ? '<p>' + esc(t.descripcion) + '</p>' : '') + (t.criterio ? '<p><b>Criterio de cumplimiento:</b> ' + esc(t.criterio) + '</p>' : '') +
         (preds ? '<p><b>Predecesoras:</b><br>' + preds + '</p>' : '') + (b ? '<p><b>Línea base:</b> ' + esc(PRY.textoFecha(b.i, true) + ' → ' + PRY.textoFecha(b.f, true) + ' · ' + (b.d == null ? '—' : b.d) + ' días') + '</p>' : '') + '</div>' +
+      App.prog.seccion(t, editable()) +
       (!puede ? '<p class="pry-nota">Solo lectura: actualizan esta tarea el líder del proyecto, los administradores y su responsable.</p>' : '') +
       '<fieldset' + (puede ? '' : ' disabled') + '><div class="ic-campos">' +
       U.campo({ name: 'estado', label: 'Estado', t: 'select', op: CFG.estadosTarea.map((x) => [x, x]), valor: t.estado, vacio: false, c: 'c4' }) +
@@ -247,6 +254,7 @@
       (puede ? U.campo({ name: 'comentario', label: 'Comentario para la bitácora', c: 'c12' }) : '') +
       '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="tHis">Historial</button><span style="flex:1"></span><button type="button" class="ic-btn sec" id="tNo">Cerrar</button>' + (puede ? '<button class="ic-btn" id="tOk">Guardar</button>' : '') + '</div></form>', (cu) => {
       const f = cu.querySelector('#fT');
+      App.prog.montar(cu, t, S.p, () => recargar(c));
       cu.querySelector('#tNo').onclick = U.cerrarModal;
       cu.querySelector('#tHis').onclick = () => { U.cerrarModal(); S.filtroBit = t.tarea_id; location.hash = '#p/' + S.p.Title + '/bitacora'; };
       const est = f.querySelector('[name=estado]'), pct = f.querySelector('[name=porcentaje]');

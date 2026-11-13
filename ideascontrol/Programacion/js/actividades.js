@@ -82,6 +82,7 @@
       '<div class="ic-campo c12" id="cAut"' + (App.esAdmin() ? '' : ' hidden') + '><label class="ic-check"><input type="checkbox" name="autorizado"' + (a.autorizado ? ' checked' : '') + '> <span>Autorizado por el Director de Operaciones (festivo o fin de semana)</span></label></div>' +
       '</div>' +
       (a.reprograma_de ? '<p class="ope-nota">Reprogramación de <b>' + esc(a.reprograma_de) + '</b>.</p>' : '') +
+      (a.pry_tarea ? '<p class="ope-nota">Viene del proyecto <a href="/ideascontrol/Proyectos/#p/' + esc(a.pry_id || String(a.pry_tarea).split('#')[0]) + '/cronograma" target="ic_proyectos"><b>' + esc(String(a.pry_tarea).replace('#', ' · ')) + '</b></a>. Al marcarla ejecutada, la tarea del proyecto queda completada.</p>' : '') +
       (a.motivo_cambio ? '<p class="ope-nota">Motivo del cambio: ' + esc(a.motivo_cambio) + '</p>' : '') +
       '<div id="valPanel" class="ope-val-panel"></div>' +
       '<div id="diaPanel" class="ope-dia-panel"></div>' +

@@ -8,7 +8,7 @@
    Describe solo lo que la app hace hoy (Etapa 2). Cada cambio de pantalla actualiza este archivo.
    ===================================================================== */
 window.IC_AYUDA = {
-  version: '0.1.0',
+  version: '0.1.1',
   actualizado: '2026-11-12',
   CATEGORIAS: [
     ['inicio', 'Primeros pasos'],
@@ -30,7 +30,7 @@ window.IC_AYUDA = {
     ['p/*/bitacora', 'bitacora'],
     ['admin', 'adm-resumen']
   ],
-  DESTACADOS: ['crear', 'tarea-actualizar', 'planear', 'linea-base', 'filtros', 'faq'],
+  DESTACADOS: ['crear', 'tarea-actualizar', 'programar', 'planear', 'linea-base', 'faq'],
 
   ARTICULOS: [
   // ===================================================================
@@ -237,6 +237,24 @@ window.IC_AYUDA = {
 <li>Cada <b>fase</b> va del primer inicio al último fin de sus tareas.</li>
 </ul>
 <p><b class="bt">Recalcular fechas</b> (en el cronograma) vuelve a calcular todo desde el inicio del proyecto. Las tareas que cambian quedan resumidas en la bitácora.</p>` },
+
+  { id: 'programar', cat: 'cronograma', titulo: 'Programar una tarea en Operaciones', resumen: 'Agendar a un técnico desde la tarea; al ejecutarse, la tarea se completa sola.',
+    claves: 'programar programacion agendar tecnico visita instalacion pruebas operaciones agenda ejecutada completada sincronizar',
+    html: `
+<p>Las tareas que hace un técnico en sitio (visita técnica, pruebas, instalación…) se agendan en la Programación de Operaciones sin salir de Proyectos. Lo hace el <b>líder del proyecto</b>.</p>
+<ol class="pasos">
+<li>Abra la tarea y, en el bloque <b>Programación de Operaciones</b>, presione <b class="bt">Programar en Operaciones</b>.</li>
+<li>Elija el <b>tipo de actividad</b> y el <b>técnico</b> (viene el responsable de la tarea, si es técnico).</li>
+<li>Revise la <b>fecha</b> (viene el inicio del plan), la hora, la ciudad, los equipos y las observaciones para el técnico.</li>
+<li>La app revisa la agenda del técnico ese día: ausencias, otras actividades, días no hábiles y si tiene la habilidad. Son avisos: puede programar de todas formas.</li>
+<li>Presione <b class="bt">Programar</b>. La actividad queda en la Programación como «Programado», con el cliente, la OS y el enlace a la tarea.</li>
+</ol>
+<ul>
+<li>En el cronograma, la tarea muestra una etiqueta con el estado de su actividad: programada, confirmada, reprogramada o ejecutada, con la fecha y el técnico.</li>
+<li>Confirmar, reprogramar o cancelar se hace en la Programación, como cualquier actividad. Una reprogramación sigue enlazada a la tarea.</li>
+<li>Cuando la actividad queda <b>Ejecutada</b> en la Programación, la tarea se marca <b>Completada</b> (100 %, fin real = fecha de la visita) y las notas del técnico pasan a sus observaciones y a la bitácora.</li>
+</ul>
+<div class="tip">Si la Programación no alcanzó a actualizar la tarea (por ejemplo, sin conexión), se completa sola la próxima vez que el líder o el responsable abran el proyecto.</div>` },
 
   { id: 'tarea-propia', cat: 'cronograma', titulo: 'Agregar una tarea propia', resumen: 'Tareas que no vienen en la plantilla.',
     claves: 'agregar nueva tarea propia adicional extra pro-001',

@@ -198,7 +198,7 @@ window.Ope = (function () {
         entidad, registro_id: registro, accion, antes: antes ? JSON.stringify(antes) : '', despues: despues ? JSON.stringify(despues) : '' });
     } catch (e) { console.warn('Auditoría no registrada', e); }
   }
-  const CAMPOS_ACT = ['fecha', 'tecnico_id', 'tipo', 'cliente', 'empresa_id', 'ciudad', 'equipos', 'hora_inicio', 'ticket_os', 'estado', 'observaciones', 'reprograma_de', 'autorizado', 'motivo_cambio', 'origen', 'sitio', 'sede'];
+  const CAMPOS_ACT = ['fecha', 'tecnico_id', 'tipo', 'cliente', 'empresa_id', 'ciudad', 'equipos', 'hora_inicio', 'ticket_os', 'estado', 'observaciones', 'reprograma_de', 'autorizado', 'motivo_cambio', 'origen', 'sitio', 'sede', 'pry_id', 'pry_tarea'];
   function soloCampos(o) { const r = {}; CAMPOS_ACT.forEach((k) => { if (o[k] !== undefined) r[k] = o[k]; }); return r; }
 
   // Cliente principal = quien contrata y paga (p. ej. Casa Limpia) · sitio = cliente final donde se instala
@@ -222,7 +222,30 @@ window.Ope = (function () {
       return new Error('Falta actualizar las listas de SharePoint (columna «sede»). Abra el Instalador (Programacion/Instalador/) y haga clic en «Crear estructura».');
     if (/sitio/i.test(String(e && e.message)) && /recogni|reconoc|not found|no existe|does not exist/i.test(String(e.message)))
       return new Error('Falta actualizar las listas de SharePoint (columna «sitio»). Abra el Instalador (Programacion/Instalador/) y haga clic en «Crear estructura».');
+    if (/pry_(id|tarea)/i.test(String(e && e.message)))
+      return new Error('Falta actualizar las listas de SharePoint (enlace con Proyectos). Abra el Instalador (Programacion/Instalador/) y haga clic en «Crear estructura».');
     return e;
+  }
+  // ---------- Enlace con Proyectos (APP-114) ----------
+  // Una actividad que viene de una tarea de proyecto lleva pry_id y pry_tarea (= clave de la tarea, p. ej. PRY-0001#TA-4-2).
+  // Al quedar EJECUTADA, la tarea del proyecto se marca Completada con las notas de la visita y queda en la bitácora del proyecto.
+  async function completarTareaProyecto(act) {
+    if (!act || !act.pry_tarea) return null;
+    const t = (await G.items('PRY_Tareas', { filtro: "fields/Title eq '" + String(act.pry_tarea).replace(/'/g, "''") + "'" }))[0];
+    if (!t || ['Completada', 'No aplica', 'Cancelada'].indexOf(t.estado) >= 0) return null;
+    const f = dia(act.fecha) > hoy() ? hoy() : dia(act.fecha);
+    const nota = act.Title + ' · ' + textoFecha(dia(act.fecha)) + ' · ' + nombreTec(act.tecnico_id) + ': ejecutada en Programación' + (act.observaciones ? '. ' + act.observaciones : '');
+    const campos = { estado: 'Completada', porcentaje: 100, fin_real: f, observaciones: (t.observaciones ? t.observaciones + '\n' : '') + nota };
+    if (!t.inicio_real) campos.inicio_real = f;
+    if (!t.evidencia) campos.evidencia = act.Title;
+    await G.actualizar('PRY_Tareas', t._id, campos);
+    const cambios = [['Estado', t.estado || '', 'Completada'], ['% avance', t.porcentaje || 0, 100], ['Fin real', t.fin_real ? textoFecha(dia(t.fin_real)) : '', textoFecha(f)]];
+    let n = await G.reservar('PRYB', cambios.length);
+    for (const c of cambios) {
+      await G.crear('PRY_Bitacora', { Title: 'BIT-' + String(n++).padStart(6, '0'), proyecto_id: act.pry_id || String(act.pry_tarea).split('#')[0], tarea_id: t.tarea_id || '', fecha_hora: new Date().toISOString(),
+        usuario: (App.usuario && App.usuario.nombre) || '', campo: c[0], anterior: String(c[1]), nuevo: String(c[2]), comentario: 'Sincronizado desde Programación · ' + nota, evidencia: act.Title });
+    }
+    return t;
   }
   async function crearActividad(a) {
     const n = await G.siguiente('PRG');
@@ -242,6 +265,10 @@ window.Ope = (function () {
     recordar(nuevo);
     const antes = {}; Object.keys(campos).forEach((k) => { antes[k] = actual[k]; });
     await auditar('ACTIVIDAD', actual.Title, accion || 'ACTUALIZAR', antes, campos);
+    if (nuevo && nuevo.pry_tarea && campos.estado === 'EJECUTADO' && actual.estado !== 'EJECUTADO') {
+      try { const t = await completarTareaProyecto(nuevo); if (t) IC.ui.aviso('Tarea ' + t.tarea_id + ' del proyecto ' + (nuevo.pry_id || '') + ' marcada como completada', 'ok', 6000); }
+      catch (e) { console.warn(e); IC.ui.aviso('La actividad quedó ejecutada, pero no se pudo actualizar la tarea del proyecto (' + IC.ui.mensajeError(e) + '). Se actualizará cuando el líder abra el proyecto.', 'warn', 9000); }
+    }
     return nuevo;
   }
 
@@ -250,6 +277,6 @@ window.Ope = (function () {
     dia, pad, hoy, aFecha, sumar, dow, lunesDe, ym, finDeMes, esFestivo, esHabil, diasHabilesMes, textoFecha,
     cargarCatalogos, catalogosFrescos, tec, tipo, habilidades, puede, usaEquipos, diasPref, tecnicosActivos, tecnicosIC, nombreTec, nombreTipo, nombreEstado,
     cargarMes, cargarRango, delRango, delDia, activa, buscar, recordar, orden,
-    cargaDia, validar, etiqueta, resumenDia, empresas, sedes, sitiosConocidos, auditar, crearActividad, actualizarActividad
+    cargaDia, validar, etiqueta, resumenDia, empresas, sedes, sitiosConocidos, auditar, crearActividad, actualizarActividad, completarTareaProyecto
   };
 })();
