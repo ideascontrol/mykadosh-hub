@@ -48,7 +48,7 @@ const App = { usuario: null, rol: '', proyectos: [], tareasTodas: [], vistas: {}
     document.getElementById('encabezado').innerHTML =
       '<a href="#"><img class="logo" src="' + CFG.logo + '" alt="Ideas Control"></a>' +
       '<div class="app-nombre"><b>' + esc(CFG.app.nombre) + '</b><span>' + CFG.app.id + ' · v' + CFG.app.version + '</span></div><div class="espacio"></div>' +
-      '<nav class="pry-nav"><a href="#" data-r="">Portafolio</a>' + (App.puedeCrear() ? '<a href="#nuevo" data-r="nuevo">Nuevo proyecto</a>' : '') + (App.esAdmin() ? '<a href="#admin" data-r="admin">Administración</a>' : '') + '<a href="' + CFG.infografia + '" target="ic_infografia" title="Infografía del proceso (2600-MAN-OPE)">Proceso ↗</a></nav>' +
+      '<nav class="pry-nav"><a href="#" data-r="">Portafolio</a>' + (App.puedeCrear() ? '<a href="#nuevo" data-r="nuevo">Nuevo proyecto</a>' : '') + (App.esAdmin() ? '<a href="#admin" data-r="admin">Administración</a>' : '') + '</nav>' +
       '<div class="ic-user">' + IC.portal.boton() + '<div class="datos"><b>' + esc(u.nombre) + '</b><span>' + esc(nombreRol(App.rol)) + '</span></div>' +
       '<div class="ic-avatar" title="' + esc(u.email) + '">' + esc(u.iniciales) + '</div><button class="ic-btn sec chico" id="btnSalir">Salir</button></div>';
     document.getElementById('encabezado').hidden = false;
@@ -62,7 +62,7 @@ const App = { usuario: null, rol: '', proyectos: [], tareasTodas: [], vistas: {}
   App.vistas.portafolio = async function (c) {
     const F = App.filtro;
     c.innerHTML = '<div class="ic-barra"><div style="flex:1"><h1 class="ic-titulo">Portafolio de proyectos</h1><p class="ic-subtitulo" style="margin:0">Implementaciones de T&A, TimeVision, biometría, puertas y torniquetes (manual ' + CFG.manual + ').</p></div>' +
-      '<a class="ic-btn sec" href="' + CFG.infografia + '" target="ic_infografia">Ver el proceso (infografía)</a>' + (App.puedeCrear() ? '<a class="ic-btn" href="#nuevo">+ Nuevo proyecto</a>' : '') + '</div><div id="pfK"></div>' +
+      (App.puedeCrear() ? '<a class="ic-btn" href="#nuevo">+ Nuevo proyecto</a>' : '') + '</div><div id="pfK"></div>' +
       '<div class="ic-filtros"><div class="ic-buscar"><input type="search" id="fq" placeholder="Buscar proyecto, cliente, OS…" value="' + esc(F.q) + '"></div>' +
       '<select id="fe"><option value="ACTIVOS">Activos (sin cerrados ni cancelados)</option><option value="">Todos los estados</option>' + CFG.estadosProyecto.map((e) => '<option>' + esc(e) + '</option>').join('') + '</select>' +
       '<select id="fs"><option value="">Toda salud</option>' + CFG.salud.map((e) => '<option>' + esc(e) + '</option>').join('') + '</select>' +

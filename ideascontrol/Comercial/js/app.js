@@ -38,7 +38,6 @@ const MENU = [
   ] },
   { grupo: 'Herramientas', items: [
     { ruta: 'ayuda', titulo: 'Ayuda', texto: 'Cómo se hace cada cosa en la app: guías paso a paso y preguntas frecuentes.', icono: 'ayuda', etapa: 2, color: 'dorado' },
-    { url: '/ideascontrol/ICManuales/gestion-documental/infografia-3100-comercial.html', titulo: 'Proceso comercial', texto: 'Infografía del proceso: pasos, estados de la cotización, seguimiento y tablero. Para ver, imprimir o descargar en PDF.', icono: 'mapa', etapa: 2, color: 'dorado' },
     { ruta: 'actividad', titulo: 'Actividad reciente', texto: 'Quién creó o modificó información y cuándo.', icono: 'actividad', etapa: 1, color: 'dorado' },
     { ruta: 'carga', titulo: 'Carga masiva', texto: 'Plantillas de Excel para cargar empresas y productos.', icono: 'carga', etapa: 1, color: 'dorado', admin: true },
     { ruta: 'admin', titulo: 'Administración', texto: 'Usuarios, condiciones comerciales y parámetros de la cotización.', icono: 'admin', etapa: 1, color: 'dorado', admin: true }

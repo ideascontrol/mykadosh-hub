@@ -5,7 +5,7 @@
    Datos en IC Apps (listas PRY_*). Clientes: MAE_Empresas / MAE_Contactos (Comercial).
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-114', nombre: 'Proyectos', version: '0.1.1 · Etapa 2' },
+  app: { id: 'APP-114', nombre: 'Proyectos', version: '0.1.2 · Etapa 2' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -17,8 +17,6 @@ window.CFG = {
   logo: '/ideascontrol/assets/ideascontrol.webp',
   manual: '2600-MAN-OPE',
   urlDoc: '/ideascontrol/Documentacion/#/doc/',
-  // Infografía del proceso (Gestión Documental › Infografías de procesos)
-  infografia: '/ideascontrol/ICManuales/gestion-documental/infografia-2600-proyectos.html',
   // Administración de la app (además de quien tenga rol ADMIN en SYS_Accesos para APP-114)
   admins: ['operaciones@ideascontrol.com'],
   // Aprobación de línea base, cambios, documentos y excepciones: basta UNO de ellos
