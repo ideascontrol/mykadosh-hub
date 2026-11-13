@@ -292,12 +292,16 @@
   }
 
   // Volver al portal de microapps: cierra esta pestaña si se abrió desde el Portal
+  // Cierra la pestaña cuando se abrió desde otra app de IC (Portal, Proyectos…); si el navegador no la deja cerrar, va al Portal
   function volverPortal() {
     const PORTAL = '/ideascontrol/Portal/';
-    let abierto = false;
-    try { abierto = !!(window.opener && !window.opener.closed && window.opener.location.pathname.indexOf(PORTAL) === 0); } catch (e) { }
-    if (abierto) { try { window.opener.focus(); } catch (e) { } window.close(); setTimeout(() => { location.href = PORTAL; }, 400); }
-    else location.href = PORTAL;
+    let abierta = false;
+    try { abierta = !!(window.opener && !window.opener.closed); } catch (e) { abierta = true; }
+    if (abierta || /^ic_/.test(window.name || '') || history.length <= 1) {
+      try { if (window.opener) window.opener.focus(); } catch (e) { }
+      window.close();
+      setTimeout(() => { location.href = PORTAL; }, 400);
+    } else location.href = PORTAL;
   }
   window.GD = { volverPortal, iniciarPortal, iniciarArea, iniciarDocumento, encabezadoSimple: (u, sub) => document.body.insertAdjacentHTML('afterbegin', encabezado(u, sub || 'Gestión Operativa')) };
   document.body.insertAdjacentHTML('beforeend', pie());
