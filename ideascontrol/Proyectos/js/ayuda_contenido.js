@@ -8,7 +8,7 @@
    Describe solo lo que la app hace hoy (Etapa 2). Cada cambio de pantalla actualiza este archivo.
    ===================================================================== */
 window.IC_AYUDA = {
-  version: '0.1.2',
+  version: '0.1.3',
   actualizado: '2026-11-12',
   CATEGORIAS: [
     ['inicio', 'Primeros pasos'],
@@ -91,7 +91,7 @@ window.IC_AYUDA = {
 <li><b>Fecha de inicio</b>: viene el siguiente día hábil; cámbiela si se acordó otra. Elija el <b>líder IC</b> y el <b>contacto</b> del cliente.</li>
 <li>Pegue el enlace de la <b>carpeta del proyecto</b> en SharePoint y la descripción del alcance contratado.</li>
 <li><b>Escenario</b>: al elegirlo se marcan solas las plantillas que le corresponden. <a href="#ayuda/escenarios">Ver escenarios</a>.</li>
-<li><b>Tareas que aplican</b>: revise la lista. Lo que no está en el alcance se <b>desmarca</b> y se escribe el motivo. <a href="#ayuda/no-aplica">Más sobre «No aplica»</a>.</li>
+<li><b>Tareas que aplican</b>: revise la lista. Lo que no está en el alcance se <b>desmarca</b> y se escribe el motivo (<a href="#ayuda/no-aplica">más sobre «No aplica»</a>). Lo que falta se agrega con <b class="bt">+ Agregar tarea propia</b>, eligiendo la fase.</li>
 <li>Presione <b class="bt">Crear proyecto</b>. La app le asigna el código (PRY-0001…), calcula las fechas y abre el cronograma.</li>
 </ol>
 <div class="tip">Las duraciones de la plantilla son referencias. Ajústelas, asigne responsables y revise las dependencias antes de <a href="#ayuda/linea-base">aprobar la línea base</a>.</div>` },
@@ -256,16 +256,32 @@ window.IC_AYUDA = {
 </ul>
 <div class="tip">Si la Programación no alcanzó a actualizar la tarea (por ejemplo, sin conexión), se completa sola la próxima vez que el líder o el responsable abran el proyecto.</div>` },
 
-  { id: 'tarea-propia', cat: 'cronograma', titulo: 'Agregar una tarea propia', resumen: 'Tareas que no vienen en la plantilla.',
-    claves: 'agregar nueva tarea propia adicional extra pro-001',
+  { id: 'tarea-propia', cat: 'cronograma', titulo: 'Agregar tareas propias', resumen: 'Tareas que no vienen en la plantilla: dónde van, cómo se ubican y cómo se corrigen.',
+    claves: 'agregar nueva tarea propia adicional extra pro-001 ubicacion posicion orden editar texto corregir',
     html: `
 <ol class="pasos">
 <li>En el cronograma, presione <b class="bt">+ Tarea propia</b> (líder o administrador).</li>
-<li>Elija la <b>fase</b>, el tipo (tarea, hito o decisión) y la duración.</li>
-<li>Escriba la actividad, la descripción, el responsable, la organización, las predecesoras y el criterio de cumplimiento.</li>
+<li>Elija la <b>fase</b> y la <b>ubicación</b> dentro de ella: al final, al comienzo o después de una tarea.</li>
+<li>Elija el tipo (tarea, hito o decisión) y la duración, y escriba la actividad, la descripción, el responsable, la organización, las predecesoras y el criterio de cumplimiento.</li>
 <li>Explique <b>por qué se agrega</b> (obligatorio) y presione <b class="bt">Agregar</b>.</li>
 </ol>
-<p>La tarea recibe un código PRO-001, PRO-002… y queda al final de su fase con la etiqueta «propia». Las fechas se recalculan solas.</p>` },
+<ul>
+<li>La tarea recibe un código PRO-001, PRO-002… y la etiqueta «propia». Las fechas se recalculan solas.</li>
+<li>La ubicación ordena la lista; el orden en que se ejecuta lo dan las <a href="#ayuda/planear">predecesoras</a>.</li>
+<li><b>Corregir el texto</b>: abra la tarea propia; en Planeación puede cambiar la actividad, el tipo, la descripción y el criterio. Cada cambio queda en la bitácora. Las tareas que vienen de la plantilla conservan su texto.</li>
+<li>También se pueden agregar al <a href="#ayuda/crear">crear el proyecto</a>, con <b class="bt">+ Agregar tarea propia</b> debajo de la lista de tareas.</li>
+</ul>` },
+
+  { id: 'fase-propia', cat: 'cronograma', titulo: 'Agregar una fase', resumen: 'Un grupo nuevo de tareas para lo que no cubre la plantilla.',
+    claves: 'fase nueva grupo agregar crear fase propia prf renombrar',
+    html: `
+<ol class="pasos">
+<li>En el cronograma, presione <b class="bt">+ Fase</b> (líder o administrador).</li>
+<li>Escriba el nombre y elija la ubicación: al comienzo, al final o después de una fase.</li>
+<li>Explique por qué se agrega y presione <b class="bt">Agregar fase</b>.</li>
+<li>Agregue sus tareas con <a href="#ayuda/tarea-propia">+ Tarea propia</a>, eligiendo la fase nueva.</li>
+</ol>
+<p>La fase recibe un código PRF-01, PRF-02… Sus fechas salen de sus tareas. Para cambiarle el nombre use <b class="bt">Editar</b>, junto al nombre de la fase en el cronograma.</p>` },
 
   // ===================================================================
   // LÍNEA BASE

@@ -150,10 +150,11 @@
       sel('cF', 'Todas las fases', fases.map((x) => [x.tarea_id, x.actividad]), F.fase) + sel('cE', 'Todo estado', CFG.estadosTarea.map((x) => [x, x]), F.estado) + sel('cS', 'Toda salud', CFG.salud.map((x) => [x, x]), F.salud) +
       '<label class="ic-check"><input type="checkbox" id="cNA"' + (F.ocultarNA ? ' checked' : '') + '> <span>Ocultar «No aplica»</span></label>' +
       '<span class="espacio" style="flex:1"></span><button class="ic-btn sec chico" id="cPl">Plegar / desplegar fases</button>' +
-      (editable() ? '<button class="ic-btn sec chico" id="cRec">Recalcular fechas</button><button class="ic-btn chico" id="cNu">+ Tarea propia</button>' : '') + '</div><div id="cT"></div>';
+      (editable() ? '<button class="ic-btn sec chico" id="cRec">Recalcular fechas</button><button class="ic-btn sec chico" id="cFa">+ Fase</button><button class="ic-btn chico" id="cNu">+ Tarea propia</button>' : '') + '</div><div id="cT"></div>';
     const pintarT = () => { d.querySelector('#cT').innerHTML = tablaGantt(); enlazar(); };
     function enlazar() {
-      d.querySelectorAll('tr[data-fase]').forEach((tr) => { tr.onclick = () => { S.plegadas[tr.dataset.fase] = !S.plegadas[tr.dataset.fase]; pintarT(); }; });
+      d.querySelectorAll('tr[data-fase]').forEach((tr) => { tr.onclick = (ev) => { if (ev.target.closest('[data-fe]')) return; S.plegadas[tr.dataset.fase] = !S.plegadas[tr.dataset.fase]; pintarT(); }; });
+      d.querySelectorAll('[data-fe]').forEach((b) => { b.onclick = (ev) => { ev.stopPropagation(); editarFase(porId(b.dataset.fe), c); }; });
       d.querySelectorAll('tr[data-t]').forEach((tr) => { tr.onclick = () => editarTarea(porId(tr.dataset.t), c); });
     }
     d.querySelectorAll('[data-w]').forEach((b) => { b.onclick = () => { F.ventana = b.dataset.w; d.querySelectorAll('[data-w]').forEach((x) => x.classList.toggle('on', x === b)); pintarT(); }; });
@@ -161,7 +162,7 @@
     [['cR', 'resp'], ['cO', 'org'], ['cF', 'fase'], ['cE', 'estado'], ['cS', 'salud']].forEach((x) => { d.querySelector('#' + x[0]).onchange = (e) => { F[x[1]] = e.target.value; pintarT(); }; });
     d.querySelector('#cNA').onchange = (e) => { F.ocultarNA = e.target.checked; pintarT(); };
     d.querySelector('#cPl').onclick = () => { const todas = fases.every((f) => S.plegadas[f.tarea_id]); fases.forEach((f) => { S.plegadas[f.tarea_id] = !todas; }); pintarT(); };
-    if (editable()) { d.querySelector('#cRec').onclick = () => recalcular(c); d.querySelector('#cNu').onclick = () => tareaPropia(c); }
+    if (editable()) { d.querySelector('#cRec').onclick = () => recalcular(c); d.querySelector('#cNu').onclick = () => tareaPropia(c); d.querySelector('#cFa').onclick = () => nuevaFase(c); }
     pintarT();
   }
 
@@ -201,7 +202,7 @@
       const hs = hijos(f).filter((t) => !PRY.esFase(t)), vis = hs.filter(pasa);
       if (filtra && !vis.length) return;
       const av = PRY.avance(hs), pleg = S.plegadas[f.tarea_id] && !filtra;
-      html += '<tr class="pry-fase" data-fase="' + esc(f.tarea_id) + '"><td class="id">' + (pleg ? '▸' : '▾') + ' ' + esc(f.tarea_id) + '</td><td class="act" colspan="5"><b>' + esc(f.actividad) + '</b> <span class="sec-in">' + vis.length + ' tarea(s) · ' + esc(f.plantilla || '') + '</span></td>' +
+      html += '<tr class="pry-fase" data-fase="' + esc(f.tarea_id) + '"><td class="id">' + (pleg ? '▸' : '▾') + ' ' + esc(f.tarea_id) + '</td><td class="act" colspan="5"><b>' + esc(f.actividad) + '</b> <span class="sec-in">' + vis.length + ' tarea(s) · ' + esc(f.plantilla || 'fase propia') + '</span>' + (f.propia === 'Sí' && editable() ? ' <button type="button" class="pry-lnk" data-fe="' + esc(f.tarea_id) + '">Editar</button>' : '') + '</td>' +
         '<td class="num">' + av + '</td><td colspan="2"></td><td class="gantt">' + lineaHoy + barra(f) + '</td></tr>';
       if (!pleg) vis.forEach((t) => { html += fila(t); n++; });
     });
@@ -213,7 +214,7 @@
   }
 
   // ---------- Guardado de una tarea con bitácora ----------
-  const ETIQ = { responsable: 'Responsable', organizacion: 'Organización', duracion: 'Duración', predecesoras: 'Predecesoras', inicio_plan: 'Inicio plan', fin_plan: 'Fin plan', inicio_real: 'Inicio real', fin_real: 'Fin real',
+  const ETIQ = { descripcion: 'Descripción', tipo: 'Tipo', responsable: 'Responsable', organizacion: 'Organización', duracion: 'Duración', predecesoras: 'Predecesoras', inicio_plan: 'Inicio plan', fin_plan: 'Fin plan', inicio_real: 'Inicio real', fin_real: 'Fin real',
     porcentaje: '% avance', estado: 'Estado', salud: 'Salud', explicacion_salud: 'Explicación de salud', evidencia: 'Evidencia', observaciones: 'Observaciones', motivo_no_aplica: 'Motivo No aplica', actividad: 'Actividad', criterio: 'Criterio de cumplimiento' };
   async function guardarTareas(cambiosPorTarea, comentario, evidencia) {
     // cambiosPorTarea: [{ t, campos:{...} }]
@@ -246,6 +247,10 @@
       U.campo({ name: 'evidencia', label: 'Evidencia (enlace o referencia)', valor: t.evidencia, c: 'c6' }) +
       U.campo({ name: 'observaciones', label: 'Observaciones', t: 'textarea', filas: 2, valor: t.observaciones, c: 'c12' }) + '</div></fieldset>' +
       (lider ? '<fieldset><legend>Planeación (líder del proyecto)</legend><div class="ic-campos">' +
+        (t.propia === 'Sí' ? U.campo({ name: 'actividad', label: 'Actividad (tarea propia)', valor: t.actividad, req: true, c: 'c8' }) +
+          U.campo({ name: 'tipo', label: 'Tipo', t: 'select', op: CFG.tipos.filter((x) => x !== 'Fase').map((x) => [x, x]), valor: t.tipo, vacio: false, c: 'c4' }) +
+          U.campo({ name: 'descripcion', label: 'Descripción', t: 'textarea', filas: 2, valor: t.descripcion, c: 'c12' }) +
+          U.campo({ name: 'criterio', label: 'Criterio de cumplimiento', valor: t.criterio, c: 'c12' }) : '') +
         U.campo({ name: 'responsable_email', label: 'Responsable', t: 'select', op: opResp, valor: t.responsable_email, vacio: 'Sin asignar', c: 'c6' }) +
         U.campo({ name: 'organizacion', label: 'Organización', t: 'select', op: CFG.organizaciones.map((x) => [x, x]), valor: t.organizacion, c: 'c6' }) +
         U.campo({ name: 'duracion', label: 'Duración (días hábiles)', t: 'number', valor: t.duracion == null ? '' : t.duracion, c: 'c3', ayuda: t.estimada === 'Sí' ? 'Duración estimada en la plantilla' : 'Referencia de la plantilla' }) +
@@ -292,6 +297,10 @@
         ['explicacion_salud', 'inicio_real', 'fin_real', 'evidencia', 'observaciones'].forEach((k) => poner(k, v[k]));
         let replan = false;
         if (lider) {
+          if (t.propia === 'Sí') {
+            if (!v.actividad) { U.marcarErrores(f, { actividad: 'Obligatorio' }); return; }
+            ['actividad', 'tipo', 'descripcion', 'criterio'].forEach((k) => poner(k, v[k]));
+          }
           poner('responsable_email', v.responsable_email);
           if (campos.responsable_email !== undefined) { const pe = PRY.persona(v.responsable_email); poner('responsable', pe ? pe.nombre : ''); }
           poner('organizacion', v.organizacion);
@@ -332,19 +341,36 @@
     catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
   }
 
+  // Orden para quedar justo después de «ref» dentro de una lista ordenada (sin renumerar las demás)
+  function ordenDespues(lista, ref) {
+    const L = lista.map((x) => x.orden).sort((x, y) => x - y);
+    const i = L.indexOf(ref.orden), sig = L.find((o) => o > ref.orden);
+    return sig == null ? ref.orden + 1 : (ref.orden + sig) / 2;
+  }
+  const finDeFase = (f) => hijos(f).reduce((m, x) => Math.max(m, x.orden), f.orden);
+
   function tareaPropia(c) {
     const fases = S.tareas.filter(PRY.esFase);
+    if (!fases.length) { U.aviso('Primero cree una fase con «+ Fase».', 'warn'); return; }
     U.modal('Agregar tarea propia del proyecto', '<form class="ic-form" id="fN"><div class="ic-campos">' +
       U.campo({ name: 'id_padre', label: 'Fase', t: 'select', op: fases.map((x) => [x.tarea_id, x.tarea_id + ' · ' + x.actividad]), req: true, c: 'c6' }) +
+      '<div class="ic-campo c6"><label for="f_ubicar">Ubicación en la fase</label><select id="f_ubicar" name="ubicar"></select></div>' +
       U.campo({ name: 'tipo', label: 'Tipo', t: 'select', op: CFG.tipos.filter((x) => x !== 'Fase').map((x) => [x, x]), valor: 'Tarea', vacio: false, c: 'c3' }) +
       U.campo({ name: 'duracion', label: 'Duración (días hábiles)', t: 'number', valor: 1, c: 'c3' }) +
-      U.campo({ name: 'actividad', label: 'Actividad', req: true, c: 'c12' }) + U.campo({ name: 'descripcion', label: 'Descripción', t: 'textarea', filas: 2, c: 'c12' }) +
+      U.campo({ name: 'actividad', label: 'Actividad', req: true, c: 'c6' }) + U.campo({ name: 'descripcion', label: 'Descripción', t: 'textarea', filas: 2, c: 'c12' }) +
       U.campo({ name: 'responsable_email', label: 'Responsable', t: 'select', op: PRY.D.personas.map((x) => [x.email, x.nombre]), vacio: 'Sin asignar', c: 'c6' }) +
       U.campo({ name: 'organizacion', label: 'Organización', t: 'select', op: CFG.organizaciones.map((x) => [x, x]), valor: 'IC', c: 'c6' }) +
       U.campo({ name: 'predecesoras', label: 'Predecesoras (IDs separados por ;)', c: 'c6' }) + U.campo({ name: 'criterio', label: 'Criterio de cumplimiento', c: 'c6' }) +
       U.campo({ name: 'comentario', label: 'Motivo / comentario para la bitácora', req: true, c: 'c12' }) + '</div>' +
+      '<p class="pry-nota">La ubicación ordena la lista; el orden en que se ejecuta lo dan las predecesoras.</p>' +
       '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="nNo">Cancelar</button><button class="ic-btn" id="nOk">Agregar</button></div></form>', (cu) => {
       const f = cu.querySelector('#fN'); cu.querySelector('#nNo').onclick = U.cerrarModal;
+      const selF = f.querySelector('[name=id_padre]'), selU = f.querySelector('[name=ubicar]');
+      const llenarUbicar = () => {
+        const fa = porId(selF.value), hs = fa ? hijos(fa).slice().sort((x, y) => x.orden - y.orden) : [];
+        selU.innerHTML = '<option value="">Al final de la fase</option><option value="^">Al comienzo de la fase</option>' + hs.map((x) => '<option value="' + esc(x.tarea_id) + '">Después de ' + esc(x.tarea_id + ' · ' + x.actividad).slice(0, 80) + '</option>').join('');
+      };
+      selF.onchange = llenarUbicar; llenarUbicar();
       f.onsubmit = async (e) => {
         e.preventDefault(); const v = U.leerForm(f), err = {};
         if (!v.id_padre) err.id_padre = 'Elija la fase';
@@ -354,22 +380,79 @@
         const t = { tarea_id: 'PRO-' + PRY.pad(n, 3), id_padre: v.id_padre, fase: (porId(v.id_padre) || {}).actividad || '', actividad: v.actividad, tipo: v.tipo, descripcion: v.descripcion,
           organizacion: v.organizacion, responsable_email: v.responsable_email, responsable: (PRY.persona(v.responsable_email) || {}).nombre || '', duracion: v.duracion === '' ? null : Number(v.duracion), estimada: 'Sí',
           predecesoras: String(v.predecesoras || '').split(/[;,\s]+/).filter(Boolean).join(';'), criterio: v.criterio, estado: 'No iniciada', salud: 'Normal', porcentaje: 0, propia: 'Sí', visibilidad: 'Compartida', obligatoria: 'No' };
-        const ult = hijos(porId(v.id_padre) || {}).map((x) => x.orden).reduce((a, b) => Math.max(a, b), (porId(v.id_padre) || {}).orden || 0);
-        t.orden = ult + 0.5;
+        const fa = porId(v.id_padre) || { orden: 0 }, hs = hijos(fa);
+        if (!v.ubicar) t.orden = finDeFase(fa) + 0.5;
+        else if (v.ubicar === '^') { const pri = hs.reduce((m, x) => Math.min(m, x.orden), Infinity); t.orden = pri === Infinity ? fa.orden + 0.5 : (fa.orden + pri) / 2; }
+        else t.orden = ordenDespues(hs, porId(v.ubicar));
         const ed = PRY.validarDependencias(S.tareas.concat([t]));
         if (ed.length) err.predecesoras = ed[0];
         if (!U.marcarErrores(f, err)) return;
         try {
           await U.conCarga(cu.querySelector('#nOk'), async () => {
-            // Reordena la numeración para que la nueva quede al final de su fase
-            const fila = App.filaTarea(S.p.Title, t); fila.orden = Math.round(t.orden * 10) / 10;
+            const fila = App.filaTarea(S.p.Title, t); fila.orden = Math.round(t.orden * 10000) / 10000;
             await G.crear('PRY_Tareas', fila);
-            await PRY.bitacora(S.p.Title, t.tarea_id, [{ campo: 'Tarea agregada', antes: '', despues: t.actividad }], v.comentario, '', App.usuario.nombre);
+            await PRY.bitacora(S.p.Title, t.tarea_id, [{ campo: 'Tarea agregada', antes: '', despues: t.actividad + ' (fase ' + v.id_padre + ')' }], v.comentario, '', App.usuario.nombre);
             await cargar(S.id);
             await reprogramar('Tarea propia ' + t.tarea_id + ' agregada');
             await sincronizarProyecto();
           });
           U.cerrarModal(); U.aviso(t.tarea_id + ' agregada', 'ok'); App.vistas.proyecto(c);
+        } catch (e2) { U.aviso(U.mensajeError(e2), 'err', 8000); }
+      };
+    });
+  }
+
+  // Fase propia del proyecto (grupo nuevo de tareas)
+  function nuevaFase(c) {
+    const fases = S.tareas.filter(PRY.esFase);
+    U.modal('Agregar fase al proyecto', '<form class="ic-form" id="fF"><div class="ic-campos">' +
+      U.campo({ name: 'actividad', label: 'Nombre de la fase', req: true, c: 'c12', ph: 'Ej.: Integración con nómina' }) +
+      U.campo({ name: 'despues', label: 'Ubicación', t: 'select', op: [['', 'Al final del cronograma'], ['^', 'Al comienzo del cronograma']].concat(fases.map((x) => [x.tarea_id, 'Después de ' + x.tarea_id + ' · ' + x.actividad])), vacio: false, c: 'c12' }) +
+      U.campo({ name: 'comentario', label: 'Motivo / comentario para la bitácora', req: true, c: 'c12' }) + '</div>' +
+      '<p class="pry-nota">Después agregue sus tareas con «+ Tarea propia». Las fechas de la fase salen de sus tareas.</p>' +
+      '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="fNo">Cancelar</button><button class="ic-btn" id="fOk">Agregar fase</button></div></form>', (cu) => {
+      const f = cu.querySelector('#fF'); cu.querySelector('#fNo').onclick = U.cerrarModal;
+      f.onsubmit = async (e) => {
+        e.preventDefault(); const v = U.leerForm(f), err = {};
+        if (!v.actividad) err.actividad = 'Obligatorio';
+        if (!v.comentario) err.comentario = 'Explique por qué se agrega';
+        if (!U.marcarErrores(f, err)) return;
+        const n = S.tareas.filter((x) => /^PRF-\d+$/.test(x.tarea_id)).map((x) => Number(x.tarea_id.slice(4))).reduce((a, b) => Math.max(a, b), 0) + 1;
+        const ordenFases = fases.map((x) => x.orden).sort((a, b) => a - b), todo = S.tareas.map((x) => x.orden);
+        let orden;
+        if (!v.despues) orden = (todo.length ? Math.max.apply(null, todo) : 0) + 1000;
+        else if (v.despues === '^') orden = (ordenFases.length ? ordenFases[0] : 1000) - 1000;
+        else { const fa = porId(v.despues), sig = ordenFases.find((o) => o > fa.orden); const fin = finDeFase(fa); orden = sig == null ? fin + 1000 : (Math.max(fa.orden, Math.min(fin, sig - 0.001)) + sig) / 2; }
+        const t = { tarea_id: 'PRF-' + PRY.pad(n, 2), id_padre: '', fase: v.actividad, actividad: v.actividad, tipo: 'Fase', estado: 'No iniciada', salud: 'Normal', porcentaje: 0, propia: 'Sí', visibilidad: 'Compartida', obligatoria: 'No', orden };
+        try {
+          await U.conCarga(cu.querySelector('#fOk'), async () => {
+            const fila = App.filaTarea(S.p.Title, t); fila.orden = Math.round(orden * 10000) / 10000;
+            await G.crear('PRY_Tareas', fila);
+            await PRY.bitacora(S.p.Title, t.tarea_id, [{ campo: 'Fase agregada', antes: '', despues: t.actividad }], v.comentario, '', App.usuario.nombre);
+          });
+          U.cerrarModal(); U.aviso('Fase ' + t.tarea_id + ' agregada. Ahora agregue sus tareas con «+ Tarea propia».', 'ok', 7000); recargar(c);
+        } catch (e2) { U.aviso(U.mensajeError(e2), 'err', 8000); }
+      };
+    });
+  }
+  function editarFase(fa, c) {
+    if (!fa) return;
+    U.modal('Editar fase ' + fa.tarea_id, '<form class="ic-form" id="fE"><div class="ic-campos">' +
+      U.campo({ name: 'actividad', label: 'Nombre de la fase', valor: fa.actividad, req: true, c: 'c12' }) +
+      U.campo({ name: 'comentario', label: 'Comentario para la bitácora', c: 'c12' }) + '</div>' +
+      '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="eNo">Cancelar</button><button class="ic-btn" id="eOk">Guardar</button></div></form>', (cu) => {
+      const f = cu.querySelector('#fE'); cu.querySelector('#eNo').onclick = U.cerrarModal;
+      f.onsubmit = async (e) => {
+        e.preventDefault(); const v = U.leerForm(f);
+        if (!U.marcarErrores(f, v.actividad ? {} : { actividad: 'Obligatorio' })) return;
+        if (v.actividad === fa.actividad) { U.cerrarModal(); return; }
+        try {
+          await U.conCarga(cu.querySelector('#eOk'), async () => {
+            await G.actualizar('PRY_Tareas', fa._id, { actividad: v.actividad, fase: v.actividad });
+            await PRY.enParalelo(hijos(fa), 4, (x) => G.actualizar('PRY_Tareas', x._id, { fase: v.actividad }));
+            await PRY.bitacora(S.p.Title, fa.tarea_id, [{ campo: 'Nombre de la fase', antes: fa.actividad, despues: v.actividad }], v.comentario, '', App.usuario.nombre);
+          });
+          U.cerrarModal(); U.aviso('Fase actualizada', 'ok'); recargar(c);
         } catch (e2) { U.aviso(U.mensajeError(e2), 'err', 8000); }
       };
     });

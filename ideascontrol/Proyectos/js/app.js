@@ -151,7 +151,7 @@ const App = { usuario: null, rol: '', proyectos: [], tareasTodas: [], vistas: {}
       '<fieldset><legend>3. Tareas que aplican</legend><div id="nvT"><p class="pry-nota">Elija las plantillas para ver sus tareas.</p></div></fieldset>' +
       '<div class="ic-acciones"><span id="nvE" class="pry-nota" style="margin-right:auto"></span><a class="ic-btn sec" href="#">Cancelar</a><button class="ic-btn" id="nvOk">Crear proyecto</button></div></form>';
     const f = c.querySelector('#fN');
-    let empresa = null, comb = null, regs = {};
+    let empresa = null, comb = null, base = null, extras = [], regs = {};
     f.querySelector('#f_cliente').onchange = async (e) => {
       empresa = emp.find((x) => U.norm(x.razon_social) === U.norm(e.target.value)) || null;
       const sel = f.querySelector('#f_contacto_id');
@@ -173,17 +173,62 @@ const App = { usuario: null, rol: '', proyectos: [], tareasTodas: [], vistas: {}
       const pls = cods.map((cod) => PRY.vigente(cod));
       for (const p of pls) if (!regs[p.Title]) regs[p.Title] = await PRY.registrosDe(p.codigo, p.version);
       const porCod = {}; pls.forEach((p) => { porCod[p.codigo] = regs[p.Title]; });
-      comb = App.combinar(pls, porCod);
+      base = App.combinar(pls, porCod);
+      pintarTareas();
+    }
+    // Lista final = plantillas combinadas + tareas propias agregadas aquí (cada una al final de su fase)
+    function armar() {
+      const L = base.tareas.slice();
+      extras = extras.filter((x) => L.some((t) => PRY.esFase(t) && t.tarea_id === x.id_padre));
+      extras.forEach((x) => {
+        let i = -1; L.forEach((t, k) => { if (t.tarea_id === x.id_padre || t.id_padre === x.id_padre) i = k; });
+        x.orden = L[i].orden + 0.01; L.splice(i + 1, 0, x);
+      });
+      comb = { tareas: L, unificadas: base.unificadas };
+    }
+    function pintarTareas() {
+      armar();
+      const caja = f.querySelector('#nvT');
       const fases = comb.tareas.filter(PRY.esFase);
       caja.innerHTML = (comb.unificadas.length ? '<div class="ic-alerta chica" style="margin-bottom:10px">Tareas comunes unificadas: ' + comb.unificadas.map((u) => esc(u.sale.actividad + ' (' + u.plantilla + ') → ' + u.queda.tarea_id)).join(' · ') + '</div>' : '') +
         '<p class="pry-nota">Desmarque lo que no está en el alcance: la tarea queda como «No aplica» con el motivo (no se borra). Las duraciones son referencias; el líder las ajusta antes de aprobar la línea base.</p>' +
         '<div class="pry-scroll" style="max-height:420px"><table class="ic-tabla pry-mini"><thead><tr><th></th><th>ID</th><th>Actividad</th><th>Tipo</th><th class="num">Días</th><th>Organización</th></tr></thead><tbody>' +
-        comb.tareas.map((t, i) => PRY.esFase(t) ? '<tr class="pry-fase"><td></td><td>' + esc(t.tarea_id) + '</td><td colspan="4"><b>' + esc(t.actividad) + '</b> <span class="sec">' + esc(t.plantilla) + '</span></td></tr>'
+        comb.tareas.map((t, i) => t.propia === 'Sí' ? '<tr><td></td><td>' + esc(t.tarea_id) + '</td><td>' + esc(t.actividad) + ' <span class="pry-tag azul">propia</span> <button type="button" class="pry-lnk" data-x="' + esc(t.tarea_id) + '">Quitar</button></td><td>' + esc(t.tipo) + '</td><td class="num">' + esc(t.duracion == null ? '—' : t.duracion) + '</td><td>' + esc(t.organizacion) + '</td></tr>'
+          : PRY.esFase(t) ? '<tr class="pry-fase"><td></td><td>' + esc(t.tarea_id) + '</td><td colspan="4"><b>' + esc(t.actividad) + '</b> <span class="sec">' + esc(t.plantilla) + '</span></td></tr>'
           : '<tr><td><input type="checkbox" data-t="' + i + '"' + (t.aplica ? ' checked' : '') + '></td><td>' + esc(t.tarea_id) + '</td><td>' + esc(t.actividad) + (t.obligatoria === 'Sí' ? ' <span class="pry-tag dorado">obligatoria</span>' : '') + (t.condicion ? '<span class="sec">' + esc(t.condicion) + '</span>' : '') +
             '<input class="pry-motivo" data-m="' + i + '" placeholder="Motivo de «No aplica»" ' + (t.aplica ? 'hidden' : '') + ' value="' + (t.aplica ? '' : 'No incluido por defecto en la plantilla') + '"></td><td>' + esc(t.tipo) + '</td><td class="num">' + esc(t.duracion == null ? '—' : t.duracion) + '</td><td>' + esc(t.organizacion) + '</td></tr>').join('') +
-        '</tbody></table></div><p class="pry-nota">' + comb.tareas.filter((t) => !PRY.esFase(t)).length + ' tareas en ' + fases.length + ' fases.</p>';
+        '</tbody></table></div><p class="pry-nota">' + comb.tareas.filter((t) => !PRY.esFase(t)).length + ' tareas en ' + fases.length + ' fases.</p><button type="button" class="ic-btn sec chico" id="nvAdd">+ Agregar tarea propia</button>';
       caja.querySelectorAll('[data-t]').forEach((x) => { x.onchange = () => { const t = comb.tareas[+x.dataset.t]; t.aplica = x.checked; const m = caja.querySelector('[data-m="' + x.dataset.t + '"]'); m.hidden = x.checked; if (!x.checked && !m.value) m.focus(); }; });
       caja.querySelectorAll('[data-m]').forEach((x) => { x.oninput = () => { comb.tareas[+x.dataset.m].motivo = x.value.trim(); }; x.oninput(); });
+      caja.querySelectorAll('[data-x]').forEach((b) => { b.onclick = () => { extras = extras.filter((x) => x.tarea_id !== b.dataset.x); extras.forEach((x, k) => { x.tarea_id = 'PRO-' + PRY.pad(k + 1, 3); }); pintarTareas(); }; });
+      caja.querySelector('#nvAdd').onclick = agregarExtra;
+    }
+    // Tarea propia agregada al crear el proyecto (queda marcada como «propia», código PRO-001…)
+    function agregarExtra() {
+      const fases = comb.tareas.filter(PRY.esFase);
+      U.modal('Agregar tarea al proyecto', '<form class="ic-form" id="fX"><div class="ic-campos">' +
+        U.campo({ name: 'id_padre', label: 'Fase', t: 'select', op: fases.map((x) => [x.tarea_id, x.tarea_id + ' · ' + x.actividad]), req: true, c: 'c6' }) +
+        U.campo({ name: 'tipo', label: 'Tipo', t: 'select', op: CFG.tipos.filter((x) => x !== 'Fase').map((x) => [x, x]), valor: 'Tarea', vacio: false, c: 'c3' }) +
+        U.campo({ name: 'duracion', label: 'Días hábiles', t: 'number', valor: 1, c: 'c3' }) +
+        U.campo({ name: 'actividad', label: 'Actividad', req: true, c: 'c12' }) +
+        U.campo({ name: 'organizacion', label: 'Organización', t: 'select', op: CFG.organizaciones.map((x) => [x, x]), valor: 'IC', c: 'c6' }) +
+        U.campo({ name: 'predecesoras', label: 'Predecesoras (IDs separados por ;)', c: 'c6', ayuda: 'Vacío: empieza con el proyecto' }) +
+        U.campo({ name: 'criterio', label: 'Criterio de cumplimiento', c: 'c12' }) + '</div>' +
+        '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="xNo">Cancelar</button><button class="ic-btn" id="xOk">Agregar</button></div></form>', (cu) => {
+        const fx = cu.querySelector('#fX'); cu.querySelector('#xNo').onclick = U.cerrarModal;
+        fx.onsubmit = (e) => {
+          e.preventDefault(); const v = U.leerForm(fx), err = {};
+          if (!v.id_padre) err.id_padre = 'Elija la fase';
+          if (!v.actividad) err.actividad = 'Obligatorio';
+          const t = { tarea_id: 'PRO-' + PRY.pad(extras.length + 1, 3), id_padre: v.id_padre, fase: (fases.find((x) => x.tarea_id === v.id_padre) || {}).actividad || '', actividad: v.actividad, tipo: v.tipo,
+            descripcion: '', organizacion: v.organizacion, rol: '', duracion: v.duracion === '' ? null : Number(v.duracion), estimada: 'Sí', predecesoras: String(v.predecesoras || '').split(/[;,\s]+/).filter(Boolean).join(';'),
+            criterio: v.criterio, obligatoria: 'No', comun: '', aplica: true, condicion: '', estado: 'No iniciada', salud: 'Normal', porcentaje: 0, propia: 'Sí', visibilidad: 'Compartida', plantilla: '', plantilla_version: '' };
+          const ed = PRY.validarDependencias(comb.tareas.concat([t]));
+          if (ed.length) err.predecesoras = ed[0];
+          if (!U.marcarErrores(fx, err)) return;
+          extras.push(t); U.cerrarModal(); pintarTareas();
+        };
+      });
     }
     f.onsubmit = async (e) => {
       e.preventDefault();

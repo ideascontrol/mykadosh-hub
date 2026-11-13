@@ -99,3 +99,4 @@ td.gantt > i.hoy { position: absolute; top: 0; bottom: 0; width: 2px; background
 .ic-header .pry-nav + .ic-user { margin-left: 0; }
 .pry-prog { border: 1px solid var(--ic-borde); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
 .pry-prog-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 6px; }
+.pry-lnk { border: 0; background: none; color: var(--ic-azul); font-size: 12px; font-weight: 600; cursor: pointer; padding: 0 4px; text-decoration: underline; }
