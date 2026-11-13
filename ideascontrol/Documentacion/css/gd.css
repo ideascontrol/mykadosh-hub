@@ -236,3 +236,9 @@ mark{background:#fdf0bf;color:inherit;border-radius:3px;padding:0 1px}
 .pub-check{display:flex;gap:8px;align-items:flex-start;font-size:13px}
 .pub-acc{display:flex;gap:10px;align-items:center;justify-content:flex-end;margin-top:18px}.pub-estado{margin-right:auto;font-size:13px;color:var(--teal);font-weight:600}
 @media (max-width:600px){.pub-grid{grid-template-columns:1fr}}
+.pub-caja:has(.pub-lote){max-width:980px}
+.pub-lote{margin-top:14px;max-height:52vh;overflow:auto;border:1px solid var(--linea);border-radius:10px}
+.pub-lote table{width:100%;border-collapse:collapse;font-size:13px}
+.pub-lote th{position:sticky;top:0;background:var(--azul-50);color:var(--azul);text-align:left;font-size:11px;text-transform:uppercase;padding:7px 8px}
+.pub-lote td{padding:6px 8px;border-top:1px solid var(--linea);vertical-align:middle;white-space:nowrap}
+.pub-lote td input:not([type=checkbox]){font:inherit;font-size:13px;border:1px solid var(--linea);border-radius:6px;padding:5px 7px;width:100%;min-width:240px}

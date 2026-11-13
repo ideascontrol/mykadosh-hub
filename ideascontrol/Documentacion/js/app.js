@@ -65,7 +65,7 @@
       const codigo = String(v('Codigo') || (nombre.match(/^\d{4}-[A-Z]{3}-[A-Z]{3}/) || [''])[0]).trim();
       if (!codigo) return;
       if (/obsolet/i.test(v('Estado_documento'))) return;
-      const esWord = /\.docx?$/i.test(nombre) || /plantilla/i.test(v('Formato'));
+      const esWord = /\.(docx?|xlsx?|xlsm)$/i.test(nombre) || /plantilla/i.test(v('Formato'));   // plantillas Word o Excel
       const doc = porCodigo[codigo] || (porCodigo[codigo] = { codigo });
       const dato = { id: di.id, nombre, webUrl: di.webUrl, size: di.size, carpeta: decodeURIComponent(padre), itemId: it.id };
       (CTX.carpetas[decodeURIComponent(padre)] = CTX.carpetas[decodeURIComponent(padre)] || []).push(codigo);
@@ -136,7 +136,8 @@
   }
   const chipVig = '<span class="chip ok">Vigente</span>';
   const urlDoc = (d) => '#/doc/' + encodeURIComponent(d.codigo);
-  const btnPlantilla = (d, cls = 'sec') => d.plantilla ? `<button type="button" class="btn ${cls}" data-bajar="${esc(d.codigo)}" title="Descargar la plantilla en Word para diligenciar">${ico('bajar', 16)}Descargar plantilla de trabajo</button>` : '';
+  const tipoPlt = (d) => d.plantilla && /\.xls/i.test(d.plantilla.nombre) ? 'Excel' : 'Word';
+  const btnPlantilla = (d, cls = 'sec') => d.plantilla ? `<button type="button" class="btn ${cls}" data-bajar="${esc(d.codigo)}" title="Descargar la plantilla en ${tipoPlt(d)} para diligenciar">${ico('bajar', 16)}Descargar plantilla de trabajo</button>` : '';
   function montarBuscador(input, fn) {
     let t; input.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => fn(input.value), 120); });
     input.addEventListener('keydown', (e) => { if (e.key === 'Escape') { input.value = ''; fn(''); } });
@@ -231,7 +232,7 @@
   }
   function tarjetaDoc(d, q) {
     const meta = [`<span class="cod">${resaltar(d.codigo, q)}</span>`, d.tipo && `<span class="tipo ${esc(d.tipo)}">${esc(TIPOS[d.tipo] || d.tipo)}</span>`,
-      d.version && `<span>v${esc(d.version)}</span>`, chipVig, d.plantilla && '<span class="chip plt" title="Tiene plantilla en Word para diligenciar">Plantilla Word</span>'].filter(Boolean).join('');
+      d.version && `<span>v${esc(d.version)}</span>`, chipVig, d.plantilla && '<span class="chip plt" title="Tiene plantilla en ' + tipoPlt(d) + ' para diligenciar">Plantilla ' + tipoPlt(d) + '</span>'].filter(Boolean).join('');
     const acc = (d.pdf ? `<a class="btn pri" href="${urlDoc(d)}">${ico('leer', 16)}${d.tipo === 'FOR' ? 'Ver' : 'Leer'}</a>` : '') + btnPlantilla(d);
     return `<article class="doc"><div><div class="meta">${meta}</div><h3>${resaltar(d.titulo, q)}</h3>${d.resumen ? `<p>${esc(d.resumen)}</p>` : ''}</div><div class="acc">${acc}</div></article>`;
   }
@@ -258,7 +259,7 @@
         <div class="dv-acc">${btnPlantilla(d, 'pri')}${d.pdf ? `<button type="button" class="btn sec" id="bCompleta" title="Ver el documento en pantalla completa">${ico('leer', 16)}Pantalla completa</button>` : ''}</div>
       </section>
       <dl class="dv-ficha">${ficha.map(([a, b]) => `<div><dt>${esc(a)}</dt><dd>${esc(b)}</dd></div>`).join('')}</dl>
-      <div class="dv-visor" id="visor">${d.pdf ? '<div class="dv-cargando"><span></span>Cargando el documento…</div>' : '<div class="vacio">Este formato se consulta con su plantilla en Word.</div>'}</div>
+      <div class="dv-visor" id="visor">${d.pdf ? '<div class="dv-cargando"><span></span>Cargando el documento…</div>' : '<div class="vacio">Este formato se consulta con su plantilla en ' + tipoPlt(d) + ': use «Descargar plantilla».</div>'}</div>
       <nav class="dv-nav">${ant ? `<a href="${urlDoc(ant)}"><small>← Anterior</small>${esc(ant.codigo)} · ${esc(ant.titulo)}</a>` : '<span></span>'}
         ${sig ? `<a class="sig" href="${urlDoc(sig)}"><small>Siguiente →</small>${esc(sig.codigo)} · ${esc(sig.titulo)}</a>` : `<a class="sig" href="#/area/${d.area.id}"><small>Proceso</small>Volver a ${esc(d.grupo.nombre)}</a>`}</nav>
     </div>`;

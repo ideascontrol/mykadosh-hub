@@ -5,7 +5,7 @@
    cuenta de Microsoft de cada persona (sin claves compartidas).
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-105', nombre: 'Gestión documental', version: '1.1.1' },
+  app: { id: 'APP-105', nombre: 'Gestión documental', version: '1.2.0' },
   // Quién puede publicar documentos aprobados desde la app (sube el PDF a la biblioteca con sus datos)
   editores: ['operaciones@ideascontrol.com'],
   auth: {
@@ -39,6 +39,7 @@ window.CFG = {
         { id: 'software-tya', nombre: 'Configuración Software Gestión de Tiempos y Asistencia', descripcion: 'Parametrización e integración del software de tiempos y asistencia.' },
         { id: 'soporte', serie: '2300', nombre: 'Soporte Técnico', descripcion: 'Atención de tickets de los equipos biométricos y de la plataforma.' },
         { id: 'mantenimiento', serie: '2400', nombre: 'Gestión de Mantenimiento de Equipos Biométricos', descripcion: 'Mantenimiento preventivo, correctivo y extraordinario con trazabilidad.' },
+        { id: 'proyectos', serie: '2600', nombre: 'Proyectos / Implementaciones', descripcion: 'Implementación de proyectos de tiempos y asistencia: fases, actas, diseño, pruebas, salida en vivo y cierre.' },
         { id: 'operaciones', nombre: 'Operaciones y Procesos', descripcion: 'Procedimientos transversales de la operación.' }
       ] },
     { id: 'financiera', nombre: 'Gestión Financiera', icono: 'financiera', descripcion: 'Procesos financieros, contables y de control.', bloque: '7', grupos: [{ id: 'financiera', serie: '7100', nombre: 'Administración y Finanzas', descripcion: 'Políticas y controles para el manejo del efectivo, los gastos y los recursos financieros.' }] },
