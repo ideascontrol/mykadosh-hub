@@ -8,7 +8,7 @@
    Describe solo lo que la app hace hoy (Etapa 2). Cada cambio de pantalla actualiza este archivo.
    ===================================================================== */
 window.IC_AYUDA = {
-  version: '0.1.1',
+  version: '0.1.2',
   actualizado: '2026-11-12',
   CATEGORIAS: [
     ['inicio', 'Primeros pasos'],
@@ -63,13 +63,13 @@ window.IC_AYUDA = {
   { id: 'etapas', cat: 'inicio', titulo: 'Qué hay hoy y qué viene', resumen: 'Lo que funciona en esta versión y las pestañas grises.',
     claves: 'version etapa novedades proximamente gris reuniones riesgos cambios documentos cierre',
     html: `
-<p><b>Disponible (Etapa 2):</b> portafolio, crear proyectos desde las plantillas GNT, cronograma con fases y Gantt, actualización de tareas, tareas propias, línea base y versiones del plan, y bitácora.</p>
+<p><b>Disponible (Etapa 2):</b> portafolio, crear proyectos desde las plantillas GNT, cronograma con fases y Gantt, actualización de tareas, tareas propias, línea base y versiones del plan, bitácora y <a href="#ayuda/programar">enlace con la Programación de Operaciones</a> (programar tareas a los técnicos y completarlas al ejecutarse).</p>
 <p><b>Próximas etapas</b> (pestañas en gris dentro del proyecto): reuniones y compromisos, riesgos y problemas, control de cambios, documentos y actas, y cierre. Mientras llegan, esos registros se llevan como indica el manual 2600-MAN-OPE.</p>` },
 
   { id: 'portafolio', cat: 'inicio', titulo: 'El portafolio', resumen: 'Indicadores, filtros y la lista de proyectos.',
     claves: 'portafolio inicio lista proyectos indicadores filtros buscar activos vencidas lider',
     html: `
-<p>Es la pantalla de inicio. Arriba están los <b>indicadores</b>: proyectos activos, en planeación, en ejecución y en pausa, en riesgo, bloqueados y el total de tareas vencidas.</p>
+<p>Es la pantalla de inicio. El avance de cada proyecto se calcula con sus tareas, así que incluye al momento lo completado desde la Programación. Arriba están los <b>indicadores</b>: proyectos activos, en planeación, en ejecución y en pausa, en riesgo, bloqueados y el total de tareas vencidas.</p>
 <ul>
 <li>Por defecto muestra los <b>activos</b> (sin cerrados ni cancelados). Cambie el filtro de estado para ver todos.</li>
 <li>Filtre por <b>salud</b> y por <b>líder</b>, o busque por nombre, código, cliente u Orden de Servicio.</li>
@@ -372,7 +372,7 @@ window.IC_AYUDA = {
 <p>La app guarda sus datos en listas de IC Apps que empiezan por <b>PRY_</b>. Si no existen, aparece «Falta instalar la app».</p>
 <ol class="pasos">
 <li>Abra el instalador de la Programación (Programacion/Instalador/) con la cuenta de la Dirección de Operaciones.</li>
-<li>Presione <b class="bt">Crear estructura</b> y luego <b class="bt">Aplicar permisos</b>.</li>
+<li>Presione <b class="bt">Crear estructura</b> y luego <b class="bt">Aplicar permisos</b>. «Crear estructura» también agrega las columnas nuevas cuando la app se actualiza (por ejemplo, el enlace con la Programación); no borra nada.</li>
 <li>Entre a Proyectos › Administración e importe la Biblioteca Maestra.</li>
 </ol>` },
 
@@ -388,6 +388,9 @@ window.IC_AYUDA = {
 <dt>¿Puedo borrar una tarea?</dt><dd>No. Márquela <a href="#ayuda/no-aplica">No aplica</a> o Cancelada con su motivo.</dd>
 <dt>Cambié la duración y se movieron muchas fechas.</dt><dd>Es lo esperado: las tareas que dependen de ella se recalculan. El resumen queda en la bitácora.</dd>
 <dt>Una tarea del cliente aparece sin responsable.</dt><dd>Es normal: el responsable de la lista es personal de IC. La organización (Cliente, Fabricante) indica de quién depende.</dd>
+<dt>Al programar en Operaciones sale un error de acceso.</dt><dd>Para programar hay que tener permiso de edición sobre las actividades de la Programación en SharePoint. Pídalo a la Dirección de Operaciones.</dd>
+<dt>Al programar dice que faltan columnas o que hay que actualizar las listas.</dt><dd>Falta correr «Crear estructura» en el instalador. Vea <a href="#ayuda/adm-instalar">Instalación de la app</a>.</dd>
+<dt>La actividad ya está ejecutada pero la tarea sigue abierta.</dt><dd>Se completa sola cuando el líder o el responsable abren el proyecto. Si no, revise en la Programación que la actividad sea la enlazada a esa tarea (su ficha dice de qué proyecto viene).</dd>
 <dt>No veo un cambio reciente de la app.</dt><dd>Recargue con <kbd>Ctrl</kbd> + <kbd>F5</kbd>.</dd>
 <dt>Aparece «Falta instalar la app».</dt><dd>Vea <a href="#ayuda/adm-instalar">Instalación de la app</a> o avise a la Dirección de Operaciones.</dd>
 </dl>` }

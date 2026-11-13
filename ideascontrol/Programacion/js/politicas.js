@@ -33,6 +33,7 @@
     ['Agenda', 'Elija mes, tipo y técnico para ver la sábana-calendario. Los días hábiles en rojo no tienen técnico de oficina.'],
     ['Mover', 'Para mover una actividad use «Reprogramar»: la original queda como Reprogramado y se crea una nueva con la nueva fecha. Así queda la trazabilidad.'],
     ['Técnicos', 'Si a un técnico se le registra el correo en Administración › Técnicos, entra con su cuenta de Microsoft, ve su agenda y marca como ejecutadas sus actividades.'],
+    ['Proyectos', 'Las actividades que vienen de la app Proyectos las programa el líder del proyecto desde la tarea. En su ficha dice de qué proyecto y tarea vienen (con enlace). Se confirman, reprograman o cancelan aquí como cualquier actividad; la reprogramación sigue enlazada a la tarea. Al marcarlas ejecutadas, la tarea del proyecto queda completada con las observaciones de la visita, así que escriba en Observaciones lo que se hizo.'],
     ['Catálogos', 'Técnicos, vinculación, matriz de habilidades, tipos, días preferentes y capacidad se administran en Administración. Los festivos son los de SYS_Festivos (compartidos con la app Comercial).']
   ];
   App.vistas.politicas = function (c) {
