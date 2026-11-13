@@ -49,10 +49,11 @@ const App = { usuario: null, rol: '', proyectos: [], tareasTodas: [], vistas: {}
       '<a href="#"><img class="logo" src="' + CFG.logo + '" alt="Ideas Control"></a>' +
       '<div class="app-nombre"><b>' + esc(CFG.app.nombre) + '</b><span>' + CFG.app.id + ' · v' + CFG.app.version + '</span></div><div class="espacio"></div>' +
       '<nav class="pry-nav"><a href="#" data-r="">Portafolio</a>' + (App.puedeCrear() ? '<a href="#nuevo" data-r="nuevo">Nuevo proyecto</a>' : '') + (App.esAdmin() ? '<a href="#admin" data-r="admin">Administración</a>' : '') + '</nav>' +
-      '<div class="ic-user">' + IC.portal.boton() + '<div class="datos"><b>' + esc(u.nombre) + '</b><span>' + esc(nombreRol(App.rol)) + '</span></div>' +
+      '<div class="ic-user">' + (App.ayuda ? App.ayuda.boton() : '') + IC.portal.boton() + '<div class="datos"><b>' + esc(u.nombre) + '</b><span>' + esc(nombreRol(App.rol)) + '</span></div>' +
       '<div class="ic-avatar" title="' + esc(u.email) + '">' + esc(u.iniciales) + '</div><button class="ic-btn sec chico" id="btnSalir">Salir</button></div>';
     document.getElementById('encabezado').hidden = false;
     document.getElementById('btnSalir').onclick = () => IC.auth.salir();
+    const ba = document.getElementById('btnAyuda'); if (ba) ba.onclick = () => App.ayuda.abrir();
   }
   const marcarNav = (r) => document.querySelectorAll('.pry-nav a').forEach((a) => a.classList.toggle('on', a.dataset.r === r));
 
@@ -254,7 +255,7 @@ const App = { usuario: null, rol: '', proyectos: [], tareasTodas: [], vistas: {}
         return;
       }
       encabezado();
-      U.enrutar({ '': () => App.vistas.portafolio(raiz), nuevo: () => App.vistas.nuevo(raiz), p: () => App.vistas.proyecto(raiz), admin: () => App.vistas.admin(raiz) }, marcarNav);
+      U.enrutar({ '': () => App.vistas.portafolio(raiz), nuevo: () => App.vistas.nuevo(raiz), p: () => App.vistas.proyecto(raiz), admin: () => App.vistas.admin(raiz), ayuda: () => App.vistas.ayuda(raiz) }, marcarNav);
     } catch (e) {
       console.error(e);
       U.pantalla(raiz, { logo: CFG.logo, titulo: 'No se pudo cargar la app', texto: U.mensajeError(e), boton: 'Reintentar', alClic: () => location.reload() });
