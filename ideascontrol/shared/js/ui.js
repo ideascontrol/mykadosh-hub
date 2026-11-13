@@ -5,6 +5,8 @@
 window.IC = window.IC || {};
 IC.ui = (function () {
   const $ = (sel, raiz) => (raiz || document).querySelector(sel);
+  // Iniciales fijas por persona (nombre o correo, sin tildes, en minúscula)
+  const INICIALES_FIJAS = { 'martin molina': 'MEM', 'martin eduardo molina': 'MEM', 'operaciones@ideascontrol.com': 'MEM', 'martin.molina@ideascontrol.com': 'MEM' };
 
   // Al corregir un campo marcado con error, se quita la marca
   document.addEventListener('input', (e) => {
@@ -58,7 +60,12 @@ IC.ui = (function () {
     num: (n) => Number(n || 0).toLocaleString('es-CO'),
     fecha: (iso) => iso ? new Date(iso).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' }) : '',
     fechaHora: (iso) => iso ? new Date(iso).toLocaleString('es-CO', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '',
-    iniciales: (nombre) => String(nombre || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]).join('').toUpperCase()
+    // Iniciales del avatar. Las personas con iniciales definidas (p. ej. Martín Molina = MEM) se respetan en todas las apps
+    iniciales: (nombre) => {
+      const k = String(nombre || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+      if (INICIALES_FIJAS[k]) return INICIALES_FIJAS[k];
+      return String(nombre || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
+    }
   };
 
   // Traduce errores técnicos a mensajes para el usuario

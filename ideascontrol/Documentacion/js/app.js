@@ -119,7 +119,8 @@
 
   // ---------- Piezas comunes ----------
   function encabezado(subtitulo) {
-    const ini = (usuario.nombre || '?').split(' ').map((p) => p[0]).join('').slice(0, 2).toUpperCase();
+    const ini = { 'martin molina': 'MEM', 'martin eduardo molina': 'MEM' }[clave(usuario.nombre || '')] || ({ 'operaciones@ideascontrol.com': 'MEM' })[String(usuario.email || '').toLowerCase()] ||
+      (usuario.nombre || '?').split(' ').filter(Boolean).map((p) => p[0]).join('').slice(0, 2).toUpperCase();
     let h = $('header.top');
     if (!h) { document.body.insertAdjacentHTML('afterbegin', '<header class="top"></header>'); h = $('header.top'); }
     h.innerHTML = `<div class="wrap">
