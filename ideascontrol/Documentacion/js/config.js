@@ -5,7 +5,7 @@
    cuenta de Microsoft de cada persona (sin claves compartidas).
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-105', nombre: 'Gestión documental', version: '1.3.2' },
+  app: { id: 'APP-105', nombre: 'Gestión documental', version: '1.3.3' },
   // Quién puede publicar documentos aprobados desde la app (sube el PDF a la biblioteca con sus datos)
   editores: ['operaciones@ideascontrol.com'],
   auth: {
@@ -23,6 +23,7 @@ window.CFG = {
   // Infografías de procesos: estructura de cada proceso en una vista (HTML + PDF carta en herramientasBase)
   infografias: [
     { area: '', serie: '', titulo: 'Estructura de la Gestión Documental', resumen: 'Las 7 áreas y sus series, cómo se lee un código, los tipos de documento, las carpetas raíz y cómo se usa el portal.', pagina: 'infografia-gestion-documental.html', icono: 'mapa' },
+    { area: 'operativa', serie: '2100', titulo: 'Instalación de equipos biométricos', resumen: 'De la orden de servicio al acta de entrega: pasos con sus formatos e instructivos, seguridad, datos biométricos y cierre.', pagina: 'infografia-2100-instalacion.html', icono: 'mapa' },
     { area: 'operativa', serie: '2600', titulo: 'Proceso de proyectos de implementación', resumen: 'Las 11 fases con sus hitos y formatos, el seguimiento, el control de cambios y los códigos de la serie 2600.', pagina: 'infografia-2600-proyectos.html', icono: 'mapa' },
     { area: 'comercial', serie: '3100', titulo: 'Proceso comercial', resumen: 'De la primera llamada a la entrega a Operaciones: pasos en la microapp Comercial, estados de la cotización, seguimiento y tablero.', pagina: 'infografia-3100-comercial.html', icono: 'mapa' }
   ],
