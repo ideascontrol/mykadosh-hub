@@ -208,3 +208,13 @@ th.mkt-ord.on .mkt-flecha { opacity: 1; }
 .mkt-sinmet .cuerpo { padding: 0 16px 14px; }
 .mkt-est { font-size: 12px; font-weight: 600; color: var(--ic-gris); background: var(--ic-fondo); border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
 .mkt-alta { background: var(--ic-fondo); border-radius: 10px; padding: 10px 12px; }
+.mkt-nota { white-space: pre-line; font-size: 13px; line-height: 1.5; color: var(--ic-gris); margin-top: 4px; }
+.mkt-nota-larga { margin-top: 4px; }
+.mkt-nota-larga summary { cursor: pointer; list-style: none; font-size: 13px; }
+.mkt-nota-larga summary::-webkit-details-marker { display: none; }
+.mkt-nota-larga summary b { color: var(--ic-azul); font-size: 12.5px; white-space: nowrap; }
+.mkt-nota-larga[open] summary .sec { display: none; }
+.mkt-nota-larga[open] summary b::before { content: 'Ocultar · '; }
+.mkt-nota-larga .mkt-nota { max-height: 360px; overflow: auto; background: var(--ic-fondo); border-radius: 8px; padding: 10px 12px; }
+@media print { .mkt-nota-larga .mkt-nota { display: none; } }
+@media print { .mkt-nota-larga summary b { display: none; } }

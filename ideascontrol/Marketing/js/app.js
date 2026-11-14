@@ -111,6 +111,13 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     const f = t.match(/^(.{20,}?[.?!])(\s|$)/); if (f && f[1].length <= 90) t = f[1];
     return t.length > 90 ? t.slice(0, 87).replace(/\s+\S*$/, '') + '…' : t;
   }
+  // Nota de una métrica: corta y legible; si es larga (p. ej. un análisis pegado de Meta), el resto se despliega
+  function notaHTML(t) {
+    const txt = String(t || '').trim(); if (!txt) return '';
+    if (txt.length <= 220) return '<div class="sec mkt-nota">' + esc(txt) + '</div>';
+    const corte = txt.slice(0, 200).replace(/\s+\S*$/, '');
+    return '<details class="mkt-nota-larga"><summary><span class="sec">' + esc(corte) + '… </span><b>Ver nota completa</b></summary><div class="mkt-nota">' + esc(txt) + '</div></details>';
+  }
   async function guardarPub(p, campos) {
     if ('fecha_semana' in campos && !hayColSemana()) { campos = Object.assign({}, campos); delete campos.fecha_semana; }
     await G.actualizar(L.pubs, p._id, campos);
@@ -664,7 +671,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
       U.campo({ name: 'fecha_campana', label: 'Semana de campaña (lunes)', t: 'date', valor: dia(m.fecha_campana) || lunesDe(dia(m.fecha_publicacion) || hoyISO()), c: 'c3', ayuda: 'El lunes de la semana del tema (igual al UTM sem-…).' }) +
       (tieneCol('fecha_corte') ? U.campo({ name: 'fecha_corte', label: 'Números con corte al', t: 'date', valor: dia(m.fecha_corte) || hoyISO(), c: 'c3', ayuda: 'Hasta qué día van estos números.' }) : '') +
       CAMPOS_MET.map((c) => U.campo({ name: c[0], label: c[1], valor: m[c[0]] === undefined || m[c[0]] === null ? '' : m[c[0]], c: 'c3', modo: 'decimal' })).join('') +
-      U.campo({ name: 'notas', label: 'Notas / análisis', t: 'textarea', valor: m.notas || '', c: 'c12', filas: 3, ayuda: 'Ej.: «61 % del alcance fue en Venezuela», costo por resultado alto, etc.' }) +
+      U.campo({ name: 'notas', label: 'Notas / análisis', t: 'textarea', valor: m.notas || '', c: 'c12', filas: 3, ayuda: 'Ideas cortas: «61 % del alcance fue en Venezuela», «costo por clic $55». Un análisis largo (por ejemplo, el de Meta) se puede pegar: en el Resumen se muestra recortado.' }) +
       '</div><div class="ic-acciones">' + (nueva ? '' : '<button type="button" class="ic-btn peligro" id="mDel" style="margin-right:auto">Eliminar</button>') + '<button type="button" class="ic-btn sec" id="mCan">Cancelar</button><button class="ic-btn" id="mOk">Guardar</button></div></form>', (c) => {
       c.querySelector('#mCan').onclick = U.cerrarModal;
       const f = c.querySelector('#fMet'), sp = c.querySelector('#m_pub'), alta = c.querySelector('#m_alta');
@@ -763,7 +770,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
       '<section class="ic-bloque"><div class="cab"><h2>Embudo vs. metas</h2><span class="sec">Definición de KPIs</span></div><div class="cuerpo">' +
         meta(alc, CFG.metas.alcance, 'Alcance') + meta(it, CFG.metas.interacciones, 'Interacciones') + meta(S('clics'), CFG.metas.clics, 'Tráfico (clics)') + meta(S('leads') || res, CFG.metas.leads, 'Leads') + '</div></section></div>' +
       '<section class="ic-bloque" style="margin-top:16px"><div class="cab"><h2>Contenido destacado del periodo</h2></div><div class="cuerpo">' +
-        (top.map((m) => '<div class="ic-item"><div><div class="titulo mkt-nom" title="' + esc(m.nombre || '') + '">' + esc(nombreCorto(m.nombre || m.publicacion_id)) + '</div><div class="sec">' + esc(m.red) + ' · ' + esc(m.tipo || '') + ' · alcance ' + num(m.alcance) + '</div>' + (m.notas ? '<div class="sec">' + esc(m.notas) + '</div>' : '') + '</div><b>' + num(interacciones(m)) + ' interac.</b></div>').join('') || '<p class="ic-vacio" style="padding:8px 0">—</p>') + '</div></section><div id="rAnalisis"></div>';
+        (top.map((m) => '<div class="ic-item"><div><div class="titulo mkt-nom" title="' + esc(m.nombre || '') + '">' + esc(nombreCorto(m.nombre || m.publicacion_id)) + '</div><div class="sec">' + esc(m.red) + ' · ' + esc(m.tipo || '') + ' · alcance ' + num(m.alcance) + '</div>' + notaHTML(m.notas) + '</div><b>' + num(interacciones(m)) + ' interac.</b></div>').join('') || '<p class="ic-vacio" style="padding:8px 0">—</p>') + '</div></section><div id="rAnalisis"></div>';
     MKT_AN.pintar(raiz.querySelector('#rAnalisis'), M.rd, M.rh, (d, h) => { M.rd = d; M.rh = h; vistaResumen(raiz); window.scrollTo(0, 0); });
     raiz.querySelector('#rD').onchange = (e) => { M.rd = e.target.value; vistaResumen(raiz); };
     raiz.querySelector('#rH').onchange = (e) => { M.rh = e.target.value; vistaResumen(raiz); };
