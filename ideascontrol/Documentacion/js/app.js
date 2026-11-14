@@ -127,7 +127,7 @@
     h.innerHTML = `<div class="wrap">
       <a class="logo" href="#/" aria-label="Inicio"><img src="${CFG.logo}" alt="Ideas Control Equipos y Soluciones S.A.S."></a>
       <div class="sistema"><b>Gestión Documental</b><span>${esc(subtitulo || 'Sistema de documentación interna')}</span></div>
-      <div class="usuario">${IC.portal.desdePortal() ? '<button type="button" class="salir" id="bPortal" title="Cerrar esta pestaña y volver al portal de microapps">← Portal</button>' : '<a class="salir" href="' + IC.portal.URL_PORTAL + '">← Portal</a>'}
+      <div class="usuario"><button type="button" class="salir" id="bPortal" title="Cerrar esta pestaña y volver al portal de microapps">← Portal</button>
         <span class="datos"><b>${esc(usuario.nombre)}</b><small>${(CFG.editores || []).indexOf(String(usuario.email || '').toLowerCase()) >= 0 ? 'Administrador' : 'Consulta'}</small></span><i title="${esc(usuario.email)}">${esc(ini)}</i><button type="button" class="salir" id="bSalir" title="Cerrar sesión">Salir</button></div></div>`;
     const bp = $('#bPortal'); if (bp) bp.onclick = () => IC.portal.volver();
     $('#bSalir').onclick = () => { try { localStorage.removeItem('ic_doc_m365'); } catch (e) { /* sin almacenamiento */ } IC.auth.salir(); };
