@@ -203,3 +203,8 @@ th.mkt-ord.on .mkt-flecha { opacity: 1; }
 .mkt-org .sec { display: block; }
 .mkt-chk { width: 34px; text-align: center; }
 .mkt-chk input { width: 16px; height: 16px; cursor: pointer; }
+.mkt-sinmet { margin: 0 0 12px; }
+.mkt-sinmet summary { cursor: pointer; padding: 12px 16px; list-style: revert; }
+.mkt-sinmet .cuerpo { padding: 0 16px 14px; }
+.mkt-est { font-size: 12px; font-weight: 600; color: var(--ic-gris); background: var(--ic-fondo); border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.mkt-alta { background: var(--ic-fondo); border-radius: 10px; padding: 10px 12px; }

@@ -593,7 +593,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     ['inversion', 'Inversión ($)'], ['resultados', 'Resultados (leads/mensajes/ventas)'], ['leads', 'Leads en landings']];
   function periodoDefecto() { const l = lunesDe(hoyISO()); return [sumarDias(l, -7), sumarDias(l, -1)]; }
   function vistaMetricas(raiz) {
-    const M = App.mf; if (!M.desde) { const p = periodoDefecto(); M.desde = sumarDias(p[0], -21); M.hasta = p[1]; }
+    const M = App.mf; if (!M.desde) { const p = periodoDefecto(); M.desde = sumarDias(p[0], -21); M.hasta = hoyISO(); }   // hasta hoy: lo de esta semana también se ve
     raiz.innerHTML = '<div class="ic-barra"><div><h1 class="ic-titulo">Métricas</h1><p class="ic-subtitulo" style="margin:0">Una fila por publicación o campaña. El periodo filtra por semana de campaña (lunes).</p></div><span class="espacio"></span><a class="ic-btn" href="#importar">Importar estadísticas</a><button class="ic-btn sec" id="bNueva">+ Registrar a mano</button></div>' +
       '<div class="ic-filtros"><label class="mkt-fecha">Desde <input type="date" id="mD" value="' + M.desde + '"></label><label class="mkt-fecha">Hasta <input type="date" id="mH" value="' + M.hasta + '"></label><select id="mR">' + opciones(CFG.redes, M.red, 'Todas las redes') + '</select></div><div id="tabla"></div>';
     const pintar = () => {
@@ -608,13 +608,22 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
       }
       const th = (k, l, n) => '<th class="mkt-ord' + (n ? ' n' : '') + (O.k === k ? ' on' : '') + '" data-ord="' + k + '" title="Ordenar por ' + l.toLowerCase() + '">' + l + '<span class="mkt-flecha">' + (O.k === k ? (O.dir > 0 ? '▲' : '▼') : '↕') + '</span></th>';
       const rep = vaciasRepetidas();
-      raiz.querySelector('#tabla').innerHTML = (rep.length ? '<div class="gen-aviso" style="margin:0 0 10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center"><span>⚠️ Hay ' + rep.length + ' fila(s) vacía(s) repetida(s): son registros sin números (por ejemplo, los del Excel de reporte) que ya tienen su gemela importada con datos.</span><button class="ic-btn chico" id="bRep">Quitar las vacías</button></div>' : '') +
+      // Publicaciones que ya salieron (o están aprobadas/programadas) y aún no tienen métricas
+      const conMet = new Set(App.mets.map((m) => m.publicacion_id).filter(Boolean));
+      const sinMet = App.pubs.filter((p) => ['Aprobada', 'Programada', 'Publicada'].indexOf(p.estado) >= 0 && !conMet.has(p.Title) && dia(p.fecha) >= M.desde && dia(p.fecha) <= (M.hasta > hoyISO() ? M.hasta : hoyISO()) && (!M.red || redDeCanal(p.canal) === M.red))
+        .sort((a, b) => dia(a.fecha).localeCompare(dia(b.fecha)) || ordenRed(a.canal) - ordenRed(b.canal));
+      raiz.querySelector('#tabla').innerHTML = (sinMet.length ? '<details class="ic-bloque mkt-sinmet"' + (M.abrirSin ? ' open' : '') + '><summary><b>' + sinMet.length + ' publicación(es) del periodo sin métricas</b> <span class="sec">— clic para ver y registrar sus números</span></summary><div class="cuerpo"><table class="ic-tabla"><tbody>' +
+          sinMet.map((p) => '<tr><td class="nw">' + esc(fCorta(p.fecha)) + '</td><td>' + esc(p.canal) + '</td><td class="mkt-nomcel"><b class="mkt-nom" title="' + esc(p.titulo || '') + '">' + esc(nombreCorto(p.titulo || p.Title)) + '</b><span class="sec">' + esc(p.Title) + '</span></td><td><span class="mkt-est">' + esc(p.estado) + '</span></td><td style="text-align:right"><button class="ic-btn chico" data-reg="' + esc(p.Title) + '">Registrar métricas</button></td></tr>').join('') +
+          '</tbody></table><p class="sec" style="margin:8px 0 0">Si una publicación ya salió y sigue como Aprobada o Programada, márquela «Publicada» en su ficha.</p></div></details>' : '') +
+        (rep.length ? '<div class="gen-aviso" style="margin:0 0 10px;display:flex;flex-wrap:wrap;gap:10px;align-items:center"><span>⚠️ Hay ' + rep.length + ' fila(s) vacía(s) repetida(s): son registros sin números (por ejemplo, los del Excel de reporte) que ya tienen su gemela importada con datos.</span><button class="ic-btn chico" id="bRep">Quitar las vacías</button></div>' : '') +
         '<p class="ic-conteo">' + lista.length + ' registros</p><div class="ic-tabla-caja mkt-scroll"><table class="ic-tabla"><thead><tr>' + th('campana', 'Campaña') + th('publicado', 'Publicado') + th('corte', 'Corte') + th('red', 'Red') + th('nombre', 'Publicación / campaña') + th('tipo', 'Tipo') +
         th('alcance', 'Alcance', 1) + th('impresiones', 'Impresiones', 1) + th('interacciones', 'Interacciones', 1) + th('tasa', 'Tasa', 1) + th('clics', 'Clics', 1) + th('inversion', 'Inversión', 1) + '</tr></thead><tbody>' +
         (lista.map((m) => { const i = interacciones(m); return '<tr data-m="' + esc(m.Title) + '"><td class="nw">' + esc(m.fecha_campana ? 'sem ' + fCorta(m.fecha_campana) : '—') + '</td><td class="nw">' + esc(fCorta(m.fecha_publicacion) || '—') + '</td><td class="nw">' + esc(fCorta(m.fecha_corte) || '—') + '</td><td>' + esc(m.red || '—') + '</td><td class="mkt-nomcel"><b class="mkt-nom" title="' + esc(m.nombre || '') + '">' + esc(nombreCorto(m.nombre || m.publicacion_id || '')) + '</b>' + (m.publicacion_id ? '<span class="sec">' + esc(m.publicacion_id) + '</span>' : '') + '</td><td>' + esc(m.tipo || '') + '</td>' +
           '<td class="n">' + num(m.alcance) + '</td><td class="n">' + num(m.impresiones) + '</td><td class="n">' + num(i) + '</td><td class="n">' + (n0(m.alcance) ? pct(i / n0(m.alcance)) : '—') + '</td><td class="n">' + num(m.clics) + '</td><td class="n">' + (n0(m.inversion) ? U.fmt.cop(m.inversion) : '—') + '</td></tr>'; }).join('') ||
           '<tr><td colspan="12" class="ic-vacio">Sin métricas en el periodo.</td></tr>') + '</tbody></table></div>';
       raiz.querySelectorAll('tr[data-m]').forEach((tr) => { tr.onclick = () => formMetrica(App.mets.find((m) => m.Title === tr.dataset.m), pintar); });
+      const ds = raiz.querySelector('.mkt-sinmet'); if (ds) ds.ontoggle = () => { M.abrirSin = ds.open; };
+      raiz.querySelectorAll('[data-reg]').forEach((b) => { b.onclick = () => { const p = pubDe(b.dataset.reg); formMetrica({ publicacion_id: p.Title, nombre: p.titulo || '', red: redDeCanal(p.canal), fecha_publicacion: dia(p.fecha), fecha_campana: (hayColSemana() && dia(p.fecha_semana)) || lunesDe(dia(p.fecha)) }, pintar); }; });
       raiz.querySelectorAll('th[data-ord]').forEach((h) => { h.onclick = () => { const k = h.dataset.ord; if (O.k === k) O.dir = -O.dir; else { O.k = k; O.dir = ['campana', 'publicado', 'corte', 'red', 'nombre', 'tipo'].indexOf(k) >= 0 ? 1 : -1; } pintar(); }; });
       const br = raiz.querySelector('#bRep');
       if (br) br.onclick = async () => {
@@ -633,10 +642,20 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
   }
   function formMetrica(m, alGuardar) {
     const nueva = !m.Title;
-    const pubsOp = App.pubs.filter((p) => ['Publicada', 'Programada'].indexOf(p.estado) >= 0 || p.Title === m.publicacion_id).slice().reverse().slice(0, 200);
+    // Todas las publicaciones (no canceladas), las más recientes primero; el buscador filtra la lista
+    const pubsOp = App.pubs.filter((p) => p.estado !== 'Cancelada' || p.Title === m.publicacion_id).slice().reverse();
+    const temasOp = App.temas.filter((t) => t.estado !== 'INACTIVO').slice().sort((a, b) => dia(b.semana_inicio).localeCompare(dia(a.semana_inicio)));
     U.modal(nueva ? 'Registrar métricas' : 'Métricas ' + m.Title, '<form class="ic-form" id="fMet"><div class="ic-campos">' +
-      '<div class="ic-campo c12"><label for="m_pub">Publicación</label><select id="m_pub" name="publicacion_id"><option value="">— Sin vincular (campaña o registro antiguo) —</option>' +
-        pubsOp.map((p) => '<option value="' + esc(p.Title) + '"' + (p.Title === m.publicacion_id ? ' selected' : '') + '>' + esc(fCorta(p.fecha) + ' · ' + p.canal + ' · ' + (p.titulo || '')) + '</option>').join('') + '</select></div>' +
+      '<div class="ic-campo c12"><label for="m_pub">Publicación</label><input type="search" id="m_buscar" placeholder="Buscar por título, red, código o fecha…" autocomplete="off" style="margin-bottom:6px">' +
+        '<select id="m_pub" name="publicacion_id"><option value="">— Sin vincular (campaña paga u otra que no está en Publicaciones) —</option>' +
+        pubsOp.map((p) => '<option value="' + esc(p.Title) + '"' + (p.Title === m.publicacion_id ? ' selected' : '') + '>' + esc(fCorta(p.fecha) + ' · ' + p.canal + ' · ' + (p.titulo || '') + ' · ' + p.Title + (p.estado !== 'Publicada' ? ' (' + p.estado + ')' : '')) + '</option>').join('') + '</select>' +
+        '<span class="ayuda">Aparecen todas las publicaciones, en cualquier estado. Si no está, deje «Sin vincular».</span></div>' +
+      (nueva ? '<div class="ic-campo c12 mkt-alta" id="m_alta"><label class="ic-check"><input type="checkbox" name="crear_pub" id="m_crear"> <span><b>Agregarla también a Publicaciones</b> (ya publicada) — para campañas o posts hechos por fuera del plan</span></label>' +
+        '<div class="ic-campos" id="m_altaCampos" hidden style="margin-top:8px">' +
+        '<div class="ic-campo c4"><label for="m_canal">Canal</label><select id="m_canal" name="canal">' + opciones(CFG.canales, '', 'Seleccione…') + '</select></div>' +
+        '<div class="ic-campo c4"><label for="m_formato">Formato</label><select id="m_formato" name="formato">' + opciones(CFG.formatos, '', '—') + '</select></div>' +
+        '<div class="ic-campo c4"><label for="m_tema">Tema (opcional)</label><select id="m_tema" name="tema_id"><option value="">Sin tema</option>' + temasOp.map((t) => '<option value="' + esc(t.Title) + '">' + esc(t.tema + ' · ' + fCorta(t.semana_inicio)) + '</option>').join('') + '</select></div>' +
+        U.campo({ name: 'link', label: 'Link publicado (opcional)', c: 'c12' }) + '</div></div>' : '') +
       U.campo({ name: 'nombre', label: 'Nombre de la publicación / campaña', valor: m.nombre || '', c: 'c12', req: true, max: 250 }) +
       '<div class="ic-campo c3"><label for="m_red">Red</label><select id="m_red" name="red">' + opciones(CFG.redes, m.red || '', 'Seleccione…') + '</select></div>' +
       '<div class="ic-campo c3"><label for="m_tipo">Tipo</label><select id="m_tipo" name="tipo">' + opciones(CFG.tipos, m.tipo || 'Orgánico') + '</select></div>' +
@@ -648,8 +667,22 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
       U.campo({ name: 'notas', label: 'Notas / análisis', t: 'textarea', valor: m.notas || '', c: 'c12', filas: 3, ayuda: 'Ej.: «61 % del alcance fue en Venezuela», costo por resultado alto, etc.' }) +
       '</div><div class="ic-acciones">' + (nueva ? '' : '<button type="button" class="ic-btn peligro" id="mDel" style="margin-right:auto">Eliminar</button>') + '<button type="button" class="ic-btn sec" id="mCan">Cancelar</button><button class="ic-btn" id="mOk">Guardar</button></div></form>', (c) => {
       c.querySelector('#mCan').onclick = U.cerrarModal;
-      const f = c.querySelector('#fMet'), sp = c.querySelector('#m_pub');
-      sp.onchange = () => { const p = pubDe(sp.value); if (!p) return; f.nombre.value = p.titulo || f.nombre.value; f.red.value = redDeCanal(p.canal); f.fecha_publicacion.value = dia(p.fecha); f.fecha_campana.value = lunesDe(dia(p.fecha)); };
+      const f = c.querySelector('#fMet'), sp = c.querySelector('#m_pub'), alta = c.querySelector('#m_alta');
+      const verAlta = () => { if (!alta) return; alta.hidden = !!sp.value; c.querySelector('#m_altaCampos').hidden = !c.querySelector('#m_crear').checked; };
+      sp.onchange = () => { verAlta(); const p = pubDe(sp.value); if (!p) return; f.nombre.value = p.titulo || f.nombre.value; f.red.value = redDeCanal(p.canal); f.fecha_publicacion.value = dia(p.fecha); f.fecha_campana.value = lunesDe(dia(p.fecha)); };
+      if (alta) {
+        c.querySelector('#m_crear').onchange = verAlta;
+        c.querySelector('#m_canal').onchange = (e) => { if (e.target.value && !f.red.value) f.red.value = redDeCanal(e.target.value); };
+        f.red.addEventListener('change', () => { const cn = c.querySelector('#m_canal'); if (!cn.value) { const op = CFG.canales.find((x) => redDeCanal(x) === f.red.value); if (op) cn.value = op; } });
+      }
+      verAlta();
+      // Buscador: deja en la lista solo las publicaciones que coinciden (la elegida siempre queda)
+      const todas = Array.from(sp.options).map((o) => [o.value, o.textContent]);
+      c.querySelector('#m_buscar').oninput = (e) => {
+        const q = U.norm(e.target.value), sel = sp.value;
+        sp.innerHTML = todas.filter((o) => !o[0] || o[0] === sel || !q || U.norm(o[1]).indexOf(q) >= 0).map((o) => '<option value="' + esc(o[0]) + '"' + (o[0] === sel ? ' selected' : '') + '>' + esc(o[1]) + '</option>').join('');
+        if (q && !sel) { const pri = Array.from(sp.options).find((o) => o.value); if (pri) { sp.value = pri.value; sp.onchange(); } }
+      };
       f.fecha_publicacion.addEventListener('change', () => { if (f.fecha_publicacion.value) f.fecha_campana.value = lunesDe(f.fecha_publicacion.value); });
       const del = c.querySelector('#mDel');
       if (del) del.onclick = async () => {
@@ -661,6 +694,9 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
         const v = U.leerForm(f), err = {};
         if (!v.nombre) err.nombre = 'Obligatorio';
         if (!v.red) err.red = 'Obligatorio';
+        const crearPub = nueva && !v.publicacion_id && v.crear_pub;
+        if (crearPub && !v.canal) err.canal = 'Elija el canal';
+        if (crearPub && !v.fecha_publicacion) err.fecha_publicacion = 'Obligatorio';
         const campos = { publicacion_id: v.publicacion_id, tema_id: (pubDe(v.publicacion_id) || {}).tema_id || m.tema_id || '', nombre: v.nombre, red: v.red, tipo: v.tipo, objetivo: v.objetivo, fecha_publicacion: v.fecha_publicacion, fecha_campana: v.fecha_campana ? lunesDe(v.fecha_campana) : (v.fecha_publicacion ? lunesDe(v.fecha_publicacion) : null), notas: v.notas };
         if (tieneCol('fecha_corte')) campos.fecha_corte = v.fecha_corte || null;
         CAMPOS_MET.forEach((k) => {
@@ -673,12 +709,23 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
         if (!U.marcarErrores(f, err)) return;
         await U.conCarga(c.querySelector('#mOk'), async () => {
           try {
+            if (crearPub) {
+              // Publicación hecha por fuera del plan: queda como Publicada, con la nota de que no pasó por aprobación
+              const pid = 'PUB-' + pad(await G.siguiente('PUB'), 5), t = temaDe(v.tema_id);
+              const np = { Title: pid, fecha: v.fecha_publicacion, canal: v.canal, formato: v.formato, titulo: v.nombre, estado: 'Publicada', responsable: App.usuario.nombre, link: v.link,
+                notas: 'Registrada desde Métricas el ' + fCorta(hoyISO()) + ' por ' + App.usuario.nombre + ': ' + (v.tipo === 'Pago' ? 'campaña paga' : 'publicación') + ' hecha por fuera del plan; no pasó por el flujo de aprobación.' };
+              if (t) np.tema_id = t.Title;
+              Object.keys(np).forEach((k) => { if (np[k] === '' || np[k] == null) delete np[k]; });
+              const creada = await G.crear(L.pubs, conSemana(np, campos.fecha_campana || lunesDe(v.fecha_publicacion)));
+              App.pubs.push(creada); App.pubs.sort((a, b) => dia(a.fecha).localeCompare(dia(b.fecha)) || String(a.Title).localeCompare(String(b.Title)));
+              campos.publicacion_id = pid; if (t) campos.tema_id = t.Title;
+            }
             if (nueva) {
               const id = 'MET-' + pad(await G.siguiente('MET'), 5);
               const it = await G.crear(L.mets, Object.assign({ Title: id, registrado_por: App.usuario.nombre }, campos));
               App.mets.unshift(it);
             } else { await G.actualizar(L.mets, m._id, campos); Object.keys(campos).forEach((k) => { m[k] = campos[k] === null ? '' : campos[k]; }); }
-            U.cerrarModal(); U.aviso('Métricas guardadas', 'ok'); alGuardar && alGuardar();
+            U.cerrarModal(); U.aviso(crearPub ? 'Métricas guardadas y ' + campos.publicacion_id + ' agregada a Publicaciones' : 'Métricas guardadas', 'ok', 6000); alGuardar && alGuardar();
           } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
         });
       };
