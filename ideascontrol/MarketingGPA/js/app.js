@@ -270,7 +270,7 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
     }
     raiz.innerHTML = '<div class="g-cab"><div><h1 class="ic-titulo">Semana</h1><div class="g-sel"><button class="ic-btn sec chico" id="sAnt">‹</button>' + selSemana('sSem', l) + '<button class="ic-btn sec chico" id="sSig">›</button><button class="ic-btn sec chico" id="sHoy">Esta semana</button></div></div>' +
       '<div class="g-acc"><a class="ic-btn" href="#mejorar/' + l + '">✨ Mejorar con Claude</a><button class="ic-btn sec" id="sWord">📄 Word de la semana</button><a class="ic-btn sec" href="/ideascontrol/Imagenes/" target="_blank" rel="noopener">🗜️ Optimizar imágenes</a><a class="ic-btn sec" href="' + CFG.logo + '" download="Logo_GPA.png" title="Para adjuntarlo en la IA de imágenes">⬇ Logo GPA</a></div></div>' +
-      cajaEstrategia(l) +
+      cajaEstrategia(l) + avisoDiaFijo(l) +
       '<p class="g-cuenta">' + ps.length + ' publicaciones · ' + CFG.estados.filter((e) => cuenta[e]).map((e) => chipEstado(e) + ' ' + cuenta[e]).join(' ') + '</p>' +
       '<div class="g-dias">' + dias + '</div>';
     const ir = (x) => { if (x) { App.verSem = x; vistaSemana(raiz); } };
@@ -280,6 +280,8 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
     raiz.querySelector('#sHoy').onclick = () => ir(semanaInicial());
     raiz.querySelector('#sSem').onchange = (e) => ir(e.target.value);
     raiz.querySelector('#sWord').onclick = (e) => U.conCarga(e.currentTarget, () => wordSemana(l));
+    const bDf = raiz.querySelector('#sDiaFijo');
+    if (bDf) bDf.onclick = () => U.conCarga(bDf, async () => { await aplicarDiaFijo(cambiosDiaFijo(l)); vistaSemana(raiz); });
     raiz.querySelectorAll('.g-card').forEach((c) => { c.onclick = (e) => { if (!e.target.closest('button')) location.hash = 'pub/' + c.dataset.id; }; });
     raiz.querySelectorAll('[data-copy]').forEach((b) => { b.onclick = (e) => { e.stopPropagation(); copiar(copyPublicar(pubDe(b.dataset.copy)), 'Copy copiado: ' + b.dataset.copy); b.textContent = 'Copy ✔'; }; });
     raiz.querySelectorAll('[data-bajar]').forEach((b) => { b.onclick = (e) => { e.stopPropagation(); U.conCarga(b, () => bajarPieza(pubDe(b.dataset.bajar)).catch((er) => U.aviso(errorArchivo(er), 'err'))); }; });
@@ -923,6 +925,19 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
     const otro = App.pubs.find((p) => p.dia);
     return otro && otro.dia.charAt(0) === otro.dia.charAt(0).toUpperCase() ? n.charAt(0).toUpperCase() + n.slice(1) : n;
   }
+  async function aplicarDiaFijo(cs) {
+    let n = 0; const err = [];
+    for (const c of cs) { try { await X.guardarPub(c.p, { fecha: c.nueva, dia: textoDia(c.nueva) }); n++; } catch (e) { err.push(c.p.id + ': ' + errorArchivo(e)); if (e.status === 423) break; } }
+    U.aviso(n + ' fecha(s) actualizadas en el Excel' + (err.length ? ' · ' + err.join(' · ') : ''), err.length ? 'warn' : 'ok', 8000);
+  }
+  // Aviso en «Semana» cuando, desde esa semana, hay publicaciones fuera de su día fijo
+  function avisoDiaFijo(l) {
+    const cs = cambiosDiaFijo(l); if (!cs.length) return '';
+    const reglas = CFG.diaFijo || {};
+    return '<div class="g-nota warn" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px"><span>' + Object.keys(reglas).map((r) => '<b>' + esc(r) + '</b> debe salir los ' + DIAS[reglas[r]]).join(' · ') +
+      '. Hay ' + cs.length + ' publicación(es) en otro día desde esta semana (' + cs.slice(0, 4).map((c) => esc(c.p.id) + ': ' + esc(fCorta(c.p.fecha)) + ' → ' + esc(fCorta(c.nueva))).join(', ') + (cs.length > 4 ? '…' : '') + ').</span>' +
+      '<button class="ic-btn chico" id="sDiaFijo">Mover al ' + DIAS[reglas[Object.keys(reglas)[0]]] + ' (' + cs.length + ')</button></div>';
+  }
   function seccionDiaFijo(raiz) {
     const reglas = CFG.diaFijo || {}; if (!Object.keys(reglas).length) return;
     const caja = raiz.querySelector('#pDias'), ini = App.semanas.indexOf(semanaActual()) >= 0 ? semanaActual() : semanaInicial();
@@ -935,12 +950,7 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
         cs.map((c) => '<tr><td class="nw">' + esc(rangoSem(c.p.semana)) + '</td><td>' + chipRed(c.p.canal) + '</td><td>' + esc(c.p.id + ' · ' + String(ganchoDe(c.p) || '').slice(0, 60)) + '</td><td class="nw">' + esc(fDia(c.p.fecha)) + '</td><td class="nw"><b>' + esc(fDia(c.nueva)) + '</b></td></tr>').join('') +
         '</tbody></table></div><div class="g-btns"><button class="ic-btn" id="pdAp">Cambiar ' + cs.length + ' fecha(s) en el Excel</button></div>' : '<p class="sec" style="margin:8px 0 0">✔ Desde esa semana todas cumplen la regla.</p>';
       const b = L.querySelector('#pdAp');
-      if (b) b.onclick = () => U.conCarga(b, async () => {
-        let n = 0; const err = [];
-        for (const c of cs) { try { await X.guardarPub(c.p, { fecha: c.nueva, dia: textoDia(c.nueva) }); n++; } catch (e) { err.push(c.p.id + ': ' + errorArchivo(e)); if (e.status === 423) break; } }
-        U.aviso(n + ' fecha(s) actualizadas en el Excel' + (err.length ? ' · ' + err.join(' · ') : ''), err.length ? 'warn' : 'ok', 8000);
-        pintar();
-      });
+      if (b) b.onclick = () => U.conCarga(b, async () => { await aplicarDiaFijo(cs); pintar(); });
     };
     caja.querySelector('#pdSem').onchange = pintar;
     pintar();
