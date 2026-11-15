@@ -6,7 +6,7 @@
    Dejar de heredar permisos y dejar solo tu cuenta.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'PER-02', nombre: 'Marketing GPA', version: '0.1.4' },
+  app: { id: 'PER-02', nombre: 'Marketing GPA', version: '0.1.5' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -57,5 +57,15 @@ window.CFG = {
   },
   contacto: 'growthpathacademy.com.co',
   // Newsletter de LinkedIn (Biblioteca BPO)
-  newsletter: { serie: 'Biblioteca BPO', firma: 'Martín Molina', sitio: 'growthpathacademy.com.co', enlace: 'https://growthpathacademy.com.co/newsletter.html', utmCampana: 'biblioteca-bpo', portada: '1920 × 1080 px (horizontal 16:9) — portada del artículo de LinkedIn' }
+  newsletter: { serie: 'Biblioteca BPO', firma: 'Martín Molina', sitio: 'growthpathacademy.com.co', enlace: 'https://growthpathacademy.com.co/newsletter.html', utmCampana: 'biblioteca-bpo', portada: '1920 × 1080 px (horizontal 16:9) — portada del artículo de LinkedIn',
+    // Web de GPA (GitHub Pages): sección GPA Insights. Colecciones = filtros de newsletter.html
+    web: {
+      repo: 'growthpathacademy/bpo2bpo', rama: 'main',
+      colecciones: [
+        { clave: 'decisiones', nombre: 'El dueño de tus decisiones', emoji: '🧠', ebook: 'El Dueño de tus Decisiones', ebookUrl: 'https://go.hotmart.com/N106441726P' },
+        { clave: 'talento', nombre: 'Líderes que despiertan talento', emoji: '🌱', ebook: 'Líderes que despiertan talento', ebookUrl: 'https://go.hotmart.com/M107178772S' },
+        { clave: 'todo-resuelto', nombre: 'Aprender a vivir sin tener todo resuelto', emoji: '🕊️', ebook: 'Aprender a Vivir Sin Tener Todo Resuelto', ebookUrl: 'https://growthpathacademy.com.co/landing/todo-resuelto/index.html' }
+      ]
+    }
+  }
 };

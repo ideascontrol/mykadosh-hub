@@ -117,6 +117,7 @@ window.GPA_PROMPTS = {
     '  "frase_final": "…",',
     '  "preguntas": ["¿…?", "¿…?"],',
     '  "cta_texto": "…",',
+    '  "resumen_web": "resumen de 1 o 2 frases (máx. 240 caracteres) para la tarjeta de la edición en la web y la meta descripción",',
     '  "linkedin": { "titulo": "título del artículo (máx. 100 caracteres)", "descripcion": "descripción SEO (máx. 140 caracteres)", "post": "texto para compartir la edición en el feed, 3 a 6 líneas, 0 a 2 emojis" },',
     '  "portada": { "descripcion": "escena para la imagen de portada", "texto_en_imagen": "texto corto para la portada" }',
     '}',

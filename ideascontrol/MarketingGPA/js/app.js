@@ -502,7 +502,7 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
   // VISTA: NEWSLETTER (Biblioteca BPO en LinkedIn) · prompt -> JSON de Claude -> Word con el diseño de la edición #020
   // Hoja «Newsletter» del Excel: una fila por edición (guarda el JSON para volver a generar el Word)
   // =====================================================================
-  const CAB_NL = ['Número', 'Fecha', 'Título', 'Subtítulo', 'Colección', 'Tema', 'Estado', 'Enlace CTA', 'Word', 'Link publicado', 'JSON'];
+  const CAB_NL = ['Número', 'Fecha', 'Título', 'Subtítulo', 'Colección', 'Tema', 'Estado', 'Enlace CTA', 'Word', 'Link publicado', 'Web', 'JSON'];
   const NLC = () => CFG.newsletter || {};
   const numNL = (x) => num(x['Número']);
   const edNL = () => (App.nl || []).filter((x) => numNL(x)).sort((a, b) => numNL(b) - numNL(a));
@@ -574,6 +574,42 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
     if (x) { if (!web) delete fila['Word']; await X.actualizarFila(CFG.hojas.newsletter, CAB_NL, x, fila); }
     else { fila['Estado'] = 'Borrador'; const r = await X.agregar(CFG.hojas.newsletter, CAB_NL, fila); r['Fecha'] = X.isoASerial(d.fecha); App.nl = (App.nl || []).concat([r]); }
   }
+  // ---------- Web de GPA (GitHub Pages) ----------
+  function configurarGithub(alGuardar) {
+    const W = GPA_WEB, rep = (NLC().web || {}).repo || 'growthpathacademy/bpo2bpo';
+    U.modal('Conectar con la web de GPA (GitHub)', '<div class="ic-form"><p class="sec" style="margin-top:0">Para publicar el newsletter en growthpathacademy.com.co, la app escribe en el repositorio <b>' + esc(rep) + '</b>. Necesita un token de GitHub que <b>se guarda solo en este navegador</b> (no en SharePoint ni en el código).</p>' +
+      '<ol class="g-pasos"><li>En GitHub (cuenta growthpathacademy): <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Settings › Developer settings › Fine-grained tokens › Generate new token ↗</a></li>' +
+      '<li><b>Repository access:</b> Only select repositories › <b>' + esc(rep.split('/')[1]) + '</b>.</li><li><b>Permissions › Repository › Contents:</b> Read and write. Nada más.</li><li>Elija la fecha de vencimiento, genere el token y péguelo aquí.</li></ol>' +
+      '<div class="ic-campo"><label for="ghT">Token</label><input id="ghT" type="password" autocomplete="off" placeholder="github_pat_…" value="' + esc(W.token()) + '"></div>' +
+      '<div class="ic-acciones">' + (W.token() ? '<button class="ic-btn sec" id="ghB">Quitar el token</button>' : '') + '<span class="espacio"></span><button class="ic-btn" id="ghG">Guardar</button></div></div>', (m) => {
+      const b = m.querySelector('#ghB'); if (b) b.onclick = () => { W.guardarToken(''); U.cerrarModal(); U.aviso('Token quitado de este navegador', 'ok'); };
+      m.querySelector('#ghG').onclick = () => { const t = m.querySelector('#ghT').value.trim(); if (t.length < 20) { U.aviso('Pegue el token completo', 'warn'); return; } W.guardarToken(t); U.cerrarModal(); U.aviso('Token guardado en este navegador', 'ok'); if (alGuardar) alGuardar(); };
+    });
+  }
+  async function publicarWeb(n, d) {
+    const W = GPA_WEB;
+    if (!W.token()) { configurarGithub(() => publicarWeb(n, d)); return; }
+    let p; try { p = await W.preparar(Object.assign({}, d, { fechaTxt: fechaNL(d.fecha) }), n); }
+    catch (e) { if (e.status === 401) { U.aviso(e.message, 'err', 8000); configurarGithub(() => publicarWeb(n, d)); return; } U.aviso(e.message, 'err', 9000); return; }
+    const col = W.coleccion(d.coleccion);
+    U.modal('Publicar ' + tNL(d.numero) + ' en la web', '<div class="ic-form"><p style="margin-top:0"><b>' + esc(lineasNL(n.titulo).join(' ')) + '</b><br><span class="sec">' + esc(fechaNL(d.fecha)) + ' · ' + col.emoji + ' ' + esc(col.nombre) + (col.ebookUrl ? '' : ' (colección nueva: se crea su filtro, sin bloque de eBook)') + '</span></p>' +
+      '<p class="sec">Cambios en growthpathacademy.com.co (un solo commit en ' + esc((NLC().web || {}).repo || '') + '):</p><ul>' + p.resumen.map((x) => '<li>' + esc(x) + '</li>').join('') + '</ul>' +
+      '<div class="g-btns"><button class="ic-btn sec chico" id="wpE">Ver HTML de la edición</button></div>' +
+      '<div class="ic-acciones"><button class="ic-btn sec" id="wpT">Cambiar token</button><span class="espacio"></span><button class="ic-btn" id="wpOk">Publicar</button></div></div>', (m) => {
+      m.querySelector('#wpE').onclick = () => { const w = window.open('', '_blank'); if (w) { w.document.open(); w.document.write(p.archivos[W.archivo(d.numero)].replace('<head>', '<head><base href="https://growthpathacademy.com.co/">')); w.document.close(); } };
+      m.querySelector('#wpT').onclick = () => configurarGithub();
+      m.querySelector('#wpOk').onclick = () => U.conCarga(m.querySelector('#wpOk'), async () => {
+        try {
+          await W.escribir(p, 'Newsletter GPA Insights ' + tNL(d.numero) + ': ' + lineasNL(n.titulo).join(' ') + ' (desde Marketing GPA)');
+          const url = W.url(d.numero), x = nlDe(d.numero);
+          if (x) { try { await X.actualizarFila(CFG.hojas.newsletter, CAB_NL, x, { 'Web': url }); } catch (e) { /* la web ya quedó */ } }
+          U.cerrarModal();
+          U.modal('Publicado en la web', '<p style="margin-top:0">La edición ' + tNL(d.numero) + ' quedó en el repositorio. GitHub Pages la muestra en 1 o 2 minutos:</p><p><a href="' + esc(url) + '" target="_blank" rel="noopener">' + esc(url) + ' ↗</a><br><a href="https://growthpathacademy.com.co/newsletter.html" target="_blank" rel="noopener">growthpathacademy.com.co/newsletter.html ↗</a></p>');
+          const raiz = document.getElementById('contenido'); if (location.hash === '#newsletter') vistaNewsletter(raiz);
+        } catch (e) { U.aviso('No se publicó: ' + e.message, 'err', 10000); }
+      });
+    });
+  }
   function vistaNewsletter(raiz) {
     const eds = edNL(), cfg = NLC(), sig = eds.length ? numNL(eds[0]) + 1 : 21;
     const ult = eds[0] || {};
@@ -582,16 +618,16 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
     raiz.innerHTML = '<div class="g-cab"><div><h1 class="ic-titulo">Newsletter · ' + esc(cfg.serie || 'Biblioteca BPO') + '</h1><p class="ic-subtitulo" style="margin:0">Edición semanal de LinkedIn con el diseño de la #020 (Word de portada azul, 16 × 24 cm).</p></div></div>' +
       (eds.length ? '<section class="ic-bloque"><div class="cab"><h2>Ediciones</h2></div><div class="cuerpo"><div class="ic-tabla-caja"><table class="ic-tabla"><thead><tr><th>#</th><th>Fecha</th><th>Título</th><th>Estado</th><th></th></tr></thead><tbody>' +
         eds.map((x) => { const n = numNL(x); return '<tr><td><b>' + tNL(n) + '</b></td><td class="nw">' + esc(fCorta(X.serialAIso(x['Fecha']))) + '</td><td>' + esc(x['Título']) + '</td><td>' + chipEstado(x['Estado'] || 'Borrador') + '</td><td><div class="g-btns" style="margin:0;flex-wrap:nowrap">' +
-          (jsonNL(x) ? '<button class="ic-btn sec chico" data-nlw="' + n + '">Word</button> <button class="ic-btn sec chico" data-nlp="' + n + '">Post</button> <button class="ic-btn sec chico" data-nli="' + n + '">Portada</button> ' : '') +
+          (jsonNL(x) ? '<button class="ic-btn sec chico" data-nlw="' + n + '" title="Para subirlo a LinkedIn">Descargar Word</button> <button class="ic-btn sec chico" data-nlp="' + n + '">Post</button> <button class="ic-btn sec chico" data-nli="' + n + '">Portada</button> ' + (x['Web'] ? '<a class="ic-btn sec chico" href="' + esc(x['Web']) + '" target="_blank" rel="noopener" title="Volver a publicar con el botón Web">En la web ↗</a> ' : '') + '<button class="ic-btn sec chico" data-nlweb="' + n + '">' + (x['Web'] ? 'Actualizar web' : 'Publicar en la web') + '</button> ' : '') +
           (x['Estado'] === 'Publicada' ? (x['Link publicado'] ? '<a class="ic-btn sec chico" href="' + esc(x['Link publicado']) + '" target="_blank" rel="noopener">Ver ↗</a>' : '') : '<button class="ic-btn chico" data-nlok="' + n + '">Publicada</button>') + '</div></td></tr>'; }).join('') +
         '</tbody></table></div></div></section>' : '') +
       '<section class="ic-bloque" style="margin-top:14px"><div class="cab"><h2>Nueva edición</h2></div><div class="cuerpo">' +
-        '<ol class="g-pasos"><li>Complete los datos y <b>copie el prompt</b>; péguelo en Claude.</li><li><b>Pegue aquí</b> la respuesta (el bloque JSON) y revise la vista previa.</li><li><b>Genere el Word</b>: se descarga, se guarda en SharePoint (Newsletter) y queda la fila en la hoja «Newsletter» del Excel.</li><li>Copie el <b>prompt de la portada</b> (imagen 1920 × 1080 con el logo adjunto) y el <b>post</b> para LinkedIn.</li></ol>' +
+        '<ol class="g-pasos"><li>Complete los datos y <b>copie el prompt</b>; péguelo en Claude.</li><li><b>Pegue aquí</b> la respuesta (el bloque JSON) y revise la vista previa.</li><li><b>Genere el Word</b>: se descarga, se guarda en SharePoint (Newsletter) y queda la fila en la hoja «Newsletter» del Excel.</li><li><b>Publique en la web</b> (GPA Insights): crea la página de la edición y actualiza newsletter.html, la edición anterior y el sitemap.</li><li>Para LinkedIn: descargue el Word, copie el <b>prompt de la portada</b> (imagen 1920 × 1080 con el logo adjunto) y el <b>post</b>.</li></ol>' +
         '<div class="ic-campos">' +
           '<div class="ic-campo c2"><label for="nN">Número</label><input type="number" id="nN" min="1" value="' + esc(f0.numero) + '"></div>' +
           '<div class="ic-campo c3"><label for="nF">Fecha de publicación</label><input type="date" id="nF" value="' + esc(f0.fecha) + '"></div>' +
           '<div class="ic-campo c3"><label for="nS">Nombre del newsletter</label><input id="nS" value="' + esc(f0.serie) + '"></div>' +
-          '<div class="ic-campo c4"><label for="nC">Colección (opcional)</label><input id="nC" value="' + esc(f0.coleccion) + '" placeholder="Ej.: Líderes que despiertan talento"></div>' +
+          '<div class="ic-campo c4"><label for="nC">Colección (opcional)</label><input id="nC" list="nCl" value="' + esc(f0.coleccion) + '" placeholder="Ej.: Líderes que despiertan talento"><datalist id="nCl">' + ((NLC().web || {}).colecciones || []).map((c) => '<option value="' + esc(c.nombre) + '">').join('') + '</datalist></div>' +
           '<div class="ic-campo c12"><label for="nT">Tema o idea de esta edición</label><textarea id="nT" rows="2" placeholder="Si lo deja vacío, Claude propone uno coherente con la colección">' + esc(f0.tema) + '</textarea></div>' +
           '<div class="ic-campo c8"><label for="nE">Enlace del llamado a la acción</label><input id="nE" list="nEl" value="' + esc(f0.enlace) + '"><datalist id="nEl">' + recursos.map((r) => '<option value="' + esc(r.enlace) + '">' + esc(r.recurso) + '</option>').join('') + '</datalist></div>' +
           '<div class="ic-campo c4"><label>Con UTM</label><div class="sec" id="nU" style="font-size:12px;word-break:break-all;padding-top:6px"></div></div>' +
@@ -620,13 +656,17 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
         } catch (e) { console.error(e); U.aviso('No se pudo crear el Word: ' + U.mensajeError(e), 'err', 9000); }
       });
       prev.querySelector('#nPost').onclick = () => copiar(postNL(n, d) || 'Sin texto de post', 'Post copiado');
+      prev.querySelector('#nWeb').onclick = () => U.conCarga(prev.querySelector('#nWeb'), async () => {
+        if (!nlDe(d.numero)) { U.aviso('Primero genere el Word y guarde la edición (paso 3).', 'warn', 6000); return; }
+        await publicarWeb(n, d);
+      });
       prev.querySelector('#nTit').onclick = () => copiar([(n.linkedin || {}).titulo || lineasNL(n.titulo).join(' '), (n.linkedin || {}).descripcion || ''].filter(Boolean).join('\n'), 'Título y descripción copiados');
       prev.querySelector('#nImg').onclick = () => copiar(promptPortadaNL(n, d), 'Prompt de portada copiado · adjunte el logo de GPA');
     };
     const mostrar = (n, d) => {
       const li = n.linkedin || {};
       raiz.querySelector('#nPrev').innerHTML = '<h2 class="g-h2">Vista previa · ' + esc(d.serie) + ' ' + tNL(d.numero) + '</h2>' +
-        '<div class="g-btns" style="margin-bottom:10px"><button class="ic-btn" id="nW">3. Generar Word y guardar</button><button class="ic-btn sec" id="nImg">Prompt portada</button><button class="ic-btn sec" id="nTit">Copiar título y descripción</button><button class="ic-btn sec" id="nPost">Copiar post</button></div>' +
+        '<div class="g-btns" style="margin-bottom:10px"><button class="ic-btn" id="nW">3. Generar Word y guardar</button><button class="ic-btn sec" id="nImg">Prompt portada</button><button class="ic-btn sec" id="nTit">Copiar título y descripción</button><button class="ic-btn sec" id="nPost">Copiar post</button><button class="ic-btn" id="nWeb">4. Publicar en la web</button></div>' +
         (li.titulo || li.post ? '<div class="g-prev"><div class="sec">Artículo de LinkedIn</div><b>' + esc(li.titulo || '') + '</b>' + (li.descripcion ? '<p class="sec" style="margin:2px 0 6px">' + esc(li.descripcion) + '</p>' : '') + (li.post ? '<pre class="g-pre chico">' + esc(li.post) + '</pre>' : '') + '</div>' : '') +
         vistaPreviaNL(n, d);
       acciones(n, d);
@@ -642,6 +682,7 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
     raiz.querySelectorAll('[data-nlw]').forEach((b) => { b.onclick = () => U.conCarga(b, async () => { const x = nlDe(b.dataset.nlw); try { await wordNL(jsonNL(x), deFila(x), false); } catch (e) { U.aviso('No se pudo crear el Word: ' + U.mensajeError(e), 'err', 9000); } }); });
     raiz.querySelectorAll('[data-nlp]').forEach((b) => { b.onclick = () => { const x = nlDe(b.dataset.nlp); copiar(postNL(jsonNL(x), deFila(x)) || 'Sin texto de post', 'Post copiado'); }; });
     raiz.querySelectorAll('[data-nli]').forEach((b) => { b.onclick = () => { const x = nlDe(b.dataset.nli); copiar(promptPortadaNL(jsonNL(x), deFila(x)), 'Prompt de portada copiado · adjunte el logo de GPA'); }; });
+    raiz.querySelectorAll('[data-nlweb]').forEach((b) => { b.onclick = () => U.conCarga(b, async () => { const x = nlDe(b.dataset.nlweb); await publicarWeb(jsonNL(x), deFila(x)); }); });
     raiz.querySelectorAll('[data-nlok]').forEach((b) => { b.onclick = () => {
       const x = nlDe(b.dataset.nlok);
       U.modal('Edición ' + tNL(numNL(x)) + ' publicada', '<div class="ic-form"><div class="ic-campo"><label for="nlL">Link del artículo en LinkedIn (opcional)</label><input id="nlL" placeholder="https://www.linkedin.com/pulse/…"></div><div class="ic-acciones"><span class="espacio"></span><button class="ic-btn" id="nlG">Guardar</button></div></div>', (m) => {
@@ -870,11 +911,13 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
         '<label class="ic-btn sec chico">' + (sinExcel ? 'Subir el Excel' : 'Reemplazar el Excel') + '<input type="file" id="aSubir" accept=".xlsx" hidden></label>' +
         '<p class="sec">La app agrega al final de «' + esc(CFG.hojas.calendario) + '» las columnas ID, Estado, Copy final, Diseño (JSON), Link publicado y Notas, y crea las hojas «Métricas», «Leads» y «Pauta» cuando se usan. Cierre el Excel en el navegador antes de guardar desde la app.</p></div></section>' +
       '<section class="ic-bloque" style="margin-top:14px"><div class="cab"><h2>Carpetas</h2></div><div class="cuerpo" id="aC"><p class="sec">Piezas (una carpeta por publicación), Semanas (Word y respaldos de Claude) e Informes.</p></div></section>' +
-      '<section class="ic-bloque" style="margin-top:14px"><div class="cab"><h2>Plantillas de los prompts</h2></div><div class="cuerpo"><div class="g-btns"><button class="ic-btn sec" data-pl="imagen">Imágenes</button><button class="ic-btn sec" data-pl="mejorar">Mejorar la semana</button><button class="ic-btn sec" data-pl="analisis">Análisis de resultados</button><button class="ic-btn sec" data-pl="newsletter">Newsletter</button></div></div></section>';
+      '<section class="ic-bloque" style="margin-top:14px"><div class="cab"><h2>Plantillas de los prompts</h2></div><div class="cuerpo"><div class="g-btns"><button class="ic-btn sec" data-pl="imagen">Imágenes</button><button class="ic-btn sec" data-pl="mejorar">Mejorar la semana</button><button class="ic-btn sec" data-pl="analisis">Análisis de resultados</button><button class="ic-btn sec" data-pl="newsletter">Newsletter</button></div></div></section>' +
+      '<section class="ic-bloque" style="margin-top:14px"><div class="cab"><h2>Web de GPA (newsletter)</h2></div><div class="cuerpo"><p class="sec" style="margin-top:0">Repositorio ' + esc((NLC().web || {}).repo || '') + ' · token de GitHub: <b>' + (GPA_WEB.token() ? 'guardado en este navegador' : 'sin configurar') + '</b></p><button class="ic-btn sec chico" id="aGh">Configurar token</button></div></section>';
     G.llamar('GET', itemDe(CFG.excel)).then((m) => { raiz.querySelector('#aX').innerHTML = '<a href="' + esc(m.webUrl) + '" target="_blank" rel="noopener">' + esc(m.name) + ' ↗</a> · modificado ' + esc(U.fmt.fechaHora(m.lastModifiedDateTime)); }).catch(() => { raiz.querySelector('#aX').textContent = 'No está todavía en SharePoint.'; });
     Promise.all(['Piezas', 'Semanas', 'Newsletter', 'Informes'].map((c) => G.llamar('GET', itemDe(CFG.carpeta + '/' + c)).then((m) => '<a href="' + esc(m.webUrl) + '" target="_blank" rel="noopener">' + c + ' ↗</a>').catch(() => c + ' (aún vacía)')))
       .then((x) => { raiz.querySelector('#aC').insertAdjacentHTML('beforeend', '<p>' + x.join(' · ') + '</p>'); });
     raiz.querySelectorAll('[data-pl]').forEach((b) => { b.onclick = () => editarPlantilla(b.dataset.pl, 'Plantilla: ' + b.textContent); });
+    raiz.querySelector('#aGh').onclick = () => configurarGithub(() => vistaArchivos(raiz, sinExcel));
     raiz.querySelector('#aSubir').onchange = async (e) => {
       const f = e.target.files[0]; if (!f) return;
       if (!sinExcel && !(await U.confirmar('Reemplazar el Excel', 'Se reemplaza ' + CFG.excel.split('/').pop() + ' en SharePoint (la versión anterior queda en el historial de versiones). ¿Continuar?', 'Reemplazar'))) return;
