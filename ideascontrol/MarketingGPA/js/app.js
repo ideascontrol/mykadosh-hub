@@ -411,6 +411,7 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
       U.conCarga(b, async () => {
         const campos = {}; ['estado', 'link', 'copyFinal', 'notas', 'fecha'].forEach((k) => { if (String(v[k] || '') !== String(p[k] || '')) campos[k] = v[k] || ''; });
         if (!Object.keys(campos).length) { U.aviso('Sin cambios', 'warn'); return; }
+        if (campos.fecha) { campos.dia = textoDia(campos.fecha); if (lunesDe(campos.fecha) !== p.semana) campos.semana = lunesDe(campos.fecha); }
         if (campos.estado === 'Publicada' && !(v.link || p.link)) U.aviso('Tip: pegue el link del post para cruzar las métricas', 'warn', 5000);
         try { await X.guardarPub(p, campos); U.aviso('Guardado en el Excel', 'ok'); vistaPub(raiz); } catch (er) { U.aviso(errorArchivo(er), 'err', 9000); }
       });
