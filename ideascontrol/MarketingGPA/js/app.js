@@ -586,6 +586,20 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
       m.querySelector('#ghG').onclick = () => { const t = m.querySelector('#ghT').value.trim(); if (t.length < 20) { U.aviso('Pegue el token completo', 'warn'); return; } W.guardarToken(t); U.cerrarModal(); U.aviso('Token guardado en este navegador', 'ok'); if (alGuardar) alGuardar(); };
     });
   }
+  // Sin token: arma los HTML con la web actual y los descarga en un ZIP para subirlos a mano
+  async function descargarWeb(n, d) {
+    const W = GPA_WEB, N = String(d.numero).padStart(3, '0');
+    let p; try { p = await W.preparar(Object.assign({}, d, { fechaTxt: fechaNL(d.fecha) }), n); } catch (e) { U.aviso(e.message, 'err', 9000); return; }
+    const blob = await W.paquete(p), nombre = 'Web_Newsletter_' + N + '.zip';
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nombre; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+    const rep = (NLC().web || {}).repo || 'growthpathacademy/bpo2bpo';
+    U.modal('HTML de la edición ' + tNL(d.numero) + ' descargados', '<div class="ic-form"><p style="margin-top:0">Se descargó <b>' + esc(nombre) + '</b> con ' + Object.keys(p.archivos).length + ' archivos:</p><ul>' +
+      Object.keys(p.archivos).map((r) => '<li><b>' + esc(r) + '</b> — ' + (r === W.archivo(d.numero) ? 'la página de esta edición' : r === 'newsletter.html' ? 'la página principal (última edición, tarjeta y filtros)' : r === 'sitemap.xml' ? 'el mapa del sitio con la URL nueva' : 'la edición anterior, con el enlace a esta') + '</li>').join('') + '</ul>' +
+      (p.resumen.filter((x) => /^Aviso/.test(x)).map((x) => '<p class="g-nota warn">' + esc(x) + '</p>').join('')) +
+      '<p class="sec">Para subirlos: descomprima el ZIP, abra <a href="https://github.com/' + esc(rep) + '/upload/main" target="_blank" rel="noopener">github.com/' + esc(rep) + ' › Add file › Upload files ↗</a>, arrastre los archivos (todos van en la raíz, reemplazan a los que tienen el mismo nombre) y pulse <b>Commit changes</b>. La web se actualiza en 1 o 2 minutos.</p>' +
+      '<p class="sec">Si sube otra edición antes de esta, vuelva a descargar el ZIP: se arma con lo que haya en la web en ese momento.</p></div>');
+    const x = nlDe(d.numero); if (x) { try { await X.actualizarFila(CFG.hojas.newsletter, CAB_NL, x, { 'Web': W.url(d.numero) }); } catch (e) { /* opcional */ } }
+  }
   async function publicarWeb(n, d) {
     const W = GPA_WEB;
     if (!W.token()) { configurarGithub(() => publicarWeb(n, d)); return; }
@@ -618,11 +632,11 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
     raiz.innerHTML = '<div class="g-cab"><div><h1 class="ic-titulo">Newsletter · ' + esc(cfg.serie || 'Biblioteca BPO') + '</h1><p class="ic-subtitulo" style="margin:0">Edición semanal de LinkedIn con el diseño de la #020 (Word de portada azul, 16 × 24 cm).</p></div></div>' +
       (eds.length ? '<section class="ic-bloque"><div class="cab"><h2>Ediciones</h2></div><div class="cuerpo"><div class="ic-tabla-caja"><table class="ic-tabla"><thead><tr><th>#</th><th>Fecha</th><th>Título</th><th>Estado</th><th></th></tr></thead><tbody>' +
         eds.map((x) => { const n = numNL(x); return '<tr><td><b>' + tNL(n) + '</b></td><td class="nw">' + esc(fCorta(X.serialAIso(x['Fecha']))) + '</td><td>' + esc(x['Título']) + '</td><td>' + chipEstado(x['Estado'] || 'Borrador') + '</td><td><div class="g-btns" style="margin:0;flex-wrap:nowrap">' +
-          (jsonNL(x) ? '<button class="ic-btn sec chico" data-nlw="' + n + '" title="Para subirlo a LinkedIn">Descargar Word</button> <button class="ic-btn sec chico" data-nlp="' + n + '">Post</button> <button class="ic-btn sec chico" data-nli="' + n + '">Portada</button> ' + (x['Web'] ? '<a class="ic-btn sec chico" href="' + esc(x['Web']) + '" target="_blank" rel="noopener" title="Volver a publicar con el botón Web">En la web ↗</a> ' : '') + '<button class="ic-btn sec chico" data-nlweb="' + n + '">' + (x['Web'] ? 'Actualizar web' : 'Publicar en la web') + '</button> ' : '') +
+          (jsonNL(x) ? '<button class="ic-btn sec chico" data-nlw="' + n + '" title="Para subirlo a LinkedIn">Descargar Word</button> <button class="ic-btn sec chico" data-nlp="' + n + '">Post</button> <button class="ic-btn sec chico" data-nli="' + n + '">Portada</button> ' + (x['Web'] ? '<a class="ic-btn sec chico" href="' + esc(x['Web']) + '" target="_blank" rel="noopener" title="Volver a publicar con el botón Web">En la web ↗</a> ' : '') + '<button class="ic-btn sec chico" data-nlhtml="' + n + '" title="ZIP con los HTML para subir a la web">HTML web</button> ' + (GPA_WEB.token() ? '<button class="ic-btn sec chico" data-nlweb="' + n + '">' + (x['Web'] ? 'Actualizar web' : 'Publicar en la web') + '</button> ' : '') : '') +
           (x['Estado'] === 'Publicada' ? (x['Link publicado'] ? '<a class="ic-btn sec chico" href="' + esc(x['Link publicado']) + '" target="_blank" rel="noopener">Ver ↗</a>' : '') : '<button class="ic-btn chico" data-nlok="' + n + '">Publicada</button>') + '</div></td></tr>'; }).join('') +
         '</tbody></table></div></div></section>' : '') +
       '<section class="ic-bloque" style="margin-top:14px"><div class="cab"><h2>Nueva edición</h2></div><div class="cuerpo">' +
-        '<ol class="g-pasos"><li>Complete los datos y <b>copie el prompt</b>; péguelo en Claude.</li><li><b>Pegue aquí</b> la respuesta (el bloque JSON) y revise la vista previa.</li><li><b>Genere el Word</b>: se descarga, se guarda en SharePoint (Newsletter) y queda la fila en la hoja «Newsletter» del Excel.</li><li><b>Publique en la web</b> (GPA Insights): crea la página de la edición y actualiza newsletter.html, la edición anterior y el sitemap.</li><li>Para LinkedIn: descargue el Word, copie el <b>prompt de la portada</b> (imagen 1920 × 1080 con el logo adjunto) y el <b>post</b>.</li></ol>' +
+        '<ol class="g-pasos"><li>Complete los datos y <b>copie el prompt</b>; péguelo en Claude.</li><li><b>Pegue aquí</b> la respuesta (el bloque JSON) y revise la vista previa.</li><li><b>Genere el Word</b>: se descarga, se guarda en SharePoint (Newsletter) y queda la fila en la hoja «Newsletter» del Excel.</li><li><b>Descargue los HTML para la web</b> (GPA Insights): un ZIP con la página de la edición, newsletter.html, la edición anterior y el sitemap, listos para subir a GitHub.</li><li>Para LinkedIn: descargue el Word, copie el <b>prompt de la portada</b> (imagen 1920 × 1080 con el logo adjunto) y el <b>post</b>.</li></ol>' +
         '<div class="ic-campos">' +
           '<div class="ic-campo c2"><label for="nN">Número</label><input type="number" id="nN" min="1" value="' + esc(f0.numero) + '"></div>' +
           '<div class="ic-campo c3"><label for="nF">Fecha de publicación</label><input type="date" id="nF" value="' + esc(f0.fecha) + '"></div>' +
@@ -656,7 +670,8 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
         } catch (e) { console.error(e); U.aviso('No se pudo crear el Word: ' + U.mensajeError(e), 'err', 9000); }
       });
       prev.querySelector('#nPost').onclick = () => copiar(postNL(n, d) || 'Sin texto de post', 'Post copiado');
-      prev.querySelector('#nWeb').onclick = () => U.conCarga(prev.querySelector('#nWeb'), async () => {
+      prev.querySelector('#nHtml').onclick = () => U.conCarga(prev.querySelector('#nHtml'), () => descargarWeb(n, d));
+      if (prev.querySelector('#nWeb')) prev.querySelector('#nWeb').onclick = () => U.conCarga(prev.querySelector('#nWeb'), async () => {
         if (!nlDe(d.numero)) { U.aviso('Primero genere el Word y guarde la edición (paso 3).', 'warn', 6000); return; }
         await publicarWeb(n, d);
       });
@@ -666,7 +681,7 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
     const mostrar = (n, d) => {
       const li = n.linkedin || {};
       raiz.querySelector('#nPrev').innerHTML = '<h2 class="g-h2">Vista previa · ' + esc(d.serie) + ' ' + tNL(d.numero) + '</h2>' +
-        '<div class="g-btns" style="margin-bottom:10px"><button class="ic-btn" id="nW">3. Generar Word y guardar</button><button class="ic-btn sec" id="nImg">Prompt portada</button><button class="ic-btn sec" id="nTit">Copiar título y descripción</button><button class="ic-btn sec" id="nPost">Copiar post</button><button class="ic-btn" id="nWeb">4. Publicar en la web</button></div>' +
+        '<div class="g-btns" style="margin-bottom:10px"><button class="ic-btn" id="nW">3. Generar Word y guardar</button><button class="ic-btn sec" id="nImg">Prompt portada</button><button class="ic-btn sec" id="nTit">Copiar título y descripción</button><button class="ic-btn sec" id="nPost">Copiar post</button><button class="ic-btn" id="nHtml">4. Descargar HTML para la web</button>' + (GPA_WEB.token() ? '<button class="ic-btn sec" id="nWeb">Publicar directo</button>' : '') + '</div>' +
         (li.titulo || li.post ? '<div class="g-prev"><div class="sec">Artículo de LinkedIn</div><b>' + esc(li.titulo || '') + '</b>' + (li.descripcion ? '<p class="sec" style="margin:2px 0 6px">' + esc(li.descripcion) + '</p>' : '') + (li.post ? '<pre class="g-pre chico">' + esc(li.post) + '</pre>' : '') + '</div>' : '') +
         vistaPreviaNL(n, d);
       acciones(n, d);
@@ -682,6 +697,7 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
     raiz.querySelectorAll('[data-nlw]').forEach((b) => { b.onclick = () => U.conCarga(b, async () => { const x = nlDe(b.dataset.nlw); try { await wordNL(jsonNL(x), deFila(x), false); } catch (e) { U.aviso('No se pudo crear el Word: ' + U.mensajeError(e), 'err', 9000); } }); });
     raiz.querySelectorAll('[data-nlp]').forEach((b) => { b.onclick = () => { const x = nlDe(b.dataset.nlp); copiar(postNL(jsonNL(x), deFila(x)) || 'Sin texto de post', 'Post copiado'); }; });
     raiz.querySelectorAll('[data-nli]').forEach((b) => { b.onclick = () => { const x = nlDe(b.dataset.nli); copiar(promptPortadaNL(jsonNL(x), deFila(x)), 'Prompt de portada copiado · adjunte el logo de GPA'); }; });
+    raiz.querySelectorAll('[data-nlhtml]').forEach((b) => { b.onclick = () => U.conCarga(b, async () => { const x = nlDe(b.dataset.nlhtml); await descargarWeb(jsonNL(x), deFila(x)); }); });
     raiz.querySelectorAll('[data-nlweb]').forEach((b) => { b.onclick = () => U.conCarga(b, async () => { const x = nlDe(b.dataset.nlweb); await publicarWeb(jsonNL(x), deFila(x)); }); });
     raiz.querySelectorAll('[data-nlok]').forEach((b) => { b.onclick = () => {
       const x = nlDe(b.dataset.nlok);
@@ -912,7 +928,7 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
         '<p class="sec">La app agrega al final de «' + esc(CFG.hojas.calendario) + '» las columnas ID, Estado, Copy final, Diseño (JSON), Link publicado y Notas, y crea las hojas «Métricas», «Leads» y «Pauta» cuando se usan. Cierre el Excel en el navegador antes de guardar desde la app.</p></div></section>' +
       '<section class="ic-bloque" style="margin-top:14px"><div class="cab"><h2>Carpetas</h2></div><div class="cuerpo" id="aC"><p class="sec">Piezas (una carpeta por publicación), Semanas (Word y respaldos de Claude) e Informes.</p></div></section>' +
       '<section class="ic-bloque" style="margin-top:14px"><div class="cab"><h2>Plantillas de los prompts</h2></div><div class="cuerpo"><div class="g-btns"><button class="ic-btn sec" data-pl="imagen">Imágenes</button><button class="ic-btn sec" data-pl="mejorar">Mejorar la semana</button><button class="ic-btn sec" data-pl="analisis">Análisis de resultados</button><button class="ic-btn sec" data-pl="newsletter">Newsletter</button></div></div></section>' +
-      '<section class="ic-bloque" style="margin-top:14px"><div class="cab"><h2>Web de GPA (newsletter)</h2></div><div class="cuerpo"><p class="sec" style="margin-top:0">Repositorio ' + esc((NLC().web || {}).repo || '') + ' · token de GitHub: <b>' + (GPA_WEB.token() ? 'guardado en este navegador' : 'sin configurar') + '</b></p><button class="ic-btn sec chico" id="aGh">Configurar token</button></div></section>';
+      '<section class="ic-bloque" style="margin-top:14px"><div class="cab"><h2>Web de GPA (newsletter)</h2></div><div class="cuerpo"><p class="sec" style="margin-top:0">Repositorio ' + esc((NLC().web || {}).repo || '') + ' · los HTML se descargan en un ZIP para subirlos a mano. Opcional: con un token de GitHub la app publica directo (<b>' + (GPA_WEB.token() ? 'token guardado en este navegador' : 'sin token') + '</b>).</p><button class="ic-btn sec chico" id="aGh">Token (opcional)</button></div></section>';
     G.llamar('GET', itemDe(CFG.excel)).then((m) => { raiz.querySelector('#aX').innerHTML = '<a href="' + esc(m.webUrl) + '" target="_blank" rel="noopener">' + esc(m.name) + ' ↗</a> · modificado ' + esc(U.fmt.fechaHora(m.lastModifiedDateTime)); }).catch(() => { raiz.querySelector('#aX').textContent = 'No está todavía en SharePoint.'; });
     Promise.all(['Piezas', 'Semanas', 'Newsletter', 'Informes'].map((c) => G.llamar('GET', itemDe(CFG.carpeta + '/' + c)).then((m) => '<a href="' + esc(m.webUrl) + '" target="_blank" rel="noopener">' + c + ' ↗</a>').catch(() => c + ' (aún vacía)')))
       .then((x) => { raiz.querySelector('#aC').insertAdjacentHTML('beforeend', '<p>' + x.join(' · ') + '</p>'); });

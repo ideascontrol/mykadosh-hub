@@ -152,7 +152,7 @@ window.GPA_WEB = (function () {
   const token = () => { try { return localStorage.getItem(CLAVE) || ''; } catch (e) { return ''; } };
   const guardarToken = (t) => { try { if (t) localStorage.setItem(CLAVE, t); else localStorage.removeItem(CLAVE); } catch (e) { /* sin almacenamiento */ } };
   async function gh(metodo, ruta, cuerpo) {
-    const r = await fetch('https://api.github.com/repos/' + (cfg().repo || 'growthpathacademy/bpo2bpo') + ruta, { method: metodo, headers: { Authorization: 'Bearer ' + token(), Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' }, body: cuerpo ? JSON.stringify(cuerpo) : undefined });
+    const r = await fetch('https://api.github.com/repos/' + (cfg().repo || 'growthpathacademy/bpo2bpo') + ruta, { method: metodo, headers: Object.assign({ Accept: 'application/vnd.github+json' }, token() ? { Authorization: 'Bearer ' + token() } : {}, cuerpo ? { 'Content-Type': 'application/json' } : {}), body: cuerpo ? JSON.stringify(cuerpo) : undefined });
     if (r.status === 404 && metodo === 'GET') return null;
     if (!r.ok) {
       let m = ''; try { m = (await r.json()).message || ''; } catch (e) { /* sin detalle */ }
@@ -162,11 +162,16 @@ window.GPA_WEB = (function () {
     return r.status === 204 ? null : r.json();
   }
   const b64aTexto = (b) => new TextDecoder('utf-8').decode(Uint8Array.from(atob(b.replace(/\n/g, '')), (c) => c.charCodeAt(0)));
-  async function leer(ruta, rama) { const r = await gh('GET', '/contents/' + ruta + '?ref=' + rama); return r ? b64aTexto(r.content) : null; }
+  // Sin token se lee el archivo público del repositorio (raw), que refleja el último cambio subido
+  async function leer(ruta, rama) {
+    if (token()) { const r = await gh('GET', '/contents/' + ruta + '?ref=' + rama); return r ? b64aTexto(r.content) : null; }
+    const r = await fetch('https://raw.githubusercontent.com/' + (cfg().repo || 'growthpathacademy/bpo2bpo') + '/' + rama + '/' + ruta + '?t=' + Date.now(), { cache: 'no-store' });
+    if (r.status === 404) return null; if (!r.ok) throw new Error('No pude leer ' + ruta + ' de la web (' + r.status + ').');
+    return r.text();
+  }
 
   // Prepara los cambios (sin escribir nada): devuelve { archivos:{ruta:texto}, resumen:[...] }
   async function preparar(d, n) {
-    if (!token()) throw new Error('Falta el token de GitHub.');
     const rama = cfg().rama || 'main', N = +d.numero;
     // Ediciones que existen en la web (puede faltar alguna: se enlaza con la anterior y la siguiente que sí existan)
     const raiz = await gh('GET', '/contents/?ref=' + rama) || [];
@@ -192,5 +197,11 @@ window.GPA_WEB = (function () {
     return nuevo.sha;
   }
   const url = (n) => 'https://growthpathacademy.com.co/' + archivo(n);
-  return { edicion, indice, navAnterior, sitemap, preparar, escribir, token, guardarToken, url, archivo, coleccion };
+  // ZIP con los archivos para subirlos a mano a la raíz del repositorio
+  async function paquete(p) {
+    const Z = window.JSZip || await new Promise((ok, mal) => { const sc = document.createElement('script'); sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'; sc.onload = () => ok(window.JSZip); sc.onerror = () => mal(new Error('No se pudo cargar el compresor ZIP.')); document.head.appendChild(sc); });
+    const z = new Z(); Object.keys(p.archivos).forEach((r) => z.file(r, p.archivos[r]));
+    return z.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+  }
+  return { paquete, edicion, indice, navAnterior, sitemap, preparar, escribir, token, guardarToken, url, archivo, coleccion };
 })();
