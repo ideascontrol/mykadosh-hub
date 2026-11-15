@@ -67,3 +67,28 @@
 .g-logo-img { width: 42px; height: 42px; object-fit: contain; display: block; }
 .g-enl-ed { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; padding: 10px 12px; background: var(--ic-fondo); border-radius: 10px; }
 .g-enl-ed input { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--ic-borde); border-radius: 8px; font: inherit; font-size: 13px; }
+
+/* Newsletter: vista previa con el diseño del Word (#020) */
+.nl-doc { max-width: 620px; margin: 10px auto 0; background: #fff; border: 1px solid var(--g-linea); border-radius: 12px; overflow: hidden; font-family: Outfit, Inter, sans-serif; color: #20242C; }
+.nl-port { background: #1B3A6B; color: #fff; padding: 56px 44px; display: flex; flex-direction: column; gap: 2px; }
+.nl-serie { color: #4FC3F7; font-weight: 700; font-size: 13px; }
+.nl-tipo { color: #C5A028; font-size: 15px; }
+.nl-num { font-size: 52px; line-height: 1.1; }
+.nl-tit { font-size: 20px; line-height: 1.25; }
+.nl-sub { color: #4FC3F7; font-size: 14px; }
+.nl-fecha { color: #C5A028; font-weight: 700; font-size: 11.5px; margin-top: 4px; }
+.nl-cuerpo { padding: 26px 44px 30px; font-size: 14px; line-height: 1.6; }
+.nl-cuerpo p { margin: 0 0 10px; text-align: justify; }
+.nl-cuerpo .nl-cita { text-align: center; color: #1B3A6B; font-weight: 700; font-size: 18px; line-height: 1.35; margin: 14px 0 16px; }
+.nl-cuerpo h4 { color: #007A78; font-size: 13px; margin: 16px 0 8px; }
+.nl-paso { display: grid; grid-template-columns: 40px 1fr; gap: 12px; margin-bottom: 10px; align-items: stretch; }
+.nl-paso > span { background: #007A78; color: #fff; font-weight: 700; display: grid; place-items: center; font-size: 15px; }
+.nl-paso b { color: #1B3A6B; display: block; font-size: 13px; }
+.nl-paso small { font-size: 12.5px; line-height: 1.45; display: block; }
+.nl-clave { background: #1B3A6B; color: #fff; text-align: center; padding: 16px 22px; margin: 12px 0; font-size: 15px; }
+.nl-cuerpo .nl-final { text-align: center; font-style: italic; }
+.nl-cuerpo .nl-q i { color: #C5A028; font-style: normal; font-weight: 700; }
+.nl-cuerpo .nl-q { text-align: left; }
+.nl-cuerpo .nl-cta, .nl-cuerpo .nl-firma { text-align: left; color: #1B3A6B; font-weight: 700; }
+.nl-cta a { color: inherit; }
+@media (max-width: 640px) { .nl-port { padding: 36px 22px; } .nl-cuerpo { padding: 20px 22px; } }

@@ -4,6 +4,7 @@
             #lista        Publicaciones (filtro por semana, red y estado) · orden Semana › Red › Fecha
             #pub/ID       Ficha: copy final, estado, enlace UTM, prompts de imagen por lámina/tramo, piezas, métricas
             #mejorar      Mejorar la semana con Claude (prompt -> JSON -> se guarda en el Excel)
+            #newsletter   Newsletter Biblioteca BPO: prompt -> JSON -> Word (diseño #020) + portada + post
             #metricas     Importar estadísticas (Meta, LinkedIn, TikTok) y ver resultados
             #leads        Leads, leads calificados y reuniones
             #pauta        Campaña paga (Talento 360™): resultados por gancho A/B
@@ -216,7 +217,7 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
   async function leerTexto(r) { const m = await G.llamar('GET', itemDe(r)); const res = await fetch(m['@microsoft.graph.downloadUrl']); if (!res.ok) throw new Error('descarga'); return (await res.text()).replace(/^﻿/, ''); }
   async function leerPlantillas() { await Promise.all(Object.keys(PR.archivos).map(async (k) => { try { App.plant[k] = await leerTexto(PR.archivos[k]); } catch (e) { /* la original */ } })); }
   function editarPlantilla(k, titulo) {
-    U.modal(titulo, '<div class="ic-form"><p class="sec" style="margin-top:0">Se guarda en SharePoint (' + esc(PR.archivos[k]) + ').' + (k === 'imagen' ? ' La app agrega al final los datos de cada pieza.' : k === 'mejorar' ? ' La app agrega el contexto de la semana, las piezas y el formato de respuesta.' : ' La app agrega los datos del periodo.') + '</p>' +
+    U.modal(titulo, '<div class="ic-form"><p class="sec" style="margin-top:0">Se guarda en SharePoint (' + esc(PR.archivos[k]) + ').' + (k === 'imagen' ? ' La app agrega al final los datos de cada pieza.' : k === 'mejorar' ? ' La app agrega el contexto de la semana, las piezas y el formato de respuesta.' : k === 'newsletter' ? ' La app agrega los datos de la edición, las ediciones anteriores, un ejemplo de estilo y el formato de respuesta.' : ' La app agrega los datos del periodo.') + '</p>' +
       '<textarea id="plT" rows="20" style="width:100%;font-family:ui-monospace,Consolas,monospace;font-size:12.5px">' + esc(App.plant[k] || PR[k]) + '</textarea>' +
       '<div class="ic-acciones"><button class="ic-btn sec" id="plO">Restaurar el original</button><span class="espacio"></span><button class="ic-btn" id="plG">Guardar en SharePoint</button></div></div>', (m) => {
       m.querySelector('#plO').onclick = () => { m.querySelector('#plT').value = PR[k]; };
@@ -230,7 +231,7 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
   // =====================================================================
   // ENCABEZADO
   // =====================================================================
-  const NAV = [['', 'Semana'], ['lista', 'Publicaciones'], ['mejorar', 'Mejorar'], ['metricas', 'Métricas'], ['leads', 'Leads'], ['pauta', 'Pauta'], ['resumen', 'Resumen'], ['plan', 'Plan'], ['archivos', 'Archivos']];
+  const NAV = [['', 'Semana'], ['lista', 'Publicaciones'], ['mejorar', 'Mejorar'], ['newsletter', 'Newsletter'], ['metricas', 'Métricas'], ['leads', 'Leads'], ['pauta', 'Pauta'], ['resumen', 'Resumen'], ['plan', 'Plan'], ['archivos', 'Archivos']];
   function pintarEncabezado() {
     const u = App.usuario;
     document.getElementById('encabezado').innerHTML = '<a href="#" class="g-marca"><img class="g-logo-img" src="' + CFG.icono + '" alt="GPA"></a>' +
@@ -498,6 +499,161 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
   }
 
   // =====================================================================
+  // VISTA: NEWSLETTER (Biblioteca BPO en LinkedIn) · prompt -> JSON de Claude -> Word con el diseño de la edición #020
+  // Hoja «Newsletter» del Excel: una fila por edición (guarda el JSON para volver a generar el Word)
+  // =====================================================================
+  const CAB_NL = ['Número', 'Fecha', 'Título', 'Subtítulo', 'Colección', 'Tema', 'Estado', 'Enlace CTA', 'Word', 'Link publicado', 'JSON'];
+  const NLC = () => CFG.newsletter || {};
+  const numNL = (x) => num(x['Número']);
+  const edNL = () => (App.nl || []).filter((x) => numNL(x)).sort((a, b) => numNL(b) - numNL(a));
+  const nlDe = (n) => edNL().find((x) => numNL(x) === +n);
+  const tNL = (n) => '#' + String(n).padStart(3, '0');
+  const jsonNL = (x) => { try { return JSON.parse(String(x['JSON'] || '')); } catch (e) { return null; } };
+  const lineasNL = (x) => (Array.isArray(x) ? x : String(x || '').split(/\n/)).map((l) => String(l).trim()).filter(Boolean);
+  const fechaNL = (iso) => { if (!iso) return ''; const d = new Date(iso + 'T12:00:00'); return pad(d.getDate()) + ' de ' + d.toLocaleDateString('es-CO', { month: 'long' }) + ', ' + d.getFullYear(); };
+  function utmNL(url, n) {
+    if (!url) return '';
+    if (/[?&]utm_/i.test(url)) return url;
+    try { const u = new URL(url); u.searchParams.set('utm_source', 'linkedin'); u.searchParams.set('utm_medium', 'newsletter'); u.searchParams.set('utm_campaign', NLC().utmCampana || 'newsletter'); u.searchParams.set('utm_content', 'NL-' + String(n).padStart(3, '0')); return u.toString(); }
+    catch (e) { return url; }
+  }
+  function promptNewsletter(f) {
+    const L = [(App.plant.newsletter || PR.newsletter).trim(), '', '═══════════════════════════════', 'DATOS DE ESTA EDICIÓN',
+      'Newsletter: ' + (f.serie || NLC().serie) + ' ' + tNL(f.numero), 'Fecha de publicación: ' + fechaNL(f.fecha)];
+    if (f.coleccion) L.push('Colección / serie de ediciones: ' + f.coleccion);
+    L.push('Tema o idea de esta edición: ' + (f.tema || 'propón uno coherente con la colección y con las ediciones anteriores'));
+    const e = App.estrategia[lunesDe(f.fecha || hoy())];
+    if (e && e.tema) L.push('Tema de la semana en el plan de contenidos (para alinear, no es obligatorio): ' + e.tema + (e.objetivo ? ' — ' + e.objetivo : ''));
+    if (f.notas) L.push('Indicaciones adicionales: ' + f.notas);
+    const ant = edNL().filter((x) => numNL(x) < +f.numero);
+    if (ant.length) { L.push('', 'EDICIONES ANTERIORES (no repitas sus ideas ni sus frases):'); ant.slice(0, 12).forEach((x) => L.push('• ' + tNL(numNL(x)) + ' · ' + limpio(x['Título']) + (x['Tema'] ? ' — ' + limpio(x['Tema']) : ''))); }
+    const ej = ant.map(jsonNL).find(Boolean);
+    if (f.referencia) L.push('', 'EDICIÓN DE REFERENCIA (copia el estilo, no el contenido):', f.referencia.trim());
+    else if (ej) L.push('', 'ÚLTIMA EDICIÓN, COMO EJEMPLO DE ESTILO (copia el estilo, no el contenido):', JSON.stringify(ej));
+    L.push('', PR.formatoNewsletter);
+    return L.join('\n');
+  }
+  function promptPortadaNL(n, d) {
+    const va = variedad('NL-' + String(d.numero).padStart(4, '0')), po = n.portada || {};
+    const L = ['', '═══════════════════════════════', 'INFORMACIÓN DE ESTA PIEZA', 'Red: LinkedIn (newsletter «' + (d.serie || NLC().serie) + '»)', 'Medidas: ' + (NLC().portada || '1920 × 1080 px (horizontal 16:9)'),
+      'Formato: portada del artículo del newsletter ' + tNL(d.numero), 'Fecha de publicación: ' + fechaNL(d.fecha),
+      'Qué se ve: ' + (po.descripcion || 'propón una escena que represente el mensaje de la edición'),
+      'Ubicación del logo (obligatoria en esta pieza): ' + va.logo,
+      'Personas (si la pieza lleva personas): ' + va.personas + '. Deben ser personas DISTINTAS a las de las imágenes anteriores de esta conversación: otra cara, edad, peinado y ropa.',
+      'Texto en la imagen (exacto): ' + (po.texto_en_imagen || lineasNL(n.titulo).join(' ')),
+      'Contexto (NO lo copies en la imagen): ' + limpio(lineasNL(n.subtitulo).join(' ') + ' ' + (n.mensaje_clave || ''))];
+    return (App.plant.imagen || PR.imagen).trim() + '\n' + L.join('\n');
+  }
+  const postNL = (n) => String((n.linkedin || {}).post || '').trim();
+  function vistaPreviaNL(n, d) {
+    const blq = (n.cuerpo || []).map((b) => { const t = typeof b === 'string' ? b : (b.texto || ''); return b.tipo === 'cita' ? '<p class="nl-cita">“' + esc(t.replace(/^[“"«]+|[”"»]+$/g, '')) + '”</p>' : '<p>' + negritas(t) + '</p>'; }).join('');
+    return '<div class="nl-doc"><div class="nl-port"><span class="nl-serie">' + esc((d.serie || '').toUpperCase()) + '</span><span class="nl-tipo">NEWSLETTER</span><b class="nl-num">' + tNL(d.numero) + '</b>' +
+      lineasNL(n.titulo).map((l) => '<b class="nl-tit">' + esc(l) + '</b>').join('') + lineasNL(n.subtitulo).map((l) => '<span class="nl-sub">' + esc(l) + '</span>').join('') +
+      '<span class="nl-fecha">' + esc(fechaNL(d.fecha)) + ' · ' + esc(NLC().sitio || CFG.contacto) + '</span></div><div class="nl-cuerpo">' + blq +
+      ((n.pasos || []).length ? '<h4>' + esc(n.lista_titulo || 'Para aplicar esta semana') + '</h4>' + n.pasos.map((p, i) => '<div class="nl-paso"><span>' + pad(i + 1) + '</span><div><b>' + esc(p.titulo) + '</b><small>' + esc(p.texto) + '</small></div></div>').join('') : '') +
+      (n.cierre_parrafo ? '<p>' + negritas(n.cierre_parrafo) + '</p>' : '') + (n.mensaje_clave ? '<div class="nl-clave">' + esc(n.mensaje_clave) + '</div>' : '') +
+      (n.frase_final ? '<p class="nl-final">' + esc(n.frase_final) + '</p>' : '') +
+      ((n.preguntas || []).length ? '<h4>Preguntas para reflexionar</h4>' + n.preguntas.map((q) => '<p class="nl-q"><i>◆</i> ' + esc(q) + '</p>').join('') : '') +
+      (n.cta_texto ? '<p class="nl-cta">' + (d.enlace ? '<a href="' + esc(d.enlace) + '" target="_blank" rel="noopener">' : '') + esc(n.cta_texto.replace(/\s*→\s*$/, '')) + ' →' + (d.enlace ? '</a>' : '') + '</p>' : '') +
+      '<p class="nl-firma">Hasta la próxima edición.<br>— ' + esc(NLC().firma || 'Martín Molina') + '</p></div></div>';
+  }
+  const negritas = (t) => esc(t).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+  async function wordNL(n, d, guardar) {
+    const blob = await GPA_DOC.newsletter({ numero: d.numero, serie: d.serie, fechaTxt: fechaNL(d.fecha), enlace: d.enlace, firma: NLC().firma, sitio: NLC().sitio, n });
+    const nombre = (d.serie || 'Newsletter').replace(/\s+/g, '_') + '_Newsletter_' + String(d.numero).padStart(3, '0') + '.docx';
+    let web = '';
+    if (guardar) { try { const r = await G.subirArchivo(CFG.carpeta + '/Newsletter/' + nombre, blob); web = r.webUrl || ''; } catch (e) { U.aviso('No se guardó en SharePoint: ' + errorArchivo(e), 'warn', 7000); } }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nombre; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+    return web;
+  }
+  async function guardarNL(n, d, web) {
+    const fila = { 'Número': +d.numero, 'Fecha': d.fecha, 'Título': lineasNL(n.titulo).join(' '), 'Subtítulo': lineasNL(n.subtitulo).join(' '), 'Colección': d.coleccion || '', 'Tema': d.tema || '',
+      'Enlace CTA': d.enlace || '', 'Word': web || '', 'JSON': JSON.stringify(n) };
+    if (fila['JSON'].length > 32000) throw new Error('La edición es demasiado larga para guardarla en una celda de Excel.');
+    const x = nlDe(d.numero);
+    if (x) { if (!web) delete fila['Word']; await X.actualizarFila(CFG.hojas.newsletter, CAB_NL, x, fila); }
+    else { fila['Estado'] = 'Borrador'; const r = await X.agregar(CFG.hojas.newsletter, CAB_NL, fila); r['Fecha'] = X.isoASerial(d.fecha); App.nl = (App.nl || []).concat([r]); }
+  }
+  function vistaNewsletter(raiz) {
+    const eds = edNL(), cfg = NLC(), sig = eds.length ? numNL(eds[0]) + 1 : 21;
+    const ult = eds[0] || {};
+    const f0 = App.nlForm || { numero: sig, fecha: hoy(), serie: cfg.serie || 'Biblioteca BPO', coleccion: ult['Colección'] || '', tema: '', notas: '', enlace: cfg.enlace || '', referencia: '' };
+    const recursos = App.recursos.filter((r) => /^https?:/.test(r.enlace));
+    raiz.innerHTML = '<div class="g-cab"><div><h1 class="ic-titulo">Newsletter · ' + esc(cfg.serie || 'Biblioteca BPO') + '</h1><p class="ic-subtitulo" style="margin:0">Edición semanal de LinkedIn con el diseño de la #020 (Word de portada azul, 16 × 24 cm).</p></div></div>' +
+      (eds.length ? '<section class="ic-bloque"><div class="cab"><h2>Ediciones</h2></div><div class="cuerpo"><div class="ic-tabla-caja"><table class="ic-tabla"><thead><tr><th>#</th><th>Fecha</th><th>Título</th><th>Estado</th><th></th></tr></thead><tbody>' +
+        eds.map((x) => { const n = numNL(x); return '<tr><td><b>' + tNL(n) + '</b></td><td class="nw">' + esc(fCorta(X.serialAIso(x['Fecha']))) + '</td><td>' + esc(x['Título']) + '</td><td>' + chipEstado(x['Estado'] || 'Borrador') + '</td><td><div class="g-btns" style="margin:0;flex-wrap:nowrap">' +
+          (jsonNL(x) ? '<button class="ic-btn sec chico" data-nlw="' + n + '">Word</button> <button class="ic-btn sec chico" data-nlp="' + n + '">Post</button> <button class="ic-btn sec chico" data-nli="' + n + '">Portada</button> ' : '') +
+          (x['Estado'] === 'Publicada' ? (x['Link publicado'] ? '<a class="ic-btn sec chico" href="' + esc(x['Link publicado']) + '" target="_blank" rel="noopener">Ver ↗</a>' : '') : '<button class="ic-btn chico" data-nlok="' + n + '">Publicada</button>') + '</div></td></tr>'; }).join('') +
+        '</tbody></table></div></div></section>' : '') +
+      '<section class="ic-bloque" style="margin-top:14px"><div class="cab"><h2>Nueva edición</h2></div><div class="cuerpo">' +
+        '<ol class="g-pasos"><li>Complete los datos y <b>copie el prompt</b>; péguelo en Claude.</li><li><b>Pegue aquí</b> la respuesta (el bloque JSON) y revise la vista previa.</li><li><b>Genere el Word</b>: se descarga, se guarda en SharePoint (Newsletter) y queda la fila en la hoja «Newsletter» del Excel.</li><li>Copie el <b>prompt de la portada</b> (imagen 1920 × 1080 con el logo adjunto) y el <b>post</b> para LinkedIn.</li></ol>' +
+        '<div class="ic-campos">' +
+          '<div class="ic-campo c2"><label for="nN">Número</label><input type="number" id="nN" min="1" value="' + esc(f0.numero) + '"></div>' +
+          '<div class="ic-campo c3"><label for="nF">Fecha de publicación</label><input type="date" id="nF" value="' + esc(f0.fecha) + '"></div>' +
+          '<div class="ic-campo c3"><label for="nS">Nombre del newsletter</label><input id="nS" value="' + esc(f0.serie) + '"></div>' +
+          '<div class="ic-campo c4"><label for="nC">Colección (opcional)</label><input id="nC" value="' + esc(f0.coleccion) + '" placeholder="Ej.: Líderes que despiertan talento"></div>' +
+          '<div class="ic-campo c12"><label for="nT">Tema o idea de esta edición</label><textarea id="nT" rows="2" placeholder="Si lo deja vacío, Claude propone uno coherente con la colección">' + esc(f0.tema) + '</textarea></div>' +
+          '<div class="ic-campo c8"><label for="nE">Enlace del llamado a la acción</label><input id="nE" list="nEl" value="' + esc(f0.enlace) + '"><datalist id="nEl">' + recursos.map((r) => '<option value="' + esc(r.enlace) + '">' + esc(r.recurso) + '</option>').join('') + '</datalist></div>' +
+          '<div class="ic-campo c4"><label>Con UTM</label><div class="sec" id="nU" style="font-size:12px;word-break:break-all;padding-top:6px"></div></div>' +
+          '<div class="ic-campo c12"><label for="nO">Indicaciones para Claude (opcional)</label><textarea id="nO" rows="2">' + esc(f0.notas) + '</textarea></div>' +
+          '<div class="ic-campo c12"><details' + (f0.referencia ? ' open' : '') + '><summary class="sec">Edición de referencia (opcional): pegue el texto de una edición anterior para que copie el estilo' + (eds.some(jsonNL) ? '. Si lo deja vacío, se usa la última guardada.' : '.') + '</summary><textarea id="nR" rows="5" style="width:100%;margin-top:6px">' + esc(f0.referencia) + '</textarea></details></div>' +
+        '</div>' +
+        '<div class="g-btns"><button class="ic-btn" id="nCopiar">1. Copiar prompt</button><button class="ic-btn sec" id="nVer">Ver prompt</button><button class="ic-btn sec" id="nPlant">Editar plantilla</button></div>' +
+        '<textarea id="nResp" rows="8" style="width:100%;margin-top:12px" placeholder="2. Pegue aquí la respuesta de Claude…"></textarea><div class="g-btns"><button class="ic-btn" id="nLeer">Leer respuesta</button></div><div id="nPrev"></div>' +
+      '</div></section>';
+    const form = () => ({ numero: +raiz.querySelector('#nN').value || sig, fecha: raiz.querySelector('#nF').value || hoy(), serie: raiz.querySelector('#nS').value.trim() || cfg.serie, coleccion: raiz.querySelector('#nC').value.trim(),
+      tema: raiz.querySelector('#nT').value.trim(), notas: raiz.querySelector('#nO').value.trim(), enlace: raiz.querySelector('#nE').value.trim(), referencia: raiz.querySelector('#nR').value.trim() });
+    const pintarU = () => { const f = form(); App.nlForm = f; raiz.querySelector('#nU').textContent = utmNL(f.enlace, f.numero) || '—'; };
+    raiz.querySelectorAll('#nN,#nF,#nS,#nC,#nT,#nE,#nO,#nR').forEach((i) => { i.oninput = pintarU; });
+    pintarU();
+    raiz.querySelector('#nCopiar').onclick = () => { const f = form(); if (nlDe(f.numero)) U.aviso('Ojo: la edición ' + tNL(f.numero) + ' ya existe; si la guarda, se reemplaza.', 'warn', 6000); copiar(promptNewsletter(f), 'Prompt copiado: péguelo en Claude'); };
+    raiz.querySelector('#nVer').onclick = () => U.modal('Prompt · newsletter ' + tNL(form().numero), '<pre class="g-pre" style="max-height:70vh">' + esc(promptNewsletter(form())) + '</pre>');
+    raiz.querySelector('#nPlant').onclick = () => editarPlantilla('newsletter', 'Plantilla: newsletter');
+    const acciones = (n, d, x) => {
+      const prev = raiz.querySelector('#nPrev');
+      prev.querySelector('#nW').onclick = () => U.conCarga(prev.querySelector('#nW'), async () => {
+        try {
+          const web = await wordNL(n, d, true);
+          try { await guardarNL(n, d, web); } catch (e) { U.aviso('El Word quedó, pero no se guardó la fila en el Excel: ' + errorArchivo(e), 'warn', 9000); return; }
+          try { await G.subirArchivo(CFG.carpeta + '/Newsletter/NL_' + String(d.numero).padStart(3, '0') + '.json', new Blob([JSON.stringify(n, null, 2)], { type: 'application/json' })); } catch (e) { /* respaldo opcional */ }
+          U.aviso('Word listo' + (web ? ' y guardado en SharePoint (Newsletter)' : '') + ' · edición ' + tNL(d.numero) + ' en la hoja «Newsletter»', 'ok', 7000);
+        } catch (e) { console.error(e); U.aviso('No se pudo crear el Word: ' + U.mensajeError(e), 'err', 9000); }
+      });
+      prev.querySelector('#nPost').onclick = () => copiar(postNL(n, d) || 'Sin texto de post', 'Post copiado');
+      prev.querySelector('#nTit').onclick = () => copiar([(n.linkedin || {}).titulo || lineasNL(n.titulo).join(' '), (n.linkedin || {}).descripcion || ''].filter(Boolean).join('\n'), 'Título y descripción copiados');
+      prev.querySelector('#nImg').onclick = () => copiar(promptPortadaNL(n, d), 'Prompt de portada copiado · adjunte el logo de GPA');
+    };
+    const mostrar = (n, d) => {
+      const li = n.linkedin || {};
+      raiz.querySelector('#nPrev').innerHTML = '<h2 class="g-h2">Vista previa · ' + esc(d.serie) + ' ' + tNL(d.numero) + '</h2>' +
+        '<div class="g-btns" style="margin-bottom:10px"><button class="ic-btn" id="nW">3. Generar Word y guardar</button><button class="ic-btn sec" id="nImg">Prompt portada</button><button class="ic-btn sec" id="nTit">Copiar título y descripción</button><button class="ic-btn sec" id="nPost">Copiar post</button></div>' +
+        (li.titulo || li.post ? '<div class="g-prev"><div class="sec">Artículo de LinkedIn</div><b>' + esc(li.titulo || '') + '</b>' + (li.descripcion ? '<p class="sec" style="margin:2px 0 6px">' + esc(li.descripcion) + '</p>' : '') + (li.post ? '<pre class="g-pre chico">' + esc(li.post) + '</pre>' : '') + '</div>' : '') +
+        vistaPreviaNL(n, d);
+      acciones(n, d);
+      raiz.querySelector('#nPrev').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    raiz.querySelector('#nLeer').onclick = () => {
+      let n; try { n = leerJson(raiz.querySelector('#nResp').value); } catch (e) { U.aviso(e.message, 'err', 9000); return; }
+      if (!lineasNL(n.titulo).length || !(n.cuerpo || []).length) { U.aviso('La respuesta no trae «titulo» y «cuerpo». Pídale a Claude que respete el formato JSON del prompt.', 'err', 9000); return; }
+      const f = form(); mostrar(n, Object.assign({}, f, { enlace: utmNL(f.enlace, f.numero) }));
+    };
+    // Ediciones guardadas
+    const deFila = (x) => ({ numero: numNL(x), fecha: X.serialAIso(x['Fecha']) || hoy(), serie: cfg.serie || 'Biblioteca BPO', coleccion: x['Colección'] || '', tema: x['Tema'] || '', enlace: x['Enlace CTA'] || '' });
+    raiz.querySelectorAll('[data-nlw]').forEach((b) => { b.onclick = () => U.conCarga(b, async () => { const x = nlDe(b.dataset.nlw); try { await wordNL(jsonNL(x), deFila(x), false); } catch (e) { U.aviso('No se pudo crear el Word: ' + U.mensajeError(e), 'err', 9000); } }); });
+    raiz.querySelectorAll('[data-nlp]').forEach((b) => { b.onclick = () => { const x = nlDe(b.dataset.nlp); copiar(postNL(jsonNL(x), deFila(x)) || 'Sin texto de post', 'Post copiado'); }; });
+    raiz.querySelectorAll('[data-nli]').forEach((b) => { b.onclick = () => { const x = nlDe(b.dataset.nli); copiar(promptPortadaNL(jsonNL(x), deFila(x)), 'Prompt de portada copiado · adjunte el logo de GPA'); }; });
+    raiz.querySelectorAll('[data-nlok]').forEach((b) => { b.onclick = () => {
+      const x = nlDe(b.dataset.nlok);
+      U.modal('Edición ' + tNL(numNL(x)) + ' publicada', '<div class="ic-form"><div class="ic-campo"><label for="nlL">Link del artículo en LinkedIn (opcional)</label><input id="nlL" placeholder="https://www.linkedin.com/pulse/…"></div><div class="ic-acciones"><span class="espacio"></span><button class="ic-btn" id="nlG">Guardar</button></div></div>', (m) => {
+        m.querySelector('#nlG').onclick = () => U.conCarga(m.querySelector('#nlG'), async () => {
+          try { await X.actualizarFila(CFG.hojas.newsletter, CAB_NL, x, { 'Estado': 'Publicada', 'Link publicado': m.querySelector('#nlL').value.trim() }); U.cerrarModal(); U.aviso('Edición marcada como publicada', 'ok'); vistaNewsletter(raiz); }
+          catch (e) { U.aviso(errorArchivo(e), 'err', 8000); }
+        });
+      });
+    }; });
+  }
+
+  // =====================================================================
   // VISTA: MÉTRICAS
   // =====================================================================
   const CAB_MET = ['ID', 'Red', 'Fecha publicación', 'Fecha corte', 'Alcance', 'Impresiones', 'Reacciones', 'Comentarios', 'Compartidos', 'Guardados', 'Clics', 'Reproducciones', 'Nuevos seguidores', 'Enlace', 'Fuente'];
@@ -714,9 +870,9 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
         '<label class="ic-btn sec chico">' + (sinExcel ? 'Subir el Excel' : 'Reemplazar el Excel') + '<input type="file" id="aSubir" accept=".xlsx" hidden></label>' +
         '<p class="sec">La app agrega al final de «' + esc(CFG.hojas.calendario) + '» las columnas ID, Estado, Copy final, Diseño (JSON), Link publicado y Notas, y crea las hojas «Métricas», «Leads» y «Pauta» cuando se usan. Cierre el Excel en el navegador antes de guardar desde la app.</p></div></section>' +
       '<section class="ic-bloque" style="margin-top:14px"><div class="cab"><h2>Carpetas</h2></div><div class="cuerpo" id="aC"><p class="sec">Piezas (una carpeta por publicación), Semanas (Word y respaldos de Claude) e Informes.</p></div></section>' +
-      '<section class="ic-bloque" style="margin-top:14px"><div class="cab"><h2>Plantillas de los prompts</h2></div><div class="cuerpo"><div class="g-btns"><button class="ic-btn sec" data-pl="imagen">Imágenes</button><button class="ic-btn sec" data-pl="mejorar">Mejorar la semana</button><button class="ic-btn sec" data-pl="analisis">Análisis de resultados</button></div></div></section>';
+      '<section class="ic-bloque" style="margin-top:14px"><div class="cab"><h2>Plantillas de los prompts</h2></div><div class="cuerpo"><div class="g-btns"><button class="ic-btn sec" data-pl="imagen">Imágenes</button><button class="ic-btn sec" data-pl="mejorar">Mejorar la semana</button><button class="ic-btn sec" data-pl="analisis">Análisis de resultados</button><button class="ic-btn sec" data-pl="newsletter">Newsletter</button></div></div></section>';
     G.llamar('GET', itemDe(CFG.excel)).then((m) => { raiz.querySelector('#aX').innerHTML = '<a href="' + esc(m.webUrl) + '" target="_blank" rel="noopener">' + esc(m.name) + ' ↗</a> · modificado ' + esc(U.fmt.fechaHora(m.lastModifiedDateTime)); }).catch(() => { raiz.querySelector('#aX').textContent = 'No está todavía en SharePoint.'; });
-    Promise.all(['Piezas', 'Semanas', 'Informes'].map((c) => G.llamar('GET', itemDe(CFG.carpeta + '/' + c)).then((m) => '<a href="' + esc(m.webUrl) + '" target="_blank" rel="noopener">' + c + ' ↗</a>').catch(() => c + ' (aún vacía)')))
+    Promise.all(['Piezas', 'Semanas', 'Newsletter', 'Informes'].map((c) => G.llamar('GET', itemDe(CFG.carpeta + '/' + c)).then((m) => '<a href="' + esc(m.webUrl) + '" target="_blank" rel="noopener">' + c + ' ↗</a>').catch(() => c + ' (aún vacía)')))
       .then((x) => { raiz.querySelector('#aC').insertAdjacentHTML('beforeend', '<p>' + x.join(' · ') + '</p>'); });
     raiz.querySelectorAll('[data-pl]').forEach((b) => { b.onclick = () => editarPlantilla(b.dataset.pl, 'Plantilla: ' + b.textContent); });
     raiz.querySelector('#aSubir').onchange = async (e) => {
@@ -746,7 +902,7 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
       try { await X.cargar(); } catch (e) { console.error(e); if (e.status === 404 || /No encontré/.test(e.message || '')) sinExcel = true; else throw e; }
       leerPlantillas().catch(() => { /* originales */ });
       if (sinExcel) { await G.sitio(CFG.sitio.host, CFG.sitio.ruta); marcarNav('archivos'); vistaArchivos(raiz, true); return; }
-      U.enrutar({ '': () => vistaSemana(raiz), lista: () => vistaLista(raiz), pub: () => vistaPub(raiz), mejorar: () => vistaMejorar(raiz), metricas: () => vistaMetricas(raiz), leads: () => vistaLeads(raiz),
+      U.enrutar({ '': () => vistaSemana(raiz), lista: () => vistaLista(raiz), pub: () => vistaPub(raiz), mejorar: () => vistaMejorar(raiz), newsletter: () => vistaNewsletter(raiz), metricas: () => vistaMetricas(raiz), leads: () => vistaLeads(raiz),
         pauta: () => vistaPauta(raiz), resumen: () => vistaResumen(raiz), plan: () => vistaPlan(raiz), archivos: () => vistaArchivos(raiz) }, marcarNav);
     } catch (e) {
       console.error(e);

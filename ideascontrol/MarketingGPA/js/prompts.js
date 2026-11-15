@@ -5,7 +5,8 @@ window.GPA_PROMPTS = {
   archivos: {
     imagen: 'Personal/Marketing GPA/Plantillas/Prompt_Imagen_GPA.txt',
     mejorar: 'Personal/Marketing GPA/Plantillas/Prompt_Mejorar_Semana_GPA.txt',
-    analisis: 'Personal/Marketing GPA/Plantillas/Prompt_Analisis_GPA.txt'
+    analisis: 'Personal/Marketing GPA/Plantillas/Prompt_Analisis_GPA.txt',
+    newsletter: 'Personal/Marketing GPA/Plantillas/Prompt_Newsletter_GPA.txt'
   },
 
   /* Imagen de cada pieza (otra IA). La app agrega al final los datos de la pieza. */
@@ -81,6 +82,45 @@ window.GPA_PROMPTS = {
     '  "notas_semana": "recomendaciones generales para la semana (opcional)"',
     '}',
     'Reglas: "laminas" solo si es carrusel (si no, []); "video" solo si es video, Reel o TikTok (si no, null). En "copy" separa párrafos con \\n\\n. No escribas nada fuera del bloque JSON.'
+  ].join('\n'),
+
+  /* Newsletter (Biblioteca BPO, LinkedIn). La app agrega: número, fecha, tema, colección, ediciones anteriores, la última como ejemplo y el formato de respuesta. */
+  newsletter: [
+    'Actúa como Martín Molina, fundador de Growth Path Academy (GPA), y escribe una nueva edición del newsletter semanal de LinkedIn «Biblioteca BPO». Lema de GPA: «Menos teoría. Más piso.»',
+    'Lectores: líderes de operación de BPO / Contact Center (supervisores, Team Leaders, jefes de operación, gerentes y líderes de calidad y de talento humano).',
+    '',
+    'Estilo (igual al de las ediciones anteriores):',
+    '1. Abre con una escena concreta del día a día de la operación (hora, turno, indicadores, una conversación pendiente). Nada de definiciones ni frases de manual.',
+    '2. Párrafos cortos (2 a 4 frases), voz del fundador, tuteo, español de Colombia. Resalta con **negrita** la frase clave de algunos párrafos (máximo una por párrafo).',
+    '3. Tres citas destacadas, cortas y memorables, repartidas entre los párrafos.',
+    '4. Tres pasos prácticos para aplicar esta semana: título corto en imperativo + 1 o 2 frases.',
+    '5. Un párrafo de cierre para quien lidera líderes, un mensaje clave de 1 o 2 frases y una frase final en tono reflexivo.',
+    '6. Dos preguntas para reflexionar, en primera persona.',
+    '7. Un llamado a la acción corto (sin el enlace; la app lo agrega).',
+    '8. Extensión del cuerpo: 350 a 550 palabras. Sin emojis en el newsletter.',
+    '9. No inventes cifras, estudios, testimonios ni casos de clientes. Si das un dato, que sea verificable; si no, plantéalo como experiencia o pregunta.',
+    '10. Si la edición es parte de una colección, conecta con las ediciones anteriores sin repetir sus ideas ni sus frases.'
+  ].join('\n'),
+
+  formatoNewsletter: [
+    'FORMATO DE RESPUESTA (obligatorio):',
+    'Responde SOLO con un bloque ```json``` con esta estructura:',
+    '{',
+    '  "tipo": "newsletter_gpa",',
+    '  "titulo": ["línea 1", "línea 2", "línea 3"],',
+    '  "subtitulo": ["pregunta en 1 o 2 líneas"],',
+    '  "cuerpo": [ { "tipo": "parrafo", "texto": "…" }, { "tipo": "cita", "texto": "…" } ],',
+    '  "lista_titulo": "título de los pasos (ej.: Para liderar en paz esta semana)",',
+    '  "pasos": [ { "titulo": "…", "texto": "…" }, { "titulo": "…", "texto": "…" }, { "titulo": "…", "texto": "…" } ],',
+    '  "cierre_parrafo": "…",',
+    '  "mensaje_clave": "…",',
+    '  "frase_final": "…",',
+    '  "preguntas": ["¿…?", "¿…?"],',
+    '  "cta_texto": "…",',
+    '  "linkedin": { "titulo": "título del artículo (máx. 100 caracteres)", "descripcion": "descripción SEO (máx. 140 caracteres)", "post": "texto para compartir la edición en el feed, 3 a 6 líneas, 0 a 2 emojis" },',
+    '  "portada": { "descripcion": "escena para la imagen de portada", "texto_en_imagen": "texto corto para la portada" }',
+    '}',
+    'Reglas: el título va partido en 2 o 3 líneas cortas; las citas van sin comillas; el cuerpo trae entre 8 y 12 bloques con 3 citas. No escribas nada fuera del bloque JSON.'
   ].join('\n'),
 
   /* Análisis de resultados */

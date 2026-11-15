@@ -6,7 +6,7 @@
    Dejar de heredar permisos y dejar solo tu cuenta.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'PER-02', nombre: 'Marketing GPA', version: '0.1.3' },
+  app: { id: 'PER-02', nombre: 'Marketing GPA', version: '0.1.4' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -24,7 +24,7 @@ window.CFG = {
     calendario: 'Calendario 6 meses', plan: 'Plan por mes', estrategia: 'Estrategia semanal', recursos: 'Recursos y enlaces',
     campana: 'Campaña paga', medicion: 'Medición y optimización', produccion: 'Producción y control', instrucciones: 'Instrucciones', lineas: 'Mapa de líneas GPA',
     // hojas que crea la app (si no existen)
-    metricas: 'Métricas', leads: 'Leads', pauta: 'Pauta'
+    metricas: 'Métricas', leads: 'Leads', pauta: 'Pauta', newsletter: 'Newsletter'
   },
   // Columnas del calendario (se buscan por el nombre del encabezado; las de la app se agregan al final si faltan)
   colsPlan: {
@@ -55,5 +55,7 @@ window.CFG = {
     nombre: 'Growth Path Academy (GPA)', lema: 'Menos teoría. Más piso.',
     colores: { navy: '#1B3A6B', teal: '#007A78', oro: '#C5A028' }, fuente: 'Outfit'
   },
-  contacto: 'growthpathacademy.com.co'
+  contacto: 'growthpathacademy.com.co',
+  // Newsletter de LinkedIn (Biblioteca BPO)
+  newsletter: { serie: 'Biblioteca BPO', firma: 'Martín Molina', sitio: 'growthpathacademy.com.co', enlace: 'https://growthpathacademy.com.co/newsletter.html', utmCampana: 'biblioteca-bpo', portada: '1920 × 1080 px (horizontal 16:9) — portada del artículo de LinkedIn' }
 };

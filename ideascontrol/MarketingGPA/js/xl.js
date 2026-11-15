@@ -83,7 +83,7 @@ window.GPA_XL = (function () {
   async function cargar() {
     sid = sid || await G.sitio(CFG.sitio.host, CFG.sitio.ruta);
     const H = CFG.hojas;
-    const [cal, est, pm, rec, lin, cam, met, lea, pau] = await Promise.all([H.calendario, H.estrategia, H.plan, H.recursos, H.lineas, H.campana, H.metricas, H.leads, H.pauta].map(rango));
+    const [cal, est, pm, rec, lin, cam, met, lea, pau, nl] = await Promise.all([H.calendario, H.estrategia, H.plan, H.recursos, H.lineas, H.campana, H.metricas, H.leads, H.pauta, H.newsletter].map(rango));
     if (!cal || !cal.values || cal.values.length < 2) throw new Error('No encontré la hoja «' + H.calendario + '» con publicaciones en el Excel.');
     calO = origen(cal);
     await asegurarColumnas(cal);
@@ -98,7 +98,7 @@ window.GPA_XL = (function () {
     App.recursos = tabla(rec).map((x) => ({ recurso: s(x['Recurso']), tipo: s(x['Tipo / uso correcto']), enlace: s(x['Enlace']), cuando: s(x['Cuándo utilizarlo']), precaucion: s(x['Precaución']) }));
     App.lineas = tabla(lin);
     App.campana = tabla(cam).map((x) => ({ k: s(x['Elemento']), v: s(x['Recomendación']) }));
-    App.met = tabla(met); App.leads = tabla(lea); App.pauta = tabla(pau);
+    App.met = tabla(met); App.leads = tabla(lea); App.pauta = tabla(pau); App.nl = tabla(nl);
     App.semanas = semanas;
   }
   const lunesDe = (iso) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
