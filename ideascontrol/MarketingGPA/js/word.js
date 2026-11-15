@@ -156,8 +156,11 @@ window.GPA_DOC = (function () {
         .concat(lineas(n.titulo).map((l) => NP(l, { bold: true, color: 'FFFFFF', size: 32 })))
         .concat(lineas(n.subtitulo).map((l) => NP(l, { color: NL.celeste, size: 22 })))
         .concat([NP(d.fechaTxt + ' · ' + (d.sitio || 'growthpathacademy.com.co'), { bold: true, color: C.oro, size: 18 })]);
-      const portada = new D.Table({ width: { size: NL.ancho, type: D.WidthType.DXA }, columnWidths: [NL.ancho], borders: sinBorde(), rows: [fila1([new D.TableCell({ width: { size: NL.ancho, type: D.WidthType.DXA },
-        shading: { fill: C.navy, type: D.ShadingType.CLEAR, color: 'auto' }, verticalAlign: D.VerticalAlign.CENTER, borders: sinBorde(), margins: { top: 1600, bottom: 1600, left: NL.margen, right: NL.margen }, children: port })], 12400)] });
+      // Tabla flotante anclada a la página (como la plantilla #020): ocupa la hoja 1 y el texto sigue en la hoja 2, sin hojas en blanco
+      const portada = new D.Table({ width: { size: NL.ancho, type: D.WidthType.DXA }, columnWidths: [NL.ancho], borders: sinBorde(),
+        float: { horizontalAnchor: D.TableAnchorType.PAGE, absoluteHorizontalPosition: 0, verticalAnchor: D.TableAnchorType.PAGE, absoluteVerticalPosition: 0, leftFromText: 0, rightFromText: 0, topFromText: 0, bottomFromText: 0, overlap: D.OverlapType.NEVER },
+        layout: D.TableLayoutType.FIXED, rows: [fila1([new D.TableCell({ width: { size: NL.ancho, type: D.WidthType.DXA },
+        shading: { fill: C.navy, type: D.ShadingType.CLEAR, color: 'auto' }, verticalAlign: D.VerticalAlign.CENTER, borders: sinBorde(), margins: { top: 1600, bottom: 1600, left: NL.margen, right: NL.margen }, children: port })], NL.alto - 1000)] });
       // Cuerpo
       const out = [];
       (n.cuerpo || []).forEach((b) => {
@@ -196,11 +199,7 @@ window.GPA_DOC = (function () {
       const pagina = (m) => ({ page: { size: { width: NL.ancho, height: NL.alto }, margin: Object.assign({ header: 708, footer: 708, gutter: 0 }, m) } });
       const doc = new D.Document({ creator: d.firma || 'Martín Molina', title: serie + ' · Newsletter ' + num + ' · ' + lineas(n.titulo).join(' '),
         styles: { default: { document: { run: { font: FUENTE, size: 21, color: NL.texto } } } },
-        sections: [
-          { properties: Object.assign(pagina({ top: 0, left: 0, right: 0, bottom: 1000 }), { type: D.SectionType.NEXT_PAGE }), footers: { default: pie },
-            children: [portada, new D.Paragraph({ spacing: { after: 0, line: 20, lineRule: D.LineRuleType.EXACT }, children: [new D.TextRun({ text: '', size: 2 })] })] },
-          { properties: Object.assign(pagina({ top: 1100, left: NL.margen, right: NL.margen, bottom: 1000 }), { type: D.SectionType.NEXT_PAGE }), headers: { default: cab }, footers: { default: pie }, children: out }
-        ] });
+        sections: [{ properties: pagina({ top: 1100, left: NL.margen, right: NL.margen, bottom: 1000 }), headers: { default: cab }, footers: { default: pie }, children: [portada].concat(out) }] });
       return await empacar(doc);
     } finally { FUENTE = ant; }
   }
