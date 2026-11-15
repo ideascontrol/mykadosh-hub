@@ -6,7 +6,7 @@
    Dejar de heredar permisos y dejar solo tu cuenta.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'PER-02', nombre: 'Marketing GPA', version: '0.1.13' },
+  app: { id: 'PER-02', nombre: 'Marketing GPA', version: '0.1.14' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -53,7 +53,7 @@ window.CFG = {
     'LinkedIn empresa': '#GrowthPathAcademy #Liderazgo #TalentoHumano',
     TikTok: '#liderazgo #talentohumano #jefes #trabajo #GPA'
   },
-  utm: { medio: 'organico', campana: 'gpa-sem-' },
+  utm: { activo: false, medio: 'organico', campana: 'gpa-sem-' },   // activo:false = enlace limpio, sin ?utm_…
   marca: {
     nombre: 'Growth Path Academy (GPA)', lema: 'Menos teoría. Más piso.',
     colores: { navy: '#1B3A6B', teal: '#007A78', oro: '#C5A028' }, fuente: 'Outfit'

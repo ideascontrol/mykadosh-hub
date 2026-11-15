@@ -56,6 +56,7 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
   const destino = (p) => p.enlace || p.enlaceRecurso || p.enlacePagina || '';
   const utmPropio = (p) => !!p.enlace && /[?&]utm_/i.test(p.enlace);   // si el enlace editado ya trae sus UTM, se usa tal cual
   function utm(p, url) {
+    if (CFG.utm.activo === false) return url || destino(p);   // enlace limpio
     if (!url && utmPropio(p)) return p.enlace;
     url = url || destino(p); if (!url) return '';
     try { const u = new URL(url); u.searchParams.set('utm_source', fuenteUtm(p.canal)); u.searchParams.set('utm_medium', CFG.utm.medio); u.searchParams.set('utm_campaign', CFG.utm.campana + p.semana); u.searchParams.set('utm_content', p.id); return u.toString(); }
