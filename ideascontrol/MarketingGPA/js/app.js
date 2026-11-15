@@ -67,7 +67,7 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
   const esGuion = (t) => /^\s*\[[^\]\n]*\]\s*$/m.test(t || '');
   const ganchoDe = (p) => dis(p).gancho || p.gancho;
   const ctaDe = (p) => dis(p).cta || p.cta;
-  const hashtagsDe = (p) => dis(p).hashtags || CFG.hashtags[p.canal] || CFG.hashtags[Object.keys(CFG.hashtags).find((k) => U.norm(p.canal).indexOf(U.norm(k)) === 0)] || '';
+  const hashtagsDe = (p) => p.hashtags || dis(p).hashtags || CFG.hashtags[p.canal] || CFG.hashtags[Object.keys(CFG.hashtags).find((k) => U.norm(p.canal).indexOf(U.norm(k)) === 0)] || '';
   function laminasTexto(t) { const out = []; String(t || '').split(/\n/).forEach((l) => { const m = l.trim().match(/^L[aá]mina\s*\d+\s*[:.\-–]\s*(.+)$/i); if (m) out.push(l.trim()); }); return out; }
   // Tramos del guion: «[0–3 s | Texto en pantalla]» + contenido; o los que devolvió Claude
   function tramos(p) {

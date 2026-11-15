@@ -76,7 +76,7 @@ window.GPA_XL = (function () {
     return {
       fila, id: s(g('id')), semana: serialAIso(g('semana')), semanaPlan: s(g('semanaPlan')), fecha: serialAIso(g('fecha')), dia: s(g('dia')), canal: s(g('canal')), formato: s(g('formato')),
       etapa: s(g('etapa')), gancho: s(g('gancho')), texto: s(g('texto')), cta: s(g('cta')), direccion: s(g('direccion')), recurso: s(g('recurso')), enlaceRecurso: s(g('enlaceRecurso')),
-      pagina: s(g('pagina')), enlacePagina: s(g('enlacePagina')), indicador: s(g('indicador')), estado: s(g('estado')) || 'Planeada', copyFinal: s(g('copyFinal')), diseno, link: s(g('link')), notas: s(g('notas')), enlace: s(g('enlace'))
+      pagina: s(g('pagina')), enlacePagina: s(g('enlacePagina')), indicador: s(g('indicador')), estado: s(g('estado')) || 'Planeada', copyFinal: s(g('copyFinal')), diseno, link: s(g('link')), notas: s(g('notas')), enlace: s(g('enlace')), hashtags: s(g('hashtags'))
     };
   }
 

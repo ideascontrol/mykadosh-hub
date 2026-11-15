@@ -6,7 +6,7 @@
    Dejar de heredar permisos y dejar solo tu cuenta.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'PER-02', nombre: 'Marketing GPA', version: '0.1.12' },
+  app: { id: 'PER-02', nombre: 'Marketing GPA', version: '0.1.13' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -30,7 +30,8 @@ window.CFG = {
   colsPlan: {
     semana: 'Semana (lunes de inicio)', semanaPlan: 'Semana del plan', fecha: 'Fecha de publicación', dia: 'Día de publicación', canal: 'Canal', formato: 'Formato',
     etapa: 'Etapa del embudo', gancho: 'Gancho', texto: 'Texto completo / guion', cta: 'CTA', direccion: 'Dirección creativa', recurso: 'Microapp / recurso GPA sugerido',
-    enlaceRecurso: 'Enlace microapp / recurso', pagina: 'Página comercial / destino', enlacePagina: 'Enlace página comercial', indicador: 'Indicador principal'
+    enlaceRecurso: 'Enlace microapp / recurso', pagina: 'Página comercial / destino', enlacePagina: 'Enlace página comercial', indicador: 'Indicador principal',
+    hashtags: 'Hashtags'   // opcional: si la columna existe y tiene texto, manda sobre los hashtags de Claude y los de cada red
   },
   colsApp: { id: 'ID', estado: 'Estado', copyFinal: 'Copy final', diseno: 'Diseño (JSON)', link: 'Link publicado', notas: 'Notas', enlace: 'Enlace destino (editado)' },
   prefijoId: 'GPA-',
