@@ -904,14 +904,57 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
   // =====================================================================
   // VISTA: PLAN (referencia del Excel)
   // =====================================================================
+  // Días fijos por red (CFG.diaFijo): mueve la fecha dentro de la misma semana, desde la semana elegida en adelante
+  const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+  function cambiosDiaFijo(desde) {
+    const reglas = CFG.diaFijo || {}, out = [];
+    App.pubs.filter((p) => p.semana >= desde && ['Publicada', 'Cancelada'].indexOf(p.estado) < 0).forEach((p) => {
+      const red = Object.keys(reglas).find((r) => U.norm(p.canal) === U.norm(r)); if (!red) return;
+      const nueva = sumar(p.semana, (reglas[red] + 6) % 7);
+      if (nueva !== p.fecha) out.push({ p, nueva });
+    });
+    return out.sort((a, b) => ordenar(a.p, b.p));
+  }
+  // Texto del día con el mismo formato que ya usa el Excel (ej.: «Lunes» o «lunes»)
+  function textoDia(iso) {
+    const n = DIAS[new Date(iso + 'T12:00:00').getDay()];
+    const ej = App.pubs.find((p) => p.dia && U.norm(p.dia) === U.norm(n));
+    if (ej) return ej.dia;
+    const otro = App.pubs.find((p) => p.dia);
+    return otro && otro.dia.charAt(0) === otro.dia.charAt(0).toUpperCase() ? n.charAt(0).toUpperCase() + n.slice(1) : n;
+  }
+  function seccionDiaFijo(raiz) {
+    const reglas = CFG.diaFijo || {}; if (!Object.keys(reglas).length) return;
+    const caja = raiz.querySelector('#pDias'), ini = App.semanas.indexOf(semanaActual()) >= 0 ? semanaActual() : semanaInicial();
+    caja.innerHTML = '<section class="ic-bloque" style="margin-bottom:14px"><div class="cab"><h2>Días de publicación</h2></div><div class="cuerpo">' +
+      '<p class="sec" style="margin-top:0">Regla: ' + Object.keys(reglas).map((r) => '<b>' + esc(r) + '</b> sale los <b>' + DIAS[reglas[r]] + '</b>').join(' · ') + '. La fecha se mueve dentro de la misma semana (no cambia la semana del plan). Las publicadas y canceladas no se tocan.</p>' +
+      '<div class="g-sel"><span class="sec">Desde la semana</span>' + selSemana('pdSem', ini) + '</div><div id="pdLista"></div></div></section>';
+    const pintar = () => {
+      const desde = caja.querySelector('#pdSem').value, cs = cambiosDiaFijo(desde), L = caja.querySelector('#pdLista');
+      L.innerHTML = cs.length ? '<div class="ic-tabla-caja" style="margin-top:8px"><table class="ic-tabla"><thead><tr><th>Semana</th><th>Red</th><th>Publicación</th><th>Fecha actual</th><th>Nueva fecha</th></tr></thead><tbody>' +
+        cs.map((c) => '<tr><td class="nw">' + esc(rangoSem(c.p.semana)) + '</td><td>' + chipRed(c.p.canal) + '</td><td>' + esc(c.p.id + ' · ' + String(ganchoDe(c.p) || '').slice(0, 60)) + '</td><td class="nw">' + esc(fDia(c.p.fecha)) + '</td><td class="nw"><b>' + esc(fDia(c.nueva)) + '</b></td></tr>').join('') +
+        '</tbody></table></div><div class="g-btns"><button class="ic-btn" id="pdAp">Cambiar ' + cs.length + ' fecha(s) en el Excel</button></div>' : '<p class="sec" style="margin:8px 0 0">✔ Desde esa semana todas cumplen la regla.</p>';
+      const b = L.querySelector('#pdAp');
+      if (b) b.onclick = () => U.conCarga(b, async () => {
+        let n = 0; const err = [];
+        for (const c of cs) { try { await X.guardarPub(c.p, { fecha: c.nueva, dia: textoDia(c.nueva) }); n++; } catch (e) { err.push(c.p.id + ': ' + errorArchivo(e)); if (e.status === 423) break; } }
+        U.aviso(n + ' fecha(s) actualizadas en el Excel' + (err.length ? ' · ' + err.join(' · ') : ''), err.length ? 'warn' : 'ok', 8000);
+        pintar();
+      });
+    };
+    caja.querySelector('#pdSem').onchange = pintar;
+    pintar();
+  }
   function vistaPlan(raiz) {
     const t = (cab, filas) => '<div class="ic-tabla-caja"><table class="ic-tabla"><thead><tr>' + cab.map((c) => '<th>' + esc(c) + '</th>').join('') + '</tr></thead><tbody>' + filas.map((f) => '<tr>' + f.map((c) => '<td>' + c + '</td>').join('') + '</tr>').join('') + '</tbody></table></div>';
     const link = (u) => u ? '<a href="' + esc(u) + '" target="_blank" rel="noopener">' + esc(u.replace(/^https?:\/\//, '').slice(0, 50)) + '</a>' : '';
     raiz.innerHTML = '<h1 class="ic-titulo">Plan GPA · 6 ciclos</h1><p class="ic-subtitulo">Tomado del Excel (hojas del plan). Para cambiarlo, edite el Excel en SharePoint.</p>' +
+      '<div id="pDias"></div>' +
       '<section class="ic-bloque"><div class="cab"><h2>Ciclos</h2></div><div class="cuerpo">' + t(['Ciclo', 'Periodo', 'Tema central', 'Objetivo', 'Oferta', 'Audiencia'], App.planMes.map((c) => [esc(c.ciclo), esc(c.periodo), esc(c.tema), esc(c.objetivo), esc(c.oferta), esc(c.audiencia)])) + '</div></section>' +
       '<section class="ic-bloque" style="margin-top:14px"><div class="cab"><h2>Estrategia semanal</h2></div><div class="cuerpo">' + t(['Semana', 'Ciclo', 'Tema', 'Objetivo', 'CTA', ''], App.semanas.map((l) => { const e = App.estrategia[l] || {}; return [esc(rangoSem(l)), esc((e.ciclo || '') + ' · ' + (e.semana || '')), '<b>' + esc(e.tema || '') + '</b>', esc(e.objetivo || ''), esc(e.cta || ''), '<a href="#mejorar/' + l + '">Mejorar</a>']; })) + '</div></section>' +
       '<section class="ic-bloque" style="margin-top:14px"><div class="cab"><h2>Recursos y enlaces</h2></div><div class="cuerpo">' + t(['Recurso', 'Uso', 'Enlace', 'Cuándo', 'Precaución'], App.recursos.map((r) => [esc(r.recurso), esc(r.tipo), link(r.enlace), esc(r.cuando), esc(r.precaucion)])) + '</div></section>' +
       (App.lineas.length ? '<section class="ic-bloque" style="margin-top:14px"><div class="cab"><h2>Mapa de líneas GPA</h2></div><div class="cuerpo">' + t(Object.keys(App.lineas[0]).filter((x) => x !== '_fila'), App.lineas.map((x) => Object.keys(x).filter((y) => y !== '_fila').map((y) => /^https?:/.test(String(x[y])) ? link(String(x[y])) : esc(x[y])))) + '</div></section>' : '');
+    seccionDiaFijo(raiz);
   }
 
   // =====================================================================

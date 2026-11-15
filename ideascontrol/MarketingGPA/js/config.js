@@ -6,7 +6,7 @@
    Dejar de heredar permisos y dejar solo tu cuenta.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'PER-02', nombre: 'Marketing GPA', version: '0.1.9' },
+  app: { id: 'PER-02', nombre: 'Marketing GPA', version: '0.1.10' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -39,6 +39,8 @@ window.CFG = {
   estados: ['Planeada', 'En producción', 'Lista', 'Programada', 'Publicada', 'Cancelada'],
   // Orden de las redes en todas las vistas
   redes: ['LinkedIn personal', 'LinkedIn empresa', 'Facebook', 'Instagram', 'TikTok'],
+  // Día fijo de publicación por red (1 = lunes). Se aplica desde «Plan › Días de publicación»
+  diaFijo: { 'LinkedIn personal': 1 },
   medidas: {
     Facebook: '1080 × 1350 px (vertical 4:5)', Instagram: '1080 × 1350 px (vertical 4:5)', LinkedIn: '1200 × 627 px (horizontal)',
     TikTok: '1080 × 1920 px (vertical 9:16)', historia: '1080 × 1920 px (vertical 9:16)'
