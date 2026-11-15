@@ -1,11 +1,11 @@
 /* =====================================================================
    Marketing GPA — publicación del newsletter en la web de GPA (GitHub Pages)
-   Repo: growthpathacademy/bpo2bpo (rama main). Actualiza en UN solo commit:
+   Repo: growthpathacademy/bpo2bpo (rama main). Arma un ZIP para subir a mano a la raíz del repositorio:
      · newsletter-0NN.html   la edición (encabezado y pie copiados de la edición anterior)
      · newsletter.html       última edición destacada, tarjeta nueva, filtros y conteos
      · newsletter-0(N-1).html enlace «Edición #0NN →» en la navegación
      · sitemap.xml           la URL nueva
-   El token de GitHub NO va en el código: se guarda solo en este navegador (localStorage).
+   Lee la web actual de los archivos públicos; no usa token ni credenciales.
    ===================================================================== */
 window.GPA_WEB = (function () {
   'use strict';
@@ -147,38 +147,22 @@ window.GPA_WEB = (function () {
     return xml.replace('</urlset>', bloque.trim() + '\n</urlset>');
   }
 
-  // ---------- GitHub ----------
-  const CLAVE = 'gpa_github_token';
-  const token = () => { try { return localStorage.getItem(CLAVE) || ''; } catch (e) { return ''; } };
-  const guardarToken = (t) => { try { if (t) localStorage.setItem(CLAVE, t); else localStorage.removeItem(CLAVE); } catch (e) { /* sin almacenamiento */ } };
-  async function gh(metodo, ruta, cuerpo) {
-    const r = await fetch('https://api.github.com/repos/' + (cfg().repo || 'growthpathacademy/bpo2bpo') + ruta, { method: metodo, headers: Object.assign({ Accept: 'application/vnd.github+json' }, token() ? { Authorization: 'Bearer ' + token() } : {}, cuerpo ? { 'Content-Type': 'application/json' } : {}), body: cuerpo ? JSON.stringify(cuerpo) : undefined });
-    if (r.status === 404 && metodo === 'GET') return null;
-    if (!r.ok) {
-      let m = ''; try { m = (await r.json()).message || ''; } catch (e) { /* sin detalle */ }
-      const e = new Error(r.status === 401 ? 'El token de GitHub no es válido o venció. Cámbielo.' : r.status === 403 || r.status === 404 ? 'El token no tiene permiso de escritura sobre el repositorio de la web (' + m + ').' : 'GitHub respondió ' + r.status + ': ' + m);
-      e.status = r.status; throw e;
-    }
-    return r.status === 204 ? null : r.json();
-  }
-  const b64aTexto = (b) => new TextDecoder('utf-8').decode(Uint8Array.from(atob(b.replace(/\n/g, '')), (c) => c.charCodeAt(0)));
-  // Sin token se lee el archivo público del repositorio (raw), que refleja el último cambio subido
+  // ---------- Lectura de la web actual (archivos públicos del repositorio; no pide credenciales) ----------
+  try { localStorage.removeItem('gpa_github_token'); } catch (e) { /* ya no se usa */ }
   async function leer(ruta, rama) {
-    if (token()) { const r = await gh('GET', '/contents/' + ruta + '?ref=' + rama); return r ? b64aTexto(r.content) : null; }
     const r = await fetch('https://raw.githubusercontent.com/' + (cfg().repo || 'growthpathacademy/bpo2bpo') + '/' + rama + '/' + ruta + '?t=' + Date.now(), { cache: 'no-store' });
     if (r.status === 404) return null; if (!r.ok) throw new Error('No pude leer ' + ruta + ' de la web (' + r.status + ').');
     return r.text();
   }
-
-  // Prepara los cambios (sin escribir nada): devuelve { archivos:{ruta:texto}, resumen:[...] }
+  // Prepara los archivos (no escribe nada en la web): devuelve { archivos:{ruta:texto}, resumen:[...] }
   async function preparar(d, n) {
     const rama = cfg().rama || 'main', N = +d.numero;
-    // Ediciones que existen en la web (puede faltar alguna: se enlaza con la anterior y la siguiente que sí existan)
-    const raiz = await gh('GET', '/contents/?ref=' + rama) || [];
-    const hay = raiz.map((f) => (String(f.name).match(/^newsletter-(\d+)\.html$/) || [])[1]).filter(Boolean).map(Number).sort((x, y) => x - y);
+    const ind = await leer('newsletter.html', rama);
+    if (!ind) throw new Error('No encontré newsletter.html en la web.');
+    // Ediciones publicadas = tarjetas de newsletter.html (puede faltar alguna: se enlaza con la anterior y la siguiente que sí existan)
+    const hay = Array.from(ind.matchAll(/<a class="nl-card" href="newsletter-(\d+)\.html"/g)).map((x) => +x[1]).sort((x, y) => x - y);
     const ant = hay.filter((x) => x < N).pop() || 0, sigN = hay.find((x) => x > N) || 0;
-    const [ind, prev, propio, sm] = await Promise.all(['newsletter.html', ant ? archivo(ant) : '', hay.indexOf(N) >= 0 ? archivo(N) : '', 'sitemap.xml'].map((r) => r ? leer(r, rama) : null));
-    if (!ind) throw new Error('No encontré newsletter.html en el repositorio de la web.');
+    const [prev, propio, sm] = await Promise.all([ant ? archivo(ant) : '', hay.indexOf(N) >= 0 ? archivo(N) : '', 'sitemap.xml'].map((r) => r ? leer(r, rama) : null));
     const base = prev || propio; if (!base) throw new Error('No encontré ninguna edición anterior en la web para copiar el encabezado y el pie.');
     const A = {}, R = [];
     A[archivo(N)] = edicion(base, d, n, { anterior: ant, siguiente: sigN }); R.push((propio ? 'Reemplaza ' : 'Crea ') + archivo(N));
@@ -188,14 +172,6 @@ window.GPA_WEB = (function () {
     if (sm) { const s2 = sitemap(sm, N); if (s2 !== sm) { A['sitemap.xml'] = s2; R.push('Agrega la URL al sitemap.xml'); } }
     return { archivos: A, resumen: R, rama };
   }
-  // Un solo commit con todos los archivos
-  async function escribir(p, mensaje) {
-    const ref = await gh('GET', '/git/ref/heads/' + p.rama), com = await gh('GET', '/git/commits/' + ref.object.sha);
-    const arbol = await gh('POST', '/git/trees', { base_tree: com.tree.sha, tree: Object.keys(p.archivos).map((r) => ({ path: r, mode: '100644', type: 'blob', content: p.archivos[r] })) });
-    const nuevo = await gh('POST', '/git/commits', { message: mensaje, tree: arbol.sha, parents: [ref.object.sha] });
-    await gh('PATCH', '/git/refs/heads/' + p.rama, { sha: nuevo.sha });
-    return nuevo.sha;
-  }
   const url = (n) => 'https://growthpathacademy.com.co/' + archivo(n);
   // ZIP con los archivos para subirlos a mano a la raíz del repositorio
   async function paquete(p) {
@@ -203,5 +179,5 @@ window.GPA_WEB = (function () {
     const z = new Z(); Object.keys(p.archivos).forEach((r) => z.file(r, p.archivos[r]));
     return z.generateAsync({ type: 'blob', compression: 'DEFLATE' });
   }
-  return { paquete, edicion, indice, navAnterior, sitemap, preparar, escribir, token, guardarToken, url, archivo, coleccion };
+  return { paquete, edicion, indice, navAnterior, sitemap, preparar, url, archivo, coleccion };
 })();
