@@ -131,6 +131,9 @@ window.GPA_WEB = (function () {
     const a = prev.indexOf('<div class="nl-nav">'); if (a < 0) return prev;
     const b = prev.indexOf('</div>', a), nav = prev.slice(a, b);
     if (nav.indexOf('href="' + href + '"') >= 0) return prev;
+    // Si ya enlaza a una edición siguiente posterior a esta, se cambia por esta (queda en orden)
+    const mSig = nav.match(/\n\s*<a href="newsletter-(\d+)\.html">Edición #\d+ →<\/a>/);
+    if (mSig && +mSig[1] > num) return prev.slice(0, a) + nav.replace(mSig[0], '\n      <a href="' + href + '">Edición #' + n3(num) + ' →</a>') + prev.slice(b);
     const v = nav.indexOf('Volver a todas las ediciones</a>');
     const ins = v >= 0 ? a + v + 'Volver a todas las ediciones</a>'.length : b;
     return prev.slice(0, ins) + '\n      <a href="' + href + '">Edición #' + n3(num) + ' →</a>' + prev.slice(ins);
@@ -165,13 +168,18 @@ window.GPA_WEB = (function () {
   async function preparar(d, n) {
     if (!token()) throw new Error('Falta el token de GitHub.');
     const rama = cfg().rama || 'main', N = +d.numero;
-    const [ind, prev, sig, propio, sm] = await Promise.all(['newsletter.html', archivo(N - 1), archivo(N + 1), archivo(N), 'sitemap.xml'].map((r) => leer(r, rama)));
+    // Ediciones que existen en la web (puede faltar alguna: se enlaza con la anterior y la siguiente que sí existan)
+    const raiz = await gh('GET', '/contents/?ref=' + rama) || [];
+    const hay = raiz.map((f) => (String(f.name).match(/^newsletter-(\d+)\.html$/) || [])[1]).filter(Boolean).map(Number).sort((x, y) => x - y);
+    const ant = hay.filter((x) => x < N).pop() || 0, sigN = hay.find((x) => x > N) || 0;
+    const [ind, prev, propio, sm] = await Promise.all(['newsletter.html', ant ? archivo(ant) : '', hay.indexOf(N) >= 0 ? archivo(N) : '', 'sitemap.xml'].map((r) => r ? leer(r, rama) : null));
     if (!ind) throw new Error('No encontré newsletter.html en el repositorio de la web.');
-    const base = prev || propio; if (!base) throw new Error('No encontré la edición anterior (' + archivo(N - 1) + ') para copiar el encabezado y el pie.');
+    const base = prev || propio; if (!base) throw new Error('No encontré ninguna edición anterior en la web para copiar el encabezado y el pie.');
     const A = {}, R = [];
-    A[archivo(N)] = edicion(base, d, n, { anterior: prev ? N - 1 : 0, siguiente: sig ? N + 1 : 0 }); R.push((propio ? 'Reemplaza ' : 'Crea ') + archivo(N));
+    A[archivo(N)] = edicion(base, d, n, { anterior: ant, siguiente: sigN }); R.push((propio ? 'Reemplaza ' : 'Crea ') + archivo(N));
     A['newsletter.html'] = indice(ind, d, n); R.push('Actualiza newsletter.html (destacada, tarjeta y filtros)');
-    if (prev) { const p2 = navAnterior(prev, N); if (p2 !== prev) { A[archivo(N - 1)] = p2; R.push('Agrega «Edición #' + n3(N) + ' →» en ' + archivo(N - 1)); } }
+    if (prev) { const p2 = navAnterior(prev, N); if (p2 !== prev) { A[archivo(ant)] = p2; R.push('Agrega «Edición #' + n3(N) + ' →» en ' + archivo(ant)); } }
+    if (ant && ant < N - 1) R.push('Aviso: en la web no hay ' + (N - ant - 1 === 1 ? 'la edición #' + n3(N - 1) : 'las ediciones #' + n3(ant + 1) + ' a #' + n3(N - 1)) + '; esta queda enlazada con la #' + n3(ant) + '.');
     if (sm) { const s2 = sitemap(sm, N); if (s2 !== sm) { A['sitemap.xml'] = s2; R.push('Agrega la URL al sitemap.xml'); } }
     return { archivos: A, resumen: R, rama };
   }
