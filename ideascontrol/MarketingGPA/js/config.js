@@ -6,7 +6,7 @@
    Dejar de heredar permisos y dejar solo tu cuenta.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'PER-02', nombre: 'Marketing GPA', version: '0.1.2' },
+  app: { id: 'PER-02', nombre: 'Marketing GPA', version: '0.1.3' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -32,7 +32,7 @@ window.CFG = {
     etapa: 'Etapa del embudo', gancho: 'Gancho', texto: 'Texto completo / guion', cta: 'CTA', direccion: 'Dirección creativa', recurso: 'Microapp / recurso GPA sugerido',
     enlaceRecurso: 'Enlace microapp / recurso', pagina: 'Página comercial / destino', enlacePagina: 'Enlace página comercial', indicador: 'Indicador principal'
   },
-  colsApp: { id: 'ID', estado: 'Estado', copyFinal: 'Copy final', diseno: 'Diseño (JSON)', link: 'Link publicado', notas: 'Notas' },
+  colsApp: { id: 'ID', estado: 'Estado', copyFinal: 'Copy final', diseno: 'Diseño (JSON)', link: 'Link publicado', notas: 'Notas', enlace: 'Enlace destino (editado)' },
   prefijoId: 'GPA-',
   formatoFecha: 'dd/mm/yyyy',
 

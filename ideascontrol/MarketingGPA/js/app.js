@@ -51,8 +51,11 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
   const chipEstado = (e) => '<span class="g-est e-' + U.norm(e || 'planeada').replace(/\s+/g, '-') + '">' + esc(e || 'Planeada') + '</span>';
   const pubDe = (id) => App.pubs.find((p) => p.id === id);
   const fuenteUtm = (c) => { const n = U.norm(c); return /linkedin/.test(n) ? 'linkedin' : /instagram/.test(n) ? 'instagram' : /facebook/.test(n) ? 'facebook' : /tiktok/.test(n) ? 'tiktok' : 'otro'; };
-  const destino = (p) => p.enlaceRecurso || p.enlacePagina || '';
+  // Destino del enlace: el editado en la ficha manda sobre el del plan
+  const destino = (p) => p.enlace || p.enlaceRecurso || p.enlacePagina || '';
+  const utmPropio = (p) => !!p.enlace && /[?&]utm_/i.test(p.enlace);   // si el enlace editado ya trae sus UTM, se usa tal cual
   function utm(p, url) {
+    if (!url && utmPropio(p)) return p.enlace;
     url = url || destino(p); if (!url) return '';
     try { const u = new URL(url); u.searchParams.set('utm_source', fuenteUtm(p.canal)); u.searchParams.set('utm_medium', CFG.utm.medio); u.searchParams.set('utm_campaign', CFG.utm.campana + p.semana); u.searchParams.set('utm_content', p.id); return u.toString(); }
     catch (e) { return url; }
@@ -346,7 +349,12 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
         '<div class="g-acc">' + (ant ? '<a class="ic-btn sec chico" href="#pub/' + esc(ant.id) + '">‹ ' + esc(ant.canal) + '</a>' : '') + (sig ? '<a class="ic-btn sec chico" href="#pub/' + esc(sig.id) + '">' + esc(sig.canal) + ' ›</a>' : '') + '</div></div>' +
       '<div class="g-ficha"><div class="g-col">' +
         '<section class="ic-bloque"><div class="cab"><h2>📣 Para publicar</h2><button class="ic-btn chico" id="pCopiar">Copiar copy</button></div><div class="cuerpo"><pre class="g-pre" id="pCopy">' + esc(copyPublicar(p)) + '</pre>' +
-          (destino(p) ? '<div class="g-enlace"><b>Enlace con UTM</b><code>' + esc(utm(p)) + '</code><div class="g-btns"><button class="ic-btn sec chico" id="pUtm">Copiar enlace</button><a class="ic-btn sec chico" href="' + esc(utm(p)) + '" target="_blank" rel="noopener">Probar ↗</a></div><span class="sec">' + esc(notaEnlace(p)) + '</span></div>' : '') +
+          '<div class="g-enlace"><b>Enlace con UTM</b>' + (p.enlace ? ' <span class="sec">(editado)</span>' : '') +
+            (destino(p) ? '<code>' + esc(utm(p)) + '</code><div class="g-btns"><button class="ic-btn sec chico" id="pUtm">Copiar enlace</button><a class="ic-btn sec chico" href="' + esc(utm(p)) + '" target="_blank" rel="noopener">Probar ↗</a><button class="ic-btn sec chico" id="pEnl">Cambiar enlace</button></div><span class="sec">' + esc(notaEnlace(p)) + '</span>'
+              : '<p class="sec" style="margin:4px 0">Esta publicación no tiene enlace.</p><div class="g-btns"><button class="ic-btn sec chico" id="pEnl">Agregar enlace</button></div>') +
+            '<form id="pEnlF" class="g-enl-ed" hidden><label class="sec" for="pEnlI">Enlace de destino</label><input id="pEnlI" type="url" value="' + esc(p.enlace || p.enlaceRecurso || p.enlacePagina || '') + '" placeholder="https://…">' +
+            '<span class="sec">Pegue la dirección a donde debe llevar. Sin <code>utm_</code>, la app le agrega los UTM de la publicación; si la pega con sus propios <code>utm_</code>, se usa tal cual.</span>' +
+            '<div class="g-btns"><button class="ic-btn chico" type="submit">Guardar enlace</button>' + (p.enlace ? '<button class="ic-btn sec chico" type="button" id="pEnlR">Volver al del plan</button>' : '') + '<button class="ic-btn sec chico" type="button" id="pEnlC">Cancelar</button></div></form></div>' +
           (guion(p) ? '<details class="g-det" open><summary>🎬 Guion del video</summary><pre class="g-pre">' + esc(guion(p)) + '</pre><button class="ic-btn sec chico" id="pGuion">Copiar guion</button></details>' : '') + '</div></section>' +
         '<section class="ic-bloque"><div class="cab"><h2>🖼️ Prompt para la imagen</h2><span class="sec">' + esc(medidas(p)) + '</span></div><div class="cuerpo">' +
           '<p class="sec" style="margin:0 0 8px">' + (ps.length ? (esVideo(p) ? 'Video de ' + ps.length + ' tramos: portada y un prompt por tramo.' : ps.length + ' láminas: un prompt por lámina.') + ' Péguelos en orden en la misma conversación y adjunte el logo en el primero.' : 'Copie el prompt, péguelo en la IA de imágenes y adjunte el logo de GPA.') + '</p>' +
@@ -374,6 +382,21 @@ const App = { usuario: null, pubs: [], semanas: [], estrategia: {}, planMes: [],
       '</div></div>';
     raiz.querySelector('#pCopiar').onclick = () => copiar(copyPublicar(p), 'Copy copiado');
     const bu = raiz.querySelector('#pUtm'); if (bu) bu.onclick = () => copiar(utm(p), 'Enlace copiado');
+    // Cambiar el enlace de destino (se guarda en el Excel, columna «Enlace destino (editado)»)
+    const fE = raiz.querySelector('#pEnlF');
+    raiz.querySelector('#pEnl').onclick = () => { fE.hidden = false; const i = fE.querySelector('#pEnlI'); i.focus(); i.select(); };
+    fE.querySelector('#pEnlC').onclick = () => { fE.hidden = true; };
+    const guardarEnlace = async (val, msg) => {
+      try { await X.guardarPub(p, { enlace: val }); U.aviso(msg, 'ok'); vistaPub(raiz); } catch (er) { U.aviso(errorArchivo(er), 'err', 9000); }
+    };
+    const br = fE.querySelector('#pEnlR'); if (br) br.onclick = () => guardarEnlace('', 'Se usa de nuevo el enlace del plan');
+    fE.onsubmit = (e) => {
+      e.preventDefault();
+      const val = fE.querySelector('#pEnlI').value.trim();
+      if (val && !/^https?:\/\/\S+$/i.test(val)) { U.aviso('Escriba una dirección completa que empiece por https://', 'warn'); return; }
+      const plan = p.enlaceRecurso || p.enlacePagina || '';
+      U.conCarga(fE.querySelector('[type=submit]'), () => guardarEnlace(val === plan ? '' : val, 'Enlace guardado'));
+    };
     const bg = raiz.querySelector('#pGuion'); if (bg) bg.onclick = () => copiar(guion(p), 'Guion copiado');
     enlazarPrompts(raiz, 'data-pi');
     raiz.querySelector('#pVer').onclick = () => { const t = promptImagen(p, ps.length && !esVideo(p) ? 1 : 0); U.modal('Prompt de la imagen · ' + p.id, '<div class="ic-form"><pre class="g-pre" style="max-height:60vh">' + esc(t) + '</pre><div class="ic-acciones"><span class="espacio"></span><button class="ic-btn" id="vC">Copiar</button></div></div>', (mm) => { mm.querySelector('#vC').onclick = () => copiar(t); }); };

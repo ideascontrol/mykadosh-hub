@@ -65,3 +65,5 @@
   .g-nav a { white-space: nowrap; }
 }
 .g-logo-img { width: 42px; height: 42px; object-fit: contain; display: block; }
+.g-enl-ed { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; padding: 10px 12px; background: var(--ic-fondo); border-radius: 10px; }
+.g-enl-ed input { width: 100%; box-sizing: border-box; padding: 8px 10px; border: 1px solid var(--ic-borde); border-radius: 8px; font: inherit; font-size: 13px; }
