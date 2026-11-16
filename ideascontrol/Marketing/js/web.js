@@ -100,6 +100,26 @@ window.MKT_WEB = (function () {
     document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
   }
 
+  // Ayuda: procedimiento completo para subir los dos archivos a GitHub (a mano)
+  const AYUDA = '<details class="w-ayuda" style="margin-top:12px;border:1px solid #DCE4EA;border-radius:8px;padding:8px 12px"><summary style="cursor:pointer;font-weight:700">? Paso a paso para publicar (GitHub)</summary>' +
+    '<div style="font-size:13.5px;line-height:1.5">' +
+    '<p><b>Qué se publica.</b> Cada artículo son dos archivos en el repositorio <b>ideascontrol/mykadosh-hub</b>, carpeta <b>ideascontrol/Recursos</b>:</p>' +
+    '<ul><li><code>&lt;dirección&gt;/index.html</code>: la página del artículo (una carpeta por artículo).</li><li><code>articulos.js</code>: la lista de todos los artículos, del más reciente al más antiguo. Es la que alimenta la página «Artículos» y «Más artículos».</li></ul>' +
+    '<p><b>Antes de empezar:</b> entre a github.com con la cuenta que tiene permiso de escritura en ideascontrol/mykadosh-hub.</p>' +
+    '<p><b>A. La página del artículo</b></p><ol>' +
+    '<li>Pulse <b>1. Descargar index.html</b>.</li>' +
+    '<li>Pulse el enlace <b>Crear la carpeta del artículo ↗</b>. GitHub abre «Create new file» con el nombre ya escrito: <code>&lt;dirección&gt;/index.html</code>. (Si lo escribe a mano, la barra <code>/</code> crea la carpeta.)</li>' +
+    '<li>Abra el index.html descargado con el Bloc de notas, seleccione todo (Ctrl+A), copie (Ctrl+C) y péguelo en el editor de GitHub (Ctrl+V).</li>' +
+    '<li>Pulse <b>Commit changes…</b> y luego <b>Commit changes</b> (deje «Commit directly to the main branch»).</li></ol>' +
+    '<p>Si el artículo ya existía (se está corrigiendo): abra la carpeta del artículo en GitHub, entre a <code>index.html</code>, pulse el lápiz (Edit), borre todo, pegue el nuevo y haga commit.</p>' +
+    '<p><b>B. La lista de artículos</b></p><ol>' +
+    '<li>Pulse <b>2. Descargar articulos.js</b>. Si el navegador lo renombra (por ejemplo <code>articulos (1).js</code>), cámbiele el nombre a <code>articulos.js</code>.</li>' +
+    '<li>Pulse el enlace <b>Subir articulos.js ↗</b>: abre «Upload files» dentro de ideascontrol/Recursos.</li>' +
+    '<li>Arrastre el archivo y pulse <b>Commit changes</b>. Reemplaza al que había.</li></ol>' +
+    '<p><b>C. Verificar</b></p><ol><li>Espere 1 o 2 minutos.</li><li>Abra <a href="' + BASE + '" target="_blank" rel="noopener">mykadosh.com/ideascontrol/Recursos ↗</a> y recargue con Ctrl+F5: el artículo nuevo debe salir de primero.</li><li>Abra el artículo y revise título, fecha, tema y el botón de la herramienta.</li></ol>' +
+    '<p class="sec"><b>Ojo:</b> descargue <code>articulos.js</code> justo antes de subirlo. Se arma con la lista que está publicada en ese momento; si sube dos artículos, haga el primero completo (A y B) antes de descargar el segundo, o la lista del segundo no traerá el primero.</p>' +
+    '</div></details>';
+
   // Diálogo: n = JSON del newsletter, ctx = { lunes, destino (URL de la herramienta del tema), tema (categoría sugerida) }
   async function dialogo(n, ctx) {
     let lista; try { lista = await listaActual(); } catch (e) { U.aviso(e.message, 'err', 8000); return; }
@@ -111,7 +131,7 @@ window.MKT_WEB = (function () {
       '<div class="ic-campo c3"><label for="wFecha">Fecha</label><input type="date" id="wFecha" value="' + esc(ctx.lunes) + '"></div>' +
       '<div class="ic-campo c3"><label for="wHer">Herramienta del final</label><select id="wHer">' + HERR.map((h) => '<option value="' + h.clave + '"' + (h.clave === her0 ? ' selected' : '') + '>' + esc(h.nombre) + '</option>').join('') + '</select></div>' +
       '</div><div id="wAviso"></div><div class="ic-acciones" style="justify-content:flex-start;flex-wrap:wrap"><button class="ic-btn" id="wB1">1. Descargar index.html</button><button class="ic-btn" id="wB2">2. Descargar articulos.js</button><button class="ic-btn sec" id="wVer">Ver el artículo</button></div>' +
-      '<div class="sec" id="wPasos" style="margin-top:10px"></div></div>', (m) => {
+      '<div class="sec" id="wPasos" style="margin-top:10px"></div>' + AYUDA + '</div>', (m) => {
       const opts = () => ({ slug: slugDe(m.querySelector('#wSlug').value) || slug0, tema: m.querySelector('#wTema').value.trim() || 'Tiempo y asistencia', fecha: m.querySelector('#wFecha').value || ctx.lunes, herramienta: m.querySelector('#wHer').value });
       const pintar = () => {
         const o = opts(), r = armar(n, o, lista), repo = 'https://github.com/ideascontrol/mykadosh-hub';
