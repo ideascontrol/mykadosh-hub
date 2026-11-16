@@ -1,6 +1,34 @@
 /* Centro de conocimiento de Ideas Control: lista de artículos (newsletters). Generado por scratchpad/news/gen.py. */
 window.IC_ARTICULOS = [
  {
+  "slug": "control-de-asistencia-remoto",
+  "titulo": "Control de asistencia remoto: ¿y si tu equipo no trabaja siempre en sede?",
+  "titulo1": "Control de asistencia remoto:",
+  "titulo2": "¿y si tu equipo no trabaja siempre en sede?",
+  "resumen": "Tu forma de registrar asistencia debería seguir a tu operación, no obligarla a pasar por la puerta de una sede.",
+  "tema": "Asistencia remota",
+  "fecha": "2026-11-16",
+  "fecha_txt": "16 de noviembre de 2026",
+  "minutos": 4,
+  "herramienta": "Diagnóstico de Madurez en Tiempo y Asistencia",
+  "herramienta_url": "https://www.mykadosh.com/ideascontrol/DiagnosticoMadurezTyA/",
+  "url": "https://www.mykadosh.com/ideascontrol/Recursos/control-de-asistencia-remoto/"
+ },
+ {
+  "slug": "gestion-manual-de-asistencia",
+  "titulo": "Si tres personas revisan el mismo archivo de asistencia… tal vez no te falta personal",
+  "titulo1": "Si tres personas revisan el mismo archivo de asistencia…",
+  "titulo2": "tal vez no te falta personal",
+  "resumen": "Cuando la gestión de asistencia depende de archivos que pasan de mano en mano, el esfuerzo se duplica y nadie sabe con certeza cuál es la versión válida.",
+  "tema": "Procesos manuales",
+  "fecha": "2026-11-09",
+  "fecha_txt": "9 de noviembre de 2026",
+  "minutos": 4,
+  "herramienta": "Diagnóstico de Madurez en Tiempo y Asistencia",
+  "herramienta_url": "https://www.mykadosh.com/ideascontrol/DiagnosticoMadurezTyA/",
+  "url": "https://www.mykadosh.com/ideascontrol/Recursos/gestion-manual-de-asistencia/"
+ },
+ {
   "slug": "reportes-de-asistencia-a-tiempo",
   "titulo": "¿Tomas decisiones con información del pasado?",
   "titulo1": "¿Tomas decisiones",
