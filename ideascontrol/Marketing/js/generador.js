@@ -224,6 +224,15 @@ window.MKT_GEN = (function () {
     const previas = (i >= 0 ? v.slice(0, i) : v).trim();
     return (previas ? previas + '\n\n' : '') + nuevas;
   }
+  // Copy del post de LinkedIn que comparte el newsletter (no es el newsletter). Si Claude no lo trajo, se arma uno corto con la bajada y la pregunta.
+  function copyLinkedinNewsletter(n) {
+    let c = String(n.copy_linkedin || '').trim();
+    if (!c) {
+      const preg = (n.bloques || []).filter((b) => b && b.tipo === 'pregunta').map((b) => b.destacado || b.titulo).filter(Boolean)[0] || '';
+      c = [n.titulo, n.bajada, 'Lo desarrollo en la edición de esta semana del newsletter 👇', preg].filter(Boolean).join('\n\n');
+    }
+    return [sinNegritas(enlacePlano(c, ST.etiqueta || 'el enlace')).trim(), GC.hashtags.linkedinPersonal || ''].filter(Boolean).join('\n\n');
+  }
   function textoNewsletter(n, url) {
     const L2 = [n.titulo, n.bajada || ''];
     (n.bloques || []).forEach((b) => {
@@ -334,7 +343,7 @@ window.MKT_GEN = (function () {
     const notas = MARCA_NOTAS + ' ' + new Date().toLocaleDateString('es-CO') + '\nSEO · Keyword principal: ' + (f.keyword || '') + '\nKeywords secundarias: ' + (f.keywords_secundarias || '') +
       '\nIntención de búsqueda: ' + (f.intencion || '') + '\nFrase destacable (pieza gráfica): ' + (f.frase_destacable || '') +
       ([].concat(f.recomendacion || []).filter(Boolean).length ? '\n\nRecomendación estratégica:\n' + [].concat(f.recomendacion).filter(Boolean).map((r) => '• ' + r).join('\n') : '') + '\n\nEl Word con el diseño está en las piezas de esta publicación.';
-    const campos = { copy: textoNewsletter(n, url), formato: 'Artículo / Newsletter', titulo: String(n.titulo || t.tema).slice(0, 250), utm_url: url, pieza_ruta: CFG.carpetaPiezas + '/' + id };
+    const campos = { copy: copyLinkedinNewsletter(n), formato: 'Artículo / Newsletter', titulo: String(n.titulo || t.tema).slice(0, 250), utm_url: url, pieza_ruta: CFG.carpetaPiezas + '/' + id };
     if (p && editable) {
       campos.notas = unirNotas(p.notas, notas);
       if (p.estado !== 'En producción') {
@@ -514,6 +523,7 @@ window.MKT_GEN = (function () {
       const n = Lr.datos;
       html += '<h3 class="gen-h3">Vista previa</h3><div class="gen-news"><h4>' + esc(n.titulo) + '</h4>' + (n.bajada ? '<p><b>' + esc(n.bajada) + '</b></p>' : '') +
         '<p class="sec">' + (n.bloques || []).length + ' bloques: ' + esc((n.bloques || []).map((b) => b && b.tipo).filter(Boolean).join(', ')) + '</p>' +
+        '<p class="sec" style="margin:8px 0 2px"><b>Copy del post de LinkedIn</b>' + (n.copy_linkedin ? '' : ' <span class="gen-aviso" style="display:inline;padding:1px 6px">Claude no lo trajo: se arma uno corto con la bajada; mejor pídaselo</span>') + '</p><pre style="white-space:pre-wrap;font:inherit;font-size:13px;background:#F6F9FB;border:1px solid #DCE4EA;border-radius:6px;padding:8px 10px;margin:0 0 6px">' + esc(copyLinkedinNewsletter(n)) + '</pre>' +
         ((n.ficha || {}).keyword ? '<p class="sec">Keyword principal: <b>' + esc(n.ficha.keyword) + '</b>' + (n.ficha.frase_destacable ? ' · Frase destacable: «' + esc(n.ficha.frase_destacable) + '»' : '') + '</p>' : '') + '</div>';
     }
     html += '<div class="ic-form" style="margin-top:14px"><div class="ic-campos">' +

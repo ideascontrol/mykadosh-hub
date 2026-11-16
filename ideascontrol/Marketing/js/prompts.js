@@ -206,9 +206,16 @@ window.MKT_PROMPTS = {
     '  ],',
     '  "cta": { "titulo": "TEXTO EN MAYÚSCULAS", "texto": "", "enlace_texto": "frase final de acción terminada en {{ENLACE}} (nunca escribas URLs)" },',
     '  "cierre": "frase final",',
+    '  "copy_linkedin": "post para el feed de LinkedIn que acompaña la publicación del newsletter (ver reglas abajo)",',
     '  "ficha": { "cta": "", "keyword": "", "keywords_secundarias": "", "intencion": "", "frase_destacable": "", "recomendacion": ["", ""] }',
     '}',
     '```',
-    'Los bloques van en el orden de lectura y puedes repetir tipos (varios "parrafos" y "subtitulo"). No escribas el teléfono ni el correo: la app los agrega. Escapa las comillas dobles dentro del texto como \\".'
+    'Los bloques van en el orden de lectura y puedes repetir tipos (varios "parrafos" y "subtitulo"). No escribas el teléfono ni el correo: la app los agrega. Escapa las comillas dobles dentro del texto como \\".',
+    'COPY PARA LINKEDIN ("copy_linkedin"): es el texto del post con el que se comparte el newsletter en el feed. NO es el newsletter ni un resumen de todos sus bloques.',
+    '- Primera línea: un gancho que detenga el scroll (pregunta, contraste o situación cotidiana), distinto a la primera frase del newsletter.',
+    '- Luego 2 a 4 líneas cortas que planteen el problema y la tensión, sin dar la solución completa.',
+    '- Una línea que invite a leer la edición completa del newsletter.',
+    '- Cierra con una pregunta concreta para generar comentarios.',
+    '- Entre 500 y 1.200 caracteres, párrafos de 1 o 2 líneas, máximo 2 emojis. Sin URL, sin teléfono, sin correo y sin hashtags: la app los agrega.'
   ].join('\n')
 };
