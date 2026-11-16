@@ -61,9 +61,6 @@
 <p>Cuéntanos en los comentarios. <strong>Esa novedad es la mejor medida de lo que te cuesta la información tardía</strong>, y el punto de partida para definir qué datos necesitas recibir antes.</p>
     <aside class="kb-cta"><span class="kb-cta-eye">Herramienta gratuita</span><h3>TimeVision</h3><p>Convierte las marcaciones en tableros de costo, capacidad y cumplimiento, disponibles antes del cierre.</p><a class="kb-btn" href="https://www.mykadosh.com/ideascontrol/TimeVision/?utm_source=recursos&amp;utm_medium=articulo&amp;utm_campaign=reportes-de-asistencia-a-tiempo">Conocer TimeVision →</a></aside>
     <p class="kb-cierre"><strong>La oportunidad del dato</strong><br><strong>importa tanto como el dato mismo.</strong></p>
-    <div class="kb-compartir"><span>Compartir:</span>
-      <a data-red="wa" href="#" rel="noopener">WhatsApp</a><a data-red="li" href="#" rel="noopener">LinkedIn</a><button type="button" id="kbCopiar">Copiar enlace</button>
-    </div>
   </article>
   <section class="kb-mas"><h2>Más artículos</h2><div id="kbMas" class="kb-lista"></div></section>
 </main>
@@ -71,12 +68,6 @@
 <script src="../articulos.js?v=1.0.0"></script>
 <script>
 (function () {
-  var url = location.href.split('#')[0].split('?')[0], titulo = document.title.replace(/ · Ideas Control$/, '');
-  document.querySelector('[data-red="wa"]').href = 'https://wa.me/?text=' + encodeURIComponent(titulo + ' ' + url);
-  document.querySelector('[data-red="li"]').href = 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(url);
-  document.querySelectorAll('[data-red]').forEach(function (a) { a.target = '_blank'; });
-  var b = document.getElementById('kbCopiar');
-  b.onclick = function () { try { navigator.clipboard.writeText(url).then(function () { b.textContent = '¡Copiado!'; }); } catch (e) { prompt('Copie el enlace:', url); } };
   /* UTM: si la persona llegó al artículo desde una publicación con etiquetas, el botón de la herramienta conserva ese origen */
   try {
     var qs = new URLSearchParams(location.search), hay = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].filter(function (k) { return qs.get(k); });

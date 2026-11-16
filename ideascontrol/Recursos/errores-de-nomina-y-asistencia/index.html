@@ -62,9 +62,6 @@
 <div class="kb-destacado"><p><strong>DIAGNÓSTICO DE MADUREZ EN TIEMPO &amp; ASISTENCIA</strong></p><p>Identifica en qué etapa de tu proceso se originan los errores y dónde deberían corregirse.</p></div>
     <aside class="kb-cta"><span class="kb-cta-eye">Herramienta gratuita</span><h3>Costo del Ausentismo</h3><p>Calcula cuánto le cuesta a tu empresa cada hora de ausencia y conviértelo en una cifra para decidir.</p><a class="kb-btn" href="https://www.mykadosh.com/ideascontrol/CostoHoraAusente/?utm_source=recursos&amp;utm_medium=articulo&amp;utm_campaign=errores-de-nomina-y-asistencia">Calcular el costo →</a></aside>
     <p class="kb-cierre"><strong>Nómina no es donde nace el error.</strong><br><strong>Es donde se vuelve visible.</strong></p>
-    <div class="kb-compartir"><span>Compartir:</span>
-      <a data-red="wa" href="#" rel="noopener">WhatsApp</a><a data-red="li" href="#" rel="noopener">LinkedIn</a><button type="button" id="kbCopiar">Copiar enlace</button>
-    </div>
   </article>
   <section class="kb-mas"><h2>Más artículos</h2><div id="kbMas" class="kb-lista"></div></section>
 </main>
@@ -72,12 +69,6 @@
 <script src="../articulos.js?v=1.0.0"></script>
 <script>
 (function () {
-  var url = location.href.split('#')[0].split('?')[0], titulo = document.title.replace(/ · Ideas Control$/, '');
-  document.querySelector('[data-red="wa"]').href = 'https://wa.me/?text=' + encodeURIComponent(titulo + ' ' + url);
-  document.querySelector('[data-red="li"]').href = 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(url);
-  document.querySelectorAll('[data-red]').forEach(function (a) { a.target = '_blank'; });
-  var b = document.getElementById('kbCopiar');
-  b.onclick = function () { try { navigator.clipboard.writeText(url).then(function () { b.textContent = '¡Copiado!'; }); } catch (e) { prompt('Copie el enlace:', url); } };
   /* UTM: si la persona llegó al artículo desde una publicación con etiquetas, el botón de la herramienta conserva ese origen */
   try {
     var qs = new URLSearchParams(location.search), hay = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].filter(function (k) { return qs.get(k); });

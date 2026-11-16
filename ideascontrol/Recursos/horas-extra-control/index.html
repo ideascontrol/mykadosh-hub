@@ -51,9 +51,6 @@
 <div class="kb-grid n2 "><div class="kb-card"><h4><strong>CUANDO SE REVISA DESPUÉS DE PAGAR</strong></h4><p>El valor aparece en la nómina, no en la operación.</p><p>Cuesta distinguir una necesidad real de un hábito.</p><p>Se explica lo que pasó en lugar de decidir.</p><p>Los patrones pasan desapercibidos período tras período.</p></div><div class="kb-card"><h4><strong>CUANDO SE ANALIZA CON DATOS</strong></h4><p>Las horas extra se ven junto a las horas trabajadas.</p><p>Los patrones recurrentes se identifican en el histórico.</p><p>Cada decisión parte de información, no de la urgencia.</p><p>Se sabe cuánto se paga y por qué.</p></div></div><div class="kb-grid n1 "><div class="kb-card"><h4><strong>Los datos ya existen.</strong><br><strong>Lo que falta es analizarlos a tiempo.</strong></h4></div></div>
     <aside class="kb-cta"><span class="kb-cta-eye">Herramienta gratuita</span><h3>Diagnóstico de Madurez en Tiempo y Asistencia</h3><p>Evalúa en 10 preguntas qué tan madura es la gestión de tiempo y asistencia de tu empresa y dónde mejorar primero.</p><a class="kb-btn" href="https://www.mykadosh.com/ideascontrol/DiagnosticoMadurezTyA/?utm_source=recursos&amp;utm_medium=articulo&amp;utm_campaign=horas-extra-control">Hacer el diagnóstico gratis →</a></aside>
     <p class="kb-cierre"><strong>No se trata de pagar menos horas extra.</strong><br><strong>Se trata de saber por qué las pagas.</strong></p>
-    <div class="kb-compartir"><span>Compartir:</span>
-      <a data-red="wa" href="#" rel="noopener">WhatsApp</a><a data-red="li" href="#" rel="noopener">LinkedIn</a><button type="button" id="kbCopiar">Copiar enlace</button>
-    </div>
   </article>
   <section class="kb-mas"><h2>Más artículos</h2><div id="kbMas" class="kb-lista"></div></section>
 </main>
@@ -61,12 +58,6 @@
 <script src="../articulos.js?v=1.0.0"></script>
 <script>
 (function () {
-  var url = location.href.split('#')[0].split('?')[0], titulo = document.title.replace(/ · Ideas Control$/, '');
-  document.querySelector('[data-red="wa"]').href = 'https://wa.me/?text=' + encodeURIComponent(titulo + ' ' + url);
-  document.querySelector('[data-red="li"]').href = 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(url);
-  document.querySelectorAll('[data-red]').forEach(function (a) { a.target = '_blank'; });
-  var b = document.getElementById('kbCopiar');
-  b.onclick = function () { try { navigator.clipboard.writeText(url).then(function () { b.textContent = '¡Copiado!'; }); } catch (e) { prompt('Copie el enlace:', url); } };
   /* UTM: si la persona llegó al artículo desde una publicación con etiquetas, el botón de la herramienta conserva ese origen */
   try {
     var qs = new URLSearchParams(location.search), hay = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].filter(function (k) { return qs.get(k); });

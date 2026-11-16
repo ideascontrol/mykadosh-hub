@@ -62,9 +62,6 @@
 <div class="kb-destacado"><p><strong>DEMOSTRACIÓN: BIOMETRÍA CONECTADA A TU PROCESO</strong></p><p>De la huella a los reportes listos para nómina, en un solo flujo.</p><p><strong>+57 321 318 4853   •   info@ideascontrol.com</strong></p></div>
     <aside class="kb-cta"><span class="kb-cta-eye">Herramienta gratuita</span><h3>Piloto de Tiempo y Asistencia</h3><p>Prueba durante 15 días cómo se ve tu asistencia cuando el registro, las novedades y los reportes salen de una sola fuente.</p><a class="kb-btn" href="https://www.mykadosh.com/ideascontrol/PilotoTyA/?utm_source=recursos&amp;utm_medium=articulo&amp;utm_campaign=biometria-sin-planillas">Solicitar el piloto →</a></aside>
     <p class="kb-cierre"><strong>La huella identifica al colaborador.</strong><br><strong>El proceso convierte ese registro en gestión.</strong></p>
-    <div class="kb-compartir"><span>Compartir:</span>
-      <a data-red="wa" href="#" rel="noopener">WhatsApp</a><a data-red="li" href="#" rel="noopener">LinkedIn</a><button type="button" id="kbCopiar">Copiar enlace</button>
-    </div>
   </article>
   <section class="kb-mas"><h2>Más artículos</h2><div id="kbMas" class="kb-lista"></div></section>
 </main>
@@ -72,12 +69,6 @@
 <script src="../articulos.js?v=1.0.0"></script>
 <script>
 (function () {
-  var url = location.href.split('#')[0].split('?')[0], titulo = document.title.replace(/ · Ideas Control$/, '');
-  document.querySelector('[data-red="wa"]').href = 'https://wa.me/?text=' + encodeURIComponent(titulo + ' ' + url);
-  document.querySelector('[data-red="li"]').href = 'https://www.linkedin.com/sharing/share-offsite/?url=' + encodeURIComponent(url);
-  document.querySelectorAll('[data-red]').forEach(function (a) { a.target = '_blank'; });
-  var b = document.getElementById('kbCopiar');
-  b.onclick = function () { try { navigator.clipboard.writeText(url).then(function () { b.textContent = '¡Copiado!'; }); } catch (e) { prompt('Copie el enlace:', url); } };
   /* UTM: si la persona llegó al artículo desde una publicación con etiquetas, el botón de la herramienta conserva ese origen */
   try {
     var qs = new URLSearchParams(location.search), hay = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].filter(function (k) { return qs.get(k); });
