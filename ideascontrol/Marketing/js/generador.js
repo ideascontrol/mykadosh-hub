@@ -520,10 +520,12 @@ window.MKT_GEN = (function () {
       (ST.tipo === 'contenido' ? '<div class="ic-campo c6"><label for="gTit">Título del documento</label><input id="gTit" maxlength="120" value="' + esc(tituloDef) + '"></div>' : '') +
       '<div class="ic-campo ' + (ST.tipo === 'contenido' ? 'c6' : 'c12') + '"><label for="gArch">Nombre del archivo</label><input id="gArch" maxlength="120" value="' + esc(archivoDef) + '"><span class="ayuda">Se guarda en SharePoint: Documentos/' +
         esc(ST.tipo === 'contenido' ? GC.carpetaSemanas + '/' + lunes : CFG.carpetaPiezas + '/<publicación>') + '/</span></div></div>' +
-      '<div class="ic-acciones" style="justify-content:flex-start"><button class="ic-btn" id="gGuardar">Guardar en el portal y crear el Word</button><button class="ic-btn sec" id="gSolo">Solo descargar el Word</button></div></div><div id="gRes"></div>';
+      '<div class="ic-acciones" style="justify-content:flex-start"><button class="ic-btn" id="gGuardar">Guardar en el portal y crear el Word</button><button class="ic-btn sec" id="gSolo">Solo descargar el Word</button>' + (ST.tipo === 'newsletter' ? '<button class="ic-btn sec" id="gWeb">🌐 Artículo para la web</button>' : '') + '</div></div><div id="gRes"></div>';
     c.innerHTML = html;
     c.querySelectorAll('[data-inc]').forEach((ch) => { ch.onchange = () => { Lr.slots.filter((s) => s.pieza)[+ch.dataset.inc].incluir = ch.checked; }; });
     const nombres = () => ({ titulo: (c.querySelector('#gTit') || {}).value || tituloDef, archivo: conDocx(limpiarArchivo(c.querySelector('#gArch').value) || archivoDef) });
+    const bw = c.querySelector('#gWeb');
+    if (bw) bw.onclick = () => U.conCarga(bw, () => MKT_WEB.dialogo(Lr.datos, { lunes, destino: destinoDe(t), tema: t.categoria || '' }));
     c.querySelector('#gSolo').onclick = () => U.conCarga(c.querySelector('#gSolo'), async () => {
       try {
         const nm = nombres(), pn = pubNewsletter(t);
