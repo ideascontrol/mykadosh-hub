@@ -61,11 +61,10 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
     App.clientes.sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)));
   }
   // Personal de IC (OPE_Tecnicos: Ideas Control, administrativo y técnicos de campo)
-  const VINC = [['IDEAS_CONTROL', 'Ideas Control'], ['ADMINISTRATIVO', 'Administrativo'], ['TECNICO_CAMPO', 'Técnicos de campo']];
-  async function cargarPersonal() {
+    async function cargarPersonal() {
     try {
       const [tec, tip] = await Promise.all([G.items('OPE_Tecnicos', { top: 999 }), G.items('OPE_Tipos', { top: 999 }).catch(() => [])]);
-      App.personal = tec.filter((t) => t.estado !== 'INACTIVO').sort((a, b) => (Number(a.orden) || 99) - (Number(b.orden) || 99) || String(a.nombre).localeCompare(b.nombre));
+      App.personal = tec.sort((a, b) => (Number(a.orden) || 99) - (Number(b.orden) || 99) || String(a.nombre).localeCompare(b.nombre));
       App.tipos = tip.filter((t) => t.estado !== 'INACTIVO').sort((a, b) => (Number(a.orden) || 99) - (Number(b.orden) || 99));
     } catch (e) { App.personal = []; App.tipos = []; }
     try { (await G.items('SYS_Festivos', { top: 999 })).forEach((f) => { App.festivos[dia(f.fecha || f.Title)] = f.descripcion || 'Festivo'; }); } catch (e) { /* sin festivos */ }
@@ -88,12 +87,12 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
   const sigHabil = (d) => { let x = d; while (!habil(x)) x = new Date(new Date(x + 'T12:00:00').getTime() + 864e5).toISOString().slice(0, 10); return x; };
   const esAdmin = () => CFG.admins.indexOf(App.usuario.email) >= 0;
   // Lista de responsables: el personal agrupado por vinculación; el valor antiguo (p. ej. «Ideas Control») se conserva
+  // Misma lista y presentación que en la Programación (IC.ui.opcionesPersonal, origen OPE_Tecnicos)
   function selResponsable(v0) {
     const actual = v0.responsable_id ? persona(v0.responsable_id) : personaPorNombre(v0.responsable);
-    let h = '<select id="f_responsable_id" name="responsable_id"><option value="">Seleccione…</option>';
-    VINC.forEach(([k, n]) => { const L = App.personal.filter((p) => (p.vinculacion || 'IDEAS_CONTROL') === k); if (L.length) h += '<optgroup label="' + n + '">' + L.map((p) => '<option value="' + esc(p.Title) + '"' + (actual && actual.Title === p.Title ? ' selected' : '') + '>' + esc(p.nombre) + '</option>').join('') + '</optgroup>'; });
-    if (!actual && v0.responsable) h += '<optgroup label="Valor anterior"><option value="__ANTES__" selected>' + esc(v0.responsable) + '</option></optgroup>';
-    return h + '</select>';
+    const op = U.opcionesPersonal(App.personal, actual ? actual.Title : '');
+    if (!actual && v0.responsable) op.push(['__ANTES__', v0.responsable, 'Valor anterior']);
+    return '<select id="f_responsable_id" name="responsable_id"><option value="">Seleccione…</option>' + U.opcionesHTML(op, actual ? actual.Title : (v0.responsable ? '__ANTES__' : '')) + '</select>';
   }
 
   // Clientes con tareas (incluye los que se escribieron a mano o el interno)
@@ -171,7 +170,7 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
         return '<div class="tar-fila-b tar-rep" data-campo="' + campo + '" data-v="' + esc(v) + '"><span>' + esc(v || 'Sin definir') + (venc ? ' <span class="tar-num rojo" title="Vencidas">' + venc + '</span>' : '') + '</span>' + barra(L.length, tot) + '<b>' + L.length + '</b></div>';
       }).join('') : '<p class="ic-conteo">Sin datos.</p>';
     };
-    const personas = App.personal.map((p) => p.nombre);
+    const personas = App.personal.filter((p) => p.estado !== 'INACTIVO').map((p) => p.nombre);
     c.innerHTML = '<div class="ic-barra"><div><h1 class="ic-titulo">Reportes detallados</h1><p class="ic-subtitulo" style="margin:0">Tareas activas (sin finalizadas ni canceladas): ' + act.length + '. En rojo, las vencidas. Haga clic en una fila para ver esas tareas.</p></div></div>' +
       '<div class="tar-dos"><section class="ic-bloque"><div class="cab"><h2>Tareas por persona</h2></div><div class="cuerpo">' + grupo('responsable', personas, nombreResp) + '</div></section>' +
       '<section class="ic-bloque"><div class="cab"><h2>Tareas por estado</h2></div><div class="cuerpo">' + grupo('estado', CFG.estados.filter((e) => CFG.cerrados.indexOf(e) < 0)) + '</div></section></div>' +
@@ -289,6 +288,8 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
         e.preventDefault();
         const v = U.leerForm(f);
         const errores = {}; if (!v.cliente_id) errores.cliente_id = 'Elija el cliente'; if (!String(v.item || '').trim()) errores.item = 'Escriba la tarea';
+        const agV = t ? agendaVigente(t) : null, enAgenda = agV && activaAg(agV) && agV.estado !== 'EJECUTADO';
+        if (enAgenda && v.fecha_inicio && v.fecha_inicio !== agV.fecha && App.festivos[v.fecha_inicio]) errores.fecha_inicio = 'Es festivo: la actividad agendada no se puede mover a ese día';
         if (Object.keys(errores).length) { U.marcarErrores(f, errores); return; }
         let bit = String(v.bitacora || '').trim();
         if (String(v.nota || '').trim()) { const d = new Date(); bit = pad(d.getDate(), 2) + '/' + pad(d.getMonth() + 1, 2) + '/' + String(d.getFullYear()).slice(2) + '. ' + v.nota.trim() + (bit ? '\n' + bit : ''); }
@@ -304,10 +305,23 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
               campos.Title = id = 'T-' + pad(n, 4); campos.orden = n;
               Object.keys(campos).forEach((k) => { if (campos[k] === '' || campos[k] === null) delete campos[k]; });
               await guardarSeguro(() => G.crear('TAR_Tareas', campos), campos);
-            } else await guardarSeguro(() => G.actualizar('TAR_Tareas', t._id, campos, t._etag), campos);
+            } else {
+              // Tarea agendada: la persona y la fecha de inicio se llevan a la actividad de la Programación
+              const cambiosAg = {}, notas = [];
+              if (enAgenda && resp && resp.Title && resp.Title !== agV.tecnico_id) { cambiosAg.tecnico_id = resp.Title; notas.push('persona ' + ((persona(agV.tecnico_id) || {}).nombre || '—') + ' → ' + resp.nombre); }
+              if (enAgenda && v.fecha_inicio && v.fecha_inicio !== agV.fecha) { cambiosAg.fecha = v.fecha_inicio; notas.push('fecha ' + textoFecha(agV.fecha) + ' → ' + textoFecha(v.fecha_inicio)); }
+              if (notas.length) {
+                cambiosAg.motivo_cambio = 'Cambio desde la tarea ' + t.Title;
+                try { await G.actualizar('OPE_Actividades', agV._id, cambiosAg); }
+                catch (e) { throw new Error('No se pudo actualizar la actividad ' + agV.Title + ' de la Programación: ' + U.mensajeError(e)); }
+                const d = new Date();
+                campos.bitacora = pad(d.getDate(), 2) + '/' + pad(d.getMonth() + 1, 2) + '/' + String(d.getFullYear()).slice(2) + '. Agenda ' + agV.Title + ' actualizada: ' + notas.join('; ') + '.' + (campos.bitacora ? '\n' + campos.bitacora : '');
+              }
+              await guardarSeguro(() => G.actualizar('TAR_Tareas', t._id, campos, t._etag), campos);
+            }
           });
           U.cerrarModal(); U.aviso(nueva ? 'Tarea creada' : 'Tarea actualizada', 'ok');
-          await cargar();
+          await Promise.all([cargar(), cargarAgenda()]);
           if (agendar) { const tt = App.tareas.find((x) => x.Title === id); if (tt) { formAgenda(tt, alGuardar); return; } }
           alGuardar();
         } catch (err) { agendar = false; U.aviso(U.mensajeError(err), 'err', 8000); }
@@ -338,13 +352,13 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
         : '<p class="sec" style="margin:4px 0 0">No está en la agenda. Solo se agenda lo que requiere una fecha y una persona en la Programación (visitas, instalaciones, soporte…): use «Guardar y agendar».</p>') + '</div>';
   }
   async function formAgenda(t, alGuardar) {
-    const tecs = App.personal.filter(esTecnico), tipos = App.tipos;
-    if (!tecs.length || !tipos.length) { U.aviso('No se pudo leer el personal o los tipos de actividad de la Programación.', 'err', 8000); alGuardar(); return; }
+    const tipos = App.tipos;
+    if (!App.personal.length || !tipos.length) { U.aviso('No se pudo leer el personal o los tipos de actividad de la Programación.', 'err', 8000); alGuardar(); return; }
     const resp = persona(t.responsable_id) || personaPorNombre(t.responsable);
     const emp = await G.items('MAE_Empresas', { filtro: "fields/Title eq '" + String(t.cliente_id || '').replace(/'/g, "''") + "'" }).then((r) => r[0]).catch(() => null);
     const f0 = t.fecha_inicio && t.fecha_inicio >= hoy() ? t.fecha_inicio : sigHabil(hoy());
     U.modal('Agendar ' + t.Title + ' en la Programación', '<form class="ic-form" id="fAg"><p class="sec" style="margin-top:0">' + esc(t.cliente_nombre + ' · ' + resumir(t.item, 120)) + '</p><div class="ic-campos">' +
-      U.campo({ name: 'tecnico_id', label: 'Persona', t: 'select', op: tecs.map((x) => [x.Title, x.nombre]), valor: esTecnico(resp) ? resp.Title : '', req: true, c: 'c6' }) +
+      U.campo({ name: 'tecnico_id', label: 'Persona', t: 'select', op: U.opcionesPersonal(App.personal, resp ? resp.Title : ''), valor: resp ? resp.Title : '', req: true, c: 'c6' }) +
       U.campo({ name: 'tipo', label: 'Tipo de actividad', t: 'select', op: tipos.map((x) => [x.Title, x.nombre + ' (' + x.Title + ')']), req: true, c: 'c6' }) +
       U.campo({ name: 'fecha', label: 'Fecha', t: 'date', valor: f0, req: true, c: 'c4' }) +
       U.campo({ name: 'hora_inicio', label: 'Hora inicio', t: 'time', c: 'c4' }) +
@@ -359,7 +373,8 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
         const v = U.leerForm(f), caja = cu.querySelector('#agDisp'); avisos = [];
         if (!v.fecha || !v.tecnico_id) { caja.innerHTML = ''; return; }
         const tc = persona(v.tecnico_id);
-        if (!habil(v.fecha)) avisos.push('El ' + textoFecha(v.fecha) + ' no es día hábil' + (App.festivos[v.fecha] ? ' (' + App.festivos[v.fecha] + ')' : '') + ': requiere autorización del Director de Operaciones.');
+        if (App.festivos[v.fecha]) { caja.innerHTML = '<div class="ic-alerta chica">⛔ El ' + esc(textoFecha(v.fecha)) + ' es festivo (' + esc(App.festivos[v.fecha]) + '): no se puede agendar. Elija otra fecha.</div>'; avisos = ['FESTIVO']; return; }
+        if (!habil(v.fecha)) avisos.push('El ' + textoFecha(v.fecha) + ' es fin de semana: requiere autorización del Director de Operaciones.');
         if (tc && v.tipo && String(tc.habilidades || '').toUpperCase().split(/[;,\s]+/).indexOf(v.tipo) < 0) avisos.push(tc.nombre + ' no tiene la habilidad ' + v.tipo + ' en la matriz.');
         let suyas = [];
         try {
@@ -378,6 +393,7 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
         const v = U.leerForm(f), err = {};
         ['tecnico_id', 'tipo', 'fecha', 'ciudad'].forEach((k) => { if (!v[k]) err[k] = 'Obligatorio'; });
         if (v.fecha && v.fecha < hoy()) err.fecha = 'No puede ser una fecha pasada';
+        if (v.fecha && App.festivos[v.fecha]) err.fecha = 'Es festivo (' + App.festivos[v.fecha] + '): no se puede agendar';
         if (!U.marcarErrores(f, err)) return;
         await revisar();
         if (avisos.length && !(await U.confirmar('Agendar con avisos', avisos.join('\n') + '\n\n¿Agendarla de todas formas?', 'Agendar'))) { formAgenda(t, alGuardar); return; }

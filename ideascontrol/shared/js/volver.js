@@ -22,7 +22,26 @@ IC.portal = (function () {
     setTimeout(() => { if (!window.closed) location.href = URL_PORTAL; }, 350);
   }
   function boton(clase) {
-    return '<button type="button" class="' + (clase || 'ic-btn sec chico') + '" onclick="IC.portal.volver()" title="Cerrar esta pestaña y volver al portal de microapps">← Portal</button>';
+    return '<button type="button" class="' + (clase || 'ic-btn sec chico') + '" onclick="IC.portal.volver()" title="Cerrar esta pestaña y volver al Portal de Ideas Control">← Portal</button>';
   }
-  return { URL_PORTAL, desdePortal, volver, boton };
+  // «Salir» en el Portal: avisa a todas las pestañas de IC abiertas (mismo sitio) para que se cierren.
+  // Las que el navegador no deja cerrar (abiertas a mano) muestran «Sesión cerrada» y van al Portal.
+  const CANAL = 'ic_sesion';
+  function cerrarPorSalida() {
+    window.close();
+    setTimeout(() => {
+      if (window.closed) return;
+      document.body.innerHTML = '<div style="font-family:Inter,system-ui,sans-serif;max-width:420px;margin:15vh auto;text-align:center;color:#1D2B36"><h2>Sesión cerrada</h2><p>Se cerró la sesión desde el Portal de Ideas Control.</p></div>';
+      setTimeout(() => { location.href = URL_PORTAL; }, 1200);
+    }, 300);
+  }
+  function avisarSalida() {
+    try { const c = new BroadcastChannel(CANAL); c.postMessage('salir'); c.close(); } catch (e) { /* navegador sin BroadcastChannel */ }
+    try { localStorage.setItem('ic_salir', String(Date.now())); } catch (e) { /* sin almacenamiento */ }
+  }
+  if (location.pathname.indexOf(URL_PORTAL) !== 0) {
+    try { new BroadcastChannel(CANAL).onmessage = (ev) => { if (ev.data === 'salir') cerrarPorSalida(); }; } catch (e) { /* sin BroadcastChannel */ }
+    window.addEventListener('storage', (ev) => { if (ev.key === 'ic_salir' && ev.newValue) cerrarPorSalida(); });
+  }
+  return { URL_PORTAL, desdePortal, volver, boton, avisarSalida };
 })();

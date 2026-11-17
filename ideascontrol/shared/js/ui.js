@@ -131,13 +131,35 @@ IC.ui = (function () {
     return !claves.length;
   }
   // Campo de formulario. t: text|email|tel|date|select|textarea|checkbox. op: opciones [[valor, texto]]
+  // Opciones de un <select>: [valor, texto] o [valor, texto, grupo] (el grupo arma <optgroup> en el orden en que aparece)
+  function opcionesHTML(op, v) {
+    let h = '', g = null;
+    op.forEach((p) => {
+      if ((p[2] || null) !== g) { if (g) h += '</optgroup>'; g = p[2] || null; if (g) h += '<optgroup label="' + esc(g) + '">'; }
+      h += '<option value="' + esc(p[0]) + '"' + (String(p[0]) === String(v) ? ' selected' : '') + '>' + esc(p[1]) + '</option>';
+    });
+    return h + (g ? '</optgroup>' : '');
+  }
+  // Lista ÚNICA del personal de IC para elegir responsable o técnico en todas las apps (Tareas, Programación…).
+  // Origen: lista OPE_Tecnicos (se mantiene en Programación › Administración › Técnicos). Agrupada por vinculación.
+  // lista = filas de OPE_Tecnicos; actual = Title elegido (se muestra aunque esté inactivo)
+  const VINCULACIONES = [['IDEAS_CONTROL', 'Ideas Control'], ['ADMINISTRATIVO', 'Administrativo'], ['TECNICO_CAMPO', 'Técnicos de campo']];
+  function opcionesPersonal(lista, actual) {
+    const vis = (lista || []).filter((t) => t.estado !== 'INACTIVO' || t.Title === actual)
+      .sort((a, b) => (Number(a.orden) || 99) - (Number(b.orden) || 99) || String(a.nombre).localeCompare(String(b.nombre)));
+    const out = [];
+    VINCULACIONES.forEach(([k, n]) => vis.filter((t) => (t.vinculacion || 'IDEAS_CONTROL') === k).forEach((t) => out.push([t.Title, t.nombre + (t.estado === 'INACTIVO' ? ' — inactivo' : ''), n])));
+    vis.filter((t) => !VINCULACIONES.some((x) => x[0] === (t.vinculacion || 'IDEAS_CONTROL'))).forEach((t) => out.push([t.Title, t.nombre, 'Otros']));
+    return out;
+  }
+
   function campo(o) {
     const id = 'f_' + o.name, v = o.valor === undefined || o.valor === null ? '' : o.valor;
     let input;
     if (o.t === 'select') {
       input = '<select id="' + id + '" name="' + o.name + '"' + (o.disabled ? ' disabled' : '') + '>' +
         (o.vacio !== false ? '<option value="">' + esc(o.vacio || 'Seleccione…') + '</option>' : '') +
-        (o.op || []).map((p) => '<option value="' + esc(p[0]) + '"' + (String(p[0]) === String(v) ? ' selected' : '') + '>' + esc(p[1]) + '</option>').join('') + '</select>';
+        opcionesHTML(o.op || [], v) + '</select>';
     } else if (o.t === 'textarea') {
       input = '<textarea id="' + id + '" name="' + o.name + '" rows="' + (o.filas || 3) + '" placeholder="' + esc(o.ph || '') + '">' + esc(v) + '</textarea>';
     } else if (o.t === 'checkbox') {
@@ -160,5 +182,5 @@ IC.ui = (function () {
   // Texto sin tildes y en minúsculas, para búsquedas
   function norm(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
 
-  return { $, esc, aviso, pantalla, enrutar, fmt, mensajeError, modal, cerrarModal, confirmar, leerForm, marcarErrores, campo, conCarga, norm };
+  return { opcionesHTML, opcionesPersonal, VINCULACIONES, $, esc, aviso, pantalla, enrutar, fmt, mensajeError, modal, cerrarModal, confirmar, leerForm, marcarErrores, campo, conCarga, norm };
 })();

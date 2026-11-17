@@ -1,5 +1,5 @@
 /* =====================================================================
-   APP-100 · Portal de microapps — inicio de sesión único y menú principal
+   APP-100 · Portal de Ideas Control — inicio de sesión único y menú principal
    Usa la misma app de Entra ID que Comercial y Programación: al entrar aquí,
    las demás microapps abren sin pedir de nuevo la cuenta (mismo dominio).
    ===================================================================== */
@@ -30,11 +30,11 @@
     const nombre = cuenta.name || cuenta.username;
     document.getElementById('encabezado').innerHTML =
       '<a href="#"><img class="logo" src="' + CFG.logo + '" alt="Ideas Control"></a>' +
-      '<div class="app-nombre"><b>Portal de microapps</b><span>Ideas Control Equipos y Soluciones S.A.S.</span></div><div class="espacio"></div>' +
+      '<div class="app-nombre"><b>Portal de Ideas Control</b><span>Ideas Control Equipos y Soluciones S.A.S.</span></div><div class="espacio"></div>' +
       '<div class="ic-user"><div class="datos"><b>' + esc(nombre) + '</b><span>' + esc(cuenta.username) + '</span></div>' +
       '<div class="ic-avatar">' + esc(U.fmt.iniciales(nombre)) + '</div><button class="ic-btn sec chico" id="btnSalir">Salir</button></div>';
     document.getElementById('encabezado').hidden = false;
-    document.getElementById('btnSalir').onclick = () => IC.auth.salir();
+    document.getElementById('btnSalir').onclick = () => { if (IC.portal && IC.portal.avisarSalida) IC.portal.avisarSalida(); IC.auth.salir(); };
   }
   function saludo() { const h = new Date().getHours(); return h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches'; }
 
@@ -158,7 +158,7 @@
       let volverUrl = null; try { volverUrl = sessionStorage.getItem('ic_volver_url'); } catch (e) { /* sin almacenamiento */ }
       if (cuenta && volverUrl && volverUrl.indexOf(location.origin + '/ideascontrol/') === 0) { sessionStorage.removeItem('ic_volver_url'); location.replace(volverUrl); return; }
       if (!cuenta) {
-        U.pantalla(raiz, { logo: CFG.logo, titulo: 'Portal de microapps', texto: 'Ingrese una sola vez con su cuenta de Microsoft de Ideas Control y abra desde aquí todas las microapps.', boton: 'Iniciar sesión', alClic: () => IC.auth.entrar() });
+        U.pantalla(raiz, { logo: CFG.logo, titulo: 'Portal de Ideas Control', texto: 'Ingrese una sola vez con su cuenta de Microsoft de Ideas Control y abra desde aquí todas las microapps.', boton: 'Iniciar sesión', alClic: () => IC.auth.entrar() });
         return;
       }
       encabezado();

@@ -18,7 +18,7 @@
     if (P.cat) return P.cat;
     const [tec, tip] = await Promise.all([G.items('OPE_Tecnicos'), G.items('OPE_Tipos')]);
     P.cat = {
-      tec: tec.filter((t) => t.vinculacion !== 'ADMINISTRATIVO').sort((a, b) => (Number(a.orden) || 99) - (Number(b.orden) || 99) || String(a.nombre).localeCompare(b.nombre)),
+      tec: tec.sort((a, b) => (Number(a.orden) || 99) - (Number(b.orden) || 99) || String(a.nombre).localeCompare(b.nombre)),
       tip: tip.sort((a, b) => (Number(a.orden) || 99) - (Number(b.orden) || 99))
     };
     return P.cat;
@@ -94,7 +94,7 @@
     let fecha = t.inicio_plan && t.inicio_plan > PRY.hoy() ? t.inicio_plan : PRY.sigHabil(PRY.hoy());
     U.modal('Programar ' + t.tarea_id + ' en Operaciones', '<form class="ic-form" id="fPg"><p class="pry-nota" style="margin-top:0">' + esc(p.Title + ' · ' + p.cliente + ' · ' + t.actividad) + '</p><div class="ic-campos">' +
       U.campo({ name: 'tipo', label: 'Tipo de actividad', t: 'select', op: tipos.map((x) => [x.Title, x.nombre + ' (' + x.Title + ')']), req: true, c: 'c6' }) +
-      U.campo({ name: 'tecnico_id', label: 'Técnico', t: 'select', op: tecs.map((x) => [x.Title, x.nombre]), valor: tecResp ? tecResp.Title : '', req: true, c: 'c6' }) +
+      U.campo({ name: 'tecnico_id', label: 'Responsable', t: 'select', op: U.opcionesPersonal(cat.tec, tecResp ? tecResp.Title : ''), valor: tecResp ? tecResp.Title : '', req: true, c: 'c6' }) +
       U.campo({ name: 'fecha', label: 'Fecha', t: 'date', valor: fecha, req: true, c: 'c4' }) +
       U.campo({ name: 'hora_inicio', label: 'Hora inicio', t: 'time', c: 'c4' }) +
       U.campo({ name: 'equipos', label: 'Equipos', t: 'number', c: 'c4', ayuda: 'Solo instalaciones o mantenimientos' }) +

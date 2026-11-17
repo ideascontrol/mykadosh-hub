@@ -78,14 +78,14 @@
     const empresas = edita ? await Ope.empresas() : [];
     if (edita) await Ope.sedes();
 
-    const tecOps = Ope.D.tecnicos.filter((t) => t.estado !== 'INACTIVO' || t.Title === a.tecnico_id)
-      .map((t) => [t.Title, t.nombre + (t.vinculacion === 'TECNICO_CAMPO' ? ' (campo)' : '') + (t.estado === 'INACTIVO' ? ' — inactivo' : '')]);
+    // Misma lista y presentación que «Responsable» en Gestión de Clientes (IC.ui.opcionesPersonal, origen OPE_Tecnicos)
+    const tecOps = U.opcionesPersonal(Ope.D.tecnicos, a.tecnico_id);
     const tipoOps = Ope.D.tipos.filter((t) => t.estado !== 'INACTIVO' || t.Title === a.tipo).map((t) => [t.Title, t.nombre + ' (' + t.Title + ')']);
     const titulo = nueva ? 'Nueva actividad' : a.Title + ' · ' + Ope.nombreTipo(a.tipo);
 
     const html = '<form class="ic-form" id="fAct" autocomplete="off"><div class="ic-campos">' +
       U.campo({ name: 'fecha', label: 'Fecha', t: 'date', valor: a.fecha, req: true, c: 'c4' }) +
-      U.campo({ name: 'tecnico_id', label: 'Técnico', t: 'select', op: tecOps, valor: a.tecnico_id, c: 'c4', vacio: '— sin técnico —' }) +
+      U.campo({ name: 'tecnico_id', label: 'Responsable', t: 'select', op: tecOps, valor: a.tecnico_id, c: 'c4', vacio: '— sin asignar —' }) +
       U.campo({ name: 'tipo', label: 'Tipo', t: 'select', op: tipoOps, valor: a.tipo, req: true, c: 'c4' }) +
       '<div class="ic-campo c6"><label for="f_cliente">Cliente (contrata y paga)</label><input id="f_cliente" name="cliente" list="dlEmpresas" value="' + esc(a.cliente || '') + '" placeholder="Ej.: Casa Limpia · o «Oficina»">' +
         '<datalist id="dlEmpresas">' + empresas.map((e) => '<option value="' + esc(e.razon_social) + '">').join('') + '</datalist>' +
@@ -225,10 +225,10 @@
 
   // ---------- Reprogramar: la original queda «Reprogramado» y se crea una nueva (trazabilidad) ----------
   function reprogramar(a, alCambiar) {
-    const tecOps = Ope.tecnicosActivos().map((t) => [t.Title, t.nombre]);
+    const tecOps = U.opcionesPersonal(Ope.D.tecnicos, a.tecnico_id);
     U.modal('Reprogramar ' + a.Title, '<form class="ic-form" id="fRep"><p class="ope-nota" style="margin-top:0">' + esc(Ope.etiqueta(a)) + ' · ' + esc(Ope.textoFecha(a.fecha, true)) + '</p><div class="ic-campos">' +
       U.campo({ name: 'fecha', label: 'Nueva fecha', t: 'date', valor: a.fecha, req: true, c: 'c4' }) +
-      U.campo({ name: 'tecnico_id', label: 'Técnico', t: 'select', op: tecOps, valor: a.tecnico_id, c: 'c8' }) +
+      U.campo({ name: 'tecnico_id', label: 'Responsable', t: 'select', op: tecOps, valor: a.tecnico_id, c: 'c8' }) +
       U.campo({ name: 'motivo', label: 'Motivo', req: true, c: 'c12', ph: 'Ej.: el cliente pidió cambio de fecha' }) +
       '</div><div id="repVal"></div><div class="ic-acciones"><button type="button" class="ic-btn sec" id="rCan">Volver</button><button class="ic-btn" id="rOk">Reprogramar</button></div></form>',
     (cu) => {

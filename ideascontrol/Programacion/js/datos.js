@@ -249,6 +249,39 @@ window.Ope = (function () {
     }
     return t;
   }
+  // Actividad enlazada con una tarea de Gestión de Clientes (tar_id): la tarea toma la persona y la fecha
+  // de la agenda y deja la nota en su bitácora. Si falla, la actividad queda igual y se avisa.
+  const ESTADO_TXT = { PROGRAMADO: 'programada', CONFIRMADO: 'confirmada', EJECUTADO: 'ejecutada', REPROGRAMADO: 'reprogramada', CANCELADO: 'cancelada', STANDBY: 'en stand by' };
+  async function sincronizarTarea(act, antes) {
+    if (!act || !act.tar_id) return;
+    act = Object.assign({}, act, { fecha: dia(act.fecha) });
+    const ff = (iso) => textoFecha(dia(iso));
+    try {
+      const t = (await G.items('TAR_Tareas', { filtro: "fields/Title eq '" + act.tar_id + "'" }))[0];
+      if (!t) return;
+      const campos = {}, cambios = [];
+      const vigente = ['CANCELADO', 'REPROGRAMADO', 'STANDBY'].indexOf(act.estado) < 0;
+      if (!antes) cambios.push('Agendada en la Programación: ' + act.Title + ' · ' + nombreTec(act.tecnico_id) + ' · ' + ff(act.fecha));
+      else {
+        if (antes.fecha && dia(antes.fecha) !== act.fecha) cambios.push(act.Title + ': fecha ' + ff(antes.fecha) + ' → ' + ff(act.fecha));
+        if (antes.tecnico_id !== undefined && antes.tecnico_id !== act.tecnico_id) cambios.push(act.Title + ': persona ' + (nombreTec(antes.tecnico_id) || '—') + ' → ' + (nombreTec(act.tecnico_id) || '—'));
+        if (antes.estado && antes.estado !== act.estado) cambios.push(act.Title + ' ' + (ESTADO_TXT[act.estado] || act.estado) + ' en la Programación' + (act.motivo_cambio ? ' (' + act.motivo_cambio + ')' : ''));
+      }
+      if (!cambios.length) return;
+      if (vigente) {
+        const tc = D.tecnicos.find((x) => x.Title === act.tecnico_id);
+        if (tc && t.responsable_id !== tc.Title) { campos.responsable = tc.nombre; campos.responsable_id = tc.Title; }
+        if (act.fecha && dia(t.fecha_inicio) !== act.fecha) campos.fecha_inicio = act.fecha;
+      }
+      const ids = String(t.agenda || '').split(/[;,\s]+/).filter(Boolean);
+      if (ids.indexOf(act.Title) < 0) campos.agenda = ids.concat([act.Title]).join(';');
+      const d = new Date();
+      campos.bitacora = pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + String(d.getFullYear()).slice(2) + '. ' + cambios.join('. ') + '.' + (t.bitacora ? '\n' + t.bitacora : '');
+      try { await G.actualizar('TAR_Tareas', t.id || t._id, campos); }
+      catch (e) { if (/responsable_id|agenda/i.test(e.message)) { delete campos.responsable_id; delete campos.agenda; await G.actualizar('TAR_Tareas', t.id || t._id, campos); } else throw e; }
+    } catch (e) { console.warn(e); IC.ui.aviso('La actividad quedó guardada, pero no se pudo actualizar la tarea ' + act.tar_id + ' (' + IC.ui.mensajeError(e) + ').', 'warn', 8000); }
+  }
+
   async function crearActividad(a) {
     const n = await G.siguiente('PRG');
     const campos = Object.assign(soloCampos(a), { Title: 'PRG-' + pad(n, 6) });
@@ -256,6 +289,7 @@ window.Ope = (function () {
     let it; try { it = await G.crear('OPE_Actividades', campos); } catch (e) { throw explicarColumna(e); }
     recordar(it);
     await auditar('ACTIVIDAD', it.Title, 'CREAR', null, campos);
+    if (campos.tar_id) await sincronizarTarea(Object.assign({}, campos, { fecha: dia(campos.fecha) }), null);
     return it;
   }
   async function actualizarActividad(actual, cambios, accion) {
@@ -267,6 +301,7 @@ window.Ope = (function () {
     recordar(nuevo);
     const antes = {}; Object.keys(campos).forEach((k) => { antes[k] = actual[k]; });
     await auditar('ACTIVIDAD', actual.Title, accion || 'ACTUALIZAR', antes, campos);
+    if (nuevo && nuevo.tar_id && accion !== 'ENLAZAR_TAREA') await sincronizarTarea(nuevo, antes);
     if (nuevo && nuevo.pry_tarea && campos.estado === 'EJECUTADO' && actual.estado !== 'EJECUTADO') {
       try { const t = await completarTareaProyecto(nuevo); if (t) IC.ui.aviso('Tarea ' + t.tarea_id + ' del proyecto ' + (nuevo.pry_id || '') + ' marcada como completada', 'ok', 6000); }
       catch (e) { console.warn(e); IC.ui.aviso('La actividad quedó ejecutada, pero no se pudo actualizar la tarea del proyecto (' + IC.ui.mensajeError(e) + '). Se actualizará cuando el líder abra el proyecto.', 'warn', 9000); }

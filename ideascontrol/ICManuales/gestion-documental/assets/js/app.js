@@ -77,7 +77,7 @@
     return `<header class="top"><div class="wrap">
       <a class="logo" href="${APP_DOCS}" aria-label="Inicio"><img src="${B}assets/img/ideascontrol.webp" alt="Ideas Control Equipos y Soluciones S.A.S."></a>
       <div class="sistema"><b>Gestión Documental</b><span>${esc(subtitulo || 'Sistema de documentación interna')}</span></div>
-      <div class="usuario"><button type="button" class="salir" onclick="GD.volverPortal()" title="Volver al portal de microapps">← Portal</button><span class="datos"><b>${esc(usuario?.nombre || '')}</b><small>${String(usuario?.email || '').toLowerCase() === 'operaciones@ideascontrol.com' ? 'Administrador' : 'Consulta'}</small></span><i title="${esc(usuario?.email || '')}">${esc(ini)}</i><button type="button" class="salir" onclick="GDAuth.cerrarSesion()" title="Cerrar sesión">Salir</button></div>
+      <div class="usuario"><button type="button" class="salir" onclick="GD.volverPortal()" title="Volver al Portal de Ideas Control">← Portal</button><span class="datos"><b>${esc(usuario?.nombre || '')}</b><small>${String(usuario?.email || '').toLowerCase() === 'operaciones@ideascontrol.com' ? 'Administrador' : 'Consulta'}</small></span><i title="${esc(usuario?.email || '')}">${esc(ini)}</i><button type="button" class="salir" onclick="GDAuth.cerrarSesion()" title="Cerrar sesión">Salir</button></div>
     </div></header>`;
   }
   function pie() {
@@ -291,7 +291,7 @@
     });
   }
 
-  // Volver al portal de microapps: cierra esta pestaña si se abrió desde el Portal
+  // Volver al Portal de Ideas Control: cierra esta pestaña si se abrió desde el Portal
   // Cierra la pestaña cuando se abrió desde otra app de IC (Portal, Proyectos…); si el navegador no la deja cerrar, va al Portal
   function volverPortal() {
     const PORTAL = '/ideascontrol/Portal/';
@@ -299,6 +299,9 @@
     window.close();
     setTimeout(() => { if (!window.closed) location.href = PORTAL; }, 350);
   }
+  // «Salir» en el Portal de Ideas Control cierra también esta pestaña
+  try { new BroadcastChannel('ic_sesion').onmessage = (ev) => { if (ev.data === 'salir') { window.close(); setTimeout(() => { if (!window.closed) location.href = '/ideascontrol/Portal/'; }, 300); } }; } catch (e) { /* sin BroadcastChannel */ }
+  window.addEventListener('storage', (ev) => { if (ev.key === 'ic_salir' && ev.newValue) { window.close(); setTimeout(() => { if (!window.closed) location.href = '/ideascontrol/Portal/'; }, 300); } });
   window.GD = { volverPortal, iniciarPortal, iniciarArea, iniciarDocumento, encabezadoSimple: (u, sub) => document.body.insertAdjacentHTML('afterbegin', encabezado(u, sub || 'Gestión Operativa')) };
   document.body.insertAdjacentHTML('beforeend', pie());
 })();
