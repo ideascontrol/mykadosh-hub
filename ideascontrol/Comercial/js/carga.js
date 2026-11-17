@@ -477,7 +477,9 @@
         Object.keys(comp).forEach((k) => { if (comp[k] !== '' && comp[k] !== undefined && String(comp[k]) !== String(ex[k] === null || ex[k] === undefined ? '' : ex[k])) o._cambios.push(k); });
         ['maneja_inventario', 'aplica_iva', 'descripcion_editable'].forEach((k) => { if (o[k] && (o[k] === 'SI') !== !!ex[k]) o._cambios.push(k); });
         const pv = P.precioVigente(ex.Title);
-        if (o._precio !== undefined && !isNaN(o._precio) && (!pv || Number(pv.valor) !== o._precio || (pv.moneda || 'COP') !== o.moneda)) {
+        const porVolumen = P.escalas(ex.Title).length > 0;
+        if (porVolumen && o._precio !== undefined && !isNaN(o._precio)) aviso(o, 'Tiene precios por volumen: el precio no se cambia desde la carga; hágalo en la ficha del producto');
+        if (!porVolumen && o._precio !== undefined && !isNaN(o._precio) && (!pv || Number(pv.valor) !== o._precio || (pv.moneda || 'COP') !== o.moneda)) {
           o._cambios.push('precio'); o._precioAnterior = pv;
           if (o.vigente_desde && pv && o.vigente_desde < sf(pv.fecha_inicio)) err(o, 'Vigente desde es anterior al precio vigente (' + sf(pv.fecha_inicio) + ')');
         }

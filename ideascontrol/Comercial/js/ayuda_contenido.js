@@ -494,8 +494,20 @@ window.IC_AYUDA = {
 <li><b>Ficha técnica</b>: una característica por línea; cada línea sale como viñeta.</li>
 <li><b>Condiciones</b>: unidad, inventario, IVA, descripción editable al cotizar, garantía en meses y stock mínimo. Licencias, servicios y viáticos nunca manejan inventario.</li>
 <li>Al crear: precio de venta inicial, moneda y fecha de vigencia.</li>
+<li>Si cambia el <b>Tipo</b> de un producto nuevo, el código propio se ajusta al prefijo de ese tipo (Equipo usa la referencia del fabricante). Una referencia del fabricante ya escrita no se toca.</li>
 </ul>
 <div class="tip">La garantía en meses de cada producto es la que aparece sola en la condición de Garantía de la cotización.</div>` },
+
+  { id: 'prd-volumen', cat: 'productos', titulo: 'Precios por volumen (rangos de cantidad)', resumen: 'Un solo producto con varios precios según la cantidad cotizada.',
+    claves: 'precio volumen rangos escala tabla empleados suscripcion cantidad desde hasta',
+    html: `
+<ul>
+<li>Sirve para productos cuyo unitario baja con la cantidad (por ejemplo, suscripción mensual por empleado). Es un solo producto, no uno por rango.</li>
+<li><b>Crear o modificar la tabla</b> (administradores): ficha del producto › <b>+ Nuevo precio</b> › Tipo de precio «Por volumen» (o <b>Modificar tabla</b> si ya la tiene). Escriba Desde, Hasta y Unitario de cada rango; el último puede quedar sin «Hasta» (en adelante). Los rangos van seguidos, sin huecos ni cruces. Al guardar, la tabla anterior queda en el historial.</li>
+<li><b>Al cotizar</b>: el unitario sale solo del rango donde cae la cantidad y cambia si cambia la cantidad. Debajo del unitario aparece el rango aplicado; al hacer clic se ve la tabla completa y se puede <b>Usar</b> otro rango (queda marcado en naranja) o volver a «Automático según la cantidad». Para un ajuste adicional se usa <b>Desc. %</b>.</li>
+<li>La carga masiva no cambia el precio de un producto con tabla por volumen; se cambia desde la ficha.</li>
+<li>Al crear una revisión, el unitario se toma de la tabla vigente según la cantidad.</li>
+</ul>` },
 
   { id: 'prd-precio', cat: 'productos', admin: true, titulo: 'Cambiar un precio, registrar inventario o una compra', resumen: 'Historial de precios, cortes de los días 1 y 15 y margen.',
     claves: 'cambiar precio nuevo precio inventario corte compra distribuidor costo margen',

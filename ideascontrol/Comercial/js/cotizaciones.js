@@ -154,7 +154,7 @@
           return { producto_id: l.producto_id, codigo: l.codigo, nombre: p.nombre || l.codigo, descripcion: l.descripcion, ficha_tecnica: l.ficha_tecnica, ciudad_sede: l.ciudad_sede || '',
             cantidad: Number(l.cantidad), precio_unitario: Number(l.precio_unitario), precio_base: Number(l.precio_unitario), moneda_base: cot.moneda || 'COP',
             precio_editable: !!(p.Title && !(App.productos.precioVigente(p.Title) || {}).valor), descripcion_editable: !!p.descripcion_editable,
-            descuento_porcentaje: Number(l.descuento_porcentaje || 0), aplica_iva: !!l.aplica_iva, garantia_meses: p.garantia_meses }; }),
+            descuento_porcentaje: Number(l.descuento_porcentaje || 0), aplica_iva: !!l.aplica_iva, garantia_meses: p.garantia_meses, escalas: !!(p.Title && App.productos.escalas(p.Title).length), rango_desde: null }; }),
         conds: conds.map((x) => x.condicion_id).filter(Boolean), introTocada: true };
     } else {
       F = { cot: null, empresa_id: '', sucursal_id: '', contacto_id: '', fecha: hoy(), moneda: P.MONEDA_DEFECTO || 'COP', trm: '', linea: 'VENTA_HW',
@@ -167,6 +167,7 @@
         F.texto_introduccion = introPara(empresaDe(pre.empresa_id));
       }
     }
+    F.lineas.forEach((l) => { if (l.escalas) rangoDeBorrador(l); });
     c.innerHTML = '<a class="ic-volver" href="' + (cot ? '#cotizaciones/' + esc(cot.Title) : '#cotizaciones') + '">← ' + (cot ? esc(cot.numero_visible) : 'Cotizaciones') + '</a>' +
       '<h1 class="ic-titulo">' + (cot ? 'Editar borrador ' + esc(cot.numero_visible) : 'Nueva cotización') + '</h1>' +
       '<p class="ic-subtitulo">Nada se envía al cliente hasta que genere el PDF. Puede guardar como borrador y seguir después.</p>' +
@@ -248,6 +249,40 @@
     const trm = num(F.trm); if (!(trm > 0)) return NaN;
     return F.moneda === 'COP' ? redondear(valor * trm, 'COP') : redondear(valor / trm, 'USD');
   }
+  // ---------- Precios por volumen ----------
+  // El unitario sale del rango donde cae la cantidad; el comercial puede fijar otro rango de la tabla (rango_desde). Para más, Desc. %.
+  function aplicarEscala(l) {
+    if (!l.escalas) return;
+    const pv = App.productos.precioVigente(l.producto_id, l.rango_desde !== null && l.rango_desde !== undefined ? l.rango_desde : Number(l.cantidad) || 1);
+    if (!pv) return;
+    l.precio_base = Number(pv.valor); l.moneda_base = pv.moneda || 'COP'; l.precio_unitario = precioEn(l.precio_base, l.moneda_base); l._rango = pv;
+  }
+  // Al abrir un borrador: reconoce qué rango tenía el precio guardado (si ya no coincide con la tabla, se respeta el guardado hasta que cambie la cantidad)
+  function rangoDeBorrador(l) {
+    const esc = App.productos.escalas(l.producto_id), auto = App.productos.precioVigente(l.producto_id, Number(l.cantidad) || 1);
+    const igual = (x) => Math.abs(precioEn(Number(x.valor), x.moneda || 'COP') - Number(l.precio_unitario)) < 0.005;
+    if (auto && igual(auto)) { l._rango = auto; return; }
+    const x = esc.find(igual); if (x) { l.rango_desde = Number(x.cantidad_desde); l._rango = x; }
+  }
+  function etiquetaRango(l) {
+    if (!l.escalas) return '';
+    const r = l._rango;
+    return '<button type="button" class="ic-rango' + (l.rango_desde !== null && l.rango_desde !== undefined ? ' fijo' : '') + '" data-tabla="' + F.lineas.indexOf(l) + '" title="Ver la tabla de precios por volumen">' +
+      (r ? (l.rango_desde !== null && l.rango_desde !== undefined ? 'Rango elegido: ' : 'Rango ') + esc(App.productos.rangoTxt(r)) : 'Precio guardado') + ' ▾</button>';
+  }
+  function verTabla(c, i) {
+    const l = F.lineas[i], esc_ = App.productos.escalas(l.producto_id);
+    U.modal('Precios por volumen · ' + l.nombre, '<div class="ic-form"><p class="ic-conteo" style="margin-top:0">Cantidad en la línea: <b>' + U.fmt.num(l.cantidad) + '</b>. Por defecto se usa el rango donde cae la cantidad; puede elegir otro rango. Para un ajuste adicional use <b>Desc. %</b>.</p>' +
+      '<table class="ic-tabla ic-escalas"><thead><tr><th>Cantidad</th><th style="text-align:right">Unitario</th><th></th></tr></thead><tbody>' +
+      esc_.map((x) => '<tr' + (l._rango && Number(l._rango.cantidad_desde) === Number(x.cantidad_desde) ? ' class="sel"' : '') + '><td>' + esc(App.productos.rangoTxt(x)) + '</td><td style="text-align:right;white-space:nowrap">' + dinero(precioEn(Number(x.valor), x.moneda || 'COP'), F.moneda) + '</td>' +
+        '<td style="text-align:right"><button type="button" class="ic-btn chico sec" data-usar="' + esc(x.cantidad_desde) + '">Usar</button></td></tr>').join('') + '</tbody></table>' +
+      '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="bAuto">Automático según la cantidad</button><button type="button" class="ic-btn" id="bC">Cerrar</button></div></div>', (m) => {
+      const fijar = (d) => { l.rango_desde = d; aplicarEscala(l); U.cerrarModal(); pintarLineas(c); pintarCondsPreview(c); };
+      m.querySelectorAll('[data-usar]').forEach((b) => { b.onclick = () => fijar(Number(b.dataset.usar)); });
+      U.$('#bAuto', m).onclick = () => fijar(null);
+      U.$('#bC', m).onclick = U.cerrarModal;
+    });
+  }
   function recalcularPrecios() { F.lineas.forEach((l) => { if (!l.precio_editable) l.precio_unitario = precioEn(l.precio_base, l.moneda_base); }); }
 
   // ---------- 3 · Líneas ----------
@@ -262,7 +297,7 @@
           (l.ficha_tecnica ? '<span class="sec">+ ' + (function (n) { return n + (n === 1 ? ' línea' : ' líneas'); })(String(l.ficha_tecnica).split(/\r?\n/).filter(Boolean).length) + ' de ficha técnica (salen en el PDF)</span>' : '') + '</td>' +
         '<td><input data-i="' + i + '" data-k="ciudad_sede" value="' + esc(l.ciudad_sede) + '"></td>' +
         '<td><input class="num" data-i="' + i + '" data-k="cantidad" inputmode="decimal" value="' + esc(l.cantidad) + '"></td>' +
-        '<td><input class="num" data-i="' + i + '" data-k="precio_unitario" inputmode="decimal" value="' + (isNaN(l.precio_unitario) ? '' : esc(l.precio_unitario)) + '"' + (l.precio_editable ? ' placeholder="Precio"' : ' readonly title="Precio del catálogo"') + '></td>' +
+        '<td><input class="num" data-i="' + i + '" data-k="precio_unitario" inputmode="decimal" value="' + (isNaN(l.precio_unitario) ? '' : esc(l.precio_unitario)) + '"' + (l.precio_editable ? ' placeholder="Precio"' : ' readonly title="Precio del catálogo"') + '>' + etiquetaRango(l) + '</td>' +
         '<td><input class="num" data-i="' + i + '" data-k="descuento_porcentaje" inputmode="decimal" value="' + esc(l.descuento_porcentaje || '') + '" placeholder="0"></td>' +
         '<td class="tot"><b data-tot="' + i + '">' + (isNaN(r.neto) ? '—' : dinero(r.neto, F.moneda)) + '</b><span class="aviso" data-av="' + i + '">' + avisoLinea(l, tope) + '</span></td>' +
         '<td class="acc"><button type="button" title="Subir" data-mov="-1" data-i="' + i + '"' + (i === 0 ? ' disabled' : '') + '>▲</button><button type="button" title="Bajar" data-mov="1" data-i="' + i + '"' + (i === F.lineas.length - 1 ? ' disabled' : '') + '>▼</button><button type="button" title="Quitar" class="quitar" data-quitar="' + i + '">✕</button></td></tr>'; };
@@ -276,7 +311,7 @@
       const t = U.norm(inp.value);
       const r = !t ? [] : App.productos.datos.productos.filter((p) => p.estado !== 'INACTIVO' && U.norm([p.codigo, p.nombre, p.categoria, p.codigo_anterior].join(' ')).includes(t)).slice(0, 10);
       U.$('#sPrd', z).innerHTML = r.map((p) => { const pv = App.productos.precioVigente(p.Title), co = App.productos.ultimoCorte(p.Title);
-        return '<button type="button" data-id="' + esc(p.Title) + '"><b>' + esc(p.codigo) + ' · ' + esc(p.nombre) + '</b><span>' + (pv ? dinero(pv.valor, pv.moneda) + ' antes de IVA' : 'Sin precio') +
+        return '<button type="button" data-id="' + esc(p.Title) + '"><b>' + esc(p.codigo) + ' · ' + esc(p.nombre) + '</b><span>' + (pv ? (App.productos.escalas(p.Title).length ? 'Por volumen · ' + App.productos.escalas(p.Title).length + ' rangos desde ' + dinero(Math.min.apply(null, App.productos.escalas(p.Title).map((x) => Number(x.valor))), pv.moneda) : dinero(pv.valor, pv.moneda)) + ' antes de IVA' : 'Sin precio') +
           (p.maneja_inventario ? ' · Inventario: ' + (co ? U.fmt.num(co.cantidad) : 'sin corte') : '') + '</span></button>'; }).join('') || (t ? '<div class="vacio">Sin resultados</div>' : '');
       U.$('#sPrd', z).querySelectorAll('button').forEach((b) => { b.onclick = () => agregarProducto(c, b.dataset.id); });
     };
@@ -285,11 +320,18 @@
       if (k === 'descripcion' || k === 'ciudad_sede') { l[k] = el.value; if (k === 'ciudad_sede') l._sedeAuto = false; }
       else l[k] = el.value === '' ? (k === 'descuento_porcentaje' ? 0 : NaN) : num(el.value);
       if (k === 'precio_unitario') l.precio_base = l.precio_unitario, l.moneda_base = F.moneda;
+      if (k === 'cantidad' && l.escalas) {   // precio por volumen: el unitario sigue a la cantidad
+        aplicarEscala(l);
+        const pi = z.querySelector('[data-i="' + el.dataset.i + '"][data-k="precio_unitario"]'); if (pi) pi.value = isNaN(l.precio_unitario) ? '' : l.precio_unitario;
+        const et = z.querySelector('[data-tabla="' + el.dataset.i + '"]'); if (et) { et.outerHTML = etiquetaRango(l); enlazarTablas(); }
+      }
       const r = calcLinea(l); U.$('[data-tot="' + el.dataset.i + '"]', z).textContent = isNaN(r.neto) ? '—' : dinero(r.neto, F.moneda);
       U.$('[data-av="' + el.dataset.i + '"]', z).innerHTML = avisoLinea(l, topePct());
       totales(c);
       if (k === 'cantidad' || k === 'precio_unitario') pintarCondsPreview(c);
     }; });
+    function enlazarTablas() { z.querySelectorAll('[data-tabla]').forEach((b) => { b.onclick = () => verTabla(c, Number(b.dataset.tabla)); }); }
+    enlazarTablas();
     z.querySelectorAll('[data-mov]').forEach((b) => { b.onclick = () => { const i = Number(b.dataset.i), j = i + Number(b.dataset.mov); const t = F.lineas[i]; F.lineas[i] = F.lineas[j]; F.lineas[j] = t; pintarLineas(c); }; });
     z.querySelectorAll('[data-quitar]').forEach((b) => { b.onclick = () => { F.lineas.splice(Number(b.dataset.quitar), 1); pintarLineas(c); pintarDatos(c); pintarConds(c); }; });
     totales(c);
@@ -309,6 +351,7 @@
       ciudad_sede: sede ? sede.ciudad || '' : '', _sedeAuto: true, cantidad: 1, precio_base: base, moneda_base: mb, precio_unitario: base > 0 ? precioEn(base, mb) : NaN,
       precio_editable: !(base > 0), descripcion_editable: !!p.descripcion_editable, descuento_porcentaje: 0, aplica_iva: p.aplica_iva !== false, garantia_meses: p.garantia_meses });
     if (base === 0) F.lineas[F.lineas.length - 1].moneda_base = F.moneda;
+    const nl = F.lineas[F.lineas.length - 1]; nl.escalas = App.productos.escalas(p.Title).length > 0; nl.rango_desde = null; aplicarEscala(nl);
     pintarLineas(c); pintarDatos(c); pintarConds(c);
     const q = c.querySelector('[data-i="' + (F.lineas.length - 1) + '"][data-k="' + (base > 0 ? 'cantidad' : 'precio_unitario') + '"]'); if (q) q.focus();
     void e;
@@ -665,7 +708,7 @@
     let nD = await G.reservar('DET', det.length);
     const tot = { bruto: 0, desc: 0, neto: 0, iva: 0 };
     for (const l of det) {
-      const pv = l.producto_id ? App.productos.precioVigente(l.producto_id) : null;
+      const pv = l.producto_id ? App.productos.precioVigente(l.producto_id, Number(l.cantidad)) : null;   // con precios por volumen, el rango de la cantidad
       const pu = pv && Number(pv.valor) > 0 && (pv.moneda || 'COP') === (cot.moneda || 'COP') ? Number(pv.valor) : Number(l.precio_unitario);
       const m = cot.moneda || 'COP', sub = redondear(Number(l.cantidad) * pu, m), dsc = redondear(sub * Number(l.descuento_porcentaje || 0) / 100, m), neto = sub - dsc;
       const iva = l.aplica_iva ? ivaPct() : 0, ivaV = redondear(neto * iva / 100, m);

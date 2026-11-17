@@ -34,7 +34,36 @@
     return pref + '-' + String(max + 1).padStart(ancho, '0');
   }
   const tipoTxt = (t) => (TIPOS.find((x) => x[0] === t) || [t, t])[1];
-  const precioVigente = (pid) => datos.precios.filter((p) => p.producto_id === pid && p.activo).sort((a, b) => soloFecha(b.fecha_inicio).localeCompare(soloFecha(a.fecha_inicio)))[0] || null;
+  // Precios por volumen: varias filas activas de MAE_Precios con cantidad_desde / cantidad_hasta (hasta vacío = en adelante)
+  const conRango = (x) => x.cantidad_desde !== null && x.cantidad_desde !== undefined && x.cantidad_desde !== '';
+  const SIN_TOPE = 999999999;
+  const hastaDe = (x) => (x.cantidad_hasta === null || x.cantidad_hasta === undefined || x.cantidad_hasta === '' || Number(x.cantidad_hasta) >= SIN_TOPE ? Infinity : Number(x.cantidad_hasta));
+  const escalas = (pid) => datos.precios.filter((p) => p.producto_id === pid && p.activo && conRango(p)).sort((a, b) => Number(a.cantidad_desde) - Number(b.cantidad_desde));
+  const rangoTxt = (x) => { const d = U.fmt.num(x.cantidad_desde), h = hastaDe(x); return h === Infinity ? d + ' en adelante' : d + ' – ' + U.fmt.num(h); };
+  // Precio vigente; con escalas y cantidad, el del rango donde cae la cantidad (sin cantidad: el primer rango)
+  function precioVigente(pid, cantidad) {
+    const esc = escalas(pid);
+    if (esc.length) {
+      if (cantidad === undefined || cantidad === null || isNaN(Number(cantidad))) return esc[0];
+      const n = Number(cantidad);
+      return esc.find((x) => n >= Number(x.cantidad_desde) && n <= hastaDe(x)) || (n < Number(esc[0].cantidad_desde) ? esc[0] : esc[esc.length - 1]);
+    }
+    return datos.precios.filter((p) => p.producto_id === pid && p.activo).sort((a, b) => soloFecha(b.fecha_inicio).localeCompare(soloFecha(a.fecha_inicio)))[0] || null;
+  }
+  // Historial: las filas de una misma tabla por volumen (misma fecha y estado) se muestran como una sola entrada
+  function agrupar(hist) {
+    const out = [], idx = {};
+    hist.forEach((h) => {
+      if (!conRango(h)) { out.push(h); return; }
+      const k = soloFecha(h.fecha_inicio) + '|' + soloFecha(h.fecha_fin) + '|' + !!h.activo;
+      if (idx[k]) idx[k]._grupo.push(h); else { idx[k] = Object.assign({}, h, { _grupo: [h] }); out.push(idx[k]); }
+    });
+    return out;
+  }
+  function tablaEscalas(esc, marcar) {
+    return '<table class="ic-prev ic-escalas"><thead><tr><th>Empleados / cantidad</th><th style="text-align:right">Unitario</th></tr></thead><tbody>' +
+      esc.map((x) => '<tr' + (marcar && marcar === x ? ' class="sel"' : '') + '><td>' + rangoTxt(x) + '</td><td style="text-align:right;white-space:nowrap">' + precio(x.valor, x.moneda) + '</td></tr>').join('') + '</tbody></table>';
+  }
   const ultimoCorte = (pid) => datos.cortes.filter((c) => c.producto_id === pid).sort((a, b) => soloFecha(b.fecha_corte).localeCompare(soloFecha(a.fecha_corte)))[0] || null;
   const productoPorId = (id) => datos.productos.find((p) => p.Title === id);
   const vinetas = (txt) => String(txt || '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
@@ -216,6 +245,13 @@
       f.querySelector('#ayCod').textContent = x[0] === 'FAB' ? 'Escriba la referencia tal como la trae el fabricante.' : x[1] + ': siguiente consecutivo libre (puede ajustarlo).';
       if (x[2] && nuevo) { tipo.value = x[2]; tipo.onchange(); }
     };
+    // Si se cambia el Tipo a mano y el código es propio o está vacío, el prefijo sigue al tipo (Equipo → referencia del fabricante)
+    tipo.addEventListener('change', () => {
+      if (!nuevo) return;   // en un producto existente el código no cambia solo
+      const pr = (PREFIJOS.find((y) => y[2] === tipo.value) || PREFIJOS[0])[0], actual = prefijoDe(inCod.value);
+      if (pr === actual || (actual === 'FAB' && inCod.value.trim())) return;   // referencia del fabricante escrita: no se toca
+      selPref.value = pr; const t = tipo.value; selPref.onchange(); tipo.value = t;
+    });
     tipo.onchange = () => {   // valores por defecto según el tipo
       const sinInv = SIN_INVENTARIO.indexOf(tipo.value) >= 0;
       f.querySelector('[name=maneja_inventario]').value = sinInv ? 'NO' : 'SI';
@@ -264,7 +300,7 @@
   function vistaFicha(c, id) {
     const p = productoPorId(id), admin = App.usuario.es_admin;
     if (!p) { c.innerHTML = '<a class="ic-volver" href="#productos">← Productos</a><div class="ic-form">No se encontró el producto ' + esc(id) + '.</div>'; return; }
-    const pv = precioVigente(id), co = ultimoCorte(id);
+    const pv = precioVigente(id), co = ultimoCorte(id), escV = escalas(id);
     const historial = datos.precios.filter((x) => x.producto_id === id).sort((a, b) => soloFecha(b.fecha_inicio).localeCompare(soloFecha(a.fecha_inicio)) || (b.activo ? 1 : 0) - (a.activo ? 1 : 0));
     const cortes = datos.cortes.filter((x) => x.producto_id === id).sort((a, b) => soloFecha(b.fecha_corte).localeCompare(soloFecha(a.fecha_corte)));
     const compras = datos.compras.filter((x) => x.producto_id === id).sort((a, b) => soloFecha(b.fecha_compra).localeCompare(soloFecha(a.fecha_compra)));
@@ -277,7 +313,7 @@
         '<div>' + htmlFoto(p, 'grande') + (admin ? '<label class="ic-btn chico sec" style="margin-top:8px;width:100%;justify-content:center" for="fFoto">' + (p.imagen_webp_url ? 'Cambiar foto' : 'Subir foto') + '</label><input type="file" id="fFoto" accept="image/*" hidden>' : '') + '</div>' +
         '<div class="principal">' + (p.estado === 'INACTIVO' ? '<span class="ic-tag inactivo">Inactivo</span>' : '<span class="ic-tag prospecto">' + esc(tipoTxt(p.tipo)) + '</span>') +
           '<h1>' + esc(p.nombre) + '</h1><div class="meta"><span>' + esc(p.codigo) + '</span>' + (p.codigo_anterior ? '<span>Antes: ' + esc(p.codigo_anterior) + '</span>' : '') + (p.categoria ? '<span>' + esc(p.categoria) + '</span>' : '') + '<span>' + esc(p.Title) + '</span></div>' +
-          '<div style="margin-top:14px;font-size:26px;font-weight:700;color:var(--ic-azul)">' + (pv ? precio(pv.valor, pv.moneda) : '<span style="font-size:15px;color:var(--ic-gris)">Sin precio vigente</span>') + '</div>' +
+          '<div style="margin-top:14px;font-size:26px;font-weight:700;color:var(--ic-azul)">' + (escV.length ? '<span style="font-size:15px;font-weight:600">Por volumen · desde </span>' + precio(Math.min.apply(null, escV.map((x) => Number(x.valor))), escV[0].moneda) : pv ? precio(pv.valor, pv.moneda) : '<span style="font-size:15px;color:var(--ic-gris)">Sin precio vigente</span>') + '</div>' +
           (pv ? '<div class="ic-conteo" style="margin:0">Antes de IVA · vigente desde ' + U.fmt.fecha(pv.fecha_inicio) + (p.aplica_iva ? '' : ' · <b>no aplica IVA</b>') + '</div>' : '') +
         '</div></div>' +
         (admin ? '<div style="display:flex;gap:8px;flex-wrap:wrap"><a class="ic-btn sec" href="#productos/' + esc(id) + '/editar">Editar</a><button class="ic-btn ' + (p.estado === 'INACTIVO' ? 'sec' : 'peligro') + '" id="btnEstado">' + (p.estado === 'INACTIVO' ? 'Reactivar' : 'Desactivar') + '</button></div>' : '') +
@@ -296,8 +332,10 @@
           '</dl><div class="ic-auditoria">Creado por ' + esc(p._autor || '—') + ' el ' + U.fmt.fechaHora(p._creado) + ' · Última modificación: ' + esc(p._editor || '—') + ', ' + U.fmt.fechaHora(p._modificado) + '</div></div></div>' +
         '</div>' +
         '<div style="display:flex;flex-direction:column;gap:16px">' +
+          (escV.length ? '<div class="ic-bloque"><div class="cab"><h2>Precios por volumen</h2>' + (admin ? '<button class="ic-btn chico sec" id="btnEscalas">Modificar tabla</button>' : '') + '</div><div class="cuerpo">' + tablaEscalas(escV) +
+            '<p class="ic-conteo" style="margin:8px 0 0">Al cotizar, el unitario se toma del rango donde cae la cantidad. Vigente desde ' + U.fmt.fecha(escV[0].fecha_inicio) + '.</p></div></div>' : '') +
           '<div class="ic-bloque"><div class="cab"><h2>Historial de precios</h2>' + (admin ? '<button class="ic-btn chico" id="btnPrecio">+ Nuevo precio</button>' : '') + '</div><div class="cuerpo">' +
-            (historial.length ? historial.map((h) => '<div class="ic-item" style="cursor:default"><div style="flex:1"><div class="titulo">' + precio(h.valor, h.moneda) + (h.activo ? ' <span class="ic-tag cliente">Vigente</span>' : '') + '</div>' +
+            (historial.length ? agrupar(historial).map((h) => '<div class="ic-item" style="cursor:default"><div style="flex:1"><div class="titulo">' + (h._grupo ? '<span class="sec" style="display:inline;margin-right:6px">Por volumen · ' + h._grupo.length + ' rangos:</span>' + precio(Math.max.apply(null, h._grupo.map((x) => Number(x.valor))), h.moneda) + ' a ' + precio(Math.min.apply(null, h._grupo.map((x) => Number(x.valor))), h.moneda) : precio(h.valor, h.moneda)) + (h.activo ? ' <span class="ic-tag cliente">Vigente</span>' : '') + '</div>' +
               '<div class="sec">Desde ' + U.fmt.fecha(h.fecha_inicio) + (h.fecha_fin ? ' hasta ' + U.fmt.fecha(h.fecha_fin) : '') + (h._autor ? ' · ' + esc(h._autor) : '') + '</div></div></div>').join('') : '<div class="ic-vacio" style="padding:18px">Sin precios registrados.</div>') +
           '</div></div>' +
           (p.maneja_inventario ? '<div class="ic-bloque"><div class="cab"><h2>Inventario' + (co ? ': ' + U.fmt.num(co.cantidad) + ' und' : '') + '</h2>' + (admin ? '<button class="ic-btn chico sec" id="btnCorte">+ Registrar corte</button>' : '') + '</div><div class="cuerpo">' +
@@ -318,6 +356,7 @@
       catch (er) { console.error(er); U.aviso(U.mensajeError(er), 'err', 7000); }
     };
     U.$('#btnPrecio', c).onclick = () => formPrecio(p, pv, c);
+    const be = U.$('#btnEscalas', c); if (be) be.onclick = () => formPrecio(p, pv, c, true);
     const bc = U.$('#btnCorte', c); if (bc) bc.onclick = () => formCorte(p, c);
     U.$('#btnCompra', c).onclick = () => formCompra(p, c);
     U.$('#btnEstado', c).onclick = async () => {
@@ -329,25 +368,74 @@
   }
 
   // ---------- Nuevo precio (cierra el vigente) ----------
-  async function registrarPrecio(p, valor, moneda, desde) {
+  // filas (opcional) = [{desde, hasta, valor}] para precios por volumen; sin filas, precio único
+  async function registrarPrecio(p, valor, moneda, desde, filas) {
     const vig = datos.precios.filter((x) => x.producto_id === p.Title && x.activo);
     for (const x of vig) await G.actualizar('MAE_Precios', x._id, { activo: false, fecha_fin: desde > soloFecha(x.fecha_inicio) ? diaAnterior(desde) : soloFecha(x.fecha_inicio) });
-    await G.crear('MAE_Precios', { Title: 'PRE-' + pad(await G.siguiente('PRE'), 6), producto_id: p.Title, valor, moneda, fecha_inicio: desde, activo: true });
+    if (!filas || !filas.length) { await G.crear('MAE_Precios', { Title: 'PRE-' + pad(await G.siguiente('PRE'), 6), producto_id: p.Title, valor, moneda, fecha_inicio: desde, activo: true }); return; }
+    for (const r of filas) {
+      const it = { Title: 'PRE-' + pad(await G.siguiente('PRE'), 6), producto_id: p.Title, valor: r.valor, moneda, fecha_inicio: desde, activo: true, cantidad_desde: r.desde };
+      if (r.hasta !== null) it.cantidad_hasta = r.hasta;
+      await G.crear('MAE_Precios', it);
+    }
   }
-  function formPrecio(p, pv, c) {
-    U.modal('Nuevo precio · ' + p.nombre, '<form class="ic-form" id="fPre" novalidate>' +
-      (pv ? '<p class="ic-conteo">Precio vigente: <b>' + precio(pv.valor, pv.moneda) + '</b> desde ' + U.fmt.fecha(pv.fecha_inicio) + '. Al guardar, queda en el historial.</p>' : '') +
-      '<div class="ic-campos">' + U.campo({ name: 'valor', label: 'Precio antes de IVA', req: true, modo: 'decimal', c: 'c4' }) +
-      U.campo({ name: 'moneda', label: 'Moneda', t: 'select', op: [['COP', 'COP'], ['USD', 'USD']], valor: pv ? pv.moneda : 'COP', vacio: false, c: 'c4' }) +
+  // Lee y valida la tabla de rangos del formulario; devuelve {filas} o {error}
+  function leerRangos(m) {
+    const nm = (v) => { v = String(v || '').trim().replace(/\./g, '').replace(/,/g, '.'); return v === '' ? null : Number(v); };
+    const filas = Array.from(m.querySelectorAll('#tRangos tbody tr')).map((tr) => ({ desde: nm(tr.querySelector('[data-r=desde]').value), hasta: nm(tr.querySelector('[data-r=hasta]').value), valor: nm(tr.querySelector('[data-r=valor]').value) }))
+      .filter((r) => r.desde !== null || r.hasta !== null || r.valor !== null);
+    if (filas.length < 2) return { error: 'Escriba al menos dos rangos (para un solo precio use «Precio único»).' };
+    for (let i = 0; i < filas.length; i++) {
+      const r = filas[i], n = i + 1;
+      if (r.hasta !== null && r.hasta >= SIN_TOPE) r.hasta = null;
+      if (r.desde === null || !Number.isInteger(r.desde) || r.desde < 0) return { error: 'Rango ' + n + ': «Desde» debe ser un número entero.' };
+      if (r.hasta !== null && (!Number.isInteger(r.hasta) || r.hasta < r.desde)) return { error: 'Rango ' + n + ': «Hasta» debe ser entero y mayor o igual que «Desde».' };
+      if (r.valor === null || isNaN(r.valor) || r.valor < 0) return { error: 'Rango ' + n + ': escriba un precio válido.' };
+      if (r.hasta === null && i < filas.length - 1) return { error: 'Rango ' + n + ': solo el último rango puede quedar sin «Hasta» (en adelante).' };
+      if (i > 0 && r.desde !== filas[i - 1].hasta + 1) return { error: 'Rango ' + n + ': debe empezar en ' + U.fmt.num(filas[i - 1].hasta + 1) + ' (justo después del rango anterior), sin huecos ni cruces.' };
+    }
+    return { filas };
+  }
+  function filaRango(r) {
+    r = r || {};
+    const v = (x) => (x === null || x === undefined || x === '' ? '' : esc(String(x)));
+    return '<tr><td><input data-r="desde" inputmode="numeric" value="' + v(r.desde) + '"></td><td><input data-r="hasta" inputmode="numeric" value="' + v(r.hasta) + '" placeholder="en adelante"></td>' +
+      '<td><input data-r="valor" inputmode="decimal" value="' + v(r.valor) + '"></td><td><button type="button" class="ic-btn chico sec" data-quitar title="Quitar rango">✕</button></td></tr>';
+  }
+  function formPrecio(p, pv, c, abrirVolumen) {
+    const esc0 = escalas(p.Title), vol = abrirVolumen || esc0.length > 0;
+    const filas0 = esc0.length ? esc0.map((x) => ({ desde: x.cantidad_desde, hasta: hastaDe(x) === Infinity ? '' : x.cantidad_hasta, valor: x.valor })) : [{ desde: 1 }, {}];
+    U.modal((vol ? 'Precios por volumen · ' : 'Nuevo precio · ') + p.nombre, '<form class="ic-form" id="fPre" novalidate>' +
+      (esc0.length ? '<p class="ic-conteo">Tabla vigente desde ' + U.fmt.fecha(esc0[0].fecha_inicio) + '. Al guardar, la anterior queda en el historial.</p>' : pv ? '<p class="ic-conteo">Precio vigente: <b>' + precio(pv.valor, pv.moneda) + '</b> desde ' + U.fmt.fecha(pv.fecha_inicio) + '. Al guardar, queda en el historial.</p>' : '') +
+      '<div class="ic-campos">' + U.campo({ name: 'modo', label: 'Tipo de precio', t: 'select', op: [['UNICO', 'Precio único'], ['VOLUMEN', 'Por volumen (rangos de cantidad)']], valor: vol ? 'VOLUMEN' : 'UNICO', vacio: false, c: 'c12' }) +
+      '<div class="ic-campo c4" id="cValor"' + (vol ? ' hidden' : '') + '><label for="f_valor">Precio antes de IVA <span class="req">*</span></label><input id="f_valor" name="valor" inputmode="decimal"></div>' +
+      U.campo({ name: 'moneda', label: 'Moneda', t: 'select', op: [['COP', 'COP'], ['USD', 'USD']], valor: (esc0[0] || pv || {}).moneda || 'COP', vacio: false, c: 'c4' }) +
       U.campo({ name: 'fecha_inicio', label: 'Vigente desde', t: 'date', valor: hoy(), c: 'c4' }) + '</div>' +
-      '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="bC">Cancelar</button><button class="ic-btn" id="bG">Guardar precio</button></div></form>', (m) => {
+      '<div id="cRangos"' + (vol ? '' : ' hidden') + '><p class="ic-conteo" style="margin:4px 0 6px">Precio unitario antes de IVA según la cantidad cotizada. Deje «Hasta» vacío en el último rango para «en adelante».</p>' +
+        '<table class="ic-tabla" id="tRangos"><thead><tr><th>Desde</th><th>Hasta</th><th>Unitario</th><th></th></tr></thead><tbody>' + filas0.map(filaRango).join('') + '</tbody></table>' +
+        '<button type="button" class="ic-btn chico sec" id="bAddR" style="margin-top:8px">+ Agregar rango</button><div class="ic-error" id="eRangos" style="color:var(--ic-err);margin-top:8px"></div></div>' +
+      '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="bC">Cancelar</button><button class="ic-btn" id="bG">Guardar</button></div></form>', (m) => {
+      const modo = m.querySelector('[name=modo]'), tb = m.querySelector('#tRangos tbody');
+      const enlazar = () => tb.querySelectorAll('[data-quitar]').forEach((b) => { b.onclick = () => { b.closest('tr').remove(); }; });
+      // Al escribir «Hasta», propone el «Desde» del rango siguiente
+      tb.addEventListener('input', (e) => { if (e.target.dataset.r !== 'hasta') return; const sig = e.target.closest('tr').nextElementSibling; const h = Number(String(e.target.value).replace(/\./g, '')); if (sig && Number.isInteger(h) && h > 0) sig.querySelector('[data-r=desde]').value = h + 1; });
+      enlazar();
+      modo.onchange = () => { const v = modo.value === 'VOLUMEN'; U.$('#cRangos', m).hidden = !v; U.$('#cValor', m).hidden = v; };
+      U.$('#bAddR', m).onclick = () => { const ult = tb.lastElementChild, h = ult ? Number(String(ult.querySelector('[data-r=hasta]').value).replace(/\./g, '')) : 0; tb.insertAdjacentHTML('beforeend', filaRango({ desde: h > 0 ? h + 1 : '' })); enlazar(); };
       U.$('#bC', m).onclick = U.cerrarModal;
       U.$('#fPre', m).onsubmit = async (ev) => {
         ev.preventDefault();
-        const v = U.leerForm(ev.target), n = Number(String(v.valor).replace(/,/g, '.'));
-        if (!U.marcarErrores(ev.target, v.valor === '' || isNaN(n) || n < 0 ? { valor: 'Precio no válido' } : {})) return;
+        const v = U.leerForm(ev.target);
+        let filas = null, n = 0;
+        if (v.modo === 'VOLUMEN') {
+          const r = leerRangos(m); U.$('#eRangos', m).textContent = r.error || '';
+          if (r.error) return; filas = r.filas; n = filas[0].valor;
+        } else {
+          n = Number(String(v.valor).replace(/,/g, '.'));
+          if (!U.marcarErrores(ev.target, v.valor === '' || isNaN(n) || n < 0 ? { valor: 'Precio no válido' } : {})) return;
+        }
         await U.conCarga(U.$('#bG', m), async () => {
-          try { await registrarPrecio(p, n, v.moneda, v.fecha_inicio || hoy()); U.cerrarModal(); await cargar(true); vistaFicha(c, p.Title); U.aviso('Precio actualizado', 'ok'); }
+          try { await registrarPrecio(p, n, v.moneda, v.fecha_inicio || hoy(), filas); U.cerrarModal(); await cargar(true); vistaFicha(c, p.Title); U.aviso(filas ? 'Tabla de precios por volumen guardada' : 'Precio actualizado', 'ok'); }
           catch (er) { U.aviso(U.mensajeError(er), 'err', 7000); }
         });
       };
@@ -459,5 +547,5 @@
   }
 
   // Expuesto para la carga masiva y, más adelante, para las cotizaciones
-  App.productos = { cargar, datos, precioVigente, ultimoCorte, normCodigo, nombreFoto, urlFoto, registrarPrecio, diaAnterior, hoy };
+  App.productos = { cargar, datos, precioVigente, escalas, rangoTxt, tablaEscalas, hastaDe, ultimoCorte, normCodigo, nombreFoto, urlFoto, registrarPrecio, diaAnterior, hoy };
 })();

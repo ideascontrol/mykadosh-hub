@@ -123,7 +123,8 @@ const LISTAS = [
     ['maneja_inventario', 'b'], ['aplica_iva', 'b'], ['garantia_meses', 'n'], ['imagen_webp_url', 't'], ['descripcion_editable', 'b'],
     ['stock_minimo', 'n'], ['estado', 'c', ESTADO, 1]] },
   { n: 'MAE_Precios', title: 'precio_id', d: 'Historial de precios de venta', cols: [
-    ['producto_id', 't', null, 1], ['valor', 'n'], ['moneda', 'c', ['COP', 'USD']], ['fecha_inicio', 'd'], ['fecha_fin', 'd'], ['activo', 'b', null, 1]] },
+    ['producto_id', 't', null, 1], ['valor', 'n'], ['moneda', 'c', ['COP', 'USD']], ['fecha_inicio', 'd'], ['fecha_fin', 'd'], ['activo', 'b', null, 1],
+    ['cantidad_desde', 'n'], ['cantidad_hasta', 'n']] },
   { n: 'MAE_Distribuidores', title: 'distribuidor_id', d: 'Proveedores de productos', cols: [
     ['nombre', 't'], ['nit', 't'], ['pais', 't'], ['contacto', 't'], ['telefono', 't'], ['email', 't'], ['estado', 'c', ESTADO]] },
   { n: 'MAE_ProductoDistribuidor', title: 'producto_distribuidor_id', d: 'Precio de compra por distribuidor', cols: [
