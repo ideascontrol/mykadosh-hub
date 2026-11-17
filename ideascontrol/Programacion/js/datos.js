@@ -266,8 +266,18 @@ window.Ope = (function () {
         if (antes.fecha && dia(antes.fecha) !== act.fecha) cambios.push(act.Title + ': fecha ' + ff(antes.fecha) + ' → ' + ff(act.fecha));
         if (antes.tecnico_id !== undefined && antes.tecnico_id !== act.tecnico_id) cambios.push(act.Title + ': persona ' + (nombreTec(antes.tecnico_id) || '—') + ' → ' + (nombreTec(act.tecnico_id) || '—'));
         if (antes.estado && antes.estado !== act.estado) cambios.push(act.Title + ' ' + (ESTADO_TXT[act.estado] || act.estado) + ' en la Programación' + (act.motivo_cambio ? ' (' + act.motivo_cambio + ')' : ''));
+        if (antes.hora_inicio !== undefined && (antes.hora_inicio || '') !== (act.hora_inicio || '')) cambios.push(act.Title + ': hora ' + (act.hora_inicio || 'sin hora'));
+        if (antes.observaciones !== undefined && (antes.observaciones || '') !== (act.observaciones || '') && act.observaciones) cambios.push(act.Title + ' · observaciones: ' + act.observaciones);
       }
       if (!cambios.length) return;
+      // Estado: la tarea refleja el estado de su actividad (REPROGRAMADO no cambia nada: la nueva actividad trae el estado)
+      const EST = { PROGRAMADO: 'Programada', CONFIRMADO: 'Programada', EJECUTADO: 'Finalizada', CANCELADO: 'Cancelada', STANDBY: 'En espera del cliente' };
+      const nuevoEst = (!antes || antes.estado !== act.estado) ? EST[act.estado] : null;
+      if (nuevoEst && t.estado !== nuevoEst && !(nuevoEst === 'Programada' && ['Finalizada', 'Cancelada'].indexOf(t.estado) >= 0 && antes)) {
+        campos.estado = nuevoEst;
+        if (nuevoEst === 'Finalizada') { campos.progreso = 100; campos.fecha_cierre = hoy(); }
+        if (nuevoEst === 'Cancelada') campos.fecha_cierre = hoy();
+      }
       if (vigente) {
         const tc = D.tecnicos.find((x) => x.Title === act.tecnico_id);
         if (tc && t.responsable_id !== tc.Title) { campos.responsable = tc.nombre; campos.responsable_id = tc.Title; }

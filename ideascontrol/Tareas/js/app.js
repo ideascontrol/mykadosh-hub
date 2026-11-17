@@ -288,7 +288,7 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
         e.preventDefault();
         const v = U.leerForm(f);
         const errores = {}; if (!v.cliente_id) errores.cliente_id = 'Elija el cliente'; if (!String(v.item || '').trim()) errores.item = 'Escriba la tarea';
-        const agV = t ? agendaVigente(t) : null, enAgenda = agV && activaAg(agV) && agV.estado !== 'EJECUTADO';
+        const agV = t ? agendaVigente(t) : null, enAgenda = agV && ['CANCELADO', 'REPROGRAMADO', 'EJECUTADO'].indexOf(agV.estado) < 0;
         if (enAgenda && v.fecha_inicio && v.fecha_inicio !== agV.fecha && App.festivos[v.fecha_inicio]) errores.fecha_inicio = 'Es festivo: la actividad agendada no se puede mover a ese día';
         if (Object.keys(errores).length) { U.marcarErrores(f, errores); return; }
         let bit = String(v.bitacora || '').trim();
@@ -310,6 +310,13 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
               const cambiosAg = {}, notas = [];
               if (enAgenda && resp && resp.Title && resp.Title !== agV.tecnico_id) { cambiosAg.tecnico_id = resp.Title; notas.push('persona ' + ((persona(agV.tecnico_id) || {}).nombre || '—') + ' → ' + resp.nombre); }
               if (enAgenda && v.fecha_inicio && v.fecha_inicio !== agV.fecha) { cambiosAg.fecha = v.fecha_inicio; notas.push('fecha ' + textoFecha(agV.fecha) + ' → ' + textoFecha(v.fecha_inicio)); }
+              // Estado: la actividad refleja el estado de la tarea
+              if (enAgenda && v.estado !== t.estado) {
+                const est = v.estado === 'Finalizada' ? 'EJECUTADO' : v.estado === 'Cancelada' ? 'CANCELADO' : /^En espera/.test(v.estado) ? 'STANDBY' : agV.estado === 'STANDBY' ? 'PROGRAMADO' : '';
+                if (est && est !== agV.estado) { cambiosAg.estado = est; notas.push('estado ' + (ESTADOS_AG[agV.estado] || agV.estado) + ' → ' + ESTADOS_AG[est]); }
+              }
+              // Nota nueva en la bitácora: también queda en las observaciones de la actividad
+              if (enAgenda && String(v.nota || '').trim()) { cambiosAg.observaciones = [agV.observaciones, 'Tarea ' + t.Title + ': ' + v.nota.trim()].filter(Boolean).join('\n'); notas.push('nota agregada a las observaciones'); }
               if (notas.length) {
                 cambiosAg.motivo_cambio = 'Cambio desde la tarea ' + t.Title;
                 try { await G.actualizar('OPE_Actividades', agV._id, cambiosAg); }
