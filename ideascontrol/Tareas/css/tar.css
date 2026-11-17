@@ -40,3 +40,21 @@
 .tar-estado.e-enesperadelcliente, .tar-estado.e-enesperadetercero, .tar-estado.e-enesperainterna { background: #F3ECFB; color: #6B3FA0; }
 .tar-estado.e-programada { background: #FFF4D6; color: #8A6100; } .tar-estado.e-enrevision { background: #E8F6F6; color: #0F6F6F; }
 .tar-estado.e-finalizada { background: #E3F4EF; color: #0F766E; }
+
+/* v0.2.0: tabla que cabe, agenda y reportes */
+.tar-caja { overflow-x: auto; }
+.tar-tabla { font-size: 13.5px; }
+.tar-tabla th, .tar-tabla td { padding: 9px 10px; }
+.tar-tabla th { white-space: nowrap; font-size: 11.5px; }
+.tar-tabla td.tar-cli { min-width: 110px; max-width: 160px; }
+.tar-tabla td.tar-av { min-width: 72px; }
+.tar-tabla td .tar-sem + .sec { margin-top: 4px; }
+.tar-ag { display: inline-block; margin-top: 4px; font-size: 11.5px; font-weight: 600; padding: 2px 7px; border-radius: 6px; background: #E6F0FA; color: #0A5A90; white-space: nowrap; }
+.tar-ag.ok { background: #E3F4EF; color: #0F766E; } .tar-ag.off { background: #F2F2F2; color: #7A7A7A; }
+.tar-estado + .tar-ag { display: block; width: max-content; }
+.tar-agenda { border: 1px solid var(--ic-borde); border-radius: 10px; padding: 10px 12px; margin: 12px 0 4px; background: #F8FAFC; font-size: 14px; }
+.tar-mini { margin-top: 6px; font-size: 13px; } .tar-mini td { padding: 6px 8px; }
+.tar-disp-ok { color: var(--ic-teal); font-weight: 600; font-size: 14px; margin: 8px 0; }
+.tar-dia { margin: 4px 0 8px; padding-left: 18px; font-size: 13px; }
+.tar-rep { cursor: pointer; border-radius: 6px; padding-left: 4px; padding-right: 4px; } .tar-rep:hover { background: #F5F9FC; }
+.tar-fila-b { grid-template-columns: minmax(150px, 220px) 1fr 34px; }

@@ -18,6 +18,26 @@
     return '<span class="ope-val ok">✔ OK</span>';
   };
 
+  // ---------- De la agenda a una tarea de Gestión de Clientes (APP-109, lista TAR_Tareas) ----------
+  async function crearTarea(a, alCambiar) {
+    const G = IC.graph;
+    const nombre = Ope.nombreTec(a.tecnico_id), d = new Date(), p2 = (n) => String(n).padStart(2, '0');
+    const ok = await U.confirmar('Crear tarea de seguimiento', 'Se crea una tarea en Gestión de Clientes para ' + (a.cliente || 'el cliente') + ', responsable ' + nombre + ', con fecha ' + Ope.textoFecha(a.fecha) + ', enlazada con ' + a.Title + '.', 'Crear tarea');
+    if (!ok) return;
+    try {
+      const n = await G.siguiente('TAR'), id = 'T-' + String(n).padStart(4, '0');
+      const campos = { Title: id, orden: n, cliente_id: a.empresa_id || 'INTERNO', cliente_nombre: a.cliente || 'Ideas Control (interno)', item: Ope.nombreTipo(a.tipo) + (a.sitio ? ' · ' + a.sitio : '') + (a.observaciones ? ': ' + a.observaciones : ''),
+        responsable: nombre, responsable_id: a.tecnico_id || '', estado: 'Programada', prioridad: 'Media', fecha_apertura: Ope.hoy(), fecha_inicio: a.fecha, fecha_limite: a.fecha, progreso: 0, agenda: a.Title,
+        bitacora: p2(d.getDate()) + '/' + p2(d.getMonth() + 1) + '/' + String(d.getFullYear()).slice(2) + '. Creada desde la Programación (' + a.Title + ').' };
+      Object.keys(campos).forEach((k) => { if (campos[k] === '' || campos[k] == null) delete campos[k]; });
+      try { await G.crear('TAR_Tareas', campos); }
+      catch (e) { if (/responsable_id|agenda/i.test(e.message)) { delete campos.responsable_id; delete campos.agenda; await G.crear('TAR_Tareas', campos); } else throw e; }
+      await Ope.actualizarActividad(a, { tar_id: id }, 'ENLAZAR_TAREA');
+      U.cerrarModal(); U.aviso('Tarea ' + id + ' creada en Gestión de Clientes', 'ok', 6000);
+      if (alCambiar) alCambiar();
+    } catch (e) { U.aviso('No se pudo crear la tarea: ' + U.mensajeError(e), 'err', 9000); }
+  }
+
   // ---------- Tabla reutilizable ----------
   App.tablaActividades = function (lista, conDia) {
     if (!lista.length) return '<div class="ic-tabla-caja"><div class="ic-vacio">No hay actividades con estos filtros.</div></div>';
@@ -83,6 +103,8 @@
       '</div>' +
       (a.reprograma_de ? '<p class="ope-nota">Reprogramación de <b>' + esc(a.reprograma_de) + '</b>.</p>' : '') +
       (a.pry_tarea ? '<p class="ope-nota">Viene del proyecto <a href="/ideascontrol/Proyectos/#p/' + esc(a.pry_id || String(a.pry_tarea).split('#')[0]) + '/cronograma" target="ic_proyectos"><b>' + esc(String(a.pry_tarea).replace('#', ' · ')) + '</b></a>. Al marcarla ejecutada, la tarea del proyecto queda completada.</p>' : '') +
+      (a.tar_id ? '<p class="ope-nota">Enlazada con la tarea <a href="/ideascontrol/Tareas/#tareas/' + encodeURIComponent(a.tar_id) + '" target="ic_tareas"><b>' + esc(a.tar_id) + '</b></a> de Gestión de Clientes.</p>'
+        : (!nueva && edita && Ope.activa(a) ? '<p class="ope-nota"><button type="button" class="ic-btn sec chico" id="bTarea">+ Crear tarea en Gestión de Clientes</button> Para hacerle seguimiento como pendiente del cliente (queda enlazada con esta actividad).</p>' : '')) +
       (a.motivo_cambio ? '<p class="ope-nota">Motivo del cambio: ' + esc(a.motivo_cambio) + '</p>' : '') +
       '<div id="valPanel" class="ope-val-panel"></div>' +
       '<div id="diaPanel" class="ope-dia-panel"></div>' +
@@ -196,6 +218,7 @@
         } catch (e) { U.aviso(U.mensajeError(e), 'err', 7000); }
       };
       const bRep = cuerpo.querySelector('#bRep'); if (bRep) bRep.onclick = () => reprogramar(a, alCambiar);
+      const bTar = cuerpo.querySelector('#bTarea'); if (bTar) bTar.onclick = () => U.conCarga(bTar, () => crearTarea(a, alCambiar));
       const bCan = cuerpo.querySelector('#bCan'); if (bCan) bCan.onclick = () => cancelar(a, alCambiar);
     });
   };

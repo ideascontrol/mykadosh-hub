@@ -4,7 +4,7 @@
    por cliente como «Plan de Trabajo - Papeles Nacionales»).
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-109', nombre: 'Seguimiento por cliente', version: '0.1.3' },
+  app: { id: 'APP-109', nombre: 'Seguimiento por cliente', version: '0.2.0' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -14,8 +14,11 @@ window.CFG = {
   },
   sitio: { host: 'ideascontrolsas.sharepoint.com', ruta: '/sites/ICApps' },
   logo: '/ideascontrol/assets/ideascontrol.webp',
-  // Por ahora solo la Dirección de Operaciones usa esta app
-  usuarios: ['operaciones@ideascontrol.com'],
+  // Todo el personal de IC (cuentas @ideascontrol.com) ve, crea y actualiza tareas. Eliminar: solo la Dirección.
+  dominio: '@ideascontrol.com',
+  admins: ['operaciones@ideascontrol.com'],
+  // Agenda = Programación de Operaciones (APP-106, lista OPE_Actividades). Una tarea agendada queda enlazada con tar_id.
+  agendaDias: 120,   // actividades que se leen para mostrar el estado en la agenda (desde hace N días)
   // Estados: los cerrados no cuentan como pendientes ni generan alarma
   estados: ['Abierta', 'En proceso', 'En espera del cliente', 'En espera de tercero', 'En espera interna', 'Programada', 'En revisión', 'Finalizada', 'Cancelada'],
   ayudaEstados: {

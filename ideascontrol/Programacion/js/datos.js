@@ -198,7 +198,7 @@ window.Ope = (function () {
         entidad, registro_id: registro, accion, antes: antes ? JSON.stringify(antes) : '', despues: despues ? JSON.stringify(despues) : '' });
     } catch (e) { console.warn('Auditoría no registrada', e); }
   }
-  const CAMPOS_ACT = ['fecha', 'tecnico_id', 'tipo', 'cliente', 'empresa_id', 'ciudad', 'equipos', 'hora_inicio', 'ticket_os', 'estado', 'observaciones', 'reprograma_de', 'autorizado', 'motivo_cambio', 'origen', 'sitio', 'sede', 'pry_id', 'pry_tarea'];
+  const CAMPOS_ACT = ['fecha', 'tecnico_id', 'tipo', 'cliente', 'empresa_id', 'ciudad', 'equipos', 'hora_inicio', 'ticket_os', 'estado', 'observaciones', 'reprograma_de', 'autorizado', 'motivo_cambio', 'origen', 'sitio', 'sede', 'pry_id', 'pry_tarea', 'tar_id'];
   function soloCampos(o) { const r = {}; CAMPOS_ACT.forEach((k) => { if (o[k] !== undefined) r[k] = o[k]; }); return r; }
 
   // Cliente principal = quien contrata y paga (p. ej. Casa Limpia) · sitio = cliente final donde se instala
@@ -222,6 +222,8 @@ window.Ope = (function () {
       return new Error('Falta actualizar las listas de SharePoint (columna «sede»). Abra el Instalador (Programacion/Instalador/) y haga clic en «Crear estructura».');
     if (/sitio/i.test(String(e && e.message)) && /recogni|reconoc|not found|no existe|does not exist/i.test(String(e.message)))
       return new Error('Falta actualizar las listas de SharePoint (columna «sitio»). Abra el Instalador (Programacion/Instalador/) y haga clic en «Crear estructura».');
+    if (/tar_id/i.test(String(e && e.message)))
+      return new Error('Falta actualizar las listas de SharePoint (enlace con Gestión de Clientes). Abra el Instalador (Programacion/Instalador/) y haga clic en «Crear estructura».');
     if (/pry_(id|tarea)/i.test(String(e && e.message)))
       return new Error('Falta actualizar las listas de SharePoint (enlace con Proyectos). Abra el Instalador (Programacion/Instalador/) y haga clic en «Crear estructura».');
     return e;

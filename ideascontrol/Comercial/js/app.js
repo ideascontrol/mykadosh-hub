@@ -33,7 +33,8 @@ const MENU = [
     { ruta: 'tablero', titulo: 'Tablero comercial', texto: 'Cómo vamos: cotizado, ganado, embudo, seguimiento pendiente y motivos de pérdida.', icono: 'tablero', etapa: 2 }
   ] },
   { grupo: 'Datos maestros', items: [
-    { ruta: 'empresas', titulo: 'Empresas y contactos', texto: 'Prospectos y clientes, sus sedes y personas de contacto.', icono: 'empresas', etapa: 1, color: 'teal' },
+    // Empresas y contactos ya no se muestra aquí: es la app «Clientes» del portal (APP-115). La ruta #empresas sigue existiendo para los enlaces.
+    { ruta: 'empresas', titulo: 'Empresas y contactos', texto: 'Prospectos y clientes, sus sedes y personas de contacto.', icono: 'empresas', etapa: 1, color: 'teal', oculto: true },
     { ruta: 'productos', titulo: 'Productos y precios', texto: 'Catálogo con foto, ficha técnica, precios e inventario.', icono: 'productos', etapa: 1, color: 'teal' }
   ] },
   { grupo: 'Herramientas', items: [
@@ -44,12 +45,15 @@ const MENU = [
   ] }
 ];
 
+// Modo «Clientes» (APP-115): la misma app abierta desde /ideascontrol/Clientes/ muestra solo Empresas y contactos
+const MODO_CLIENTES = window.IC_MODO === 'clientes';
+
 // ---------- Encabezado ----------
 function pintarEncabezado() {
   const u = App.usuario;
   document.getElementById('encabezado').innerHTML =
     '<a href="#"><img class="logo" src="' + CFG.logo + '" alt="Ideas Control"></a>' +
-    '<div class="app-nombre"><b>Microapp ' + IC.ui.esc(CFG.app.nombre) + '</b><span>' + CFG.app.id + ' · v' + CFG.app.version + '</span></div>' +
+    (MODO_CLIENTES ? '<div class="app-nombre"><b>Clientes</b><span>APP-115 · Empresas y contactos</span></div>' : '<div class="app-nombre"><b>Microapp ' + IC.ui.esc(CFG.app.nombre) + '</b><span>' + CFG.app.id + ' · v' + CFG.app.version + '</span></div>') +
     '<div class="espacio"></div>' +
     '<div class="ic-user">' +
       (IC.portal ? IC.portal.boton() : '') +
@@ -77,7 +81,7 @@ function vistaMenu(c) {
       kpi('kEmp', 'Empresas registradas') + kpi('kCli', 'Clientes') + kpi('kPrd', 'Productos activos') + kpi('kCot', 'Cotizaciones') +
     '</div>';
   MENU.forEach((g) => {
-    const items = g.items.filter((i) => !i.admin || u.es_admin);
+    const items = g.items.filter((i) => (!i.admin || u.es_admin) && !i.oculto);
     if (!items.length) return;
     html += '<div class="ic-seccion">' + g.grupo + '</div><div class="ic-grid">';
     items.forEach((i) => {
@@ -128,12 +132,14 @@ function vistaPendiente(ruta) {
 async function arrancar() {
   const raiz = document.getElementById('contenido');
   IC.ui.pantalla(raiz, { logo: CFG.logo, cargando: true, titulo: 'Cargando…', texto: 'Conectando con Microsoft 365' });
+  if (MODO_CLIENTES) { try { sessionStorage.setItem('ic_volver_url', location.href); } catch (e) { /* sin almacenamiento */ } }
   try {
     const cuenta = await IC.auth.iniciar(CFG.auth);
     if (!cuenta) {
       IC.ui.pantalla(raiz, { logo: CFG.logo, titulo: 'Microapp Comercial', texto: 'Ingrese con su cuenta de Microsoft de Ideas Control.', boton: 'Iniciar sesión', alClic: () => IC.auth.entrar() });
       return;
     }
+    if (MODO_CLIENTES) { try { sessionStorage.removeItem('ic_volver_url'); } catch (e) { /* sin almacenamiento */ } }
     await IC.graph.sitio(CFG.sitio.host, CFG.sitio.ruta);
 
     // El usuario debe estar ACTIVO en SYS_Usuarios
@@ -154,6 +160,7 @@ async function arrancar() {
     pintarEncabezado();
     const rutas = { '': vistaMenu };
     MENU.forEach((g) => g.items.forEach((i) => { rutas[i.ruta] = (c) => (App.vistas[i.ruta] || vistaPendiente(i.ruta))(c); }));
+    if (MODO_CLIENTES) rutas[''] = (c) => App.vistas['empresas'](c);
     const volver = IC.auth.volverA(); if (volver) location.hash = volver;
     IC.ui.enrutar(Object.fromEntries(Object.entries(rutas).map(([k, fn]) => [k, () => fn(raiz)])));
   } catch (e) {

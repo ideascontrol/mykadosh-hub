@@ -1,10 +1,11 @@
 /* =====================================================================
    APP-109 · Seguimiento por cliente — tareas y pendientes por cliente
-   Vistas: #  resumen · #tareas  listado con filtros · #importar  Excel
-   Datos: TAR_Tareas (IC Apps) · clientes de MAE_Empresas (Comercial)
+   Vistas: #  resumen · #tareas  listado con filtros · #reportes  reportes detallados · #importar  Excel
+   Datos: TAR_Tareas (IC Apps) · clientes de MAE_Empresas (Comercial) · personal de OPE_Tecnicos
+   Agenda: una tarea se puede agendar en la Programación de Operaciones (OPE_Actividades, origen TAREA, tar_id = ID de la tarea)
    Semáforo: Vencida · Próxima a vencer (≤ CFG.diasAviso) · A tiempo · Sin fecha · Cerrada
    ===================================================================== */
-const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', estado: 'ACTIVAS', prioridad: '', categoria: '', semaforo: '', q: '' } };
+const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], tipos: [], festivos: {}, filtro: { cliente: '', estado: 'ACTIVAS', prioridad: '', categoria: '', semaforo: '', responsable: '', q: '' } };
 
 (function () {
   const U = IC.ui, esc = U.esc, G = IC.graph;
@@ -59,6 +60,42 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
     catch (e) { App.clientes = []; }
     App.clientes.sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)));
   }
+  // Personal de IC (OPE_Tecnicos: Ideas Control, administrativo y técnicos de campo)
+  const VINC = [['IDEAS_CONTROL', 'Ideas Control'], ['ADMINISTRATIVO', 'Administrativo'], ['TECNICO_CAMPO', 'Técnicos de campo']];
+  async function cargarPersonal() {
+    try {
+      const [tec, tip] = await Promise.all([G.items('OPE_Tecnicos', { top: 999 }), G.items('OPE_Tipos', { top: 999 }).catch(() => [])]);
+      App.personal = tec.filter((t) => t.estado !== 'INACTIVO').sort((a, b) => (Number(a.orden) || 99) - (Number(b.orden) || 99) || String(a.nombre).localeCompare(b.nombre));
+      App.tipos = tip.filter((t) => t.estado !== 'INACTIVO').sort((a, b) => (Number(a.orden) || 99) - (Number(b.orden) || 99));
+    } catch (e) { App.personal = []; App.tipos = []; }
+    try { (await G.items('SYS_Festivos', { top: 999 })).forEach((f) => { App.festivos[dia(f.fecha || f.Title)] = f.descripcion || 'Festivo'; }); } catch (e) { /* sin festivos */ }
+  }
+  const persona = (id) => App.personal.find((p) => p.Title === id);
+  const personaPorNombre = (n) => App.personal.find((p) => U.norm(p.nombre) === U.norm(n));
+  const esTecnico = (p) => p && p.vinculacion !== 'ADMINISTRATIVO';
+  // Agenda: actividades de la Programación enlazadas a tareas (desde hace CFG.agendaDias días)
+  const ESTADOS_AG = { PROGRAMADO: 'Programada', CONFIRMADO: 'Confirmada', EJECUTADO: 'Ejecutada', REPROGRAMADO: 'Reprogramada', CANCELADO: 'Cancelada', STANDBY: 'Stand By' };
+  const activaAg = (a) => ['CANCELADO', 'REPROGRAMADO', 'STANDBY'].indexOf(a.estado) < 0;
+  async function cargarAgenda() {
+    const desde = new Date(Date.now() - (CFG.agendaDias || 120) * 864e5).toISOString().slice(0, 10);
+    try { App.acts = (await G.items('OPE_Actividades', { filtro: "fields/fecha ge '" + desde + "T00:00:00Z'", top: 5000 })).map((a) => Object.assign(a, { fecha: dia(a.fecha) })); }
+    catch (e) { App.acts = []; }
+  }
+  const agendaDe = (t) => App.acts.filter((a) => a.tar_id === t.Title || String(t.agenda || '').split(/[;,\s]+/).indexOf(a.Title) >= 0).sort((a, b) => a.fecha.localeCompare(b.fecha));
+  const agendaVigente = (t) => { const L = agendaDe(t); return L.filter(activaAg).pop() || L[L.length - 1] || null; };
+  const chipAgenda = (t) => { const a = agendaVigente(t); if (!a) return ''; return '<span class="tar-ag ' + (a.estado === 'EJECUTADO' ? 'ok' : activaAg(a) ? '' : 'off') + '" title="Agenda (Programación): ' + esc(a.Title) + '">📅 ' + esc((ESTADOS_AG[a.estado] || a.estado) + ' ' + textoFecha(a.fecha)) + '</span>'; };
+  const habil = (d) => { const w = new Date(d + 'T12:00:00').getDay(); return w !== 0 && w !== 6 && !App.festivos[d]; };
+  const sigHabil = (d) => { let x = d; while (!habil(x)) x = new Date(new Date(x + 'T12:00:00').getTime() + 864e5).toISOString().slice(0, 10); return x; };
+  const esAdmin = () => CFG.admins.indexOf(App.usuario.email) >= 0;
+  // Lista de responsables: el personal agrupado por vinculación; el valor antiguo (p. ej. «Ideas Control») se conserva
+  function selResponsable(v0) {
+    const actual = v0.responsable_id ? persona(v0.responsable_id) : personaPorNombre(v0.responsable);
+    let h = '<select id="f_responsable_id" name="responsable_id"><option value="">Seleccione…</option>';
+    VINC.forEach(([k, n]) => { const L = App.personal.filter((p) => (p.vinculacion || 'IDEAS_CONTROL') === k); if (L.length) h += '<optgroup label="' + n + '">' + L.map((p) => '<option value="' + esc(p.Title) + '"' + (actual && actual.Title === p.Title ? ' selected' : '') + '>' + esc(p.nombre) + '</option>').join('') + '</optgroup>'; });
+    if (!actual && v0.responsable) h += '<optgroup label="Valor anterior"><option value="__ANTES__" selected>' + esc(v0.responsable) + '</option></optgroup>';
+    return h + '</select>';
+  }
+
   // Clientes con tareas (incluye los que se escribieron a mano o el interno)
   function clientesConTareas() {
     const m = {}; App.tareas.forEach((t) => { if (!m[t.cliente_id]) m[t.cliente_id] = t.cliente_nombre || t.cliente_id; });
@@ -78,8 +115,8 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
     document.getElementById('encabezado').innerHTML =
       '<a href="#"><img class="logo" src="' + CFG.logo + '" alt="Ideas Control"></a>' +
       '<div class="app-nombre"><b>' + esc(CFG.app.nombre) + '</b><span>' + CFG.app.id + ' · v' + CFG.app.version + '</span></div><div class="espacio"></div>' +
-      '<nav class="tar-nav"><a href="#" data-r="">Resumen</a><a href="#tareas" data-r="tareas">Tareas</a><a href="#importar" data-r="importar">Importar</a></nav>' +
-      '<div class="ic-user">' + IC.portal.boton() + '<div class="datos"><b>' + esc(u.nombre) + '</b><span>Dirección de Operaciones</span></div>' +
+      '<nav class="tar-nav"><a href="#" data-r="">Resumen</a><a href="#tareas" data-r="tareas">Tareas</a><a href="#reportes" data-r="reportes">Reportes detallados</a>' + (esAdmin() ? '<a href="#importar" data-r="importar">Importar</a>' : '') + '</nav>' +
+      '<div class="ic-user">' + IC.portal.boton() + '<div class="datos"><b>' + esc(u.nombre) + '</b><span>' + (esAdmin() ? 'Dirección de Operaciones' : 'Personal IC') + '</span></div>' +
       '<div class="ic-avatar" title="' + esc(u.email) + '">' + esc(u.iniciales) + '</div><button class="ic-btn sec chico" id="btnSalir">Salir</button></div>';
     document.getElementById('encabezado').hidden = false;
     document.getElementById('btnSalir').onclick = () => IC.auth.salir();
@@ -103,7 +140,6 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
       return { cl, total: ts.length, activas: a.length, venc: ts.filter((t) => semaforo(t) === 'VENCIDA').length, prox: ts.filter((t) => semaforo(t) === 'PROXIMA').length, av: ts.length ? Math.round(r * 100 / ts.length) : 0 };
     }).sort((a, b) => b.venc - a.venc || b.activas - a.activas);
     const urgentes = act.filter((t) => ['VENCIDA', 'PROXIMA'].indexOf(semaforo(t)) >= 0).sort((a, b) => a.fecha_limite.localeCompare(b.fecha_limite)).slice(0, 12);
-    const grupo = (campo, valores, lista) => { const tot = lista.length; return valores.concat(['']).map((v) => [v || 'Sin definir', lista.filter((t) => (t[campo] || '') === v).length]).filter((x) => x[1]).map((x) => '<div class="tar-fila-b"><span>' + esc(x[0]) + '</span>' + barra(x[1], tot) + '<b>' + x[1] + '</b></div>').join('') || '<p class="ic-conteo">Sin datos.</p>'; };
     c.innerHTML = '<div class="ic-barra"><div><h1 class="ic-titulo">Resumen</h1><p class="ic-subtitulo" style="margin:0">Tareas y pendientes de todos los clientes, al ' + esc(textoFecha(hoy())) + '.</p></div><span class="espacio"></span><button class="ic-btn" id="bNueva">+ Nueva tarea</button></div>' +
       '<div class="ic-kpis tar-kpis">' + kpi(T.length, 'Tareas registradas', '', 'TODAS') + kpi(act.length, 'Pendientes activas', '', 'ACTIVAS') + kpi(venc, 'Vencidas', 'rojo', 'VENCIDA') +
         kpi(prox, 'Vencen en ' + CFG.diasAviso + ' días o menos', 'amarillo', 'PROXIMA') + kpi(avance + ' %', 'Avance (finalizadas)', 'verde', 'CERRADAS') + '</div>' +
@@ -113,13 +149,40 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
           : '<p class="ic-conteo">Aún no hay tareas. Créelas con «+ Nueva tarea» o importe un plan de Excel.</p>') + '</div></section>' +
       '<section class="ic-bloque"><div class="cab"><h2>Vencidas y por vencer</h2></div><div class="cuerpo">' +
         (urgentes.length ? urgentes.map((t) => '<div class="tar-urg" data-id="' + esc(t.Title) + '">' + chipSem(t) + '<div><b>' + esc(resumir(t.item, 90)) + '</b><span class="sec">' + esc(t.cliente_nombre) + ' · ' + esc(textoFecha(t.fecha_limite)) + ' · ' + esc(textoDias(t)) + '</span></div></div>').join('') : '<p class="ic-conteo">✔ Nada vencido ni por vencer.</p>') + '</div></section></div>' +
-      '<div class="tar-tres"><section class="ic-bloque"><div class="cab"><h2>Pendientes por estado</h2></div><div class="cuerpo">' + grupo('estado', CFG.estados.filter((e) => CFG.cerrados.indexOf(e) < 0), act) + '</div></section>' +
-      '<section class="ic-bloque"><div class="cab"><h2>Pendientes por prioridad</h2></div><div class="cuerpo">' + grupo('prioridad', CFG.prioridades, act) + '</div></section>' +
-      '<section class="ic-bloque"><div class="cab"><h2>Pendientes por categoría</h2></div><div class="cuerpo">' + grupo('categoria', categorias(), act) + '</div></section></div>';
+      '<p class="ic-conteo"><a href="#reportes">Ver reportes detallados: tareas por estado, prioridad, categoría y persona →</a></p>';
     c.querySelector('#bNueva').onclick = () => formTarea(null, () => vistaResumen(c));
-    c.querySelectorAll('[data-ir]').forEach((a) => { a.onclick = () => { const v = a.dataset.ir; Object.assign(App.filtro, { cliente: '', prioridad: '', categoria: '', q: '', estado: ['VENCIDA', 'PROXIMA'].indexOf(v) >= 0 ? 'ACTIVAS' : v, semaforo: ['VENCIDA', 'PROXIMA'].indexOf(v) >= 0 ? v : '' }); }; });
-    c.querySelectorAll('tr[data-cli]').forEach((tr) => { tr.onclick = () => { Object.assign(App.filtro, { cliente: tr.dataset.cli, estado: 'ACTIVAS', semaforo: '', prioridad: '', categoria: '', q: '' }); location.hash = 'tareas'; }; });
+    c.querySelectorAll('[data-ir]').forEach((a) => { a.onclick = () => { const v = a.dataset.ir; Object.assign(App.filtro, { cliente: '', prioridad: '', categoria: '', responsable: '', q: '', estado: ['VENCIDA', 'PROXIMA'].indexOf(v) >= 0 ? 'ACTIVAS' : v, semaforo: ['VENCIDA', 'PROXIMA'].indexOf(v) >= 0 ? v : '' }); }; });
+    c.querySelectorAll('tr[data-cli]').forEach((tr) => { tr.onclick = () => { Object.assign(App.filtro, { cliente: tr.dataset.cli, estado: 'ACTIVAS', semaforo: '', prioridad: '', categoria: '', responsable: '', q: '' }); location.hash = 'tareas'; }; });
     c.querySelectorAll('.tar-urg').forEach((d) => { d.onclick = () => formTarea(App.tareas.find((t) => t.Title === d.dataset.id), () => vistaResumen(c)); });
+  }
+  // =====================================================================
+  // REPORTES DETALLADOS (tareas activas por estado, prioridad, categoría y persona)
+  // =====================================================================
+  const nombreResp = (t) => (t.responsable_id && persona(t.responsable_id) ? persona(t.responsable_id).nombre : t.responsable) || '';
+  function vistaReportes(c) {
+    const act = App.tareas.filter((t) => !cerrada(t));
+    const barra = (v, max) => '<div class="tar-barra"><i style="width:' + (max ? Math.round(v * 100 / max) : 0) + '%"></i></div>';
+    const grupo = (campo, valores, valorDe) => {
+      const tot = act.length, de = valorDe || ((t) => t[campo] || '');
+      const vals = valores.concat(Array.from(new Set(act.map(de))).filter((v) => v && valores.indexOf(v) < 0)).concat(['']);
+      const filas = vals.map((v) => [v, act.filter((t) => de(t) === v)]).filter((x) => x[1].length);
+      return filas.length ? filas.map(([v, L]) => {
+        const venc = L.filter((t) => semaforo(t) === 'VENCIDA').length;
+        return '<div class="tar-fila-b tar-rep" data-campo="' + campo + '" data-v="' + esc(v) + '"><span>' + esc(v || 'Sin definir') + (venc ? ' <span class="tar-num rojo" title="Vencidas">' + venc + '</span>' : '') + '</span>' + barra(L.length, tot) + '<b>' + L.length + '</b></div>';
+      }).join('') : '<p class="ic-conteo">Sin datos.</p>';
+    };
+    const personas = App.personal.map((p) => p.nombre);
+    c.innerHTML = '<div class="ic-barra"><div><h1 class="ic-titulo">Reportes detallados</h1><p class="ic-subtitulo" style="margin:0">Tareas activas (sin finalizadas ni canceladas): ' + act.length + '. En rojo, las vencidas. Haga clic en una fila para ver esas tareas.</p></div></div>' +
+      '<div class="tar-dos"><section class="ic-bloque"><div class="cab"><h2>Tareas por persona</h2></div><div class="cuerpo">' + grupo('responsable', personas, nombreResp) + '</div></section>' +
+      '<section class="ic-bloque"><div class="cab"><h2>Tareas por estado</h2></div><div class="cuerpo">' + grupo('estado', CFG.estados.filter((e) => CFG.cerrados.indexOf(e) < 0)) + '</div></section></div>' +
+      '<div class="tar-dos"><section class="ic-bloque"><div class="cab"><h2>Tareas por categoría</h2></div><div class="cuerpo">' + grupo('categoria', categorias()) + '</div></section>' +
+      '<section class="ic-bloque"><div class="cab"><h2>Tareas por prioridad</h2></div><div class="cuerpo">' + grupo('prioridad', CFG.prioridades) + '</div></section></div>';
+    c.querySelectorAll('.tar-rep').forEach((d) => { d.onclick = () => {
+      Object.assign(App.filtro, { cliente: '', estado: 'ACTIVAS', semaforo: '', prioridad: '', categoria: '', responsable: '', q: '' });
+      const k = d.dataset.campo, v = d.dataset.v;
+      if (k === 'estado') App.filtro.estado = v || 'ACTIVAS'; else App.filtro[k] = v || '__SIN__';
+      location.hash = 'tareas';
+    }; });
   }
   const resumir = (s, n) => { s = String(s || '').replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
   const CAT = CFG.categorias.map((c) => c[0]);
@@ -135,7 +198,8 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
     const f = App.filtro, q = U.norm(f.q);
     return App.tareas.filter((t) => (!f.cliente || t.cliente_id === f.cliente) &&
       (f.estado === 'TODAS' || !f.estado ? true : f.estado === 'ACTIVAS' ? !cerrada(t) : f.estado === 'CERRADAS' ? cerrada(t) : t.estado === f.estado) &&
-      (!f.prioridad || t.prioridad === f.prioridad) && (!f.categoria || t.categoria === f.categoria) && (!f.semaforo || semaforo(t) === f.semaforo) &&
+      (!f.prioridad || (f.prioridad === '__SIN__' ? !t.prioridad : t.prioridad === f.prioridad)) && (!f.categoria || (f.categoria === '__SIN__' ? !t.categoria : t.categoria === f.categoria)) && (!f.semaforo || semaforo(t) === f.semaforo) &&
+      (!f.responsable || (f.responsable === '__SIN__' ? !nombreResp(t) : nombreResp(t) === f.responsable)) &&
       (!q || U.norm([t.Title, t.item, t.responsable, t.bitacora, t.cliente_nombre, t.plan].join(' ')).indexOf(q) >= 0));
   }
   function vistaTareas(c) {
@@ -148,24 +212,28 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
         sel('fSem', [['', 'Todo semáforo'], ['VENCIDA', 'Vencidas'], ['PROXIMA', 'Próximas a vencer'], ['A_TIEMPO', 'A tiempo'], ['SIN_FECHA', 'Sin fecha']], f.semaforo) +
         sel('fPri', [['', 'Toda prioridad']].concat(CFG.prioridades.map((p) => [p, p])), f.prioridad) +
         sel('fCat', [['', 'Toda categoría']].concat(categorias().map((p) => [p, p])), f.categoria) +
+        sel('fRes', [['', 'Todas las personas']].concat(Array.from(new Set(App.personal.map((p) => p.nombre).concat(App.tareas.map(nombreResp)).filter(Boolean))).sort().map((p) => [p, p])).concat([['__SIN__', 'Sin responsable']]), f.responsable) +
         '<input type="search" id="fQ" placeholder="Buscar…" value="' + esc(f.q) + '" style="flex:1;min-width:160px"></div><div id="lista"></div>';
     const pintar = () => {
       const L = filtradas(), varios = !f.cliente;
       c.querySelector('#lista').innerHTML = '<p class="ic-conteo">' + L.length + ' tarea' + (L.length === 1 ? '' : 's') + '</p>' + (L.length ?
-        '<div class="ic-tabla-caja"><table class="ic-tabla tar-tabla"><thead><tr><th>ID</th>' + (varios ? '<th>Cliente</th>' : '') + '<th>Tarea</th><th>Categoría</th><th>Responsable</th><th>Prioridad</th><th>Estado</th><th>Límite</th><th>Avance</th><th>Semáforo</th></tr></thead><tbody>' +
-        L.map((t) => '<tr data-id="' + esc(t.Title) + '"><td class="nw">' + esc(t.Title) + '</td>' + (varios ? '<td>' + esc(t.cliente_nombre) + '</td>' : '') +
+        '<div class="ic-tabla-caja tar-caja"><table class="ic-tabla tar-tabla"><thead><tr><th>ID</th>' + (varios ? '<th>Cliente</th>' : '') + '<th>Tarea</th><th>Categoría</th><th>Responsable</th><th>Prioridad</th><th>Estado</th><th>Límite y semáforo</th><th>Avance</th></tr></thead><tbody>' +
+        L.map((t) => '<tr data-id="' + esc(t.Title) + '"><td class="nw">' + esc(t.Title) + '</td>' + (varios ? '<td class="tar-cli">' + esc(t.cliente_nombre) + '</td>' : '') +
           '<td><b>' + esc(resumir(t.item, 110)) + '</b>' + (t.bitacora ? '<span class="sec">' + esc(resumir(String(t.bitacora).split('\n')[0], 90)) + '</span>' : '') + '</td>' +
-          '<td>' + esc(t.categoria || '') + '</td><td>' + esc(t.responsable || '') + '</td><td>' + (t.prioridad ? '<span class="tar-pri p-' + U.norm(t.prioridad) + '">' + esc(t.prioridad) + '</span>' : '') + '</td>' +
-          '<td>' + chipEstado(t.estado) + '</td><td class="nw">' + esc(textoFecha(t.fecha_limite)) + (textoDias(t) ? '<span class="sec">' + esc(textoDias(t)) + '</span>' : '') + '</td>' +
-          '<td style="min-width:90px"><div class="tar-barra"><i class="verde" style="width:' + Math.min(100, t.progreso) + '%"></i></div><small>' + Math.round(t.progreso) + ' %</small></td><td>' + chipSem(t) + '</td></tr>').join('') +
+          '<td>' + esc(t.categoria || '') + '</td><td>' + esc(nombreResp(t)) + '</td><td>' + (t.prioridad ? '<span class="tar-pri p-' + U.norm(t.prioridad) + '">' + esc(t.prioridad) + '</span>' : '') + '</td>' +
+          '<td>' + chipEstado(t.estado) + chipAgenda(t) + '</td><td class="nw">' + chipSem(t) + (t.fecha_limite ? '<span class="sec">' + esc(textoFecha(t.fecha_limite)) + (textoDias(t) ? ' · ' + esc(textoDias(t)) : '') + '</span>' : '') + '</td>' +
+          '<td class="tar-av"><div class="tar-barra"><i class="verde" style="width:' + Math.min(100, t.progreso) + '%"></i></div><small>' + Math.round(t.progreso) + ' %</small></td></tr>').join('') +
         '</tbody></table></div>' : '<div class="ic-vacio">No hay tareas con estos filtros.</div>');
       c.querySelectorAll('tr[data-id]').forEach((tr) => { tr.onclick = () => formTarea(App.tareas.find((t) => t.Title === tr.dataset.id), pintar); });
     };
-    [['fCli', 'cliente'], ['fEst', 'estado'], ['fSem', 'semaforo'], ['fPri', 'prioridad'], ['fCat', 'categoria']].forEach(([id, k]) => { c.querySelector('#' + id).onchange = (e) => { f[k] = e.target.value; pintar(); }; });
+    [['fCli', 'cliente'], ['fEst', 'estado'], ['fSem', 'semaforo'], ['fPri', 'prioridad'], ['fCat', 'categoria'], ['fRes', 'responsable']].forEach(([id, k]) => { c.querySelector('#' + id).onchange = (e) => { f[k] = e.target.value; pintar(); }; });
     c.querySelector('#fQ').oninput = (e) => { f.q = e.target.value; pintar(); };
     c.querySelector('#bNueva').onclick = () => formTarea(null, pintar);
     c.querySelector('#bExcel').onclick = () => exportar(filtradas()).catch((e) => U.aviso(e.message, 'err'));
     pintar();
+    // #tareas/T-0003 abre la tarea (enlace desde la Programación)
+    const idUrl = decodeURIComponent((location.hash.split('/')[1] || ''));
+    if (idUrl) { const t = App.tareas.find((x) => x.Title === idUrl); if (t) formTarea(t, pintar); history.replaceState(null, '', '#tareas'); }
   }
 
   // =====================================================================
@@ -182,7 +250,7 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
         CFG.categorias.map((c) => '<option value="' + esc(c[0]) + '" title="' + esc(c[1]) + '"' + (c[0] === v0.categoria ? ' selected' : '') + '>' + esc(c[0]) + '</option>').join('') +
         (otrasCategorias().length ? '<optgroup label="Usadas antes">' + otrasCategorias().map((c) => '<option value="' + esc(c) + '"' + (c === v0.categoria ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '</optgroup>' : '') +
         '</select><span class="ayuda" id="ayCat"></span></div>' +
-      U.campo({ name: 'responsable', label: 'Responsable', valor: v0.responsable || 'Ideas Control', c: 'c4' }) +
+      '<div class="ic-campo c4"><label for="f_responsable_id">Responsable</label>' + selResponsable(v0) + '</div>' +
       U.campo({ name: 'prioridad', label: 'Prioridad', t: 'select', op: CFG.prioridades.map((p) => [p, p]), valor: v0.prioridad, c: 'c4' }) +
       '<div class="ic-campo c4"><label for="f_estado">Estado</label><select id="f_estado" name="estado">' + CFG.estados.concat(CFG.estados.indexOf(v0.estado) < 0 && v0.estado ? [v0.estado] : [])
         .map((e) => '<option value="' + esc(e) + '" title="' + esc(CFG.ayudaEstados[e] || '') + '"' + (e === v0.estado ? ' selected' : '') + '>' + esc(e) + '</option>').join('') + '</select><span class="ayuda" id="ayEst"></span></div>' +
@@ -194,8 +262,8 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
       U.campo({ name: 'fecha_cierre', label: 'Cierre', t: 'date', valor: v0.fecha_cierre, c: 'c3' }) +
       U.campo({ name: 'nota', label: 'Nueva anotación en la bitácora', t: 'textarea', filas: 2, c: 'c12', ph: 'Se agrega arriba con la fecha de hoy' }) +
       U.campo({ name: 'bitacora', label: 'Bitácora', t: 'textarea', valor: v0.bitacora, filas: 5, c: 'c12' }) +
-      '</div><div class="ic-acciones">' + (nueva ? '' : '<button type="button" class="ic-btn peligro" id="tDel" style="margin-right:auto">Eliminar</button>') +
-      '<button type="button" class="ic-btn sec" id="tNo">Cancelar</button><button class="ic-btn" id="tOk">Guardar</button></div></form>', (cu) => {
+      '</div>' + seccionAgenda(t) + '<div class="ic-acciones">' + (nueva || !esAdmin() ? '' : '<button type="button" class="ic-btn peligro" id="tDel" style="margin-right:auto">Eliminar</button>') +
+      '<button type="button" class="ic-btn sec" id="tNo">Cancelar</button>' + (cerrada(v0) ? '' : '<button type="button" class="ic-btn sec" id="tAg">' + 'Guardar y agendar' + '</button>') + '<button class="ic-btn" id="tOk">Guardar</button></div></form>', (cu) => {
       const f = cu.querySelector('#fTar');
       const sem = () => { const v = U.leerForm(f); cu.querySelector('#semF').innerHTML = chipSem({ estado: v.estado, fecha_limite: v.fecha_limite }) + (textoDias({ estado: v.estado, fecha_limite: v.fecha_limite }) ? ' <small>' + esc(textoDias({ estado: v.estado, fecha_limite: v.fecha_limite })) + '</small>' : ''); };
       const verAyuda = () => { cu.querySelector('#ayCat').textContent = ayudaCat(f.categoria.value) || (f.categoria.value ? '' : 'Elija la categoría que mejor describe la tarea.'); };
@@ -215,6 +283,8 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
         try { await G.eliminar('TAR_Tareas', t._id); U.aviso('Tarea eliminada', 'ok'); } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
         await cargar(); alGuardar();
       };
+      let agendar = false;
+      const bAg = cu.querySelector('#tAg'); if (bAg) bAg.onclick = () => { agendar = true; f.requestSubmit(); };
       f.onsubmit = async (e) => {
         e.preventDefault();
         const v = U.leerForm(f);
@@ -222,21 +292,113 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
         if (Object.keys(errores).length) { U.marcarErrores(f, errores); return; }
         let bit = String(v.bitacora || '').trim();
         if (String(v.nota || '').trim()) { const d = new Date(); bit = pad(d.getDate(), 2) + '/' + pad(d.getMonth() + 1, 2) + '/' + String(d.getFullYear()).slice(2) + '. ' + v.nota.trim() + (bit ? '\n' + bit : ''); }
-        const campos = { cliente_id: v.cliente_id, cliente_nombre: nombreCliente(v.cliente_id), plan: v.plan, item: v.item.trim(), categoria: v.categoria, responsable: v.responsable,
+        const resp = v.responsable_id === '__ANTES__' ? { nombre: v0.responsable, Title: '' } : persona(v.responsable_id);
+        const campos = { cliente_id: v.cliente_id, cliente_nombre: nombreCliente(v.cliente_id), plan: v.plan, item: v.item.trim(), categoria: v.categoria, responsable: resp ? resp.nombre : '', responsable_id: resp ? resp.Title : '',
           prioridad: v.prioridad, estado: v.estado, progreso: Math.max(0, Math.min(100, Number(v.progreso) || 0)), fecha_apertura: v.fecha_apertura, fecha_inicio: v.fecha_inicio,
           fecha_limite: v.fecha_limite, fecha_cierre: v.fecha_cierre, bitacora: bit };
         try {
-          await U.conCarga(cu.querySelector('#tOk'), async () => {
+          let id = t ? t.Title : '';
+          await U.conCarga(cu.querySelector(agendar ? '#tAg' : '#tOk'), async () => {
             if (nueva) {
               const n = await G.siguiente('TAR');
-              campos.Title = 'T-' + pad(n, 4); campos.orden = n;
+              campos.Title = id = 'T-' + pad(n, 4); campos.orden = n;
               Object.keys(campos).forEach((k) => { if (campos[k] === '' || campos[k] === null) delete campos[k]; });
-              await G.crear('TAR_Tareas', campos);
-            } else await G.actualizar('TAR_Tareas', t._id, campos, t._etag);
+              await guardarSeguro(() => G.crear('TAR_Tareas', campos), campos);
+            } else await guardarSeguro(() => G.actualizar('TAR_Tareas', t._id, campos, t._etag), campos);
           });
           U.cerrarModal(); U.aviso(nueva ? 'Tarea creada' : 'Tarea actualizada', 'ok');
-          await cargar(); alGuardar();
-        } catch (err) { U.aviso(U.mensajeError(err), 'err', 8000); }
+          await cargar();
+          if (agendar) { const tt = App.tareas.find((x) => x.Title === id); if (tt) { formAgenda(tt, alGuardar); return; } }
+          alGuardar();
+        } catch (err) { agendar = false; U.aviso(U.mensajeError(err), 'err', 8000); }
+      };
+    });
+  }
+
+  // Si la lista aún no tiene las columnas nuevas (responsable_id, agenda), guarda sin ellas y avisa
+  async function guardarSeguro(fn, campos) {
+    try { return await fn(); }
+    catch (e) {
+      const col = ['responsable_id', 'agenda'].filter((k) => new RegExp(k, 'i').test(e.message) && k in campos);
+      if (!col.length) throw e;
+      col.forEach((k) => delete campos[k]);
+      U.aviso('Falta actualizar la lista TAR_Tareas: abra el Instalador (Programacion/Instalador/) y haga clic en «Crear estructura». Se guardó sin ' + col.join(', ') + '.', 'warn', 9000);
+      return await fn();
+    }
+  }
+
+  // =====================================================================
+  // AGENDA (Programación de Operaciones): de tarea a actividad y su estado
+  // =====================================================================
+  function seccionAgenda(t) {
+    if (!t) return '';
+    const L = agendaDe(t);
+    return '<div class="tar-agenda"><b>Agenda (Programación de Operaciones)</b>' +
+      (L.length ? '<table class="ic-tabla tar-mini"><tbody>' + L.map((a) => '<tr><td><a href="/ideascontrol/Programacion/" target="ic_programacion">' + esc(a.Title) + '</a></td><td>' + esc(textoFecha(a.fecha)) + (a.hora_inicio ? ' · ' + esc(a.hora_inicio) : '') + '</td><td>' + esc((persona(a.tecnico_id) || {}).nombre || a.tecnico_id || '') + '</td><td>' + esc(a.tipo || '') + '</td><td>' + esc(ESTADOS_AG[a.estado] || a.estado) + '</td></tr>').join('') + '</tbody></table>'
+        : '<p class="sec" style="margin:4px 0 0">No está en la agenda. Solo se agenda lo que requiere una fecha y una persona en la Programación (visitas, instalaciones, soporte…): use «Guardar y agendar».</p>') + '</div>';
+  }
+  async function formAgenda(t, alGuardar) {
+    const tecs = App.personal.filter(esTecnico), tipos = App.tipos;
+    if (!tecs.length || !tipos.length) { U.aviso('No se pudo leer el personal o los tipos de actividad de la Programación.', 'err', 8000); alGuardar(); return; }
+    const resp = persona(t.responsable_id) || personaPorNombre(t.responsable);
+    const emp = await G.items('MAE_Empresas', { filtro: "fields/Title eq '" + String(t.cliente_id || '').replace(/'/g, "''") + "'" }).then((r) => r[0]).catch(() => null);
+    const f0 = t.fecha_inicio && t.fecha_inicio >= hoy() ? t.fecha_inicio : sigHabil(hoy());
+    U.modal('Agendar ' + t.Title + ' en la Programación', '<form class="ic-form" id="fAg"><p class="sec" style="margin-top:0">' + esc(t.cliente_nombre + ' · ' + resumir(t.item, 120)) + '</p><div class="ic-campos">' +
+      U.campo({ name: 'tecnico_id', label: 'Persona', t: 'select', op: tecs.map((x) => [x.Title, x.nombre]), valor: esTecnico(resp) ? resp.Title : '', req: true, c: 'c6' }) +
+      U.campo({ name: 'tipo', label: 'Tipo de actividad', t: 'select', op: tipos.map((x) => [x.Title, x.nombre + ' (' + x.Title + ')']), req: true, c: 'c6' }) +
+      U.campo({ name: 'fecha', label: 'Fecha', t: 'date', valor: f0, req: true, c: 'c4' }) +
+      U.campo({ name: 'hora_inicio', label: 'Hora inicio', t: 'time', c: 'c4' }) +
+      U.campo({ name: 'ciudad', label: 'Ciudad', valor: emp && emp.ciudad ? emp.ciudad : '', req: true, c: 'c4' }) +
+      U.campo({ name: 'observaciones', label: 'Observaciones para la persona', t: 'textarea', filas: 2, valor: 'Tarea ' + t.Title + ': ' + resumir(t.item, 300), c: 'c12' }) + '</div>' +
+      '<div id="agDisp"></div><p class="sec">Queda en la Programación como «Programado» y enlazada con esta tarea. Desde allá se confirma, reprograma o marca ejecutada; su estado se ve en la tarea.</p>' +
+      '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="agNo">Ahora no</button><button class="ic-btn" id="agOk">Agendar</button></div></form>', (cu) => {
+      const f = cu.querySelector('#fAg'); let avisos = [];
+      cu.querySelector('#agNo').onclick = () => { U.cerrarModal(); alGuardar(); };
+      // Disponibilidad: día hábil, habilidad, ausencias y lo que la persona ya tiene ese día
+      const revisar = async () => {
+        const v = U.leerForm(f), caja = cu.querySelector('#agDisp'); avisos = [];
+        if (!v.fecha || !v.tecnico_id) { caja.innerHTML = ''; return; }
+        const tc = persona(v.tecnico_id);
+        if (!habil(v.fecha)) avisos.push('El ' + textoFecha(v.fecha) + ' no es día hábil' + (App.festivos[v.fecha] ? ' (' + App.festivos[v.fecha] + ')' : '') + ': requiere autorización del Director de Operaciones.');
+        if (tc && v.tipo && String(tc.habilidades || '').toUpperCase().split(/[;,\s]+/).indexOf(v.tipo) < 0) avisos.push(tc.nombre + ' no tiene la habilidad ' + v.tipo + ' en la matriz.');
+        let suyas = [];
+        try {
+          const d = await G.items('OPE_Actividades', { filtro: "fields/fecha ge '" + v.fecha + "T00:00:00Z' and fields/fecha le '" + v.fecha + "T23:59:59Z'", top: 999 });
+          suyas = d.filter((a) => a.tecnico_id === v.tecnico_id && activaAg(a));
+          if (suyas.some((a) => a.tipo === 'AUS')) avisos.push((tc ? tc.nombre : 'La persona') + ' tiene una ausencia ese día.');
+          const otras = suyas.filter((a) => a.tipo !== 'AUS' && a.tipo !== 'OFI');
+          if (otras.length) avisos.push((tc ? tc.nombre : 'La persona') + ' ya tiene ' + otras.length + ' actividad(es) ese día.');
+        } catch (e) { avisos.push('No se pudo revisar la agenda de ese día: ' + U.mensajeError(e)); }
+        caja.innerHTML = (avisos.length ? '<div class="ic-alerta chica">⚠ ' + avisos.map(esc).join('<br>⚠ ') + '</div>' : '<div class="tar-disp-ok">✓ Disponible: sin cruces en la agenda ese día.</div>') +
+          (suyas.length ? '<div class="sec">Agenda de ' + esc(tc ? tc.nombre : '') + ' el ' + esc(textoFecha(v.fecha)) + ':</div><ul class="tar-dia">' + suyas.map((a) => '<li>' + esc((a.hora_inicio || '—') + ' · ' + a.tipo + ' · ' + (a.cliente || '') + ' (' + (ESTADOS_AG[a.estado] || a.estado) + ')') + '</li>').join('') + '</ul>' : '');
+      };
+      f.addEventListener('change', revisar); revisar();
+      f.onsubmit = async (e) => {
+        e.preventDefault();
+        const v = U.leerForm(f), err = {};
+        ['tecnico_id', 'tipo', 'fecha', 'ciudad'].forEach((k) => { if (!v[k]) err[k] = 'Obligatorio'; });
+        if (v.fecha && v.fecha < hoy()) err.fecha = 'No puede ser una fecha pasada';
+        if (!U.marcarErrores(f, err)) return;
+        await revisar();
+        if (avisos.length && !(await U.confirmar('Agendar con avisos', avisos.join('\n') + '\n\n¿Agendarla de todas formas?', 'Agendar'))) { formAgenda(t, alGuardar); return; }
+        try {
+          let fila;
+          await U.conCarga(cu.querySelector('#agOk'), async () => {
+            const n = await G.siguiente('PRG');
+            fila = { Title: 'PRG-' + pad(n, 6), fecha: v.fecha, tecnico_id: v.tecnico_id, tipo: v.tipo, cliente: t.cliente_nombre, empresa_id: t.cliente_id === 'INTERNO' ? '' : t.cliente_id, ciudad: v.ciudad,
+              hora_inicio: v.hora_inicio, estado: 'PROGRAMADO', observaciones: v.observaciones, origen: 'TAREA', tar_id: t.Title };
+            Object.keys(fila).forEach((k) => { if (fila[k] === '' || fila[k] == null) delete fila[k]; });
+            try { await G.crear('OPE_Actividades', fila); }
+            catch (e2) { if (/tar_id/i.test(e2.message)) throw new Error('Falta actualizar las listas: abra el Instalador (Programacion/Instalador/) y haga clic en «Crear estructura».'); throw e2; }
+            const d = new Date(), nota = pad(d.getDate(), 2) + '/' + pad(d.getMonth() + 1, 2) + '/' + String(d.getFullYear()).slice(2) + '. Agendada en la Programación: ' + fila.Title + ' · ' + v.tipo + ' · ' + persona(v.tecnico_id).nombre + ' · ' + textoFecha(v.fecha);
+            const campos = { bitacora: nota + (t.bitacora ? '\n' + t.bitacora : ''), agenda: [t.agenda, fila.Title].filter(Boolean).join(';') };
+            if (t.estado === 'Abierta') campos.estado = 'Programada';
+            if (!t.fecha_inicio) campos.fecha_inicio = v.fecha;
+            await guardarSeguro(() => G.actualizar('TAR_Tareas', t._id, campos), campos);
+          });
+          U.cerrarModal(); U.aviso(t.Title + ' agendada: ' + fila.Title + ' para ' + persona(v.tecnico_id).nombre + ' el ' + textoFecha(v.fecha), 'ok', 7000);
+          await Promise.all([cargar(), cargarAgenda()]); alGuardar();
+        } catch (err2) { U.aviso(U.mensajeError(err2), 'err', 9000); }
       };
     });
   }
@@ -251,7 +413,7 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
   const serial = (d) => d ? Math.round((new Date(d + 'T00:00:00Z') - Date.UTC(1899, 11, 30)) / 864e5) : '';
   async function exportar(L) {
     await cargarXLSX();
-    const filas = L.map((t) => ({ ID: t.Title, Cliente: t.cliente_nombre, Plan: t.plan || '', Item: t.item, 'Categoría': t.categoria || '', Responsable: t.responsable || '', Prioridad: t.prioridad || '', Estado: t.estado || '',
+    const filas = L.map((t) => ({ ID: t.Title, Cliente: t.cliente_nombre, Plan: t.plan || '', Item: t.item, 'Categoría': t.categoria || '', Responsable: nombreResp(t), Prioridad: t.prioridad || '', Estado: t.estado || '',
       'Fecha Apertura': serial(t.fecha_apertura), 'Fecha Inicio': serial(t.fecha_inicio), 'Fecha Limite': serial(t.fecha_limite), 'Fecha Cierre': serial(t.fecha_cierre),
       'Dias Restantes / Atraso': cerrada(t) || !t.fecha_limite ? '' : difDias(t.fecha_limite, hoy()), '% Progreso': (t.progreso || 0) / 100, Semaforo: SEM[semaforo(t)][0], 'Comentarios / Bitacora': t.bitacora || '' }));
     const ws = XLSX.utils.json_to_sheet(filas);
@@ -343,13 +505,13 @@ const App = { usuario: null, tareas: [], clientes: [], filtro: { cliente: '', es
       if (!cuenta) { U.pantalla(raiz, { logo: CFG.logo, titulo: CFG.app.nombre, texto: 'Ingrese con su cuenta de Microsoft de Ideas Control.', boton: 'Iniciar sesión', alClic: () => IC.auth.entrar() }); return; }
       try { sessionStorage.removeItem('ic_volver_url'); } catch (e) { /* sin almacenamiento */ }
       const email = String(cuenta.username || '').toLowerCase();
-      if (CFG.usuarios.indexOf(email) < 0) { U.pantalla(raiz, { logo: CFG.logo, titulo: 'Sin acceso', texto: 'Por ahora esta app es solo de la Dirección de Operaciones.', boton: 'Volver al portal', alClic: () => IC.portal.volver() }); return; }
+      if (!email.endsWith(CFG.dominio)) { U.pantalla(raiz, { logo: CFG.logo, titulo: 'Sin acceso', texto: 'Esta app es para el personal de Ideas Control: ingrese con su cuenta ' + CFG.dominio + '.', boton: 'Volver al portal', alClic: () => IC.portal.volver() }); return; }
       App.usuario = { nombre: cuenta.name || email, email, iniciales: U.fmt.iniciales(cuenta.name || email) };
       await G.sitio(CFG.sitio.host, CFG.sitio.ruta);
-      await Promise.all([cargar(), cargarClientes()]);
-      await convertirCategorias();
+      await Promise.all([cargar(), cargarClientes(), cargarPersonal(), cargarAgenda()]);
+      if (esAdmin()) await convertirCategorias();
       pintarEncabezado();
-      U.enrutar({ '': () => vistaResumen(raiz), tareas: () => vistaTareas(raiz), importar: () => vistaImportar(raiz) }, marcarNav);
+      U.enrutar({ '': () => vistaResumen(raiz), tareas: () => vistaTareas(raiz), reportes: () => vistaReportes(raiz), importar: () => (esAdmin() ? vistaImportar(raiz) : vistaResumen(raiz)) }, marcarNav);
     } catch (e) {
       console.error(e);
       const falta = /No existe la lista TAR_/.test(e.message);
