@@ -129,8 +129,8 @@
     c.innerHTML = '<div class="ic-centro" style="min-height:40vh"><div><div class="ic-spinner"></div></div></div>';
     try {
       await cargar();
-      if (partes[1] === 'nuevo') return App.usuario.es_admin ? vistaForm(c, null) : vistaLista(c);
-      if (partes[1] && partes[2] === 'editar') return App.usuario.es_admin ? vistaForm(c, productoPorId(partes[1])) : vistaFicha(c, partes[1]);
+      if (partes[1] === 'nuevo') return App.usuario.gestiona_productos ? vistaForm(c, null) : vistaLista(c);
+      if (partes[1] && partes[2] === 'editar') return App.usuario.gestiona_productos ? vistaForm(c, productoPorId(partes[1])) : vistaFicha(c, partes[1]);
       if (partes[1]) return vistaFicha(c, partes[1]);
       return vistaLista(c);
     } catch (e) {
@@ -143,11 +143,11 @@
   // LISTA
   // =====================================================================
   function vistaLista(c) {
-    const admin = App.usuario.es_admin;
+    const admin = App.usuario.es_admin, gestiona = App.usuario.gestiona_productos;
     c.innerHTML =
       '<a class="ic-volver" href="#">← Menú principal</a>' +
-      '<div class="ic-barra"><div><h1 class="ic-titulo">Productos y precios</h1><p class="ic-subtitulo" style="margin:0">Catálogo de Ideas Control' + (admin ? '' : ' (consulta)') + '</p></div><div class="espacio"></div>' +
-      (admin ? '<button class="ic-btn sec" id="btnFotos">' + ICO_FOTO.replace('<svg', '<svg width="18" height="18"') + ' Cargar fotos</button><a class="ic-btn" href="#productos/nuevo">+ Nuevo producto</a>' : '') + '</div>' +
+      '<div class="ic-barra"><div><h1 class="ic-titulo">Productos y precios</h1><p class="ic-subtitulo" style="margin:0">Catálogo de Ideas Control' + (gestiona ? '' : ' (consulta)') + '</p></div><div class="espacio"></div>' +
+      (admin ? '<button class="ic-btn sec" id="btnFotos">' + ICO_FOTO.replace('<svg', '<svg width="18" height="18"') + ' Cargar fotos</button>' : '') + (gestiona ? '<a class="ic-btn" href="#productos/nuevo">+ Nuevo producto</a>' : '') + '</div>' +
       '<div class="ic-filtros">' +
         '<div class="ic-buscar">' + ICO_BUSCAR + '<input id="fTexto" type="search" placeholder="Buscar por código, nombre, categoría o código anterior" value="' + esc(filtro.texto) + '"></div>' +
         '<select id="fTipo"><option value="">Todos los tipos</option>' + TIPOS.map((t) => '<option value="' + t[0] + '">' + t[1] + '</option>').join('') + '</select>' +
@@ -167,7 +167,7 @@
       (!t || U.norm([p.codigo, p.nombre, p.categoria, p.codigo_anterior, p.descripcion_corta].join(' ')).includes(t)));
     U.$('#conteo', c).textContent = lista.length + (lista.length === 1 ? ' producto' : ' productos');
     if (!lista.length) {
-      U.$('#tabla', c).innerHTML = '<div class="ic-vacio">' + (datos.productos.length ? 'No hay productos que coincidan.' : 'Aún no hay productos.' + (App.usuario.es_admin ? ' Créelos con <b>+ Nuevo producto</b> o con la <a href="#carga">Carga masiva</a>.' : '')) + '</div>';
+      U.$('#tabla', c).innerHTML = '<div class="ic-vacio">' + (datos.productos.length ? 'No hay productos que coincidan.' : 'Aún no hay productos.' + (App.usuario.gestiona_productos ? ' Créelos con <b>+ Nuevo producto</b> o con la <a href="#carga">Carga masiva</a>.' : '')) + '</div>';
       return;
     }
     U.$('#tabla', c).innerHTML = '<table class="ic-tabla"><thead><tr><th style="width:64px"></th><th>Producto</th><th class="ocultar-movil">Tipo</th><th style="text-align:right">Precio (antes de IVA)</th><th class="ocultar-movil" style="text-align:right">Inventario</th></tr></thead><tbody>' +
@@ -186,7 +186,7 @@
   }
 
   // =====================================================================
-  // FORMULARIO (solo administradores)
+  // FORMULARIO (administradores y usuarios con «Gestiona productos»)
   // =====================================================================
   function vistaForm(c, p) {
     const nuevo = !p;
@@ -298,7 +298,7 @@
   // FICHA
   // =====================================================================
   function vistaFicha(c, id) {
-    const p = productoPorId(id), admin = App.usuario.es_admin;
+    const p = productoPorId(id), admin = App.usuario.es_admin, gestiona = App.usuario.gestiona_productos;
     if (!p) { c.innerHTML = '<a class="ic-volver" href="#productos">← Productos</a><div class="ic-form">No se encontró el producto ' + esc(id) + '.</div>'; return; }
     const pv = precioVigente(id), co = ultimoCorte(id), escV = escalas(id);
     const historial = datos.precios.filter((x) => x.producto_id === id).sort((a, b) => soloFecha(b.fecha_inicio).localeCompare(soloFecha(a.fecha_inicio)) || (b.activo ? 1 : 0) - (a.activo ? 1 : 0));
@@ -310,13 +310,13 @@
     c.innerHTML =
       '<a class="ic-volver" href="#productos">← Productos</a>' +
       '<div class="ic-ficha-cab"><div style="display:flex;gap:18px;flex:1 1 420px;align-items:flex-start">' +
-        '<div>' + htmlFoto(p, 'grande') + (admin ? '<label class="ic-btn chico sec" style="margin-top:8px;width:100%;justify-content:center" for="fFoto">' + (p.imagen_webp_url ? 'Cambiar foto' : 'Subir foto') + '</label><input type="file" id="fFoto" accept="image/*" hidden>' : '') + '</div>' +
+        '<div>' + htmlFoto(p, 'grande') + (gestiona ? '<label class="ic-btn chico sec" style="margin-top:8px;width:100%;justify-content:center" for="fFoto">' + (p.imagen_webp_url ? 'Cambiar foto' : 'Subir foto') + '</label><input type="file" id="fFoto" accept="image/*" hidden>' : '') + '</div>' +
         '<div class="principal">' + (p.estado === 'INACTIVO' ? '<span class="ic-tag inactivo">Inactivo</span>' : '<span class="ic-tag prospecto">' + esc(tipoTxt(p.tipo)) + '</span>') +
           '<h1>' + esc(p.nombre) + '</h1><div class="meta"><span>' + esc(p.codigo) + '</span>' + (p.codigo_anterior ? '<span>Antes: ' + esc(p.codigo_anterior) + '</span>' : '') + (p.categoria ? '<span>' + esc(p.categoria) + '</span>' : '') + '<span>' + esc(p.Title) + '</span></div>' +
           '<div style="margin-top:14px;font-size:26px;font-weight:700;color:var(--ic-azul)">' + (escV.length ? '<span style="font-size:15px;font-weight:600">Por volumen · desde </span>' + precio(Math.min.apply(null, escV.map((x) => Number(x.valor))), escV[0].moneda) : pv ? precio(pv.valor, pv.moneda) : '<span style="font-size:15px;color:var(--ic-gris)">Sin precio vigente</span>') + '</div>' +
           (pv ? '<div class="ic-conteo" style="margin:0">Antes de IVA · vigente desde ' + U.fmt.fecha(pv.fecha_inicio) + (p.aplica_iva ? '' : ' · <b>no aplica IVA</b>') + '</div>' : '') +
         '</div></div>' +
-        (admin ? '<div style="display:flex;gap:8px;flex-wrap:wrap"><a class="ic-btn sec" href="#productos/' + esc(id) + '/editar">Editar</a><button class="ic-btn ' + (p.estado === 'INACTIVO' ? 'sec' : 'peligro') + '" id="btnEstado">' + (p.estado === 'INACTIVO' ? 'Reactivar' : 'Desactivar') + '</button></div>' : '') +
+        (gestiona ? '<div style="display:flex;gap:8px;flex-wrap:wrap"><a class="ic-btn sec" href="#productos/' + esc(id) + '/editar">Editar</a><button class="ic-btn ' + (p.estado === 'INACTIVO' ? 'sec' : 'peligro') + '" id="btnEstado">' + (p.estado === 'INACTIVO' ? 'Reactivar' : 'Desactivar') + '</button></div>' : '') +
       '</div>' +
       '<div class="ic-ficha-grid">' +
         '<div style="display:flex;flex-direction:column;gap:16px">' +
@@ -332,9 +332,9 @@
           '</dl><div class="ic-auditoria">Creado por ' + esc(p._autor || '—') + ' el ' + U.fmt.fechaHora(p._creado) + ' · Última modificación: ' + esc(p._editor || '—') + ', ' + U.fmt.fechaHora(p._modificado) + '</div></div></div>' +
         '</div>' +
         '<div style="display:flex;flex-direction:column;gap:16px">' +
-          (escV.length ? '<div class="ic-bloque"><div class="cab"><h2>Precios por volumen</h2>' + (admin ? '<button class="ic-btn chico sec" id="btnEscalas">Modificar tabla</button>' : '') + '</div><div class="cuerpo">' + tablaEscalas(escV) +
+          (escV.length ? '<div class="ic-bloque"><div class="cab"><h2>Precios por volumen</h2>' + (gestiona ? '<button class="ic-btn chico sec" id="btnEscalas">Modificar tabla</button>' : '') + '</div><div class="cuerpo">' + tablaEscalas(escV) +
             '<p class="ic-conteo" style="margin:8px 0 0">Al cotizar, el unitario se toma del rango donde cae la cantidad. Vigente desde ' + U.fmt.fecha(escV[0].fecha_inicio) + '.</p></div></div>' : '') +
-          '<div class="ic-bloque"><div class="cab"><h2>Historial de precios</h2>' + (admin ? '<button class="ic-btn chico" id="btnPrecio">+ Nuevo precio</button>' : '') + '</div><div class="cuerpo">' +
+          '<div class="ic-bloque"><div class="cab"><h2>Historial de precios</h2>' + (gestiona ? '<button class="ic-btn chico" id="btnPrecio">+ Nuevo precio</button>' : '') + '</div><div class="cuerpo">' +
             (historial.length ? agrupar(historial).map((h) => '<div class="ic-item" style="cursor:default"><div style="flex:1"><div class="titulo">' + (h._grupo ? '<span class="sec" style="display:inline;margin-right:6px">Por volumen · ' + h._grupo.length + ' rangos:</span>' + precio(Math.max.apply(null, h._grupo.map((x) => Number(x.valor))), h.moneda) + ' a ' + precio(Math.min.apply(null, h._grupo.map((x) => Number(x.valor))), h.moneda) : precio(h.valor, h.moneda)) + (h.activo ? ' <span class="ic-tag cliente">Vigente</span>' : '') + '</div>' +
               '<div class="sec">Desde ' + U.fmt.fecha(h.fecha_inicio) + (h.fecha_fin ? ' hasta ' + U.fmt.fecha(h.fecha_fin) : '') + (h._autor ? ' · ' + esc(h._autor) : '') + '</div></div></div>').join('') : '<div class="ic-vacio" style="padding:18px">Sin precios registrados.</div>') +
           '</div></div>' +
@@ -348,7 +348,7 @@
         '</div>' +
       '</div>';
     pintarFotos(c);
-    if (!admin) return;
+    if (!gestiona) return;
     U.$('#fFoto', c).onchange = async (e) => {
       const f = e.target.files[0]; if (!f) return;
       U.aviso('Subiendo foto…');
@@ -358,7 +358,7 @@
     U.$('#btnPrecio', c).onclick = () => formPrecio(p, pv, c);
     const be = U.$('#btnEscalas', c); if (be) be.onclick = () => formPrecio(p, pv, c, true);
     const bc = U.$('#btnCorte', c); if (bc) bc.onclick = () => formCorte(p, c);
-    U.$('#btnCompra', c).onclick = () => formCompra(p, c);
+    const bco = U.$('#btnCompra', c); if (bco) bco.onclick = () => formCompra(p, c);
     U.$('#btnEstado', c).onclick = async () => {
       const activar = p.estado === 'INACTIVO';
       if (!await U.confirmar(activar ? 'Reactivar producto' : 'Desactivar producto', activar ? '¿Reactivar ' + p.nombre + '?' : p.nombre + ' dejará de aparecer al cotizar. Su historial se conserva.', activar ? 'Reactivar' : 'Desactivar', !activar)) return;

@@ -86,7 +86,7 @@
       '<p class="ic-conteo">' + usuarios.filter((u) => u.estado === 'ACTIVO').length + ' activos de ' + usuarios.length + '. Haga clic en un usuario para editarlo.</p>' +
       '<div class="ic-tabla-caja"><table class="ic-tabla"><thead><tr><th>Nombre</th><th style="width:90px">Iniciales</th><th class="ocultar-movil">Cargo</th><th style="width:130px">Rol</th><th style="width:100px">Estado</th></tr></thead><tbody>' +
       usuarios.map((u) => '<tr data-id="' + esc(u.Title) + '"><td><b>' + esc(u.nombre) + '</b><span class="sec">' + esc(u.email) + '</span></td><td><b>' + esc(u.iniciales) + '</b></td>' +
-        '<td class="ocultar-movil">' + esc(u.cargo || '') + '</td><td>' + (u.rol === 'ADMIN' ? 'Administrador' : 'Comercial') + '</td>' +
+        '<td class="ocultar-movil">' + esc(u.cargo || '') + '</td><td>' + (u.rol === 'ADMIN' ? 'Administrador' : 'Comercial' + (u.gestiona_productos ? '<span class="sec">+ productos</span>' : '')) + '</td>' +
         '<td><span class="ic-tag ' + (u.estado === 'ACTIVO' ? 'cliente' : 'inactivo') + '">' + (u.estado === 'ACTIVO' ? 'Activo' : 'Inactivo') + '</span></td></tr>').join('') +
       '</tbody></table></div>' +
       '<p class="ic-conteo" style="margin-top:14px">Importante: además de registrarlo aquí, la persona debe tener acceso como <b>Miembro</b> al sitio de SharePoint <a href="' + SITIO_URL + '" target="_blank" rel="noopener">IC Apps</a>. Sin ese acceso no puede leer ni guardar datos.</p>';
@@ -105,6 +105,7 @@
       U.campo({ name: 'celular', label: 'Celular', t: 'tel', valor: u.celular, c: 'c6', modo: 'tel', ayuda: 'Aparece en el PDF de sus cotizaciones' }) +
       U.campo({ name: 'rol', label: 'Rol', t: 'select', op: ROLES, valor: u.rol, vacio: false, c: 'c6', ayuda: 'Administrador: carga masiva, precios, compras y esta sección' }) +
       U.campo({ name: 'estado', label: 'Estado', t: 'select', op: [['ACTIVO', 'Activo'], ['INACTIVO', 'Inactivo (no puede entrar)']], valor: u.estado, vacio: false, c: 'c6' }) +
+      U.campo({ name: 'gestiona_productos', label: 'Gestiona productos', t: 'select', op: [['NO', 'No'], ['SI', 'Sí: crea, edita, desactiva y cambia precios']], valor: u.gestiona_productos ? 'SI' : 'NO', vacio: false, c: 'c12', ayuda: 'Para comerciales. Los administradores ya lo tienen. Inventario, compras y carga masiva siguen siendo de administradores.' }) +
       '</div>' + (yo ? '<p class="ic-conteo">Este es su propio usuario: no puede quitarse el rol de administrador ni desactivarse.</p>' : '') +
       '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="bC">Cancelar</button><button class="ic-btn" id="bG">' + (nuevo ? 'Crear usuario' : 'Guardar cambios') + '</button></div></form>', (m) => {
       U.$('#bC', m).onclick = U.cerrarModal;
@@ -135,7 +136,7 @@
   }
 
   async function guardarUsuario(c, u, v, nuevo) {
-    const campos = { nombre: v.nombre, email: v.email, iniciales: v.iniciales, cargo: v.cargo, celular: v.celular, rol: v.rol, estado: v.estado };
+    const campos = { nombre: v.nombre, email: v.email, iniciales: v.iniciales, cargo: v.cargo, celular: v.celular, rol: v.rol, estado: v.estado, gestiona_productos: v.gestiona_productos === 'SI' };
     try {
       if (!u.Title) {
         // El consecutivo USR puede ir atrasado si hubo usuarios creados a mano en SharePoint

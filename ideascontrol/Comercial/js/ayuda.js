@@ -11,7 +11,7 @@
 (function () {
   const U = IC.ui, esc = U.esc;
   const A = () => window.IC_AYUDA || { ARTICULOS: [], CATEGORIAS: [], CONTEXTO: [], DESTACADOS: [] };
-  const puedeVer = (a) => a && (!a.admin || (App.usuario && App.usuario.es_admin));
+  const puedeVer = (a) => a && (!a.admin || (App.usuario && (App.usuario.es_admin || (a.admin === 'productos' && App.usuario.gestiona_productos))));
   const articulos = () => A().ARTICULOS.filter(puedeVer);
   const porId = (id) => A().ARTICULOS.find((a) => a.id === id);
   const nombreCat = (c) => (A().CATEGORIAS.find((x) => x[0] === c) || [c, c])[1];
@@ -65,7 +65,7 @@
   function htmlArticulo(a, conTitulo) {
     const rel = articulos().filter((x) => x.cat === a.cat && x.id !== a.id).slice(0, 4);
     return '<article class="ic-ay-art">' +
-      '<div class="ic-ay-ruta">' + esc(nombreCat(a.cat)) + (a.admin ? ' · <span class="ic-badge admin">Administradores</span>' : '') + '</div>' +
+      '<div class="ic-ay-ruta">' + esc(nombreCat(a.cat)) + (a.admin ? ' · <span class="ic-badge admin">' + (a.admin === 'productos' ? 'Gestión de productos' : 'Administradores') + '</span>' : '') + '</div>' +
       (conTitulo ? '<h1>' + esc(a.titulo) + '</h1>' : '<h2>' + esc(a.titulo) + '</h2>') +
       '<div class="ic-ay-cuerpo">' + a.html + '</div>' +
       (rel.length ? '<div class="ic-ay-rel"><h3>Relacionados</h3>' + rel.map((x) => '<a href="#ayuda/' + x.id + '" data-art="' + x.id + '">' + esc(x.titulo) + '</a>').join('') + '</div>' : '') +

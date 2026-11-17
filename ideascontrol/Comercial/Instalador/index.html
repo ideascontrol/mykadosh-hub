@@ -93,7 +93,7 @@ const LISTAS = [
     ['plataforma', 't'], ['carpeta_actual', 't'], ['url', 't']] },
   { n: 'SYS_Usuarios', title: 'usuario_id', d: 'Usuarios internos de las microapps', cols: [
     ['nombre', 't'], ['email', 't', null, 1], ['iniciales', 't', null, 1], ['celular', 't'], ['cargo', 't'],
-    ['rol', 'c', ['COMERCIAL', 'ADMIN']], ['estado', 'c', ESTADO, 1]] },
+    ['rol', 'c', ['COMERCIAL', 'ADMIN']], ['estado', 'c', ESTADO, 1], ['gestiona_productos', 'b']] },
   { n: 'SYS_Delegaciones', title: 'delegacion_id', d: 'Delegación temporal de administrador', cols: [
     ['usuario_id', 't', null, 1], ['fecha_inicio', 'd'], ['fecha_fin', 'd'], ['otorgado_por', 't'], ['observaciones', 'm']] },
   { n: 'SYS_Parametros', title: 'clave', d: 'Parámetros configurables por microapp', cols: [

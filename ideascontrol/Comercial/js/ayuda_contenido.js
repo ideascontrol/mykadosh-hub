@@ -484,7 +484,7 @@ window.IC_AYUDA = {
 <li><b>Compras a distribuidores</b> y margen: solo administradores.</li>
 </ul>` },
 
-  { id: 'prd-crear', cat: 'productos', admin: true, titulo: 'Crear o editar un producto', resumen: 'Código, descripción, ficha técnica y condiciones.',
+  { id: 'prd-crear', cat: 'productos', admin: 'productos', titulo: 'Crear o editar un producto', resumen: 'Código, descripción, ficha técnica y condiciones.',
     claves: 'crear producto nuevo codigo servicio viaticos licencia ficha tecnica garantia',
     html: `
 <ul>
@@ -509,7 +509,7 @@ window.IC_AYUDA = {
 <li>Al crear una revisión, el unitario se toma de la tabla vigente según la cantidad.</li>
 </ul>` },
 
-  { id: 'prd-precio', cat: 'productos', admin: true, titulo: 'Cambiar un precio, registrar inventario o una compra', resumen: 'Historial de precios, cortes de los días 1 y 15 y margen.',
+  { id: 'prd-precio', cat: 'productos', admin: 'productos', titulo: 'Cambiar un precio, registrar inventario o una compra', resumen: 'Historial de precios, cortes de los días 1 y 15 y margen.',
     claves: 'cambiar precio nuevo precio inventario corte compra distribuidor costo margen',
     html: `
 <ul>

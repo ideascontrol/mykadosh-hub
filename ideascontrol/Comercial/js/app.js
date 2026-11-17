@@ -154,7 +154,8 @@ async function arrancar() {
     }
     const hoy = new Date().toISOString().slice(0, 10);
     const deleg = (await IC.graph.items('SYS_Delegaciones')).some((d) => d.usuario_id === u.Title && String(d.fecha_inicio).slice(0, 10) <= hoy && hoy <= String(d.fecha_fin).slice(0, 10));
-    App.usuario = Object.assign({}, u, { usuario_id: u.Title, es_admin: u.rol === 'ADMIN' || deleg, es_delegado: deleg });
+    App.usuario = Object.assign({}, u, { usuario_id: u.Title, es_admin: u.rol === 'ADMIN' || deleg, es_delegado: deleg,
+      gestiona_productos: u.rol === 'ADMIN' || deleg || u.gestiona_productos === true });   // crear/editar/desactivar productos y precios
     App.usuarios = us;
 
     pintarEncabezado();
