@@ -4,7 +4,7 @@
    por cliente como «Plan de Trabajo - Papeles Nacionales»).
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-109', nombre: 'Seguimiento por cliente', version: '0.2.2' },
+  app: { id: 'APP-109', nombre: 'Seguimiento por cliente', version: '0.2.3' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -20,13 +20,13 @@ window.CFG = {
   // Agenda = Programación de Operaciones (APP-106, lista OPE_Actividades). Una tarea agendada queda enlazada con tar_id.
   agendaDias: 120,   // actividades que se leen para mostrar el estado en la agenda (desde hace N días)
   // Estados: los cerrados no cuentan como pendientes ni generan alarma
-  estados: ['Abierta', 'En proceso', 'En espera del cliente', 'En espera de tercero', 'En espera interna', 'Programada', 'En revisión', 'Finalizada', 'Cancelada'],
+  estados: ['Abierta', 'En proceso', 'Espera cliente', 'Espera interna', 'Espera proveedor', 'Programada', 'En revisión', 'Finalizada', 'Cancelada'],
   ayudaEstados: {
     'Abierta': 'Tarea creada, pendiente de iniciar.',
     'En proceso': 'Ya se está trabajando en ella.',
-    'En espera del cliente': 'Depende de una respuesta o acción del cliente.',
-    'En espera de tercero': 'Depende de un proveedor u otra entidad.',
-    'En espera interna': 'Depende de otra persona o área de Ideas Control.',
+    'Espera cliente': 'Queda quieta: depende de una respuesta o acción del cliente.',
+    'Espera interna': 'Queda quieta: depende de otra persona o área de Ideas Control.',
+    'Espera proveedor': 'Queda quieta: depende de un proveedor.',
     'Programada': 'Tiene una fecha definida para su ejecución.',
     'En revisión': 'Se realizó el trabajo y está pendiente de validación.',
     'Finalizada': 'Actividad completada y compromiso cumplido.',
@@ -34,8 +34,9 @@ window.CFG = {
   },
   cerrados: ['Finalizada', 'Cancelada'],
   // Estados anteriores (Excel del plan de trabajo) → estado nuevo. Se convierten solos al abrir la app y al importar.
-  equivEstados: { 'Pendiente OC': 'En espera del cliente', 'Abierto': 'Abierta', 'En Progreso': 'En proceso', 'Esperando Cliente': 'En espera del cliente',
-    'Esperando Proveedor': 'En espera de tercero', 'Resuelto': 'Finalizada', 'Cerrado': 'Finalizada' },
+  equivEstados: { 'Pendiente OC': 'Espera cliente', 'Abierto': 'Abierta', 'En Progreso': 'En proceso', 'Esperando Cliente': 'Espera cliente',
+    'Esperando Proveedor': 'Espera proveedor', 'Resuelto': 'Finalizada', 'Cerrado': 'Finalizada',
+    'En espera del cliente': 'Espera cliente', 'En espera de tercero': 'Espera proveedor', 'En espera interna': 'Espera interna' },
   prioridades: ['Alta', 'Media', 'Baja'],
   // Categorías con su definición (se muestra como ayuda al crear o editar una tarea)
   categorias: [

@@ -73,8 +73,12 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
   const personaPorNombre = (n) => App.personal.find((p) => U.norm(p.nombre) === U.norm(n));
   const esTecnico = (p) => p && p.vinculacion !== 'ADMINISTRATIVO';
   // Agenda: actividades de la Programación enlazadas a tareas (desde hace CFG.agendaDias días)
-  const ESTADOS_AG = { PROGRAMADO: 'Programada', CONFIRMADO: 'Confirmada', EJECUTADO: 'Ejecutada', REPROGRAMADO: 'Reprogramada', CANCELADO: 'Cancelada', STANDBY: 'Stand By' };
-  const activaAg = (a) => ['CANCELADO', 'REPROGRAMADO', 'STANDBY'].indexOf(a.estado) < 0;
+  const ESTADOS_AG = { PROGRAMADO: 'Programada', CONFIRMADO: 'Confirmada', EJECUTADO: 'Ejecutada', REPROGRAMADO: 'Reprogramada', CANCELADO: 'Cancelada',
+    ESPERA_CLIENTE: 'Espera cliente', ESPERA_INTERNA: 'Espera interna', ESPERA_PROVEEDOR: 'Espera proveedor', STANDBY: 'Stand By' };
+  // Tarea ↔ actividad: mismos estados de espera en las dos
+  const ESPERA_AG = { 'Espera cliente': 'ESPERA_CLIENTE', 'Espera interna': 'ESPERA_INTERNA', 'Espera proveedor': 'ESPERA_PROVEEDOR' };
+  const esEsperaAg = (e) => /^ESPERA_|^STANDBY$/.test(e || '');
+  const activaAg = (a) => ['CANCELADO', 'REPROGRAMADO'].indexOf(a.estado) < 0;
   async function cargarAgenda() {
     const desde = new Date(Date.now() - (CFG.agendaDias || 120) * 864e5).toISOString().slice(0, 10);
     try { App.acts = (await G.items('OPE_Actividades', { filtro: "fields/fecha ge '" + desde + "T00:00:00Z'", top: 5000 })).map((a) => Object.assign(a, { fecha: dia(a.fecha) })); }
@@ -82,7 +86,7 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
   }
   const agendaDe = (t) => App.acts.filter((a) => a.tar_id === t.Title || String(t.agenda || '').split(/[;,\s]+/).indexOf(a.Title) >= 0).sort((a, b) => a.fecha.localeCompare(b.fecha));
   const agendaVigente = (t) => { const L = agendaDe(t); return L.filter(activaAg).pop() || L[L.length - 1] || null; };
-  const chipAgenda = (t) => { const a = agendaVigente(t); if (!a) return ''; return '<span class="tar-ag ' + (a.estado === 'EJECUTADO' ? 'ok' : activaAg(a) ? '' : 'off') + '" title="Agenda (Programación): ' + esc(a.Title) + '">📅 ' + esc((ESTADOS_AG[a.estado] || a.estado) + ' ' + textoFecha(a.fecha)) + '</span>'; };
+  const chipAgenda = (t) => { const a = agendaVigente(t); if (!a) return ''; return '<span class="tar-ag ' + (a.estado === 'EJECUTADO' ? 'ok' : esEsperaAg(a.estado) ? 'esp' : activaAg(a) ? '' : 'off') + '" title="Agenda (Programación): ' + esc(a.Title) + '">📅 ' + esc((ESTADOS_AG[a.estado] || a.estado) + ' ' + textoFecha(a.fecha)) + '</span>'; };
   const habil = (d) => { const w = new Date(d + 'T12:00:00').getDay(); return w !== 0 && w !== 6 && !App.festivos[d]; };
   const sigHabil = (d) => { let x = d; while (!habil(x)) x = new Date(new Date(x + 'T12:00:00').getTime() + 864e5).toISOString().slice(0, 10); return x; };
   const esAdmin = () => CFG.admins.indexOf(App.usuario.email) >= 0;
@@ -284,6 +288,7 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
       };
       let agendar = false;
       const bAg = cu.querySelector('#tAg'); if (bAg) bAg.onclick = () => { agendar = true; f.requestSubmit(); };
+      const bRp = cu.querySelector('#tRep'); if (bRp) bRp.onclick = () => { U.cerrarModal(); formReprogramar(t, alGuardar); };
       f.onsubmit = async (e) => {
         e.preventDefault();
         const v = U.leerForm(f);
@@ -312,7 +317,7 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
               if (enAgenda && v.fecha_inicio && v.fecha_inicio !== agV.fecha) { cambiosAg.fecha = v.fecha_inicio; notas.push('fecha ' + textoFecha(agV.fecha) + ' → ' + textoFecha(v.fecha_inicio)); }
               // Estado: la actividad refleja el estado de la tarea
               if (enAgenda && v.estado !== t.estado) {
-                const est = v.estado === 'Finalizada' ? 'EJECUTADO' : v.estado === 'Cancelada' ? 'CANCELADO' : /^En espera/.test(v.estado) ? 'STANDBY' : agV.estado === 'STANDBY' ? 'PROGRAMADO' : '';
+                const est = v.estado === 'Finalizada' ? 'EJECUTADO' : v.estado === 'Cancelada' ? 'CANCELADO' : ESPERA_AG[v.estado] ? ESPERA_AG[v.estado] : esEsperaAg(agV.estado) ? 'PROGRAMADO' : '';
                 if (est && est !== agV.estado) { cambiosAg.estado = est; notas.push('estado ' + (ESTADOS_AG[agV.estado] || agV.estado) + ' → ' + ESTADOS_AG[est]); }
               }
               // Nota nueva en la bitácora: también queda en las observaciones de la actividad
@@ -356,7 +361,59 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
     const L = agendaDe(t);
     return '<div class="tar-agenda"><b>Agenda (Programación de Operaciones)</b>' +
       (L.length ? '<table class="ic-tabla tar-mini"><tbody>' + L.map((a) => '<tr><td><a href="/ideascontrol/Programacion/" target="ic_programacion">' + esc(a.Title) + '</a></td><td>' + esc(textoFecha(a.fecha)) + (a.hora_inicio ? ' · ' + esc(a.hora_inicio) : '') + '</td><td>' + esc((persona(a.tecnico_id) || {}).nombre || a.tecnico_id || '') + '</td><td>' + esc(a.tipo || '') + '</td><td>' + esc(ESTADOS_AG[a.estado] || a.estado) + '</td></tr>').join('') + '</tbody></table>'
+        + (agendaVigente(t) && ['EJECUTADO', 'CANCELADO', 'REPROGRAMADO'].indexOf(agendaVigente(t).estado) < 0 ? '<div style="margin-top:8px"><button type="button" class="ic-btn sec chico" id="tRep">↻ Reprogramar</button></div>' : '')
         : '<p class="sec" style="margin:4px 0 0">No está en la agenda. Solo se agenda lo que requiere una fecha y una persona en la Programación (visitas, instalaciones, soporte…): use «Guardar y agendar».</p>') + '</div>';
+  }
+  // Reprogramar: ventana pequeña con nueva fecha, persona y razón. La actividad queda «Reprogramado», se crea la nueva
+  // (misma trazabilidad que en la Programación) y la tarea se actualiza con la razón en la bitácora.
+  function formReprogramar(t, alGuardar) {
+    const a = agendaVigente(t); if (!a) return;
+    U.modal('Reprogramar ' + a.Title, '<form class="ic-form" id="fRp"><p class="sec" style="margin-top:0">' + esc(t.Title + ' · ' + (persona(a.tecnico_id) || {}).nombre + ' · ' + textoFecha(a.fecha)) + '</p><div class="ic-campos">' +
+      U.campo({ name: 'fecha', label: 'Nueva fecha', t: 'date', valor: a.fecha >= hoy() ? a.fecha : sigHabil(hoy()), req: true, c: 'c5' }) +
+      U.campo({ name: 'tecnico_id', label: 'Responsable', t: 'select', op: U.opcionesPersonal(App.personal, a.tecnico_id), valor: a.tecnico_id, req: true, c: 'c7' }) +
+      U.campo({ name: 'razon', label: 'Razón (queda en la bitácora)', t: 'textarea', filas: 2, req: true, c: 'c12', ph: 'Ej.: el cliente pidió cambio de fecha' }) +
+      '</div><div id="rpDisp"></div><div class="ic-acciones"><button type="button" class="ic-btn sec" id="rpNo">Volver</button><button class="ic-btn" id="rpOk">Reprogramar</button></div></form>', (cu) => {
+      const f = cu.querySelector('#fRp');
+      cu.querySelector('#rpNo').onclick = () => { U.cerrarModal(); formTarea(t, alGuardar); };
+      const revisar = async () => {
+        const v = U.leerForm(f), caja = cu.querySelector('#rpDisp');
+        if (!v.fecha || !v.tecnico_id) { caja.innerHTML = ''; return; }
+        if (App.festivos[v.fecha]) { caja.innerHTML = '<div class="ic-alerta chica">⛔ ' + esc(textoFecha(v.fecha)) + ' es festivo (' + esc(App.festivos[v.fecha]) + '): elija otra fecha.</div>'; return; }
+        let suyas = [];
+        try { suyas = (await G.items('OPE_Actividades', { filtro: "fields/fecha ge '" + v.fecha + "T00:00:00Z' and fields/fecha le '" + v.fecha + "T23:59:59Z'", top: 999 })).filter((x) => x.tecnico_id === v.tecnico_id && x.Title !== a.Title && activaAg(x) && !esEsperaAg(x.estado)); } catch (e) { /* sin conexión */ }
+        const nom = (persona(v.tecnico_id) || {}).nombre || '';
+        caja.innerHTML = (!habil(v.fecha) ? '<div class="ic-alerta chica">⚠ Fin de semana: requiere autorización del Director de Operaciones.</div>' : '') +
+          (suyas.some((x) => x.tipo === 'AUS') ? '<div class="ic-alerta chica">⚠ ' + esc(nom) + ' tiene una ausencia ese día.</div>' : '') +
+          (suyas.length ? '<div class="sec">Agenda de ' + esc(nom) + ' ese día:</div><ul class="tar-dia">' + suyas.map((x) => '<li>' + esc((x.hora_inicio || '—') + ' · ' + x.tipo + ' · ' + (x.cliente || '')) + '</li>').join('') + '</ul>' : '<div class="tar-disp-ok">✓ ' + esc(nom) + ' no tiene otras actividades ese día.</div>');
+      };
+      f.addEventListener('change', revisar); revisar();
+      f.onsubmit = async (e) => {
+        e.preventDefault();
+        const v = U.leerForm(f), err = {};
+        if (!v.fecha) err.fecha = 'Obligatorio'; else if (v.fecha < hoy()) err.fecha = 'No puede ser una fecha pasada'; else if (App.festivos[v.fecha]) err.fecha = 'Es festivo';
+        if (!v.tecnico_id) err.tecnico_id = 'Obligatorio';
+        if (!String(v.razon || '').trim()) err.razon = 'Escriba la razón';
+        if (!U.marcarErrores(f, err)) return;
+        const tc = persona(v.tecnico_id), razon = v.razon.trim();
+        try {
+          let nueva;
+          await U.conCarga(cu.querySelector('#rpOk'), async () => {
+            await G.actualizar('OPE_Actividades', a._id, { estado: 'REPROGRAMADO', motivo_cambio: razon + ' (desde la tarea ' + t.Title + ')' });
+            const n = await G.siguiente('PRG');
+            nueva = { Title: 'PRG-' + pad(n, 6), fecha: v.fecha, tecnico_id: v.tecnico_id, estado: 'PROGRAMADO', reprograma_de: a.Title, tar_id: t.Title };
+            ['tipo', 'cliente', 'empresa_id', 'ciudad', 'equipos', 'hora_inicio', 'ticket_os', 'observaciones', 'origen', 'sitio', 'sede', 'pry_id', 'pry_tarea'].forEach((k) => { if (a[k] !== undefined && a[k] !== null && a[k] !== '') nueva[k] = a[k]; });
+            await G.crear('OPE_Actividades', nueva);
+            const d = new Date();
+            const campos = { fecha_inicio: v.fecha, responsable: tc.nombre, responsable_id: tc.Title, agenda: [t.agenda, nueva.Title].filter(Boolean).join(';'),
+              bitacora: pad(d.getDate(), 2) + '/' + pad(d.getMonth() + 1, 2) + '/' + String(d.getFullYear()).slice(2) + '. Reprogramada: ' + a.Title + ' → ' + nueva.Title + ' · ' + textoFecha(v.fecha) + ' · ' + tc.nombre + '. Razón: ' + razon + (t.bitacora ? '\n' + t.bitacora : '') };
+            if (!cerrada(t)) campos.estado = 'Programada';
+            await guardarSeguro(() => G.actualizar('TAR_Tareas', t._id, campos), campos);
+          });
+          U.cerrarModal(); U.aviso('Reprogramada: ' + nueva.Title + ' para ' + tc.nombre + ' el ' + textoFecha(v.fecha), 'ok', 7000);
+          await Promise.all([cargar(), cargarAgenda()]); alGuardar();
+        } catch (err2) { U.aviso(U.mensajeError(err2), 'err', 9000); }
+      };
+    });
   }
   async function formAgenda(t, alGuardar) {
     const tipos = App.tipos;

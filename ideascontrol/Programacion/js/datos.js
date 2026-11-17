@@ -9,7 +9,9 @@ window.Ope = (function () {
     tecnicos: [], personal: [], tipos: [], festivos: {}, meses: {}, empresas: null
   };
 
-  const ESTADOS = [['PROGRAMADO', 'Programado'], ['CONFIRMADO', 'Confirmado'], ['EJECUTADO', 'Ejecutado'], ['REPROGRAMADO', 'Reprogramado'], ['CANCELADO', 'Cancelado'], ['STANDBY', 'Stand By']];
+  const ESTADOS = [['PROGRAMADO', 'Programado'], ['CONFIRMADO', 'Confirmado'], ['ESPERA_CLIENTE', 'Espera cliente'], ['ESPERA_INTERNA', 'Espera interna'], ['ESPERA_PROVEEDOR', 'Espera proveedor'], ['EJECUTADO', 'Ejecutado'], ['REPROGRAMADO', 'Reprogramado'], ['CANCELADO', 'Cancelado']];
+  const ESTADOS_ANTES = { STANDBY: 'Stand By' };   // ya no se usa: solo para mostrar registros anteriores
+  const ESPERAS = ['ESPERA_CLIENTE', 'ESPERA_INTERNA', 'ESPERA_PROVEEDOR', 'STANDBY'];
   const VINCULOS = [['IDEAS_CONTROL', 'Ideas Control'], ['TECNICO_CAMPO', 'Técnico de campo']];
   // Personal administrativo: está en OPE_Tecnicos solo para Novedades del personal; no se programa ni aparece en la Programación
   const ADMINISTRATIVO = 'ADMINISTRATIVO';
@@ -65,7 +67,7 @@ window.Ope = (function () {
   const tecnicosIC = () => tecnicosActivos().filter((t) => t.vinculacion === 'IDEAS_CONTROL');
   const nombreTec = (id) => { const t = tec(id); return t ? t.nombre : (id || '— sin técnico —'); };
   const nombreTipo = (cod) => { const t = tipo(cod); return t ? t.nombre : (cod || '—'); };
-  const nombreEstado = (e) => (ESTADOS.find((x) => x[0] === e) || [e, e])[1];
+  const nombreEstado = (e) => (ESTADOS.find((x) => x[0] === e) || [e, ESTADOS_ANTES[e] || e])[1];
 
   // ---------- Actividades (se cargan por mes y se guardan en memoria) ----------
   function normalizar(a) { a.fecha = dia(a.fecha); a.equipos = a.equipos === null || a.equipos === undefined || a.equipos === '' ? '' : Number(a.equipos); return a; }
@@ -92,8 +94,8 @@ window.Ope = (function () {
       String(a.hora_inicio || '99').localeCompare(String(b.hora_inicio || '99')) || nombreTec(a.tecnico_id).localeCompare(nombreTec(b.tecnico_id));
   }
   const delDia = (s) => (D.meses[ym(s)] || []).filter((a) => a.fecha === s);
-  // Stand By: queda en pausa, no ocupa al técnico ni cuenta en la carga
-  const activa = (a) => a.estado !== 'CANCELADO' && a.estado !== 'REPROGRAMADO' && a.estado !== 'STANDBY';
+  // En espera (cliente, interna o proveedor): queda quieta, no ocupa al técnico ni cuenta en la carga
+  const activa = (a) => a.estado !== 'CANCELADO' && a.estado !== 'REPROGRAMADO' && ESPERAS.indexOf(a.estado) < 0;
   const buscar = (id) => { for (const k of Object.keys(D.meses)) { const a = D.meses[k].find((x) => x.Title === id); if (a) return a; } return null; };
   // Mantiene la memoria al día después de guardar
   function recordar(a) {
@@ -251,7 +253,7 @@ window.Ope = (function () {
   }
   // Actividad enlazada con una tarea de Gestión de Clientes (tar_id): la tarea toma la persona y la fecha
   // de la agenda y deja la nota en su bitácora. Si falla, la actividad queda igual y se avisa.
-  const ESTADO_TXT = { PROGRAMADO: 'programada', CONFIRMADO: 'confirmada', EJECUTADO: 'ejecutada', REPROGRAMADO: 'reprogramada', CANCELADO: 'cancelada', STANDBY: 'en stand by' };
+  const ESTADO_TXT = { PROGRAMADO: 'programada', CONFIRMADO: 'confirmada', EJECUTADO: 'ejecutada', REPROGRAMADO: 'reprogramada', CANCELADO: 'cancelada', ESPERA_CLIENTE: 'en espera del cliente', ESPERA_INTERNA: 'en espera interna', ESPERA_PROVEEDOR: 'en espera del proveedor', STANDBY: 'en stand by' };
   async function sincronizarTarea(act, antes) {
     if (!act || !act.tar_id) return;
     act = Object.assign({}, act, { fecha: dia(act.fecha) });
@@ -260,8 +262,11 @@ window.Ope = (function () {
       const t = (await G.items('TAR_Tareas', { filtro: "fields/Title eq '" + act.tar_id + "'" }))[0];
       if (!t) return;
       const campos = {}, cambios = [];
-      const vigente = ['CANCELADO', 'REPROGRAMADO', 'STANDBY'].indexOf(act.estado) < 0;
-      if (!antes) cambios.push('Agendada en la Programación: ' + act.Title + ' · ' + nombreTec(act.tecnico_id) + ' · ' + ff(act.fecha));
+      const vigente = ['CANCELADO', 'REPROGRAMADO'].indexOf(act.estado) < 0;
+      if (!antes && act.reprograma_de) {
+        const vieja = Object.keys(D.meses).reduce((r, k) => r || D.meses[k].find((x) => x.Title === act.reprograma_de), null);
+        cambios.push('Reprogramada: ' + act.reprograma_de + ' → ' + act.Title + ' · ' + ff(act.fecha) + ' · ' + nombreTec(act.tecnico_id) + (vieja && vieja.motivo_cambio ? '. Razón: ' + vieja.motivo_cambio : ''));
+      } else if (!antes) cambios.push('Agendada en la Programación: ' + act.Title + ' · ' + nombreTec(act.tecnico_id) + ' · ' + ff(act.fecha));
       else {
         if (antes.fecha && dia(antes.fecha) !== act.fecha) cambios.push(act.Title + ': fecha ' + ff(antes.fecha) + ' → ' + ff(act.fecha));
         if (antes.tecnico_id !== undefined && antes.tecnico_id !== act.tecnico_id) cambios.push(act.Title + ': persona ' + (nombreTec(antes.tecnico_id) || '—') + ' → ' + (nombreTec(act.tecnico_id) || '—'));
@@ -271,7 +276,7 @@ window.Ope = (function () {
       }
       if (!cambios.length) return;
       // Estado: la tarea refleja el estado de su actividad (REPROGRAMADO no cambia nada: la nueva actividad trae el estado)
-      const EST = { PROGRAMADO: 'Programada', CONFIRMADO: 'Programada', EJECUTADO: 'Finalizada', CANCELADO: 'Cancelada', STANDBY: 'En espera del cliente' };
+      const EST = { PROGRAMADO: 'Programada', CONFIRMADO: 'Programada', EJECUTADO: 'Finalizada', CANCELADO: 'Cancelada', ESPERA_CLIENTE: 'Espera cliente', ESPERA_INTERNA: 'Espera interna', ESPERA_PROVEEDOR: 'Espera proveedor' };
       const nuevoEst = (!antes || antes.estado !== act.estado) ? EST[act.estado] : null;
       if (nuevoEst && t.estado !== nuevoEst && !(nuevoEst === 'Programada' && ['Finalizada', 'Cancelada'].indexOf(t.estado) >= 0 && antes)) {
         campos.estado = nuevoEst;
@@ -311,7 +316,8 @@ window.Ope = (function () {
     recordar(nuevo);
     const antes = {}; Object.keys(campos).forEach((k) => { antes[k] = actual[k]; });
     await auditar('ACTIVIDAD', actual.Title, accion || 'ACTUALIZAR', antes, campos);
-    if (nuevo && nuevo.tar_id && accion !== 'ENLAZAR_TAREA') await sincronizarTarea(nuevo, antes);
+    // Al reprogramar, la nota completa (con la razón) la deja la actividad nueva
+    if (nuevo && nuevo.tar_id && accion !== 'ENLAZAR_TAREA' && campos.estado !== 'REPROGRAMADO') await sincronizarTarea(nuevo, antes);
     if (nuevo && nuevo.pry_tarea && campos.estado === 'EJECUTADO' && actual.estado !== 'EJECUTADO') {
       try { const t = await completarTareaProyecto(nuevo); if (t) IC.ui.aviso('Tarea ' + t.tarea_id + ' del proyecto ' + (nuevo.pry_id || '') + ' marcada como completada', 'ok', 6000); }
       catch (e) { console.warn(e); IC.ui.aviso('La actividad quedó ejecutada, pero no se pudo actualizar la tarea del proyecto (' + IC.ui.mensajeError(e) + '). Se actualizará cuando el líder abra el proyecto.', 'warn', 9000); }
@@ -320,7 +326,7 @@ window.Ope = (function () {
   }
 
   return {
-    D, ESTADOS, VINCULOS, ADMINISTRATIVO, DIAS, DIAS_CORTOS, MESES,
+    D, ESTADOS, ESPERAS, VINCULOS, ADMINISTRATIVO, DIAS, DIAS_CORTOS, MESES,
     dia, pad, hoy, aFecha, sumar, dow, lunesDe, ym, finDeMes, esFestivo, esHabil, diasHabilesMes, textoFecha,
     cargarCatalogos, catalogosFrescos, tec, tipo, habilidades, puede, usaEquipos, diasPref, tecnicosActivos, tecnicosIC, nombreTec, nombreTipo, nombreEstado,
     cargarMes, cargarRango, delRango, delDia, activa, buscar, recordar, orden,

@@ -9,8 +9,8 @@
 (function () {
   const U = IC.ui, G = IC.graph, esc = U.esc;
   const P = { acts: [], porTarea: {}, error: '', cat: null };
-  const ESTADOS = { PROGRAMADO: 'Programada', CONFIRMADO: 'Confirmada', EJECUTADO: 'Ejecutada', REPROGRAMADO: 'Reprogramada', CANCELADO: 'Cancelada', STANDBY: 'Stand By' };
-  const activa = (a) => ['CANCELADO', 'REPROGRAMADO', 'STANDBY'].indexOf(a.estado) < 0;
+  const ESTADOS = { PROGRAMADO: 'Programada', CONFIRMADO: 'Confirmada', EJECUTADO: 'Ejecutada', REPROGRAMADO: 'Reprogramada', CANCELADO: 'Cancelada', STANDBY: 'Stand By', ESPERA_CLIENTE: 'Espera cliente', ESPERA_INTERNA: 'Espera interna', ESPERA_PROVEEDOR: 'Espera proveedor' };
+  const activa = (a) => ['CANCELADO', 'REPROGRAMADO', 'STANDBY', 'ESPERA_CLIENTE', 'ESPERA_INTERNA', 'ESPERA_PROVEEDOR'].indexOf(a.estado) < 0;
   const cerrada = (t) => ['Completada', 'No aplica', 'Cancelada'].indexOf(t.estado) >= 0;
   const nombreTec = (id) => { const t = P.cat && P.cat.tec.find((x) => x.Title === id); return t ? t.nombre : (id || 'sin técnico'); };
 

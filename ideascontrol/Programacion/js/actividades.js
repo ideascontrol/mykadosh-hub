@@ -97,7 +97,7 @@
       '<div class="ic-campo c3" id="cEquipos"><label for="f_equipos">Equipos</label><input id="f_equipos" name="equipos" type="number" min="0" step="1" value="' + esc(a.equipos === undefined ? '' : a.equipos) + '"><span class="ayuda" id="ayCarga"></span></div>' +
       U.campo({ name: 'hora_inicio', label: 'Hora inicio', t: 'time', valor: a.hora_inicio, c: 'c3' }) +
       U.campo({ name: 'ticket_os', label: 'Ticket / OS', valor: a.ticket_os, c: 'c3' }) +
-      U.campo({ name: 'estado', label: 'Estado', t: 'select', op: Ope.ESTADOS.filter((e) => nueva ? e[0] === 'PROGRAMADO' || e[0] === 'CONFIRMADO' : true), valor: a.estado, c: 'c3', vacio: false }) +
+      U.campo({ name: 'estado', label: 'Estado', t: 'select', op: Ope.ESTADOS.filter((e) => nueva ? e[0] === 'PROGRAMADO' || e[0] === 'CONFIRMADO' : true).concat(a.estado && !Ope.ESTADOS.some((e) => e[0] === a.estado) ? [[a.estado, Ope.nombreEstado(a.estado) + ' (anterior)']] : []), valor: a.estado, c: 'c3', vacio: false }) +
       U.campo({ name: 'observaciones', label: 'Observaciones', t: 'textarea', valor: a.observaciones, c: 'c12', filas: 2 }) +
       '<div class="ic-campo c12" id="cAut"' + (App.esAdmin() ? '' : ' hidden') + '><label class="ic-check"><input type="checkbox" name="autorizado"' + (a.autorizado ? ' checked' : '') + '> <span>Autorizado por el Director de Operaciones (festivo o fin de semana)</span></label></div>' +
       '</div>' +
@@ -229,7 +229,7 @@
     U.modal('Reprogramar ' + a.Title, '<form class="ic-form" id="fRep"><p class="ope-nota" style="margin-top:0">' + esc(Ope.etiqueta(a)) + ' · ' + esc(Ope.textoFecha(a.fecha, true)) + '</p><div class="ic-campos">' +
       U.campo({ name: 'fecha', label: 'Nueva fecha', t: 'date', valor: a.fecha, req: true, c: 'c4' }) +
       U.campo({ name: 'tecnico_id', label: 'Responsable', t: 'select', op: tecOps, valor: a.tecnico_id, c: 'c8' }) +
-      U.campo({ name: 'motivo', label: 'Motivo', req: true, c: 'c12', ph: 'Ej.: el cliente pidió cambio de fecha' }) +
+      U.campo({ name: 'motivo', label: 'Razón del cambio' + (a.tar_id ? ' (queda en la bitácora de la tarea ' + a.tar_id + ')' : ''), t: 'textarea', filas: 2, req: true, c: 'c12', ph: 'Ej.: el cliente pidió cambio de fecha' }) +
       '</div><div id="repVal"></div><div class="ic-acciones"><button type="button" class="ic-btn sec" id="rCan">Volver</button><button class="ic-btn" id="rOk">Reprogramar</button></div></form>',
     (cu) => {
       const f = cu.querySelector('#fRep');
@@ -245,7 +245,7 @@
       f.onsubmit = async (ev) => {
         ev.preventDefault();
         const v = U.leerForm(f);
-        if (!U.marcarErrores(f, Object.assign({}, !v.fecha ? { fecha: 'Indique la fecha' } : {}, !v.motivo ? { motivo: 'Indique el motivo' } : {}))) return;
+        if (!U.marcarErrores(f, Object.assign({}, !v.fecha ? { fecha: 'Indique la fecha' } : Ope.esFestivo(v.fecha) ? { fecha: 'Es festivo: no se puede programar' } : {}, !v.motivo ? { motivo: 'Indique la razón' } : {}))) return;
         try {
           await U.conCarga(cu.querySelector('#rOk'), async () => {
             await Ope.actualizarActividad(a, { estado: 'REPROGRAMADO', motivo_cambio: v.motivo }, 'CAMBIO_ESTADO');
