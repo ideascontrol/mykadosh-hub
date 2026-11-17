@@ -25,6 +25,14 @@
   // Nombre de archivo de la foto: igual a la columna automática de la plantilla
   const nombreFoto = (c) => normCodigo(c).replace(/[ /\\]/g, '-');
   const precio = (v, moneda) => moneda === 'USD' ? 'US$ ' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : U.fmt.cop(v);
+  // Códigos propios: prefijo + consecutivo (definidos en la ayuda «Crear o editar un producto»). FAB = referencia del fabricante tal cual.
+  const PREFIJOS = [['FAB', 'Referencia del fabricante (se escribe tal cual)', ''], ['SRV', 'Servicios', 'SERVICIO'], ['VIA', 'Viáticos', 'VIATICOS'], ['LIC', 'Licencias', 'LICENCIA'], ['ACC', 'Accesorios', 'ACCESORIO']];
+  const prefijoDe = (cod) => { const m = /^(SRV|VIA|LIC|ACC)-/i.exec(cod || ''); return m ? m[1].toUpperCase() : 'FAB'; };
+  function siguienteCodigo(pref, lista) {
+    let max = 0, ancho = 3;
+    lista.forEach((x) => { const m = new RegExp('^' + pref + '-(\\d+)$', 'i').exec(String(x.codigo || '').trim()); if (m) { max = Math.max(max, Number(m[1])); ancho = Math.max(ancho, m[1].length); } });
+    return pref + '-' + String(max + 1).padStart(ancho, '0');
+  }
   const tipoTxt = (t) => (TIPOS.find((x) => x[0] === t) || [t, t])[1];
   const precioVigente = (pid) => datos.precios.filter((p) => p.producto_id === pid && p.activo).sort((a, b) => soloFecha(b.fecha_inicio).localeCompare(soloFecha(a.fecha_inicio)))[0] || null;
   const ultimoCorte = (pid) => datos.cortes.filter((c) => c.producto_id === pid).sort((a, b) => soloFecha(b.fecha_corte).localeCompare(soloFecha(a.fecha_corte)))[0] || null;
@@ -161,9 +169,18 @@
       '<h1 class="ic-titulo">' + (nuevo ? 'Nuevo producto' : 'Editar producto') + '</h1><p class="ic-subtitulo">' + (nuevo ? 'Los campos con <span style="color:var(--ic-err)">*</span> son obligatorios.' : esc(p.Title)) + '</p>' +
       '<form class="ic-form" id="fPrd" novalidate>' +
         '<fieldset><legend>Identificación</legend><div class="ic-campos">' +
-          U.campo({ name: 'codigo', label: 'Código', valor: p.codigo, req: true, c: 'c4', ayuda: 'Referencia del fabricante o SRV-, VIA-, LIC-, ACC-…' }) +
+          '<div class="ic-campo c4"><label for="f_prefijo">Código <span class="req">*</span></label><select id="f_prefijo">' + PREFIJOS.map((x) => '<option value="' + x[0] + '"' + (prefijoDe(p.codigo) === x[0] ? ' selected' : '') + '>' + x[0] + ' — ' + esc(x[1]) + '</option>').join('') + '</select>' +
+            '<input id="f_codigo" name="codigo" value="' + esc(p.codigo || '') + '" autocomplete="off" style="margin-top:6px" placeholder="Referencia del fabricante"><span class="ayuda" id="ayCod">Elija el tipo de código; los propios se numeran solos.</span></div>' +
           U.campo({ name: 'codigo_anterior', label: 'Código anterior', valor: p.codigo_anterior, c: 'c4' }) +
-          U.campo({ name: 'categoria', label: 'Categoría', valor: p.categoria, c: 'c4', ph: 'Biometría, Accesorios…' }) +
+          (() => { // Categorías: las que ya usa el catálogo + «Otra» para escribir una nueva
+            const cats = {}; datos.productos.forEach((x) => { const k = String(x.categoria || '').trim(); if (k) cats[k] = (cats[k] || 0) + 1; });
+            const lista = Object.keys(cats).sort((a, b) => a.localeCompare(b, 'es'));
+            const actual = String(p.categoria || '').trim();
+            return '<div class="ic-campo c4"><label for="f_catSel">Categoría</label><select id="f_catSel"><option value="">— Sin categoría —</option>' +
+              lista.map((k) => '<option value="' + esc(k) + '"' + (k === actual ? ' selected' : '') + '>' + esc(k) + ' (' + cats[k] + ')</option>').join('') +
+              '<option value="__otra">Otra… (escribir nueva)</option></select>' +
+              '<input id="f_categoria" name="categoria" value="' + esc(actual) + '" autocomplete="off" style="margin-top:6px;display:none" placeholder="Nueva categoría"></div>';
+          })() +
           U.campo({ name: 'nombre', label: 'Nombre', valor: p.nombre, req: true, c: 'c8' }) +
           U.campo({ name: 'tipo', label: 'Tipo', t: 'select', op: TIPOS, valor: p.tipo, vacio: false, req: true, c: 'c4' }) +
         '</div></fieldset>' +
@@ -188,6 +205,17 @@
       '</form>';
     const f = U.$('#fPrd', c);
     const tipo = f.querySelector('[name=tipo]');
+    // Tipo de código: con prefijo propio propone el siguiente consecutivo y el tipo de producto; FAB se escribe a mano
+    const selPref = f.querySelector('#f_prefijo'), inCod = f.querySelector('#f_codigo');
+    const selCat = f.querySelector('#f_catSel'), inCat = f.querySelector('#f_categoria');
+    selCat.onchange = () => { const otra = selCat.value === '__otra'; inCat.style.display = otra ? '' : 'none'; inCat.value = otra ? '' : selCat.value; if (otra) inCat.focus(); };
+    selPref.onchange = () => {
+      const x = PREFIJOS.find((y) => y[0] === selPref.value);
+      if (x[0] === 'FAB') { if (prefijoDe(inCod.value) !== 'FAB') inCod.value = ''; inCod.placeholder = 'Referencia del fabricante'; inCod.focus(); }
+      else if (prefijoDe(inCod.value) !== x[0]) inCod.value = siguienteCodigo(x[0], datos.productos);
+      f.querySelector('#ayCod').textContent = x[0] === 'FAB' ? 'Escriba la referencia tal como la trae el fabricante.' : x[1] + ': siguiente consecutivo libre (puede ajustarlo).';
+      if (x[2] && nuevo) { tipo.value = x[2]; tipo.onchange(); }
+    };
     tipo.onchange = () => {   // valores por defecto según el tipo
       const sinInv = SIN_INVENTARIO.indexOf(tipo.value) >= 0;
       f.querySelector('[name=maneja_inventario]').value = sinInv ? 'NO' : 'SI';

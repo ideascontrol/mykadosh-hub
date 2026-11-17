@@ -488,7 +488,8 @@ window.IC_AYUDA = {
     claves: 'crear producto nuevo codigo servicio viaticos licencia ficha tecnica garantia',
     html: `
 <ul>
-<li><b>Código</b>: la referencia del fabricante tal cual, o un código propio con prefijo: SRV- servicios, VIA- viáticos, LIC- licencias, ACC- accesorios. No se puede repetir.</li>
+<li><b>Código</b>: elija en la lista el tipo de código. <b>FAB</b> = referencia del fabricante, se escribe tal cual. Los propios (SRV servicios, VIA viáticos, LIC licencias, ACC accesorios) proponen solos el siguiente consecutivo y el tipo de producto; el número se puede ajustar. No se puede repetir.</li>
+<li><b>Categoría</b>: elija una de las que ya usa el catálogo (entre paréntesis, cuántos productos la tienen) o «Otra…» para escribir una nueva.</li>
 <li><b>Nombre, tipo y descripción corta</b> son obligatorios. La descripción corta es la primera línea del PDF.</li>
 <li><b>Ficha técnica</b>: una característica por línea; cada línea sale como viñeta.</li>
 <li><b>Condiciones</b>: unidad, inventario, IVA, descripción editable al cotizar, garantía en meses y stock mínimo. Licencias, servicios y viáticos nunca manejan inventario.</li>
