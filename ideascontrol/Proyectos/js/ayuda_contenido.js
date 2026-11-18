@@ -106,6 +106,7 @@ window.IC_AYUDA = {
 <tr><td>Instalación biométrica</td><td>GNT-003</td></tr>
 <tr><td>Puerta / control de acceso</td><td>GNT-004</td></tr>
 <tr><td>Torniquete</td><td>GNT-005</td></tr>
+<tr><td>Migración de plataformas</td><td>GNT-006</td></tr>
 <tr><td>Proyecto combinado</td><td>Las que usted marque</td></tr>
 </tbody></table>
 <ul>

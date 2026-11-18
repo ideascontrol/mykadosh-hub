@@ -159,7 +159,7 @@
     let lib;
     try { await cargarXLSX(); lib = leerBiblioteca(XLSX.read(await file.arrayBuffer(), { type: 'array' })); }
     catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); return; }
-    if (!lib.length) { U.aviso('El archivo no tiene hojas GNT-001…GNT-005.', 'warn'); return; }
+    if (!lib.length) { U.aviso('El archivo no tiene hojas de plantilla (GNT-001, GNT-002…).', 'warn'); return; }
     await PRY.cargarPlantillas();
     const existe = (p) => PRY.D.plantillas.find((x) => x.Title === p.codigo + '@' + p.version);
     U.modal('Importar Biblioteca Maestra', '<div class="ic-form"><p style="margin-top:0">Revise lo que se va a importar. Las correcciones se hacen solo en la app; el Excel no se modifica.</p>' +

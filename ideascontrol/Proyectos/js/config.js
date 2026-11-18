@@ -1,7 +1,7 @@
 /* =====================================================================
    APP-114 · Proyectos — configuración
    Proyectos de implementación de Ideas Control (manual 2600-MAN-OPE):
-   T&A, TimeVision (reportes y análisis de T&A, no WFM), biometría, puertas y torniquetes.
+   T&A, TimeVision (reportes y análisis de T&A, no WFM), biometría, puertas, torniquetes y migración de plataformas.
    Datos en IC Apps (listas PRY_*). Clientes: MAE_Empresas / MAE_Contactos (Comercial).
    ===================================================================== */
 window.CFG = {
@@ -37,6 +37,7 @@ window.CFG = {
     { id: 'BIO', nombre: 'Instalación biométrica', plantillas: ['GNT-003'] },
     { id: 'PUE', nombre: 'Puerta / control de acceso', plantillas: ['GNT-004'] },
     { id: 'TOR', nombre: 'Torniquete', plantillas: ['GNT-005'] },
+    { id: 'MIG', nombre: 'Migración de plataformas', plantillas: ['GNT-006'] },
     { id: 'COMB', nombre: 'Proyecto combinado', plantillas: [] }
   ],
   // Tareas comunes: al combinar plantillas se dejan una sola vez (la primera plantilla manda)
