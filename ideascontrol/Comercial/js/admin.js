@@ -163,7 +163,7 @@
   // =====================================================================
   // CONDICIONES COMERCIALES
   // =====================================================================
-  const TIPOS_CND = [['PAGO', 'Forma de pago', 'PAG'], ['GARANTIA', 'Garantía', 'GAR'], ['SOPORTE', 'Soporte', 'SOP'], ['GENERALES', 'Condiciones generales', 'GEN']];
+  const TIPOS_CND = [['PAGO', 'Forma de pago', 'PAG'], ['GARANTIA', 'Garantía', 'GAR'], ['ENTREGA', 'Tiempo de entrega', 'ENT'], ['SOPORTE', 'Soporte', 'SOP'], ['GENERALES', 'Condiciones generales', 'GEN']];
   const LINEAS = [['TODAS', 'Todas las líneas'], ['VENTA_HW', 'Venta de equipos'], ['LICENCIA', 'Licencias'], ['SAAS', 'SaaS (suscripción)'], ['ALQUILER_HW', 'Alquiler de equipos'], ['SOPORTE', 'Contratos de soporte'], ['LATAM', 'Clientes de Latinoamérica']];
   const lineaTxt = (k) => (LINEAS.find((x) => x[0] === k) || [k, k || '—'])[1];
   let condiciones = [], P = {};
@@ -206,7 +206,7 @@
         '<div class="ic-tabla-caja"><table class="ic-tabla"><tbody>' + grupo.map((x) => {
           const pr = problemas(x), mal = tieneProblemas(pr);
           return '<tr data-id="' + esc(x.Title) + '">' +
-            '<td><b>' + esc(x.titulo) + '</b> ' + (x.predeterminada ? '<span class="ic-tag cliente">Predeterminada</span> ' : '') + (x.estado === 'INACTIVO' ? '<span class="ic-tag inactivo">Inactiva</span>' : '') +
+            '<td><b>' + esc(x.titulo) + '</b> ' + (x.predeterminada ? '<span class="ic-tag cliente">Predeterminada</span> ' : '') + (x.editable_al_cotizar ? '<span class="ic-tag">Editable al cotizar</span> ' : '') + (x.estado === 'INACTIVO' ? '<span class="ic-tag inactivo">Inactiva</span>' : '') +
             '<div style="margin-top:4px;white-space:pre-line">' + conVariables(x.texto) + '</div>' +
             (mal ? '<div class="ic-alerta chica">' + avisosHtml(pr) + ' <button class="ic-btn sec" data-corregir="' + esc(x.Title) + '">Corregir</button></div>' : '') +
             '<span class="sec">' + esc(lineaTxt(x.linea_negocio)) + ' · Orden ' + esc(x.orden === undefined || x.orden === null ? '—' : x.orden) + ' · ' + esc(x.Title) + '</span></td></tr>';
@@ -247,6 +247,7 @@
       U.campo({ name: 'texto', label: 'Texto', t: 'textarea', filas: 7, valor: propuesta ? textoPropuesto : x.texto, req: true, c: 'c12', ayuda: 'No escriba a mano datos como la vigencia, los datos bancarios o los meses de garantía: use los botones de arriba.' }) +
       '<div class="ic-campo c12"><label>Así se verá en una cotización creada hoy</label><div class="ic-prev-texto" id="pvTexto"></div><div id="avTexto"></div></div>' +
       U.campo({ name: 'predeterminada', label: 'Predeterminada: agregarla sola a las cotizaciones nuevas de esta línea', t: 'checkbox', valor: x.predeterminada, c: 'c12' }) +
+      U.campo({ name: 'editable_al_cotizar', label: 'Editable al cotizar: el comercial ajusta el texto en cada cotización (ej.: el tiempo de entrega)', t: 'checkbox', valor: x.editable_al_cotizar, c: 'c12' }) +
       (nuevo ? '' : U.campo({ name: 'estado', label: 'Estado', t: 'select', op: [['ACTIVO', 'Activa'], ['INACTIVO', 'Inactiva (ya no se ofrece)']], valor: x.estado || 'ACTIVO', vacio: false, c: 'c6' })) +
       '</div><div class="ic-acciones"><button type="button" class="ic-btn sec" id="bC">Cancelar</button><button class="ic-btn" id="bG">' + (nuevo ? 'Crear condición' : 'Guardar cambios') + '</button></div></form>', (m) => {
       const ta = m.querySelector('[name=texto]'), tipo = m.querySelector('[name=tipo]');
@@ -257,7 +258,8 @@
           (pr.rep.some((r) => r.corregir) || pr.garantia ? ' <button type="button" class="ic-btn sec" id="bFix">Usar datos automáticos</button>' : '') + '</div>' : '';
         const bf = U.$('#bFix', m); if (bf) bf.onclick = () => { ta.value = corregido({ texto: ta.value, tipo: tipo.value }); repintar(); };
       };
-      ta.oninput = repintar; tipo.onchange = repintar; repintar();
+      ta.oninput = repintar; repintar();
+      tipo.onchange = () => { if (nuevo && tipo.value === 'ENTREGA') m.querySelector('[name=editable_al_cotizar]').checked = true; repintar(); };   // el tiempo de entrega cambia en cada cotización
       m.querySelectorAll('[data-var]').forEach((b) => { b.onclick = () => {
         const ins = '{' + b.dataset.var + '}', i = ta.selectionStart ?? ta.value.length, j = ta.selectionEnd ?? i;
         ta.value = ta.value.slice(0, i) + ins + ta.value.slice(j); ta.focus(); ta.selectionStart = ta.selectionEnd = i + ins.length; repintar();
@@ -276,7 +278,7 @@
         // Meses de garantía escritos a mano: solo se avisa (recuadro amarillo); se permite guardar
         if (v.orden && !/^\d{1,3}$/.test(v.orden)) err.orden = 'Número entero';
         if (!U.marcarErrores(ev.target, err)) return;
-        const campos = { tipo: v.tipo, linea_negocio: v.linea_negocio, titulo: v.titulo, texto, orden: v.orden === '' ? null : Number(v.orden), predeterminada: !!v.predeterminada };
+        const campos = { tipo: v.tipo, linea_negocio: v.linea_negocio, titulo: v.titulo, texto, orden: v.orden === '' ? null : Number(v.orden), predeterminada: !!v.predeterminada, editable_al_cotizar: !!v.editable_al_cotizar };
         if (!nuevo) campos.estado = v.estado;
         await U.conCarga(U.$('#bG', m), async () => {
           try {

@@ -155,10 +155,12 @@
             cantidad: Number(l.cantidad), precio_unitario: Number(l.precio_unitario), precio_base: Number(l.precio_unitario), moneda_base: cot.moneda || 'COP',
             precio_editable: !!(p.Title && !(App.productos.precioVigente(p.Title) || {}).valor), descripcion_editable: !!p.descripcion_editable,
             descuento_porcentaje: Number(l.descuento_porcentaje || 0), aplica_iva: !!l.aplica_iva, garantia_meses: p.garantia_meses, escalas: !!(p.Title && App.productos.escalas(p.Title).length), rango_desde: null }; }),
-        conds: conds.map((x) => x.condicion_id).filter(Boolean), introTocada: true };
+        conds: conds.map((x) => x.condicion_id).filter(Boolean), introTocada: true,
+        // Condiciones «editables al cotizar»: se conserva el texto que el comercial dejó en el borrador
+        textos: conds.reduce((o, x) => { const m = D.condiciones.find((y) => y.Title === x.condicion_id); if (m && m.editable_al_cotizar) o[x.condicion_id] = x.texto || ''; return o; }, {}) };
     } else {
       F = { cot: null, empresa_id: '', sucursal_id: '', contacto_id: '', fecha: hoy(), moneda: P.MONEDA_DEFECTO || 'COP', trm: '', linea: 'VENTA_HW',
-        titulo_seccion: '', texto_introduccion: '', observaciones: '', lineas: [], conds: [], introTocada: false };
+        titulo_seccion: '', texto_introduccion: '', observaciones: '', lineas: [], conds: [], introTocada: false, textos: {} };
       F.conds = predeterminadas('VENTA_HW');
       // Viene de una interacción «Pide cotización»: cliente y contacto ya elegidos
       const pre = App.cotizaciones.prellenar; App.cotizaciones.prellenar = null;
@@ -390,13 +392,25 @@
   function pintarConds(c) {
     const z = U.$('#zConds', c);
     const activas = D.condiciones.filter((x) => x.estado !== 'INACTIVO' || F.conds.indexOf(x.Title) >= 0);
-    const tipos = [['PAGO', 'Forma de pago'], ['GARANTIA', 'Garantía'], ['SOPORTE', 'Soporte'], ['GENERALES', 'Condiciones generales']];
+    const tipos = [['PAGO', 'Forma de pago'], ['GARANTIA', 'Garantía'], ['ENTREGA', 'Tiempo de entrega'], ['SOPORTE', 'Soporte'], ['GENERALES', 'Condiciones generales']];
     z.innerHTML = '<p class="ic-conteo">Marcadas: las que van en esta cotización. Las predeterminadas de la línea de negocio se marcan solas. El texto se completa con los datos de hoy y queda fijo en la cotización.</p>' +
       tipos.map((t) => { const g = activas.filter((x) => x.tipo === t[0]).sort((a, b) => (Number(a.orden) || 99) - (Number(b.orden) || 99)); if (!g.length) return '';
         return '<div class="ic-seccion" style="margin-top:12px">' + t[1] + '</div>' + g.map((x) => '<label class="ic-cond"><input type="checkbox" data-cond="' + esc(x.Title) + '"' + (F.conds.indexOf(x.Title) >= 0 ? ' checked' : '') + '>' +
-          '<div><b>' + esc(x.titulo) + '</b> <span class="sec">' + esc((LINEAS.find((l) => l[0] === x.linea_negocio) || [0, x.linea_negocio])[1]) + '</span><div class="txt" data-prev="' + esc(x.Title) + '"></div></div></label>').join(''); }).join('');
-    z.querySelectorAll('[data-cond]').forEach((el) => { el.onchange = () => { const id = el.dataset.cond; F.conds = F.conds.filter((k) => k !== id); if (el.checked) F.conds.push(id); totales(c); }; });
+          '<div><b>' + esc(x.titulo) + '</b> <span class="sec">' + esc((LINEAS.find((l) => l[0] === x.linea_negocio) || [0, x.linea_negocio])[1]) + '</span>' + (x.editable_al_cotizar ? ' <span class="ic-tag">Se ajusta en esta cotización</span>' : '') +
+            (x.editable_al_cotizar && F.conds.indexOf(x.Title) >= 0 ? '' : '<div class="txt" data-prev="' + esc(x.Title) + '"></div>') + '</div></label>' +
+          (x.editable_al_cotizar && F.conds.indexOf(x.Title) >= 0 ? '<div class="ic-cond-edit"><textarea rows="3" data-ctxt="' + esc(x.Title) + '"></textarea><span class="sec">Así sale en el PDF. Ajuste el texto para esta cotización (ej.: el tiempo de entrega).</span></div>' : '')).join(''); }).join('');
+    z.querySelectorAll('[data-cond]').forEach((el) => { el.onchange = () => { const id = el.dataset.cond; F.conds = F.conds.filter((k) => k !== id); if (el.checked) F.conds.push(id); pintarConds(c); }; });
+    z.querySelectorAll('[data-ctxt]').forEach((el) => {
+      const x = D.condiciones.find((y) => y.Title === el.dataset.ctxt);
+      el.value = textoCond(x, ctxCot(), D.params);
+      el.oninput = () => { F.textos[x.Title] = el.value; };
+    });
     pintarCondsPreview(c); totales(c);
+  }
+  // Texto final de una condición: el ajustado por el comercial (si es editable y lo tocó) o la plantilla con los datos de hoy
+  function textoCond(x, ctx, P, modo) {
+    if (x.editable_al_cotizar && F.textos && F.textos[x.Title] !== undefined) return F.textos[x.Title];
+    return T().resolver(x.texto, P, ctx, modo);
   }
   function pintarCondsPreview(c) {
     const ctx = ctxCot();
@@ -422,7 +436,7 @@
           neto_linea: r.neto, iva_porcentaje: r.iva }; });
         const ctx = ctxCot();
         const conds = D.condiciones.filter((x) => F.conds.indexOf(x.Title) >= 0).sort((a, b2) => (Number(a.orden) || 99) - (Number(b2.orden) || 99))
-          .map((x) => ({ titulo: x.titulo, texto: T().resolver(x.texto, D.params, ctx), orden: x.orden }));
+          .map((x) => ({ titulo: x.titulo, texto: textoCond(x, ctx, D.params), orden: x.orden }));
         const doc = await App.cotPdf.generar(cot, det, conds, { params: D.params, productos: App.productos.datos.productos, comercial: usuario(F.cot ? F.cot.comercial_id : yo()),
           codigoCliente: e.codigo_cliente || e.codigo_cliente_anterior || '', vistaPrevia: true });
         const url = URL.createObjectURL(doc.output('blob'));
@@ -442,6 +456,8 @@
       if (isNaN(l.precio_unitario) || Number(l.precio_unitario) < 0 || (l.precio_editable && !(Number(l.precio_unitario) > 0))) errores.push('Línea ' + (i + 1) + ': escriba un precio válido.');
       const d = Number(l.descuento_porcentaje || 0); if (isNaN(d) || d < 0 || d > 100) errores.push('Línea ' + (i + 1) + ': el descuento debe estar entre 0 y 100.');
     });
+    D.condiciones.filter((x) => x.editable_al_cotizar && F.conds.indexOf(x.Title) >= 0 && F.textos[x.Title] !== undefined && !String(F.textos[x.Title]).trim())
+      .forEach((x) => errores.push('Condición «' + x.titulo + '»: escriba el texto o desmárquela.'));
     if (conPdf && !String(param('SITIO_DOCUMENTAL_URL') || '').trim()) errores.push('Falta configurar el sitio documental en Administración › Parámetros (Ubicación de los documentos). Puede guardar como borrador.');
     if (errores.length) { U.modal('Revise la cotización', '<div class="ic-form"><ul style="margin:0 0 12px;padding-left:18px">' + errores.map((x) => '<li>' + esc(x) + '</li>').join('') + '</ul><div class="ic-acciones"><button class="ic-btn" id="bOk">Entendido</button></div></div>', (m) => { U.$('#bOk', m).onclick = U.cerrarModal; }); return; }
     if (conPdf && !await U.confirmar('Generar el PDF', 'Se guarda la cotización, se genera el PDF y se archiva en SharePoint. Después ya no se puede editar: cualquier cambio se hace con una revisión (R1, R2…). ¿Continuar?', 'Generar PDF')) return;
@@ -511,7 +527,7 @@
     let nC = await G.reservar('CCO', sel.length);
     for (let i = 0; i < sel.length; i++) {
       const x = sel[i];
-      await G.crear('COT_CotizacionCondiciones', { Title: 'CCO-' + pad(nC++, 6), cotizacion_id: id, condicion_id: x.Title, tipo: x.tipo, titulo: x.titulo, texto: T().resolver(x.texto, P, ctx), orden: i + 1 });
+      await G.crear('COT_CotizacionCondiciones', { Title: 'CCO-' + pad(nC++, 6), cotizacion_id: id, condicion_id: x.Title, tipo: x.tipo, titulo: x.titulo, texto: textoCond(x, ctx, P), orden: i + 1 });
     }
     return id;
   }

@@ -540,3 +540,7 @@ button.ic-var:hover { background: rgba(21,144,144,.2); }
 .ic-rango.fijo{background:#fff6e5;border-color:#f0c36d;color:#8a5a00}
 .ic-escalas tr.sel td{background:#e8f3fb;font-weight:700}
 #tRangos input{width:100%;min-width:90px}
+
+/* Condición editable al cotizar (Comercial) */
+.ic-cond-edit{margin:-2px 0 10px 30px}
+.ic-cond-edit textarea{width:100%;font:inherit;padding:8px;border:1px solid var(--ic-borde,#d6dde4);border-radius:8px;resize:vertical}

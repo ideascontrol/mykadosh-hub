@@ -149,11 +149,11 @@ const LISTAS = [
     ['ciudad_sede', 't'], ['cantidad', 'n'], ['precio_unitario', 'n'], ['descuento_porcentaje', 'n'], ['descuento_valor', 'n'],
     ['subtotal_linea', 'n'], ['neto_linea', 'n'], ['aplica_iva', 'b'], ['iva_porcentaje', 'n'], ['iva_valor', 'n'], ['total_linea', 'n']] },
   { n: 'COT_Condiciones', title: 'condicion_id', d: 'Textos estándar de condiciones comerciales', cols: [
-    ['tipo', 'c', ['PAGO', 'GARANTIA', 'SOPORTE', 'GENERALES']],
+    ['tipo', 'c', ['PAGO', 'GARANTIA', 'ENTREGA', 'SOPORTE', 'GENERALES']],
     ['linea_negocio', 'c', ['TODAS', 'VENTA_HW', 'LICENCIA', 'SAAS', 'ALQUILER_HW', 'SOPORTE', 'LATAM']],
-    ['titulo', 't'], ['texto', 'm'], ['predeterminada', 'b'], ['orden', 'n'], ['estado', 'c', ESTADO]] },
+    ['titulo', 't'], ['texto', 'm'], ['predeterminada', 'b'], ['orden', 'n'], ['estado', 'c', ESTADO], ['editable_al_cotizar', 'b']] },
   { n: 'COT_CotizacionCondiciones', title: 'cotizacion_condicion_id', d: 'Condiciones aplicadas en cada cotización', cols: [
-    ['cotizacion_id', 't', null, 1], ['condicion_id', 't'], ['tipo', 'c', ['PAGO', 'GARANTIA', 'SOPORTE', 'GENERALES']],
+    ['cotizacion_id', 't', null, 1], ['condicion_id', 't'], ['tipo', 'c', ['PAGO', 'GARANTIA', 'ENTREGA', 'SOPORTE', 'GENERALES']],
     ['titulo', 't'], ['texto', 'm'], ['orden', 'n']] },
   // v3 (Tablero): debe ir de última. Si existe, la app sabe que también existen las columnas nuevas de COT_Cotizaciones.
   { n: 'COT_MotivosPerdida', title: 'motivo_id', d: 'Motivos para registrar una cotización perdida', cols: [
@@ -848,11 +848,20 @@ async function crearOActualizarLista(def) {
     id = l.id; listasExistentes[def.n] = id;
     log(def.n + ': lista creada con ' + def.cols.length + ' columnas', 'ok');
   } else {
-    const cols = await graphAll('/sites/' + sitio.id + '/lists/' + id + '/columns?$select=name');
+    const cols = await graphAll('/sites/' + sitio.id + '/lists/' + id + '/columns?$select=id,name,choice');
     const nombres = cols.map((c) => c.name);
     const faltan = def.cols.filter((c) => nombres.indexOf(c[0]) < 0);
     for (const c of faltan) await graph('POST', '/sites/' + sitio.id + '/lists/' + id + '/columns', columna(c));
     log(def.n + ': ya existía' + (faltan.length ? '; se agregaron ' + faltan.length + ' columnas (' + faltan.map((c) => c[0]).join(', ') + ')' : '; columnas completas'), faltan.length ? 'warn' : 'ok');
+    // Columnas de opción ya existentes: se agregan las opciones nuevas (nunca se quitan las que ya tienen)
+    for (const d of def.cols.filter((c) => c[1] === 'c')) {
+      const ex = cols.find((c) => c.name === d[0]);
+      if (!ex || !ex.choice) continue;
+      const tiene = ex.choice.choices || [], nuevas = d[2].filter((o) => tiene.indexOf(o) < 0);
+      if (!nuevas.length) continue;
+      await graph('PATCH', '/sites/' + sitio.id + '/lists/' + id + '/columns/' + ex.id, { choice: Object.assign({}, ex.choice, { choices: tiene.concat(nuevas) }) });
+      log(def.n + '.' + d[0] + ': opciones agregadas (' + nuevas.join(', ') + ')', 'warn');
+    }
   }
   // La columna Título guarda el ID de negocio: se renombra para que se entienda en SharePoint.
   try {
