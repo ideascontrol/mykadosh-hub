@@ -274,7 +274,7 @@
         if (!v.titulo) err.titulo = 'Obligatorio';
         if (!texto) err.texto = 'Obligatorio';
         else if (pr.malas.length) err.texto = 'Revise el dato {' + pr.malas[0] + '}: no existe';
-        else if (pr.rep.length) err.texto = 'El texto repite datos de Parámetros. Use «Usar datos automáticos».';
+        // Datos de Parámetros escritos a mano: solo se sugiere «Usar datos automáticos» (recuadro amarillo); se permite guardar
         // Meses de garantía escritos a mano: solo se avisa (recuadro amarillo); se permite guardar
         if (v.orden && !/^\d{1,3}$/.test(v.orden)) err.orden = 'Número entero';
         if (!U.marcarErrores(ev.target, err)) return;
