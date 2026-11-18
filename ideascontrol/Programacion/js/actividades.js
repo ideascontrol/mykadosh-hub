@@ -291,7 +291,7 @@
     c.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a>' +
       '<div class="ic-barra"><div style="flex:1"><h1 class="ic-titulo">Actividades</h1><p class="ic-subtitulo" style="margin:0">Único lugar para registrar actividades. La validación se calcula sola.</p></div>' +
       '<button class="ic-btn sec" id="bExportar" title="Excel o impresión / PDF de las actividades del rango, por cliente">Exportar / Imprimir</button>' +
-      (App.puedeEditar() ? '<button class="ic-btn sec" id="bAsignar" title="Asigna el cliente que contrata a las actividades filtradas">Asignar cliente…</button><button class="ic-btn" id="bNueva">+ Nueva actividad</button>' : '') + '</div>' +
+      (App.puedeEditar() ? '<button class="ic-btn sec" id="bAsignar" title="Asigna el cliente que contrata a las actividades filtradas">Asignar cliente…</button><button class="ic-btn sec" id="bMasiva" title="Descargar la plantilla de Excel o subirla diligenciada">Carga masiva (Excel)</button><button class="ic-btn" id="bNueva">+ Nueva actividad</button>' : '') + '</div>' +
       '<div class="ic-filtros">' +
         '<label class="ope-lbl">Desde <input type="date" id="fDesde" value="' + filtros.desde + '"></label>' +
         '<label class="ope-lbl">Hasta <input type="date" id="fHasta" value="' + filtros.hasta + '"></label>' +
@@ -305,6 +305,7 @@
     const bN = c.querySelector('#bNueva'); if (bN) bN.onclick = () => App.nuevaActividad({}, pintar);
     c.querySelector('#bExportar').onclick = () => elegirSalida(listaActual, filtros);
     const bA = c.querySelector('#bAsignar'); if (bA) bA.onclick = () => asignarCliente(listaActual, pintar);
+    const bM = c.querySelector('#bMasiva'); if (bM) bM.onclick = () => App.cargaMasiva(pintar);
     const leer = () => {
       filtros.desde = c.querySelector('#fDesde').value || filtros.desde; filtros.hasta = c.querySelector('#fHasta').value || filtros.hasta;
       filtros.tec = c.querySelector('#fTec').value; filtros.tipo = c.querySelector('#fTipo').value; filtros.estado = c.querySelector('#fEst').value;
