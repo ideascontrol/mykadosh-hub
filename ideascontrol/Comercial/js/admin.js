@@ -273,7 +273,7 @@
         if (!texto) err.texto = 'Obligatorio';
         else if (pr.malas.length) err.texto = 'Revise el dato {' + pr.malas[0] + '}: no existe';
         else if (pr.rep.length) err.texto = 'El texto repite datos de Parámetros. Use «Usar datos automáticos».';
-        else if (pr.garantia) err.texto = 'Los meses de garantía se toman de cada producto. Use «Usar datos automáticos».';
+        // Meses de garantía escritos a mano: solo se avisa (recuadro amarillo); se permite guardar
         if (v.orden && !/^\d{1,3}$/.test(v.orden)) err.orden = 'Número entero';
         if (!U.marcarErrores(ev.target, err)) return;
         const campos = { tipo: v.tipo, linea_negocio: v.linea_negocio, titulo: v.titulo, texto, orden: v.orden === '' ? null : Number(v.orden), predeterminada: !!v.predeterminada };

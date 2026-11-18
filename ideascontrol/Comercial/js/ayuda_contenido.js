@@ -579,7 +579,7 @@ window.IC_AYUDA = {
 <ul>
 <li>Cada condición tiene tipo (pago, garantía, soporte, generales), línea de negocio y si es <b>predeterminada</b> (viene marcada en las cotizaciones nuevas).</li>
 <li>Los datos que ya existen en la app (vigencia, datos bancarios, IVA, sitio web, fecha de vencimiento, garantía de los productos) se insertan con los botones <b class="bt">+ Vigencia</b>, <b class="bt">+ Datos bancarios</b>… y aparecen como recuadros de color.</li>
-<li>Si alguien escribe a mano uno de esos datos, la app no deja guardar y ofrece <b class="bt">Usar datos automáticos</b>.</li>
+<li>Si alguien escribe a mano uno de esos datos, la app no deja guardar y ofrece <b class="bt">Usar datos automáticos</b>. Excepción: los meses de garantía escritos a mano solo generan un aviso; la condición se puede guardar y luego activar o desactivar.</li>
 <li>Al crear una cotización, el texto queda fijo con los valores de ese día: si después cambia un dato, las cotizaciones anteriores no cambian.</li>
 </ul>` },
 
