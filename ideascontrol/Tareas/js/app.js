@@ -118,7 +118,7 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
     document.getElementById('encabezado').innerHTML =
       '<a href="#"><img class="logo" src="' + CFG.logo + '" alt="Ideas Control"></a>' +
       '<div class="app-nombre"><b>' + esc(CFG.app.nombre) + '</b><span>' + CFG.app.id + ' · v' + CFG.app.version + '</span></div><div class="espacio"></div>' +
-      '<nav class="tar-nav"><a href="#" data-r="">Resumen</a><a href="#tareas" data-r="tareas">Tareas</a><a href="#reportes" data-r="reportes">Reportes detallados</a>' + (esAdmin() ? '<a href="#importar" data-r="importar">Importar</a>' : '') + '</nav>' +
+      '<nav class="tar-nav"><a href="#" data-r="">Resumen</a><a href="#tareas" data-r="tareas">Tareas</a><a href="#pendientes" data-r="pendientes">Pendientes</a><a href="#reportes" data-r="reportes">Reportes detallados</a>' + (esAdmin() ? '<a href="#importar" data-r="importar">Importar</a>' : '') + '</nav>' +
       '<div class="ic-user">' + IC.portal.boton() + '<div class="datos"><b>' + esc(u.nombre) + '</b><span>' + (esAdmin() ? 'Dirección de Operaciones' : 'Personal IC') + '</span></div>' +
       '<div class="ic-avatar" title="' + esc(u.email) + '">' + esc(u.iniciales) + '</div><button class="ic-btn sec chico" id="btnSalir">Salir</button></div>';
     document.getElementById('encabezado').hidden = false;
@@ -242,6 +242,114 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
     // #tareas/T-0003 abre la tarea (enlace desde la Programación)
     const idUrl = decodeURIComponent((location.hash.split('/')[1] || ''));
     if (idUrl) { const t = App.tareas.find((x) => x.Title === idUrl); if (t) formTarea(t, pintar); history.replaceState(null, '', '#tareas'); }
+  }
+
+
+  // =====================================================================
+  // PENDIENTES (Programación + Gestión de Clientes, sin Proyectos)
+  // Gestión de Clientes: tareas no finalizadas ni canceladas.
+  // Programación: actividades Programadas, Confirmadas, en Espera o Stand By, que no son de un proyecto (pry_id),
+  // ni ausencias ni turnos de oficina; las enlazadas a una tarea se muestran en la tarea (no se repiten).
+  // =====================================================================
+  const PEND_AG = ['PROGRAMADO', 'CONFIRMADO', 'STANDBY', 'ESPERA_CLIENTE', 'ESPERA_INTERNA', 'ESPERA_PROVEEDOR'];
+  const ORIGEN = { TAR: 'Gestión Cliente', PRG: 'Programación' };
+  const fp = App.filtroPend = { origen: '', persona: '', cliente: '', q: '', por: 'persona' };
+  let actsPend = null;
+  async function cargarActsPend() {
+    if (actsPend) return actsPend;
+    const desde = new Date(Date.now() - 365 * 864e5).toISOString().slice(0, 10);
+    try { actsPend = (await G.items('OPE_Actividades', { filtro: "fields/fecha ge '" + desde + "T00:00:00Z'", top: 5000 })).map((a) => Object.assign(a, { fecha: dia(a.fecha) })); }
+    catch (e) { actsPend = App.acts; }
+    return actsPend;
+  }
+  function pendientes() {
+    const L = [];
+    App.tareas.filter((t) => !cerrada(t)).forEach((t) => {
+      const ag = agendaVigente(t), d = t.fecha_limite ? difDias(t.fecha_limite, hoy()) : null;
+      L.push({ origen: 'TAR', id: t.Title, persona: nombreResp(t), cliente: t.cliente_nombre || nombreCliente(t.cliente_id), texto: t.item || '',
+        estado: t.estado || '', fecha: t.fecha_limite || '', etqFecha: 'Límite', atraso: d !== null && d < 0 ? -d : 0,
+        extra: ag && activaAg(ag) && ag.estado !== 'EJECUTADO' ? 'Agenda: ' + (ESTADOS_AG[ag.estado] || ag.estado) + ' ' + textoFecha(ag.fecha) + (persona(ag.tecnico_id) ? ' (' + persona(ag.tecnico_id).nombre + ')' : '') : '', t });
+    });
+    (actsPend || []).filter((a) => PEND_AG.indexOf(a.estado) >= 0 && !a.pry_id && !a.tar_id && a.tipo !== 'AUS' && a.tipo !== 'OFI').forEach((a) => {
+      const tipo = (App.tipos.find((x) => x.Title === a.tipo) || {}).nombre || a.tipo || 'Actividad', p = persona(a.tecnico_id);
+      const det = [a.sede || a.sitio, a.equipos ? a.equipos + ' equipo' + (a.equipos == 1 ? '' : 's') : '', resumir(a.observaciones, 90)].filter(Boolean).join(' · ');
+      const d = a.fecha ? difDias(a.fecha, hoy()) : null;
+      L.push({ origen: 'PRG', id: a.Title, persona: p ? p.nombre : (a.tecnico_id || ''), cliente: a.cliente || '', texto: tipo + (det ? ' — ' + det : ''),
+        estado: ESTADOS_AG[a.estado] || a.estado, fecha: a.fecha, etqFecha: 'Agendada', atraso: d !== null && d < 0 && !esEsperaAg(a.estado) ? -d : 0, extra: '' });
+    });
+    return L;
+  }
+  function pendFiltrados() {
+    const q = U.norm(fp.q), cq = U.norm(fp.cliente).trim().split(/\s+/).filter(Boolean);
+    return pendientes().filter((x) => (!fp.origen || x.origen === fp.origen) &&
+      (!fp.persona || (fp.persona === '__SIN__' ? !x.persona : x.persona === fp.persona)) &&
+      (!cq.length || cq.every((t) => U.norm(x.cliente).indexOf(t) >= 0)) &&
+      (!q || U.norm([x.id, x.texto, x.cliente, x.persona, x.estado, x.extra].join(' ')).indexOf(q) >= 0));
+  }
+  function agrupar(L) {
+    const k = fp.por === 'cliente' ? 'cliente' : 'persona', m = {};
+    L.forEach((x) => { const g = x[k] || (k === 'cliente' ? 'Sin cliente' : 'Sin responsable'); (m[g] = m[g] || []).push(x); });
+    return Object.keys(m).sort((a, b) => /^Sin /.test(a) - /^Sin /.test(b) || a.localeCompare(b, 'es'))
+      .map((g) => [g, m[g].sort((a, b) => String(a.fecha || '9999').localeCompare(String(b.fecha || '9999')) || a.origen.localeCompare(b.origen))]);
+  }
+  const lineaFecha = (x) => x.fecha ? (x.origen === 'TAR' ? 'límite ' : '') + textoFecha(x.fecha) + (x.atraso ? ' · ' + x.atraso + ' día' + (x.atraso === 1 ? '' : 's') + ' de atraso' : '') : 'Sin fecha';
+  function textoPend(G2) {
+    const n = G2.reduce((s, g) => s + g[1].length, 0), otro = fp.por === 'cliente' ? 'persona' : 'cliente';
+    return '*Pendientes · Programación y Gestión de Clientes*\n' + textoFecha(hoy()) + ' · ' + n + ' pendiente' + (n === 1 ? '' : 's') + '\n' +
+      G2.map(([g, L]) => '\n*' + g + '* (' + L.length + ')\n' + L.map((x, i) => (i + 1) + '. ' + (x[otro] ? x[otro] + ' — ' : '') + resumir(x.texto, 100) +
+        ' (' + ORIGEN[x.origen] + ' · ' + x.estado + ' · ' + lineaFecha(x) + ')').join('\n')).join('\n');
+  }
+  function vistaPendientes(c) {
+    const sel = (id, op, v) => '<select id="' + id + '">' + U.opcionesHTML(op, v) + '</select>';
+    const ops = U.opcionesPersonal(App.personal).map((o) => [o[1].replace(/ — inactivo$/, ''), o[1], o[2]]);
+    const clientes = Array.from(new Set(App.tareas.map((t) => t.cliente_nombre).concat(App.clientes.map((x) => x.nombre)).filter(Boolean))).sort();
+    c.innerHTML = '<div class="ic-barra"><div><h1 class="ic-titulo">Pendientes</h1><p class="ic-subtitulo" style="margin:0">Todo lo abierto de la Programación y de Gestión de Clientes, por persona o por cliente. No incluye Proyectos.</p></div><span class="espacio"></span>' +
+      '<button class="ic-btn sec" id="bCopiar">Copiar texto</button><button class="ic-btn sec" id="bExcelP">⬇ Excel</button></div>' +
+      '<div class="ic-filtros"><div class="ic-chips" id="chPor"><button data-p="persona">Por persona</button><button data-p="cliente">Por cliente</button></div>' +
+        sel('pOri', [['', 'Programación y Gestión Cliente'], ['PRG', 'Solo Programación'], ['TAR', 'Solo Gestión Cliente']], fp.origen) +
+        '<select id="pPer"></select>' +
+        '<input id="pCli" list="dlPendCli" placeholder="Cliente (cualquier parte del nombre)" value="' + esc(fp.cliente) + '" style="min-width:220px"><datalist id="dlPendCli">' + clientes.map((n) => '<option value="' + esc(n) + '">').join('') + '</datalist>' +
+        '<input type="search" id="pQ" placeholder="Buscar…" value="' + esc(fp.q) + '" style="flex:1;min-width:160px"></div><div id="lista"><div class="ic-vacio">Cargando…</div></div>';
+    const pintar = () => {
+      const todos = pendientes(), L = pendFiltrados(), G2 = agrupar(L);
+      const extras = Array.from(new Set(todos.map((x) => x.persona).filter((n) => n && !ops.some((o) => o[0] === n)))).sort();
+      c.querySelector('#pPer').innerHTML = U.opcionesHTML([['', 'Todas las personas']].concat(ops).concat(extras.map((n) => [n, n, 'Valor anterior'])).concat([['__SIN__', 'Sin responsable']]), fp.persona);
+      c.querySelectorAll('#chPor button').forEach((b) => b.classList.toggle('activo', b.dataset.p === fp.por));
+      const nP = L.filter((x) => x.origen === 'PRG').length, nT = L.length - nP, nA = L.filter((x) => x.atraso).length;
+      c.querySelector('#lista').innerHTML = '<p class="ic-conteo">' + L.length + ' pendiente' + (L.length === 1 ? '' : 's') + ' · Programación ' + nP + ' · Gestión Cliente ' + nT + (nA ? ' · <b style="color:#b3261e">' + nA + ' con atraso</b>' : '') + '</p>' +
+        (L.length ? G2.map(([g, LL]) => '<section class="ic-bloque tar-pend"><div class="cab"><h2>' + esc(g) + ' <span class="tar-num">' + LL.length + '</span></h2></div>' +
+          '<div class="ic-tabla-caja"><table class="ic-tabla tar-tabla"><thead><tr><th style="width:34px">#</th><th>' + (fp.por === 'cliente' ? 'Persona' : 'Cliente') + '</th><th>Pendiente</th><th>Origen</th><th>Estado</th><th>Fecha</th></tr></thead><tbody>' +
+          LL.map((x, i) => '<tr' + (x.origen === 'TAR' ? ' data-id="' + esc(x.id) + '"' : '') + '><td>' + (i + 1) + '</td><td class="tar-cli">' + esc((fp.por === 'cliente' ? x.persona : x.cliente) || '—') + '</td>' +
+            '<td><b>' + esc(resumir(x.texto, 140)) + '</b><span class="sec">' + esc(x.id) + (x.extra ? ' · ' + esc(x.extra) : '') + '</span></td>' +
+            '<td><span class="tar-ori o-' + x.origen.toLowerCase() + '">' + ORIGEN[x.origen] + '</span></td><td>' + chipEstado(x.estado) + '</td>' +
+            '<td class="nw">' + (x.fecha ? esc(x.etqFecha + ' ' + textoFecha(x.fecha)) : '<span class="sec">Sin fecha</span>') + (x.atraso ? '<span class="sec" style="color:#b3261e">' + x.atraso + ' día' + (x.atraso === 1 ? '' : 's') + ' de atraso</span>' : '') + '</td></tr>').join('') +
+          '</tbody></table></div></section>').join('') : '<div class="ic-vacio">No hay pendientes con estos filtros.</div>');
+      c.querySelectorAll('tr[data-id]').forEach((tr) => { tr.onclick = () => formTarea(App.tareas.find((t) => t.Title === tr.dataset.id), pintar); });
+    };
+    c.querySelectorAll('#chPor button').forEach((b) => { b.onclick = () => { fp.por = b.dataset.p; pintar(); }; });
+    c.querySelector('#pOri').onchange = (e) => { fp.origen = e.target.value; pintar(); };
+    c.querySelector('#pPer').onchange = (e) => { fp.persona = e.target.value; pintar(); };
+    const cli = c.querySelector('#pCli'); cli.oninput = cli.onchange = () => { fp.cliente = cli.value; pintar(); };
+    c.querySelector('#pQ').oninput = (e) => { fp.q = e.target.value; pintar(); };
+    c.querySelector('#bCopiar').onclick = async () => {
+      const txt = textoPend(agrupar(pendFiltrados()));
+      try { await navigator.clipboard.writeText(txt); U.aviso('Texto copiado: péguelo en WhatsApp o en el correo', 'ok'); }
+      catch (e) { U.modal('Copiar texto', '<div class="ic-form"><textarea style="width:100%;min-height:360px">' + esc(txt) + '</textarea></div>'); }
+    };
+    c.querySelector('#bExcelP').onclick = async () => {
+      try {
+        await cargarXLSX();
+        const filas = []; agrupar(pendFiltrados()).forEach(([g, L]) => L.forEach((x) => filas.push({ Persona: x.persona, Cliente: x.cliente, Pendiente: x.texto, Origen: ORIGEN[x.origen], Estado: x.estado,
+          'Tipo de fecha': x.fecha ? x.etqFecha : '', Fecha: serial(x.fecha), 'Días de atraso': x.atraso || '', ID: x.id, Nota: x.extra })));
+        const ws = XLSX.utils.json_to_sheet(filas), rg = XLSX.utils.decode_range(ws['!ref']);
+        for (let r = 1; r <= rg.e.r; r++) { const cel = ws['G' + (r + 1)]; if (cel && cel.v !== '') { cel.t = 'n'; cel.z = 'dd/mm/yyyy'; } }
+        ws['!cols'] = [22, 30, 60, 16, 16, 12, 12, 10, 14, 40].map((w) => ({ wch: w }));
+        const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Pendientes');
+        XLSX.writeFile(wb, 'Pendientes_' + (fp.por === 'cliente' ? 'por_cliente' : 'por_persona') + '_' + hoy() + '.xlsx');
+      } catch (e) { U.aviso(e.message, 'err'); }
+    };
+    pintar();
+    cargarActsPend().then(pintar);
   }
 
   // =====================================================================
@@ -596,7 +704,7 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
       await Promise.all([cargar(), cargarClientes(), cargarPersonal(), cargarAgenda()]);
       if (esAdmin()) await convertirCategorias();
       pintarEncabezado();
-      U.enrutar({ '': () => vistaResumen(raiz), tareas: () => vistaTareas(raiz), reportes: () => vistaReportes(raiz), importar: () => (esAdmin() ? vistaImportar(raiz) : vistaResumen(raiz)) }, marcarNav);
+      U.enrutar({ '': () => vistaResumen(raiz), tareas: () => vistaTareas(raiz), pendientes: () => vistaPendientes(raiz), reportes: () => vistaReportes(raiz), importar: () => (esAdmin() ? vistaImportar(raiz) : vistaResumen(raiz)) }, marcarNav);
     } catch (e) {
       console.error(e);
       const falta = /No existe la lista TAR_/.test(e.message);
