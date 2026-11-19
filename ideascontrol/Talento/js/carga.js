@@ -205,13 +205,14 @@ window.TalCarga = (function () {
   // ---------- Mover fechas de un programa (aplazar o adelantar) ----------
   function moverFechas(programaId, alTerminar) {
     const ahora = new Date();
-    const pend = (pid) => App.piezas.filter((x) => x.programa_id === pid && x.fecha_publicacion && new Date(x.fecha_publicacion) > ahora && x.estado !== 'ARCHIVADA')
+    // Se mueven todas las que no están en el muro: borradores con fecha (aunque esa fecha ya haya pasado) y programadas aún no publicadas
+    const pend = (pid) => App.piezas.filter((x) => x.programa_id === pid && x.fecha_publicacion && (x.estado === 'BORRADOR' || (x.estado === 'PROGRAMADA' && new Date(x.fecha_publicacion) > ahora)))
       .sort((a, b) => String(a.fecha_publicacion).localeCompare(String(b.fecha_publicacion)));
     const progs = App.programas.filter((p) => pend(p.Title).length);
     if (!progs.length) { U.aviso('No hay piezas con fechas futuras para mover.', 'warn'); return; }
     const sel = progs.find((p) => p.Title === programaId) ? programaId : progs[0].Title;
     const iso = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-    U.modal('Mover fechas de un programa', '<form class="ic-form" id="fMv"><p style="margin-top:0">Corre todas las piezas <b>aún no publicadas</b> del programa, conservando su hora, su día de la semana y su estado.</p><div class="ic-campos">' +
+    U.modal('Mover fechas de un programa', '<form class="ic-form" id="fMv"><p style="margin-top:0">Corre <b>todas las piezas que aún no están en el muro</b> (borradores y programadas pendientes): la primera pasa a la fecha que elija y las demás conservan la misma separación entre sí, su hora y su estado. Las ya publicadas no se tocan.</p><div class="ic-campos">' +
       U.campo({ name: 'programa', label: 'Programa', t: 'select', op: progs.map((p) => [p.Title, p.nombre]), valor: sel, vacio: false, c: 'c12' }) +
       U.campo({ name: 'nueva', label: 'La primera pieza pasa a', t: 'date', valor: '', req: true, c: 'c6' }) +
       '</div><div id="mvPrev" style="margin-top:10px;font-size:13px"></div><div class="ic-acciones"><button type="button" class="ic-btn sec" id="mvNo">Cancelar</button><button type="button" class="ic-btn" id="mvOk">Mover fechas</button></div></form>', (cu) => {
@@ -230,7 +231,7 @@ window.TalCarga = (function () {
         cu.querySelector('#mvPrev').innerHTML = '<b>' + lista.length + '</b> piezas se corren <b>' + Math.abs(dias) + ' día(s) ' + (dias >= 0 ? 'después' : 'antes') + '</b>: hoy la primera es el ' +
           esc(primera.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })) + '; quedarán del ' +
           esc(new Date(primera.getTime() + dias * 864e5).toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })) + ' al ' + esc(ult.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })) + '.' +
-          (dias % 7 ? '<br><span style="color:#8a6d0f">Ojo: no es un múltiplo de 7 días, así que cambia el día de la semana.</span>' : '');
+          (dias % 7 ? '<br><span style="color:#8a6d0f">Ojo: hoy la primera sale un ' + primera.toLocaleDateString('es-CO', { weekday: 'long' }) + ' y la fecha elegida es ' + new Date(f.nueva.value + 'T12:00:00').toLocaleDateString('es-CO', { weekday: 'long' }) + ': todas cambiarán de día de la semana (si salían lunes, miércoles y viernes, dejarán de hacerlo). Para conservar los días, elija un ' + primera.toLocaleDateString('es-CO', { weekday: 'long' }) + '.</span>' : '');
       };
       f.addEventListener('change', (e) => { if (e.target.name === 'programa') f.nueva.value = ''; vista(); }); f.addEventListener('input', vista); vista();
       cu.querySelector('#mvNo').onclick = U.cerrarModal;
