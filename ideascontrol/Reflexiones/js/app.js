@@ -364,17 +364,73 @@ const App = { vistas: {}, filtro: { libro: '', dim: '', comp: '', estado: '', an
     let s = base, usados = 0;
     Object.keys(datos).forEach((k) => { const re = new RegExp('(' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ':\\s*)\\[[^\\]]*\\]'); if (re.test(s)) { s = s.replace(re, '$1' + datos[k]); usados++; } });
     if (!usados) s += '\n\nDATOS DE LA NUEVA REFLEXIÓN\n' + Object.keys(datos).map((k) => '• ' + k + ': ' + datos[k]).join('\n');
-    return s + '\n\nEntrega el texto narrativo con subtítulos solo si ayudan a la lectura (sin las ocho etapas como apartados). Al final, por separado, la pregunta para llevarse y la ficha editorial interna.';
+    return s + '\n\nFORMATO DE ENTREGA (para cargarla en la app sin copiar campo por campo):\n' +
+      '1. Escribe la línea === TEXTO === y debajo solo la historia narrada con la reflexión integrada, en Markdown (## para subtítulos solo si ayudan a la lectura, **negrita**, *cursiva*, > para una cita destacada). Sin título, sin referencia, sin pregunta final y sin la ficha.\n' +
+      '2. Escribe la línea === FIN TEXTO ===\n' +
+      '3. Luego la ficha editorial como un bloque JSON con estas claves exactas: {"titulo_editorial": "", "pregunta": "", "dimension": "una de las seis dimensiones", "competencia": "", "competencias_secundarias": ["", ""], "areas": ["solo de: ' + CFG.areas.join(', ') + '"], "principio": "", "referencias_complementarias": "", "intro": "máximo 220 caracteres, para la tarjeta de la biblioteca web"}.\n' +
+      'Competencias del catálogo: ' + D.comps.filter((c) => c.activo).map((c) => c.nombre).join(', ') + '.';
   }
   async function copiar(texto, ok) {
     try { await navigator.clipboard.writeText(texto); U.aviso(ok || 'Copiado', 'ok'); }
     catch (e) { U.modal('Copiar', '<div class="ic-form"><textarea style="width:100%;height:50vh">' + esc(texto) + '</textarea><p class="re-nota">Seleccione todo (Ctrl+A) y copie (Ctrl+C).</p></div>'); }
   }
   App.copiar = copiar;
+  // Lee la respuesta completa de Claude: texto entre === TEXTO === y === FIN TEXTO === + ficha en JSON. Llena texto, pregunta, título y la ficha.
+  function leerRespuesta(txt) {
+    const out = { avisos: [] };
+    const m = /={2,}\s*TEXTO\s*={2,}([\s\S]*?)={2,}\s*FIN TEXTO\s*={2,}/i.exec(txt);
+    if (m) out.texto = m[1].trim();
+    const ji = txt.indexOf('{', m ? m.index + m[0].length : 0), jf = txt.lastIndexOf('}');
+    if (ji >= 0 && jf > ji) { try { out.ficha = JSON.parse(txt.slice(ji, jf + 1)); } catch (e) { out.avisos.push('La ficha (JSON) no se pudo leer; complétela a mano.'); } }
+    if (!m && !out.ficha) { out.texto = txt.trim(); out.avisos.push('No vi las marcas === TEXTO ===: se pegó todo como texto. Revise y quite lo que no sea la historia.'); }
+    return out;
+  }
+  function aplicarFicha(f, r) {
+    const c = {}, av = [], N = (x) => U.norm(String(x || '').trim());
+    const dimx = D.dims.find((d) => N(d.nombre) === N(f.dimension)); if (dimx) c.dimension = dimx.id; else if (f.dimension) av.push('Dimensión «' + f.dimension + '» no está en el catálogo');
+    const comp = (x) => (D.comps.find((y) => N(y.nombre) === N(x)) || {}).nombre;
+    if (f.competencia) { if (comp(f.competencia)) c.competencia = comp(f.competencia); else av.push('Competencia «' + f.competencia + '» no está en el catálogo'); }
+    const secs = [].concat(f.competencias_secundarias || []).map((x) => { const v = comp(x); if (!v && x) av.push('Secundaria «' + x + '» no está en el catálogo'); return v; }).filter((x) => x && x !== c.competencia).slice(0, 2);
+    if (secs.length) c.competencias_sec = secs.join(';');
+    const areas = [].concat(f.areas || []).map((x) => CFG.areas.find((a) => N(a) === N(x))).filter(Boolean);
+    if (areas.length) c.areas = areas.join(';');
+    if (f.principio) c.principio = String(f.principio);
+    if (f.referencias_complementarias) c.refs_complementarias = Array.isArray(f.referencias_complementarias) ? f.referencias_complementarias.join('\n') : String(f.referencias_complementarias);
+    if (f.intro) c.intro = String(f.intro).slice(0, 220);
+    return { campos: c, avisos: av };
+  }
+  function pegarRespuesta(r, edi, preg, tit, marcar) {
+    U.modal('Pegar respuesta de Claude · ' + r.codigo, '<div class="ic-form"><p style="margin-top:0" class="re-nota">Use el botón <b>Copiar</b> de la respuesta de Claude y péguela completa aquí. La app pone la historia en el editor, la pregunta y el título a la derecha, y la ficha (clasificación, áreas, principio, referencias e introducción) en la pestaña Ficha.</p>' +
+      '<textarea id="rT" style="width:100%;height:45vh;font:13px/1.5 Consolas,monospace"></textarea>' +
+      (edi.html() && RE_EDITOR.palabras(edi.html()) > 20 ? '<p class="re-nota">⚠ El editor ya tiene texto: será reemplazado (queda la versión anterior en el historial).</p>' : '') +
+      '<div class="ic-acciones"><button class="ic-btn sec" id="rNo">Cancelar</button><button class="ic-btn" id="rOk">Cargar</button></div></div>', (m) => {
+      document.querySelector('.ic-modal').classList.add('re-modal-ancho');
+      m.querySelector('#rNo').onclick = U.cerrarModal;
+      m.querySelector('#rOk').onclick = async () => {
+        const txt = m.querySelector('#rT').value; if (!txt.trim()) return;
+        const R = leerRespuesta(txt), av = R.avisos.slice();
+        if (R.texto) edi.poner(RE_EDITOR.desdeTexto(R.texto));
+        let campos = {};
+        if (R.ficha) {
+          if (R.ficha.pregunta) preg.value = String(R.ficha.pregunta);
+          if (R.ficha.titulo_editorial) tit.value = String(R.ficha.titulo_editorial);
+          const A = aplicarFicha(R.ficha, r); campos = A.campos; av.push(...A.avisos);
+        }
+        marcar();
+        const b = m.querySelector('#rOk'); b.disabled = true; b.textContent = 'Guardando…';
+        try {
+          if (App.guardarTexto) await App.guardarTexto();
+          if (Object.keys(campos).length) await RE.guardar(r, campos, 'Ficha desde la respuesta de Claude', Object.keys(campos).join(', '));
+          U.cerrarModal();
+          U.aviso('Respuesta cargada y guardada' + (av.length ? '. Revise: ' + av.join(' · ') : ''), av.length ? 'warn' : 'ok', av.length ? 12000 : 5000);
+        } catch (e) { U.aviso(U.mensajeError(e), 'err', 9000); b.disabled = false; b.textContent = 'Cargar'; }
+      };
+    });
+  }
   function tabTexto(t, r) {
     const ed = RE.puede.editar() && RE.editableTexto(r);
     t.innerHTML = '<div class="re-texto-cab"><div class="re-nota">' + (ed ? 'Tres elementos visibles: título y referencia (en la ficha), la historia narrada con la reflexión integrada (aquí) y una pregunta para llevarse. Pegue desde Word, Claude o ChatGPT: el formato se limpia solo.' : 'El texto no se puede editar en estado «' + esc(RE.nombreEstado(r.estado)) + '». ' + (RE.puede.editar() ? 'Use «Reabrir para editar».' : '')) + '</div>' +
-      '<div class="re-texto-bot">' + (RE.puede.editar() ? '<button class="ic-btn sec chico" id="bPrompt">Copiar prompt para Claude</button>' : '') + '<button class="ic-btn sec chico" id="bVista">Vista previa de lectura</button></div></div>' +
+      '<div class="re-texto-bot">' + (RE.puede.editar() ? '<button class="ic-btn sec chico" id="bPrompt">Copiar prompt para Claude</button>' + (ed ? '<button class="ic-btn chico" id="bResp">Pegar respuesta de Claude</button>' : '') : '') + '<button class="ic-btn sec chico" id="bVista">Vista previa de lectura</button></div></div>' +
       '<div class="re-texto"><div id="ed"></div><aside class="re-lado"><label>Pregunta para llevarse</label><textarea id="tPreg" rows="4"' + (ed ? '' : ' disabled') + '>' + esc(r.pregunta || '') + '</textarea>' +
       '<label>Título editorial</label><input id="tTit" value="' + esc(r.titulo_editorial || '') + '"' + (ed ? '' : ' disabled') + '><p class="re-nota">' + esc(RE.referenciaCompleta(r)) + '</p>' +
       (ed ? '<button class="ic-btn" id="bGT">Guardar texto</button><p class="re-nota" id="gInfo">' + (r._modificado ? 'Última modificación: ' + esc(new Date(r._modificado).toLocaleString('es-CO')) : '') + '</p><p class="re-nota">Se guarda solo cada 2 minutos y al salir. Cada guardado queda en el historial de versiones.</p>' : '') + '</aside></div>';
@@ -382,6 +438,7 @@ const App = { vistas: {}, filtro: { libro: '', dim: '', comp: '', estado: '', an
     App.editor = edi;
     const preg = t.querySelector('#tPreg'), tit = t.querySelector('#tTit');
     let extraSucio = false; [preg, tit].forEach((x) => x.addEventListener('input', () => { extraSucio = true; }));
+    const br = t.querySelector('#bResp'); if (br) br.onclick = () => pegarRespuesta(r, edi, preg, tit, () => { extraSucio = true; });
     const bp = t.querySelector('#bPrompt'); if (bp) bp.onclick = () => copiar(textoParaClaude(r), 'Prompt maestro con los datos de ' + r.codigo + ' copiado. Péguelo en Claude y luego pegue aquí la respuesta.');
     t.querySelector('#bVista').onclick = () => {
       const html = edi.html();
