@@ -1,6 +1,6 @@
 /* =====================================================================
    APP-108 · Desarrollo de Talento — Colecciones de lectura
-   Contenidos para leer cuando cada quien quiera (p. ej. «Reflexiones Estratégicas» de Growth Path Academy).
+   Contenidos de lectura libre (p. ej. «Reflexiones Estratégicas» de Growth Path Academy).
    Fuente: lista TAL_Coleccion (la llena la app de cada colección al publicar). Solo estado PUBLICADA.
    Sin avisos: no cuentan como «por leer», no piden «Entendido» y no generan correos (el flujo de correos usa TAL_Piezas).
    Rutas: #colecciones · #colecciones/<código>
@@ -51,7 +51,7 @@ window.Coleccion = (function () {
     const libros = Array.from(new Set(C.slice().sort((a, b) => (Number(a.libro_orden) || 0) - (Number(b.libro_orden) || 0)).map((x) => x.libro).filter(Boolean)));
     const dims = Array.from(new Set(C.map((x) => x.dimension).filter(Boolean))).sort();
     c.innerHTML = (cols.length > 1 ? '<div class="ic-chips" style="margin-bottom:14px">' + cols.map((k) => '<button data-col="' + esc(k) + '" class="' + (k === filtro.col ? 'activo' : '') + '">' + esc(info(k).nombre) + '</button>').join('') + '</div>' : '') +
-      '<div class="col-hero"><span>' + esc(I.marca || 'Colección') + '</span><h1>' + esc(I.nombre) + '</h1><p>' + esc(I.lema) + '</p><small>' + C.length + ' lectura' + (C.length === 1 ? '' : 's') + ' · léalas cuando quiera</small></div>' +
+      '<div class="col-hero"><span>' + esc(I.marca || 'Colección') + '</span><h1>' + esc(I.nombre) + '</h1><p>' + esc(I.lema) + '</p><small>' + C.length + (C.length === 1 ? ' lectura disponible' : ' lecturas disponibles') + '</small></div>' +
       '<div class="col-filtros"><input id="cQ" placeholder="Buscar" value="' + esc(filtro.q) + '">' +
       (libros.length > 1 ? '<select id="cL"><option value="">Todos los libros</option>' + libros.map((l) => '<option' + (l === filtro.libro ? ' selected' : '') + '>' + esc(l) + '</option>').join('') + '</select>' : '') +
       (dims.length > 1 ? '<select id="cD"><option value="">Todas las dimensiones</option>' + dims.map((d) => '<option' + (d === filtro.dim ? ' selected' : '') + '>' + esc(d) + '</option>').join('') + '</select>' : '') + '</div><div class="col-grid" id="cG"></div>';
