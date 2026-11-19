@@ -171,12 +171,50 @@
     });
     return out;
   }
+  // ---------- Borrar lo importado del plan (para volver a cargar la BD) ----------
+  const DEL_PLAN = 'Plan inicial (Excel)';
+  const delPlan = () => D.refl.filter((r) => r.autor === DEL_PLAN);
+  // Tocada = alguien la modificó después de importarla (más de 2 minutos después de creada)
+  const tocada = (r) => r._creado && r._modificado && (new Date(r._modificado) - new Date(r._creado)) > 120000;
+  function seccionBorrar() {
+    const L = delPlan(); if (!L.length) return '';
+    const idea = L.filter((r) => r.estado === 'IDEA'), otras = L.filter((r) => r.estado !== 'IDEA'), mod = idea.filter(tocada);
+    return '<section class="ic-bloque"><div class="cab"><h2>Borrar lo importado del plan</h2></div><div class="cuerpo">' +
+      '<p class="re-nota">Hay <b>' + L.length.toLocaleString('es-CO') + '</b> reflexiones que vinieron del plan. Se borran las <b>' + idea.length.toLocaleString('es-CO') + '</b> que siguen en «Idea», para volver a importar la hoja BD con sus mismos códigos.' +
+      (otras.length ? ' Las <b>' + otras.length + '</b> que ya avanzaron (en desarrollo, revisión, aprobadas o publicadas) <b>no se borran</b> y al reimportar se omiten: ' + esc(otras.slice(0, 8).map((r) => r.codigo).join(', ')) + (otras.length > 8 ? '…' : '') + '.' : '') + '</p>' +
+      (mod.length ? '<div class="ic-alerta chica">' + mod.length + ' de las que están en «Idea» fueron modificadas después de importarlas (' + esc(mod.slice(0, 8).map((r) => r.codigo).join(', ')) + (mod.length > 8 ? '…' : '') + '). Esos cambios se pierden. <label class="ic-check"><input type="checkbox" id="bdMod"> <span>Conservarlas (no borrar las modificadas)</span></label></div>' : '') +
+      '<p class="re-nota">El borrado es definitivo. Las reflexiones creadas a mano en la app no se tocan.</p>' +
+      '<div class="ic-acciones" style="justify-content:flex-start"><button class="ic-btn peligro" id="bBorrarPlan"' + (idea.length ? '' : ' disabled') + '>Borrar lo importado</button><span class="re-nota" id="bdEst"></span></div></div></section>';
+  }
+  function enlazarBorrar(z) {
+    const b = z.querySelector('#bBorrarPlan'); if (!b) return;
+    b.onclick = () => {
+      const cons = z.querySelector('#bdMod'), lista = delPlan().filter((r) => r.estado === 'IDEA' && !(cons && cons.checked && tocada(r)));
+      U.modal('Borrar lo importado del plan', '<form class="ic-form" id="fBP"><p style="margin-top:0">Se borrarán definitivamente <b>' + lista.length.toLocaleString('es-CO') + '</b> reflexiones en estado «Idea» que vinieron del plan. Después puede volver a importar la hoja BD.</p>' +
+        U.campo({ name: 'conf', label: 'Para confirmar, escriba BORRAR' }) + '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="bpNo">Cancelar</button><button class="ic-btn peligro" id="bpOk">Borrar ' + lista.length.toLocaleString('es-CO') + '</button></div></form>', (m) => {
+        m.querySelector('#bpNo').onclick = U.cerrarModal;
+        m.querySelector('#fBP').onsubmit = async (e) => {
+          e.preventDefault();
+          if (!U.marcarErrores(e.target, m.querySelector('[name=conf]').value.trim().toUpperCase() === 'BORRAR' ? {} : { conf: 'Escriba BORRAR' })) return;
+          U.cerrarModal(); b.disabled = true; const est = z.querySelector('#bdEst');
+          let n = 0, fallos = 0;
+          const borrar = async (r) => { try { await G.eliminar('RE_Reflexiones', r._id); D.refl = D.refl.filter((x) => x !== r); } catch (er) { fallos++; console.warn(r.codigo, er); } n++; est.textContent = n + ' de ' + lista.length + '…' + (fallos ? ' (' + fallos + ' con error)' : ''); };
+          for (let i = 0; i < lista.length; i += 4) await Promise.all(lista.slice(i, i + 4).map(borrar));
+          try { await G.crear('RE_Historial', { Title: 'BORRADO-PLAN@' + Date.now(), reflexion_id: 'PLAN', fecha_hora: new Date().toISOString(), usuario: D.usuario.nombre, email: D.usuario.email, accion: 'Borrado de lo importado del plan', detalle: (n - fallos) + ' reflexiones en Idea borradas' + (fallos ? ', ' + fallos + ' con error' : '') }); } catch (er) { /* el historial es informativo */ }
+          U.aviso((n - fallos).toLocaleString('es-CO') + ' reflexiones borradas' + (fallos ? ' · ' + fallos + ' con error (repita para reintentar)' : '. Ya puede importar la BD de nuevo.'), fallos ? 'warn' : 'ok', 9000);
+          await RE.cargarReflexiones(); importar(z);
+        };
+      });
+    };
+  }
+
   function importar(z) {
     z.innerHTML = '<section class="ic-bloque"><div class="cab"><h2>Importar el plan inicial (hoja BD)</h2></div><div class="cuerpo">' +
       '<p class="re-nota">Lee la hoja «BD» del Excel «Reflexiones Estratégicas» y crea cada historia como reflexión en estado <b>Idea</b>, conservando su código (RE-GEN-001…). Las nuevas reflexiones de cada libro siguen desde el último número. ' +
       '<b>Importe el plan antes de crear reflexiones nuevas en esos libros</b>, para que los códigos del plan queden con sus historias. ' +
       'La competencia del plan se asigna solo si existe en el catálogo oficial; si no, queda «por clasificar» y la clasificación original se guarda en la ficha para no perderla. Las que ya existen se omiten (se puede repetir sin duplicar).</p>' +
-      '<input type="file" id="fBD" accept=".xlsx"><div id="prevBD"></div></div></section>';
+      '<input type="file" id="fBD" accept=".xlsx"><div id="prevBD"></div></div></section>' + seccionBorrar();
+    enlazarBorrar(z);
     z.querySelector('#fBD').onchange = async (e) => {
       const f = e.target.files[0]; if (!f) return; const p = z.querySelector('#prevBD');
       p.innerHTML = '<div class="ic-vacio">Leyendo…</div>';

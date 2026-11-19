@@ -29,7 +29,7 @@ window.RE = (function () {
     const id = await G.listaId('RE_Reflexiones');
     const q = '/sites/' + await G.sitio(CFG.sitio.host, CFG.sitio.ruta) + '/lists/' + id + '/items?$expand=fields($select=' + CAMPOS_LISTA.join(',') + ')&$top=999';
     const r = await G.todas(q, { Prefer: 'HonorNonIndexedQueriesWarningMayFailRandomly' });
-    D.refl = r.map((it) => normal(Object.assign({}, it.fields, { _id: it.id, _etag: it['@odata.etag'] || it.eTag, _modificado: it.lastModifiedDateTime, _editor: it.lastModifiedBy && it.lastModifiedBy.user ? it.lastModifiedBy.user.displayName : '' })))
+    D.refl = r.map((it) => normal(Object.assign({}, it.fields, { _id: it.id, _etag: it['@odata.etag'] || it.eTag, _creado: it.createdDateTime, _modificado: it.lastModifiedDateTime, _editor: it.lastModifiedBy && it.lastModifiedBy.user ? it.lastModifiedBy.user.displayName : '' })))
       .sort((a, b) => ordenLibro(a.libro) - ordenLibro(b.libro) || a.num - b.num || String(a.codigo).localeCompare(b.codigo));
   }
   // Una reflexión completa (con el texto)
