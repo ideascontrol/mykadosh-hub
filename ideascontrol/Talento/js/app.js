@@ -150,7 +150,7 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
       '<select id="fProg"><option value="">Todos los programas</option>' + App.programas.map((p) => '<option value="' + esc(p.Title) + '"' + (p.Title === App.filtroProg ? ' selected' : '') + '>' + esc(p.nombre) + '</option>').join('') + '</select>' +
       '<button class="ic-btn sec" id="bImportar" title="Cargar muchas piezas desde un Excel">Carga masiva</button><button class="ic-btn sec" id="bFechas" title="Repartir los borradores sin fecha en días y hora">Asignar fechas</button>' +
       '<button class="ic-btn sec" id="bMover" title="Aplazar o adelantar las piezas pendientes de un programa">Mover fechas</button>' +
-      '<button class="ic-btn sec" id="bProgTodas">Programar borradores</button><button class="ic-btn" id="bNueva">+ Nueva pieza</button></div>' +
+      '<button class="ic-btn sec" id="bDesprog" title="Devolver a borrador piezas programadas de los programas que elija">Volver a borrador</button><button class="ic-btn sec" id="bProgTodas">Programar borradores</button><button class="ic-btn" id="bNueva">+ Nueva pieza</button></div>' +
       '<div class="ic-tabla-caja ope-scroll"><table class="ic-tabla"><thead><tr><th style="width:90px"></th><th>Pieza</th><th>Publicación</th><th>Estado</th><th class="num">Entendido</th></tr></thead><tbody>' +
       (l.length ? l.map((p) => {
         const n = App.lecturas.filter((x) => x.pieza_id === p.Title).length;
@@ -175,6 +175,7 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
         U.aviso('Imágenes listas para ' + sinImg.length + ' piezas', 'ok'); await recargar();
       };
     }
+    c.querySelector('#bDesprog').onclick = () => volverABorrador(c);
     c.querySelector('#bProgTodas').onclick = async () => {
       const bor = l.filter((p) => p.estado === 'BORRADOR' && p.fecha_publicacion && p.titular && (p.tipo === 'RESUMEN' || p.mensaje));
       if (!bor.length) { U.aviso('No hay borradores con fecha para programar en este filtro.', 'warn'); return; }
@@ -192,6 +193,32 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
     pintarMiniaturas(c);
   }
 
+  // Devuelve a borrador, en bloque, las piezas programadas de los programas elegidos (p. ej. si se programó todo por error).
+  // Por defecto solo las que aún no se publican; opcionalmente también las ya visibles desde una fecha. No toca los correos ya enviados.
+  function volverABorrador(c) {
+    const prog2 = App.programas.map((pr) => { const pz = App.piezas.filter((x) => x.programa_id === pr.Title && x.estado === 'PROGRAMADA'); return { pr, pend: pz.filter((x) => !publicada(x)), pub: pz.filter(publicada) }; }).filter((x) => x.pend.length || x.pub.length);
+    if (!prog2.length) { U.aviso('No hay piezas programadas.', 'warn'); return; }
+    U.modal('Volver a borrador', '<form class="ic-form" id="fVB"><p style="margin-top:0">Elija los programas cuyas piezas programadas deben volver a <b>borrador</b> (dejan de salir en el muro y no generan correo).</p>' +
+      '<div class="ic-tabla-caja"><table class="ic-tabla"><thead><tr><th></th><th>Programa</th><th class="num">Pendientes</th><th class="num">Ya visibles</th></tr></thead><tbody>' +
+      prog2.map((x) => '<tr><td><input type="checkbox" data-vp="' + esc(x.pr.Title) + '"></td><td>' + esc(x.pr.nombre) + '</td><td class="num">' + x.pend.length + '</td><td class="num">' + x.pub.length + '</td></tr>').join('') + '</tbody></table></div>' +
+      '<label class="ic-check" style="margin-top:10px"><input type="checkbox" id="vbPub"> <span>Incluir también las ya visibles en el muro publicadas desde el</span></label> <input type="date" id="vbDesde" style="margin-left:6px">' +
+      '<p class="ope-nota" id="vbRes"></p><div class="ic-acciones"><button type="button" class="ic-btn sec" id="vbNo">Cancelar</button><button type="button" class="ic-btn" id="vbOk" disabled>Volver a borrador</button></div></form>', (m) => {
+      const lista = () => {
+        const sel = Array.from(m.querySelectorAll('[data-vp]')).filter((x) => x.checked).map((x) => x.dataset.vp), inc = m.querySelector('#vbPub').checked, desde = m.querySelector('#vbDesde').value;
+        let l = []; prog2.filter((x) => sel.indexOf(x.pr.Title) >= 0).forEach((x) => { l = l.concat(x.pend); if (inc && desde) l = l.concat(x.pub.filter((p) => String(partes(p.fecha_publicacion).f) >= desde)); });
+        return l;
+      };
+      const act = () => { const n = lista().length; m.querySelector('#vbRes').textContent = n ? n + ' pieza(s) volverán a borrador.' : 'Elija al menos un programa.'; m.querySelector('#vbOk').disabled = !n; };
+      m.querySelectorAll('input').forEach((x) => { x.onchange = act; x.oninput = act; }); act();
+      m.querySelector('#vbNo').onclick = U.cerrarModal;
+      m.querySelector('#vbOk').onclick = async (e) => {
+        const l = lista(), b = e.target; b.disabled = true; let n = 0, f = 0;
+        for (const p of l) { b.textContent = (n + f + 1) + ' de ' + l.length + '…'; try { await G.actualizar('TAL_Piezas', p._id, { estado: 'BORRADOR' }, p._etag); n++; } catch (er) { f++; console.warn(p.Title, er); } }
+        U.cerrarModal(); U.aviso(n + ' piezas volvieron a borrador' + (f ? ' · ' + f + ' con error (repita para reintentar)' : ''), f ? 'warn' : 'ok', 8000);
+        await cargar(); vistaPiezas(c);
+      };
+    });
+  }
   function editor(p, alCambiar) {
     const nueva = !p;
     p = p || { programa_id: App.filtroProg || (App.programas[0] && App.programas[0].Title), tipo: 'TIP', estado: 'BORRADOR' };
