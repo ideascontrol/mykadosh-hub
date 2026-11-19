@@ -220,12 +220,11 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
     const pintar = () => {
       const L = filtradas(), varios = !f.cliente;
       c.querySelector('#lista').innerHTML = '<p class="ic-conteo">' + L.length + ' tarea' + (L.length === 1 ? '' : 's') + '</p>' + (L.length ?
-        '<div class="ic-tabla-caja tar-caja"><table class="ic-tabla tar-tabla"><thead><tr><th>ID</th>' + (varios ? '<th>Cliente</th>' : '') + '<th>Tarea</th><th>Categoría</th><th>Responsable</th><th>Prioridad</th><th>Estado</th><th>Límite y semáforo</th><th>Avance</th></tr></thead><tbody>' +
+        '<div class="ic-tabla-caja tar-caja"><table class="ic-tabla tar-tabla"><thead><tr><th>ID</th>' + (varios ? '<th>Cliente</th>' : '') + '<th>Tarea</th><th>Categoría</th><th>Responsable</th><th>Prioridad</th><th>Estado</th><th>Límite y semáforo</th></tr></thead><tbody>' +
         L.map((t) => '<tr data-id="' + esc(t.Title) + '"><td class="nw">' + esc(t.Title) + '</td>' + (varios ? '<td class="tar-cli">' + esc(t.cliente_nombre) + '</td>' : '') +
           '<td><b>' + esc(resumir(t.item, 110)) + '</b>' + (t.bitacora ? '<span class="sec">' + esc(resumir(String(t.bitacora).split('\n')[0], 90)) + '</span>' : '') + '</td>' +
           '<td>' + esc(t.categoria || '') + '</td><td>' + esc(nombreResp(t)) + '</td><td>' + (t.prioridad ? '<span class="tar-pri p-' + U.norm(t.prioridad) + '">' + esc(t.prioridad) + '</span>' : '') + '</td>' +
-          '<td>' + chipEstado(t.estado) + chipAgenda(t) + '</td><td class="nw">' + chipSem(t) + (t.fecha_limite ? '<span class="sec">' + esc(textoFecha(t.fecha_limite)) + (textoDias(t) ? ' · ' + esc(textoDias(t)) : '') + '</span>' : '') + '</td>' +
-          '<td class="tar-av"><div class="tar-barra"><i class="verde" style="width:' + Math.min(100, t.progreso) + '%"></i></div><small>' + Math.round(t.progreso) + ' %</small></td></tr>').join('') +
+          '<td>' + chipEstado(t.estado) + chipAgenda(t) + '</td><td class="nw">' + chipSem(t) + (t.fecha_limite ? '<span class="sec">' + esc(textoFecha(t.fecha_limite)) + (textoDias(t) ? ' · ' + esc(textoDias(t)) : '') + '</span>' : '') + '</td></tr>').join('') +
         '</tbody></table></div>' : '<div class="ic-vacio">No hay tareas con estos filtros.</div>');
       c.querySelectorAll('tr[data-id]').forEach((tr) => { tr.onclick = () => formTarea(App.tareas.find((t) => t.Title === tr.dataset.id), pintar); });
     };
