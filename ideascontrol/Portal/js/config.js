@@ -21,6 +21,7 @@ window.CFG = {
     { nombre: 'Instalador IC Apps', url: '/ideascontrol/Programacion/Instalador/', texto: 'Crea o completa las listas de SharePoint de las microapps (Programación, Novedades, Talento, Clientes, Costos, Marketing, Checklist) y aplica permisos.' },
     { nombre: 'De Dios para el camino · Lectura diaria', url: '/ideascontrol/Lectura/', texto: 'Personal: 3 versículos por día con Claude, elegir uno, documentar el Word, prompt de la imagen y texto para Facebook.' },
     { nombre: 'Marketing GPA · Growth Path Academy', url: '/ideascontrol/MarketingGPA/', texto: 'Personal: plan de contenido GPA (288 publicaciones), mejorar la semana con Claude, copys, prompts de imagen, Word, métricas, leads y pauta.' }
+    { nombre: 'Reflexiones Estratégicas · Growth Path Academy', url: '/ideascontrol/Reflexiones/', texto: 'Colección editorial de GPA: reflexiones a partir de relatos bíblicos. Biblioteca, editor, calendario, prompt maestro, distribución y web pública. Acceso por persona.' },
   ]
 };
 

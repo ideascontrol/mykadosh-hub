@@ -243,7 +243,27 @@ const LISTAS = [
     ['fecha_publicacion', 'd', null, 1], ['alcance', 'n'], ['alcance_colombia', 'n'], ['impresiones', 'n'], ['reacciones', 'n'], ['comentarios', 'n'],
     ['compartidos', 'n'], ['guardados', 'n'], ['clics', 'n'], ['vistas_perfil', 'n'], ['nuevos_seguidores', 'n'], ['reproducciones', 'n'],
     ['visualizaciones', 'n'], ['tiempo_prom', 'n'], ['video_completo', 'n'], ['inversion', 'n'], ['resultados', 'n'], ['leads', 'n'], ['notas', 'm'], ['registrado_por', 't'],
-    ['fecha_corte', 'd'], ['enlace_post', 't'], ['post_id', 't']] }
+    ['fecha_corte', 'd'], ['enlace_post', 't'], ['post_id', 't']] },
+  // PER-03 · Reflexiones Estratégicas (Growth Path Academy). Permisos únicos: los aplica la propia app (Administración › Proteger listas)
+  { n: 'RE_Reflexiones', title: 'codigo_id', d: 'Reflexiones Estratégicas: ficha, clasificación, texto y estado editorial', cols: [
+    ['codigo', 't', null, 1], ['num', 'n'], ['libro', 't', null, 1], ['capitulo', 't'], ['vers_ini', 't'], ['vers_fin', 't'], ['version_biblica', 't'], ['titulo', 't'], ['titulo_editorial', 't'],
+    ['personajes', 't'], ['resumen', 'm'], ['intro', 'm'], ['contenido', 'm'], ['tiene_texto', 'b'], ['pregunta', 'm'], ['refs_complementarias', 'm'], ['principio', 'm'],
+    ['dimension', 't'], ['competencia', 't'], ['competencias_sec', 't'], ['areas', 't'], ['etiquetas_origen', 'm'], ['estado', 't', null, 1],
+    ['fecha_creacion', 'd'], ['fecha_prevista', 'd'], ['fecha_publicacion', 'd'], ['observaciones', 'm'], ['autor', 't'], ['portada', 't']] },
+  { n: 'RE_Historial', title: 'evento_id', d: 'Reflexiones Estratégicas: historial editorial (quién, qué y cuándo)', cols: [
+    ['reflexion_id', 't', null, 1], ['fecha_hora', 'dt'], ['usuario', 't'], ['email', 't'], ['accion', 't'], ['detalle', 'm']] },
+  { n: 'RE_Distribucion', title: 'dist_id', d: 'Reflexiones Estratégicas: textos por formato y estado por canal', cols: [
+    ['reflexion_id', 't', null, 1], ['tipo', 't'], ['clave', 't'], ['texto', 'm'], ['estado', 't'], ['fecha', 'd'], ['actualizado_por', 't']] },
+  { n: 'RE_Aprobaciones', title: 'aprobacion_id', d: 'Reflexiones Estratégicas: aprobaciones (solo revisores y administradores pueden escribir)', cols: [
+    ['reflexion_id', 't', null, 1], ['etapa', 't'], ['decision', 't'], ['aprobador', 't'], ['email', 't'], ['fecha_hora', 'dt'], ['comentarios', 'm']] },
+  { n: 'RE_Libros', title: 'codigo', d: 'Reflexiones Estratégicas: catálogo de los 66 libros bíblicos', cols: [
+    ['nombre', 't'], ['orden', 'n'], ['testamento', 't'], ['activo', 'b']] },
+  { n: 'RE_Competencias', title: 'competencia_id', d: 'Reflexiones Estratégicas: dimensiones y competencias', cols: [
+    ['tipo', 't'], ['dimension', 't'], ['nombre', 't'], ['descripcion', 'm'], ['orden', 'n'], ['activo', 'b']] },
+  { n: 'RE_Config', title: 'config_id', d: 'Reflexiones Estratégicas: Prompt Maestro y prompts con control de versiones', cols: [
+    ['clave', 't', null, 1], ['version', 'n'], ['texto', 'm'], ['nota', 't'], ['autor', 't'], ['fecha_hora', 'dt'], ['vigente', 'b']] },
+  { n: 'RE_Accesos', title: 'email', d: 'Reflexiones Estratégicas: quién tiene acceso, con qué rol y quién lo concedió o retiró', cols: [
+    ['nombre', 't'], ['rol', 't'], ['estado', 't'], ['otorgado_por', 't'], ['fecha_otorgado', 'dt'], ['retirado_por', 't'], ['fecha_retiro', 'dt'], ['historial', 'm']] },
 ];
 // Datos iniciales tomados de la hoja «Listas» del Excel 2506-MAN-OPE. Solo se cargan los que no existan (por Title).
 const SEMILLAS = {

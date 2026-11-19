@@ -38,7 +38,17 @@ IC.auth = (function () {
     }
   }
 
+  // Token para otro recurso (p. ej. la API REST de SharePoint para administrar permisos). Si hace falta consentimiento, redirige.
+  async function tokenPara(scopes) {
+    try {
+      return (await app.acquireTokenSilent({ scopes, account: cuenta })).accessToken;
+    } catch (e) {
+      if (e instanceof msal.InteractionRequiredAuthError) { try { sessionStorage.setItem('ic_volver_url', location.href); } catch (x) { /* sin almacenamiento */ } await app.acquireTokenRedirect({ scopes, account: cuenta }); }
+      throw e;
+    }
+  }
+
   function volverA() { const h = sessionStorage.getItem('ic_volver_a'); sessionStorage.removeItem('ic_volver_a'); return h; }
 
-  return { iniciar, entrar, salir, token, volverA, cuenta: () => cuenta };
+  return { iniciar, entrar, salir, token, tokenPara, volverA, cuenta: () => cuenta };
 })();
