@@ -176,8 +176,8 @@ const App = { vistas: {}, filtro: { libro: '', dim: '', comp: '', estado: '', an
       if (r.estado === 'DESARROLLO') b.push(['rev', 'Enviar a revisión bíblica', '']);
       if (r.estado === 'APROBADA') b.push(['prog', 'Programar fecha', '']);
       if (r.estado === 'PROGRAMADA') b.push(['prog', 'Cambiar fecha', 'sec'], ['desprog', 'Quitar programación', 'sec']);
-      if ((r.estado === 'APROBADA' || r.estado === 'PROGRAMADA') && (!r.fecha_prevista || r.fecha_prevista <= h)) b.push(['pub', 'Publicar en Desarrollo de Talento', 'oro']);
-      if (r.estado === 'PUBLICADA') b.push(['tal', 'Actualizar en Desarrollo de Talento', 'sec']);
+      if ((r.estado === 'APROBADA' || r.estado === 'PROGRAMADA') && (!r.fecha_prevista || r.fecha_prevista <= h)) b.push(['pub', 'Publicar en Colecciones de lectura', 'oro']);
+      if (r.estado === 'PUBLICADA') b.push(['tal', 'Actualizar en Colecciones de lectura', 'sec']);
       if (['APROBADA', 'PROGRAMADA', 'PUBLICADA'].indexOf(r.estado) >= 0) b.push(['reab', 'Reabrir para editar', 'sec']);
     }
     if (ap && r.estado === 'REV_BIBLICA') b.push(['apb', 'Aprobar revisión bíblica', ''], ['dvb', 'Devolver', 'sec']);
@@ -206,13 +206,13 @@ const App = { vistas: {}, filtro: { libro: '', dim: '', comp: '', estado: '', an
       desprog: () => hacer(() => cambiarEstado(r, 'APROBADA'), 'Programación retirada'),
       pub: async () => {
         if (!RE.aprobadaEditorial(r)) { U.aviso('No tiene aprobación editorial registrada.', 'err'); return; }
-        if (!(await U.confirmar('Publicar en Desarrollo de Talento', r.codigo + ' aparecerá en la colección «' + CFG.coleccion.nombre + '» de Desarrollo de Talento, visible para todo el personal de IC, con fecha ' + RE.textoFecha(h) + '.\n\nNo se envían correos ni avisos: quien navegue la colección la encontrará.', 'Publicar'))) return;
-        hacer(async () => { r.fecha_publicacion = h; await RE.publicarTalento(r); await cambiarEstado(r, 'PUBLICADA', { fecha_publicacion: h }, 'Publicada en Desarrollo de Talento'); }, 'Publicada en Desarrollo de Talento');
+        if (!(await U.confirmar('Publicar en Colecciones de lectura', r.codigo + ' aparecerá en la colección «' + CFG.coleccion.nombre + '» de Colecciones de lectura, visible para todo el personal de IC, con fecha ' + RE.textoFecha(h) + '.\n\nNo se envían correos ni avisos: quien navegue la colección la encontrará.', 'Publicar'))) return;
+        hacer(async () => { r.fecha_publicacion = h; await RE.publicarTalento(r); await cambiarEstado(r, 'PUBLICADA', { fecha_publicacion: h }, 'Publicada en Colecciones de lectura'); }, 'Publicada en Colecciones de lectura');
       },
-      tal: () => hacer(async () => { await RE.publicarTalento(r); await RE.registrar(r, 'Actualizada en Desarrollo de Talento'); }, 'Actualizada en Desarrollo de Talento'),
+      tal: () => hacer(async () => { await RE.publicarTalento(r); await RE.registrar(r, 'Actualizada en Colecciones de lectura'); }, 'Actualizada en Colecciones de lectura'),
       pdf: async (ev) => { const bt = ev.currentTarget; bt.disabled = true; bt.textContent = 'Generando…'; try { await RE.leer(r); const n = await RE_PDF.generar(r); await RE.registrar(r, 'PDF descargado', n); } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); } bt.disabled = false; bt.textContent = '⬇ PDF'; },
       reab: async () => {
-        if (!(await U.confirmar('Reabrir para editar', 'Vuelve a «En desarrollo» y necesitará una nueva aprobación para publicarse.' + (r.estado === 'PUBLICADA' ? '\n\nMientras tanto sale de la colección de Desarrollo de Talento.' : ''), 'Reabrir'))) return;
+        if (!(await U.confirmar('Reabrir para editar', 'Vuelve a «En desarrollo» y necesitará una nueva aprobación para publicarse.' + (r.estado === 'PUBLICADA' ? '\n\nMientras tanto sale de Colecciones de lectura.' : ''), 'Reabrir'))) return;
         hacer(async () => { if (r.estado === 'PUBLICADA') await RE.retirarTalento(r); await RE.aprobar(r, 'EDITORIAL', 'REABIERTA', 'Reabierta por ' + D.usuario.nombre); await cambiarEstado(r, 'DESARROLLO'); }, 'Reabierta');
       },
       dup: async () => {
@@ -223,7 +223,7 @@ const App = { vistas: {}, filtro: { libro: '', dim: '', comp: '', estado: '', an
           const n = await RE.crear(f); U.aviso('Copia creada: ' + n.codigo, 'ok'); location.hash = 'r/' + n.codigo;
         } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
       },
-      arch: async () => { if (await U.confirmar('Archivar ' + r.codigo, 'Sale del calendario' + (r.estado === 'PUBLICADA' ? ' y de la colección de Desarrollo de Talento' : '') + '. No se borra y el código no se reutiliza. Se puede restaurar.', 'Archivar')) hacer(async () => { if (r.estado === 'PUBLICADA') await RE.retirarTalento(r); await cambiarEstado(r, 'ARCHIVADA'); }, 'Archivada'); },
+      arch: async () => { if (await U.confirmar('Archivar ' + r.codigo, 'Sale del calendario' + (r.estado === 'PUBLICADA' ? ' y de Colecciones de lectura' : '') + '. No se borra y el código no se reutiliza. Se puede restaurar.', 'Archivar')) hacer(async () => { if (r.estado === 'PUBLICADA') await RE.retirarTalento(r); await cambiarEstado(r, 'ARCHIVADA'); }, 'Archivada'); },
       rest: () => hacer(() => cambiarEstado(r, 'DESARROLLO'), 'Restaurada a «En desarrollo»'),
       del: () => eliminar(r)
     };
@@ -250,7 +250,7 @@ const App = { vistas: {}, filtro: { libro: '', dim: '', comp: '', estado: '', an
   }
   function programar(r, alFin) {
     U.modal('Programar ' + r.codigo, '<form class="ic-form" id="fP">' + U.campo({ name: 'fecha', label: 'Fecha de publicación', t: 'date', valor: r.fecha_prevista && r.fecha_prevista >= RE.hoy() ? r.fecha_prevista : '', req: true }) +
-      '<p class="re-nota" id="pSem"></p><p class="re-nota">Programar no publica: el día indicado, la reflexión queda lista y alguien la publica en Desarrollo de Talento.</p>' +
+      '<p class="re-nota" id="pSem"></p><p class="re-nota">Programar no publica: el día indicado, la reflexión queda lista y alguien la publica en Colecciones de lectura.</p>' +
       '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="pNo">Cancelar</button><button class="ic-btn" id="pOk">Programar</button></div></form>', (m) => {
       const inp = m.querySelector('[name=fecha]'), info = m.querySelector('#pSem');
       inp.oninput = () => { const l = inp.value ? lunes(inp.value) : ''; const otras = l ? D.refl.filter((x) => x !== r && x.estado !== 'ARCHIVADA' && fechaPlan(x) && lunes(fechaPlan(x)) === l) : []; info.textContent = otras.length ? '⚠ Esa semana ya tiene: ' + otras.map((x) => x.codigo).join(', ') + ' (la frecuencia es una por semana).' : ''; };
@@ -559,7 +559,7 @@ const App = { vistas: {}, filtro: { libro: '', dim: '', comp: '', estado: '', an
       cuerpo = '<div class="re-mes"><div class="dias">' + ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((x) => '<b>' + x + '</b>').join('') + '</div><div class="grid">' + celdas.join('') + '</div></div>';
     }
     c.innerHTML = '<div class="re-titulo-fila"><h1 class="ic-titulo">Calendario editorial</h1><div class="re-seg"><button data-m="semana" class="' + (calModo === 'semana' ? 'on' : '') + '">Semanal</button><button data-m="mes" class="' + (calModo === 'mes' ? 'on' : '') + '">Mensual</button></div></div>' +
-      '<p class="ic-subtitulo">' + esc(CFG.frecuencia) + '. Programar no publica: nada aparece en Desarrollo de Talento ni en redes sin aprobación editorial y sin que alguien la publique.</p>' +
+      '<p class="ic-subtitulo">' + esc(CFG.frecuencia) + '. Programar no publica: nada aparece en Colecciones de lectura ni en redes sin aprobación editorial y sin que alguien la publique.</p>' +
       '<div class="re-cal-nav"><button class="ic-btn sec chico" id="cA">←</button><b>' + esc(calModo === 'semana' ? 'Desde ' + nomMes : nomMes) + '</b><button class="ic-btn sec chico" id="cS">→</button><button class="ic-btn sec chico" id="cH">Hoy</button>' +
       '<span class="re-leyenda">' + ['DESARROLLO', 'REV_EDITORIAL', 'APROBADA', 'PROGRAMADA', 'PUBLICADA'].map(chip).join(' ') + '</span></div>' + cuerpo;
     const mover = (n) => { const d = new Date(calBase + 'T12:00:00'); d.setMonth(d.getMonth() + n); calBase = d.toISOString().slice(0, 7) + '-01'; App.vistas.calendario(c); };

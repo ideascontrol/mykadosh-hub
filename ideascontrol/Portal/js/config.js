@@ -4,7 +4,7 @@
    está en la lista SYS_Microapps (columna url), esa tiene prioridad.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-100', nombre: 'Portal de Ideas Control', version: '0.1.23' },
+  app: { id: 'APP-100', nombre: 'Portal de Ideas Control', version: '0.1.24' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -35,8 +35,11 @@ window.APPS = [
     texto: 'Permisos, vacaciones, licencias, incapacidades y cambios de horario. Se tramitan solo con la Dirección de Operaciones.',
     url: '/ideascontrol/Novedades/', datos: 'SHAREPOINT', acceso: 'APP107' },
   { grupo: 'Desarrollo de Talento', id: 'APP-108', nombre: 'Desarrollo de Talento', icono: 'talento', color: 'dorado',
-    texto: 'Una idea práctica para aplicar hoy (piezas de formación del personal de IC) y Colecciones de lectura, como Reflexiones Estratégicas.',
+    texto: 'Una idea práctica para aplicar hoy: piezas de formación del personal de IC en el Muro.',
     url: '/ideascontrol/Talento/', datos: 'SHAREPOINT', acceso: 'APP108' },
+  { grupo: 'Desarrollo de Talento', id: 'APP-116', nombre: 'Colecciones de lectura', icono: 'libro', color: 'teal',
+    texto: 'Lecturas para todo el personal, como Reflexiones Estratégicas de Growth Path Academy. Solo lectura.',
+    url: '/ideascontrol/Colecciones/', datos: 'SHAREPOINT', fija: true },   // lectura para todos; control total solo operaciones@ (CFG.admins de la app)
   { grupo: 'Operaciones', id: 'APP-114', nombre: 'Proyectos', icono: 'tareas', color: 'dorado',
     texto: 'Implementaciones de T&A, TimeVision, biometría, puertas y torniquetes: cronograma desde plantillas, línea base, avance y bitácora.',
     url: '/ideascontrol/Proyectos/', datos: 'SHAREPOINT', acceso: 'APP114' },

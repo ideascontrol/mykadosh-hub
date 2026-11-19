@@ -88,7 +88,7 @@
       <div class="num">5</div>
       <div style="flex:1">
         <h2>Permisos de los técnicos</h2>
-        <p>Los técnicos <b>no</b> se agregan como miembros del sitio IC Apps (verían también los datos de Comercial). Este paso crea el grupo de SharePoint <b>«IC Apps Tecnicos»</b>, le da permiso <b>solo</b> sobre las listas de la Programación y de Novedades (cada técnico ve solo sus solicitudes), deja <b>Faltas</b> visible solo para usted, guarda el correo de cada técnico y lo agrega al grupo. Para un técnico nuevo: escriba su correo aquí y vuelva a clic en «Aplicar permisos».</p>
+        <p>Los técnicos <b>no</b> se agregan como miembros del sitio IC Apps (verían también los datos de Comercial). Este paso crea el grupo de SharePoint <b>«IC Apps Tecnicos»</b>, le da permiso <b>solo</b> sobre las listas de la Programación y de Novedades (cada técnico ve solo sus solicitudes), deja <b>Faltas</b> visible solo para usted, deja las <b>Colecciones de lectura</b> en solo lectura para todos (usted con control total), guarda el correo de cada técnico y lo agrega al grupo. Para un técnico nuevo: escriba su correo aquí y vuelva a clic en «Aplicar permisos».</p>
         <p><b>Requisito (una vez):</b> en Entra ID › la app › Permisos de API, el permiso <b>SharePoint › AllSites.FullControl</b> (delegado) con consentimiento del administrador.</p>
         <div id="tablaTec" style="margin:8px 0 12px"></div>
         <button id="btnPermisos" disabled>Aplicar permisos</button>
@@ -1326,6 +1326,28 @@ async function aplicarPermisos() {
         log('NOV_Faltas: permisos únicos — solo ' + yo.Title + ' (Dirección) puede abrirla', 'ok');
       } else log('NOV_Faltas: ya tenía permisos únicos (no se cambiaron)', 'ok');
     }
+    // 2d. TAL_Coleccion (Colecciones de lectura): todos solo leen; control total solo para quien ejecuta este paso (Dirección)
+    try {
+      const base = "web/lists/getbytitle('TAL_Coleccion')";
+      const l = await sp('GET', base + '?$select=HasUniqueRoleAssignments');
+      if (!l.HasUniqueRoleAssignments) await sp('POST', base + '/breakroleinheritance(copyRoleAssignments=true,clearSubscopes=true)');
+      const yo = await sp('GET', 'web/currentuser?$select=Id,Title');
+      const lectura = await sp('GET', 'web/roledefinitions/getbytype(2)?$select=Id'), control = await sp('GET', 'web/roledefinitions/getbytype(5)?$select=Id');
+      let duenos = null; try { duenos = (await sp('GET', 'web/associatedownergroup?$select=Id')).Id; } catch (e) { /* sin grupo de propietarios */ }
+      const asig = (await sp('GET', base + '/roleassignments?$expand=Member,RoleDefinitionBindings')).value || [];
+      if (!asig.some((x) => x.PrincipalId === yo.Id)) await sp('POST', base + '/roleassignments/addroleassignment(principalid=' + yo.Id + ',roledefid=' + control.Id + ')');
+      let n = 0;
+      for (const x of asig) {
+        if (x.PrincipalId === yo.Id || x.PrincipalId === duenos) continue;
+        const ligas = (x.RoleDefinitionBindings && (x.RoleDefinitionBindings.results || x.RoleDefinitionBindings)) || [];
+        const altas = ligas.filter((r) => Number(r.RoleTypeKind) > 2 || (Number(r.RoleTypeKind) === 0 && !/^(Limited|Acceso limitado)/i.test(r.Name || '')));
+        if (!altas.length) continue;
+        if (!ligas.some((r) => Number(r.RoleTypeKind) === 2)) await sp('POST', base + '/roleassignments/addroleassignment(principalid=' + x.PrincipalId + ',roledefid=' + lectura.Id + ')');
+        for (const r of altas) await sp('POST', base + '/roleassignments/removeroleassignment(principalid=' + x.PrincipalId + ',roledefid=' + r.Id + ')');
+        n++;
+      }
+      log('TAL_Coleccion: todo el personal solo lee' + (n ? ' (' + n + ' grupo' + (n === 1 ? '' : 's') + ' pasaron a lectura)' : '') + '; control total: ' + yo.Title, 'ok');
+    } catch (e) { log('TAL_Coleccion: no se pudo dejar en solo lectura (' + e.message + '). Hágalo a mano: lista › Configuración › Permisos: deje «Leer» a los Miembros.', 'warn'); }
     // 3. Correos: se guardan en OPE_Tecnicos y se agregan al grupo
     const yaEnGrupo = ((await sp('GET', 'web/sitegroups(' + grupo.Id + ')/users?$select=Email')).value || []).map((u) => String(u.Email || '').toLowerCase());
     const inputs = Array.from(document.querySelectorAll('#tablaTec input[data-id]'));

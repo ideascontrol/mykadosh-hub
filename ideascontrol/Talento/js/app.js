@@ -414,12 +414,11 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
   // ---------- Navegación ----------
   function pintar() {
     const c = document.getElementById('contenido');
-    const tabs = '<div class="ic-chips tal-tabs">' + [['muro', 'Muro'], ['colecciones', 'Colecciones']].concat(esAdmin() ? [['piezas', 'Piezas'], ['lecturas', 'Lecturas'], ['programas', 'Programas']] : [])
+    const tabs = '<div class="ic-chips tal-tabs">' + [['muro', 'Muro']].concat(esAdmin() ? [['piezas', 'Piezas'], ['lecturas', 'Lecturas'], ['programas', 'Programas']] : [])
       .map((t) => '<button data-v="' + t[0] + '"' + (App.vista === t[0] ? ' class="activo"' : '') + '>' + t[1] + '</button>').join('') + '</div>';
     c.innerHTML = tabs + '<div id="vista"></div>';
     c.querySelectorAll('.tal-tabs button').forEach((b) => { b.onclick = () => { App.vista = b.dataset.v; history.replaceState(null, '', b.dataset.v === 'muro' ? location.pathname : '#' + b.dataset.v); pintar(); }; });
     const v = c.querySelector('#vista');
-    if (App.vista === 'colecciones') return Coleccion.vista(v);   // colecciones de lectura: para todo el personal, sin avisos
     ({ muro: vistaMuro, piezas: vistaPiezas, lecturas: vistaLecturas, programas: vistaProgramas })[esAdmin() ? App.vista : 'muro'](v);
   }
 
@@ -446,7 +445,8 @@ const App = { usuario: null, programas: [], piezas: [], lecturas: [], vista: 'mu
       if (esAdmin()) await cargarAudiencia();
       encabezado();
       const volver = IC.auth.volverA(); if (volver) location.hash = volver;
-      const ir = () => { const h = (location.hash || '#').slice(1).split('/')[0]; App.vista = ['piezas', 'lecturas', 'programas', 'colecciones'].indexOf(h) >= 0 ? h : 'muro'; pintar(); window.scrollTo(0, 0); };
+      const ir = () => { const h = (location.hash || '#').slice(1).split('/')[0]; if (h === 'colecciones') { location.replace('/ideascontrol/Colecciones/' + location.hash); return; }   // las Colecciones ahora son su propia app (APP-116)
+        App.vista = ['piezas', 'lecturas', 'programas'].indexOf(h) >= 0 ? h : 'muro'; pintar(); window.scrollTo(0, 0); };
       window.addEventListener('hashchange', ir); ir();
       Post.preparar();
     } catch (e) {

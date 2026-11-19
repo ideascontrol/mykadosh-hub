@@ -1,20 +1,26 @@
 /* =====================================================================
-   APP-108 · Desarrollo de Talento — Colecciones de lectura
+   APP-116 · Colecciones de lectura (antes pestaña de Desarrollo de Talento)
    Contenidos de lectura libre (p. ej. «Reflexiones Estratégicas» de Growth Path Academy).
-   Fuente: lista TAL_Coleccion (la llena la app de cada colección al publicar). Solo estado PUBLICADA.
+   Fuente: lista TAL_Coleccion (la llena la app de cada colección al publicar).
+   Personal: solo lectura de lo PUBLICADO con fecha cumplida. Administrador (CFG.admins): ve también lo programado
+   y lo retirado, y puede retirar o volver a publicar cada lectura.
    Sin avisos: no cuentan como «por leer», no piden «Entendido» y no generan correos (el flujo de correos usa TAL_Piezas).
    Rutas: #colecciones · #colecciones/<código>
    ===================================================================== */
 window.Coleccion = (function () {
   const U = IC.ui, esc = U.esc, G = IC.graph;
-  const NOMBRES = { REFLEXIONES: { nombre: 'Reflexiones Estratégicas', marca: 'Growth Path Academy', logo: '/ideascontrol/Reflexiones/img/gpa-logo-blanco.png', lema: 'Historias que nos ayudan a comprender la vida, desarrollar nuestro carácter y tomar mejores decisiones.' } };
-  let items = null, filtro = { col: '', libro: '', dim: '', q: '' };
+  const NOMBRES = { REFLEXIONES: { nombre: 'Reflexiones Estratégicas', marca: 'Growth Path Academy', logo: '/ideascontrol/Reflexiones/img/gpa-logo-blanco.png', app: '/ideascontrol/Reflexiones/', lema: 'Historias que nos ayudan a comprender la vida, desarrollar nuestro carácter y tomar mejores decisiones.' } };
+  let items = null, todos = [], filtro = { col: '', libro: '', dim: '', q: '', est: '' }, admin = false;
+  const visible = (x) => x.estado === 'PUBLICADA' && x.fecha_publicacion && String(x.fecha_publicacion).slice(0, 10) <= hoy();
+  const estadoDe = (x) => visible(x) ? 'VISIBLE' : x.estado === 'PUBLICADA' ? 'PROGRAMADA' : 'RETIRADA';
+  const ETQ = { VISIBLE: 'Visible', PROGRAMADA: 'Programada', RETIRADA: 'Retirada' };
   const imgs = {};
   async function cargar() {
     if (items) return items;
-    try { items = (await G.items('TAL_Coleccion', { top: 2000 })).filter((x) => x.estado === 'PUBLICADA' && x.fecha_publicacion && String(x.fecha_publicacion).slice(0, 10) <= hoy()); }
-    catch (e) { items = []; }
-    items.sort((a, b) => String(b.fecha_publicacion).localeCompare(String(a.fecha_publicacion)));
+    try { todos = await G.items('TAL_Coleccion', { top: 2000 }); }
+    catch (e) { todos = []; }
+    todos.sort((a, b) => String(b.fecha_publicacion || '').localeCompare(String(a.fecha_publicacion || '')));
+    items = admin ? todos : todos.filter(visible);
     return items;
   }
   const hoy = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
@@ -39,13 +45,15 @@ window.Coleccion = (function () {
     return doc.body.firstChild.innerHTML;
   }
 
-  async function vista(c) {
+  async function vista(c, opciones) {
+    if (opciones && 'admin' in opciones) admin = !!opciones.admin;
     c.innerHTML = '<div class="ic-vacio">Cargando…</div>';
-    const L = await cargar();
+    const L0 = await cargar();
     const cod = decodeURIComponent((location.hash.slice(1).split('/')[1] || ''));
-    if (cod) { const it = L.find((x) => x.codigo === cod); if (it) return lectura(c, it); }
+    if (cod) { const it = L0.find((x) => x.codigo === cod); if (it) return lectura(c, it); }
+    const L = admin && filtro.est ? L0.filter((x) => estadoDe(x) === filtro.est) : L0;
     const cols = Array.from(new Set(L.map((x) => x.coleccion)));
-    if (!L.length) { c.innerHTML = '<div class="ic-tabla-caja"><div class="ic-vacio">Todavía no hay colecciones publicadas.</div></div>'; return; }
+    if (!L0.length) { c.innerHTML = '<div class="ic-tabla-caja"><div class="ic-vacio">Todavía no hay colecciones publicadas.</div></div>'; return; }
     if (!filtro.col || cols.indexOf(filtro.col) < 0) filtro.col = cols[0];
     const C = L.filter((x) => x.coleccion === filtro.col), I = info(filtro.col);
     const libros = Array.from(new Set(C.slice().sort((a, b) => (Number(a.libro_orden) || 0) - (Number(b.libro_orden) || 0)).map((x) => x.libro).filter(Boolean)));
@@ -54,19 +62,21 @@ window.Coleccion = (function () {
       '<div class="col-hero">' + (I.logo ? '<img class="col-logo" src="' + I.logo + '" alt="' + esc(I.marca) + '">' : '') + '<span>' + esc(I.marca || 'Colección') + '</span><h1>' + esc(I.nombre) + '</h1><p>' + esc(I.lema) + '</p><small>' + C.length + (C.length === 1 ? ' lectura disponible' : ' lecturas disponibles') + '</small></div>' +
       '<div class="col-filtros"><input id="cQ" placeholder="Buscar" value="' + esc(filtro.q) + '">' +
       (libros.length > 1 ? '<select id="cL"><option value="">Todos los libros</option>' + libros.map((l) => '<option' + (l === filtro.libro ? ' selected' : '') + '>' + esc(l) + '</option>').join('') + '</select>' : '') +
+      (admin ? '<select id="cE" title="Solo administrador"><option value="">Todos los estados</option>' + Object.keys(ETQ).map((k) => '<option value="' + k + '"' + (k === filtro.est ? ' selected' : '') + '>' + ETQ[k] + '</option>').join('') + '</select>' : '') +
       (dims.length > 1 ? '<select id="cD"><option value="">Todas las dimensiones</option>' + dims.map((d) => '<option' + (d === filtro.dim ? ' selected' : '') + '>' + esc(d) + '</option>').join('') + '</select>' : '') + '</div><div class="col-grid" id="cG"></div>';
     const G2 = c.querySelector('#cG');
     function pintar() {
       const q = U.norm(filtro.q);
       const v = C.filter((x) => (!filtro.libro || x.libro === filtro.libro) && (!filtro.dim || x.dimension === filtro.dim) && (!q || U.norm([x.titulo, x.referencia, x.intro, x.competencias].join(' ')).indexOf(q) >= 0));
       G2.innerHTML = v.length ? v.map((x) => '<a class="col-card" href="#colecciones/' + encodeURIComponent(x.codigo) + '"><div class="img" data-port="' + esc(x.portada || '') + '"></div><div class="cuerpo"><span class="ref">' + esc(x.referencia) + '</span><h3>' + esc(x.titulo) + '</h3>' +
-        (x.intro ? '<p>' + esc(x.intro) + '</p>' : '') + '<div class="pie"><span>' + esc(fecha(x.fecha_publicacion)) + '</span><b>Leer →</b></div></div></a>').join('') : '<div class="ic-vacio">Nada con ese filtro.</div>';
+        (x.intro ? '<p>' + esc(x.intro) + '</p>' : '') + '<div class="pie"><span>' + esc(fecha(x.fecha_publicacion)) + (admin && estadoDe(x) !== 'VISIBLE' ? ' · <em class="col-est e-' + estadoDe(x).toLowerCase() + '">' + ETQ[estadoDe(x)] + '</em>' : '') + '</span><b>Leer →</b></div></div></a>').join('') : '<div class="ic-vacio">Nada con ese filtro.</div>';
       G2.querySelectorAll('[data-port]').forEach(async (d) => { const u = await portada(d.dataset.port); if (u) d.style.backgroundImage = 'url("' + u + '")'; });
     }
-    c.querySelectorAll('[data-col]').forEach((b) => { b.onclick = () => { filtro = { col: b.dataset.col, libro: '', dim: '', q: '' }; vista(c); }; });
+    c.querySelectorAll('[data-col]').forEach((b) => { b.onclick = () => { filtro = { col: b.dataset.col, libro: '', dim: '', q: '', est: filtro.est }; vista(c); }; });
     const sL = c.querySelector('#cL'), sD = c.querySelector('#cD');
     if (sL) sL.onchange = () => { filtro.libro = sL.value; pintar(); };
     if (sD) sD.onchange = () => { filtro.dim = sD.value; pintar(); };
+    const sE = c.querySelector('#cE'); if (sE) sE.onchange = () => { filtro.est = sE.value; vista(c); };
     let t; c.querySelector('#cQ').oninput = (e) => { clearTimeout(t); t = setTimeout(() => { filtro.q = e.target.value.trim(); pintar(); }, 250); };
     pintar();
   }
@@ -78,7 +88,20 @@ window.Coleccion = (function () {
       (img ? '<img class="col-port" src="' + img + '" alt="">' : '') + '<div class="col-texto">' + limpio(x.contenido) + '</div>' +
       (x.pregunta ? '<div class="col-preg"><span>Una pregunta para llevarse</span><p>' + esc(x.pregunta) + '</p></div>' : '') +
       '<p class="col-fecha">' + esc(fecha(x.fecha_publicacion)) + ' · ' + esc(x.codigo) + '</p>' +
+      (admin ? '<div class="col-admin"><span>Administrador · estado: <b>' + ETQ[estadoDe(x)] + '</b>' + (estadoDe(x) === 'PROGRAMADA' ? ' (se verá desde el ' + esc(fecha(x.fecha_publicacion)) + ')' : '') + '</span>' +
+        (x.estado === 'PUBLICADA' ? '<button class="ic-btn sec chico peligro-txt" id="aRet">Retirar de la colección</button>' : '<button class="ic-btn chico" id="aPub">Volver a publicar</button>') +
+        (info(x.coleccion).app ? '<a class="ic-btn sec chico" href="' + info(x.coleccion).app + '#r/' + encodeURIComponent(x.codigo) + '">Editar en ' + esc(info(x.coleccion).nombre) + '</a>' : '') + '</div>' : '') +
       '<div class="col-nav">' + (L[i + 1] ? '<a href="#colecciones/' + encodeURIComponent(L[i + 1].codigo) + '">← ' + esc(L[i + 1].titulo) + '</a>' : '<span></span>') + (L[i - 1] ? '<a href="#colecciones/' + encodeURIComponent(L[i - 1].codigo) + '">' + esc(L[i - 1].titulo) + ' →</a>' : '') + '</div></article>';
+    const cambiar = async (b, estado, txt) => {
+      if (estado === 'RETIRADA' && !(await U.confirmar('Retirar ' + x.codigo, 'Deja de verse en la colección para todo el personal. Puede volver a publicarla cuando quiera.', 'Retirar', true))) return;
+      try {
+        await U.conCarga(b, () => G.actualizar('TAL_Coleccion', x._id, { estado, actualizado: new Date().toISOString() }));
+        x.estado = estado; U.aviso(txt, 'ok'); lectura(c, x);
+      } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
+    };
+    const bR = c.querySelector('#aRet'), bP = c.querySelector('#aPub');
+    if (bR) bR.onclick = () => cambiar(bR, 'RETIRADA', 'Retirada de la colección');
+    if (bP) bP.onclick = () => cambiar(bP, 'PUBLICADA', 'Publicada de nuevo');
   }
   return { vista };
 })();

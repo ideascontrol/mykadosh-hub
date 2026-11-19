@@ -25,7 +25,7 @@ window.CFG = {
   logoBlanco: '/ideascontrol/Reflexiones/img/gpa-logo-blanco.png', // para fondos azules
   icono: '/ideascontrol/MarketingGPA/img/gpa-icono.png',
   carpetaPortadas: 'Reflexiones Estrategicas/Portadas',
-  // Se publica como colección en Desarrollo de Talento (APP-108): visible para todo el personal, sin avisos ni correos
+  // Se publica en Colecciones de lectura (APP-116): visible para todo el personal, sin avisos ni correos
   coleccion: { id: 'REFLEXIONES', nombre: 'Reflexiones Estratégicas' },
   carpetaTalento: 'Talento/Colecciones/Reflexiones',
   web: { base: 'https://growthpathacademy.com.co', carpeta: 'reflexiones', indice: 'reflexiones.html', marca: 'Growth Path Academy' },
@@ -50,7 +50,7 @@ window.CFG = {
   // Distribución: piezas (formatos) y canales
   piezas: [['COMPLETA', 'Publicación completa (web)'], ['LINKEDIN', 'Resumen para LinkedIn'], ['FACEBOOK', 'Texto para Facebook'], ['INSTAGRAM', 'Texto para Instagram'],
     ['FRASE', 'Frase destacada'], ['PREGUNTA', 'Pregunta para generar interacción'], ['VIDEO', 'Guion para video corto'], ['CARRUSEL', 'Propuesta de carrusel']],
-  canales: [['WEB', 'Desarrollo de Talento (IC)', 'COMPLETA'], ['LI_PERSONAL', 'LinkedIn personal', 'LINKEDIN'], ['LI_GPA', 'LinkedIn empresarial de GPA', 'LINKEDIN'],
+  canales: [['WEB', 'Colecciones de lectura (IC)', 'COMPLETA'], ['LI_PERSONAL', 'LinkedIn personal', 'LINKEDIN'], ['LI_GPA', 'LinkedIn empresarial de GPA', 'LINKEDIN'],
     ['FACEBOOK', 'Facebook', 'FACEBOOK'], ['INSTAGRAM', 'Instagram', 'INSTAGRAM'], ['NEWSLETTER', 'Newsletter de GPA', 'LINKEDIN']],
   estadosCanal: [['PENDIENTE', 'Pendiente'], ['PREPARADO', 'Preparado'], ['PROGRAMADO', 'Programado'], ['PUBLICADO', 'Publicado']],
   areas: ['Liderazgo', 'Toma de decisiones', 'Desarrollo personal', 'Relaciones humanas', 'Vida familiar', 'Vida profesional', 'Negocios y emprendimiento', 'Fe y propósito'],
