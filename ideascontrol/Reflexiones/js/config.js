@@ -7,7 +7,7 @@
    después se administran en la app (Configuración).
    ===================================================================== */
 window.CFG = {
-  app: { id: 'PER-03', nombre: 'Reflexiones Estratégicas', version: '0.1.0' },
+  app: { id: 'PER-03', nombre: 'Reflexiones Estratégicas', version: '0.2.0' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -24,6 +24,9 @@ window.CFG = {
   logo: '/ideascontrol/MarketingGPA/img/gpa-logo.png',
   icono: '/ideascontrol/MarketingGPA/img/gpa-icono.png',
   carpetaPortadas: 'Reflexiones Estrategicas/Portadas',
+  // Se publica como colección en Desarrollo de Talento (APP-108): visible para todo el personal, sin avisos ni correos
+  coleccion: { id: 'REFLEXIONES', nombre: 'Reflexiones Estratégicas' },
+  carpetaTalento: 'Talento/Colecciones/Reflexiones',
   web: { base: 'https://growthpathacademy.com.co', carpeta: 'reflexiones', indice: 'reflexiones.html', marca: 'Growth Path Academy' },
   frecuencia: 'Una reflexión nueva por semana',
   versiones: ['RVR1960', 'NVI', 'NTV', 'LBLA', 'DHH', 'RVC', 'TLA'],
@@ -46,7 +49,7 @@ window.CFG = {
   // Distribución: piezas (formatos) y canales
   piezas: [['COMPLETA', 'Publicación completa (web)'], ['LINKEDIN', 'Resumen para LinkedIn'], ['FACEBOOK', 'Texto para Facebook'], ['INSTAGRAM', 'Texto para Instagram'],
     ['FRASE', 'Frase destacada'], ['PREGUNTA', 'Pregunta para generar interacción'], ['VIDEO', 'Guion para video corto'], ['CARRUSEL', 'Propuesta de carrusel']],
-  canales: [['WEB', 'Biblioteca web de GPA', 'COMPLETA'], ['LI_PERSONAL', 'LinkedIn personal', 'LINKEDIN'], ['LI_GPA', 'LinkedIn empresarial de GPA', 'LINKEDIN'],
+  canales: [['WEB', 'Desarrollo de Talento (IC)', 'COMPLETA'], ['LI_PERSONAL', 'LinkedIn personal', 'LINKEDIN'], ['LI_GPA', 'LinkedIn empresarial de GPA', 'LINKEDIN'],
     ['FACEBOOK', 'Facebook', 'FACEBOOK'], ['INSTAGRAM', 'Instagram', 'INSTAGRAM'], ['NEWSLETTER', 'Newsletter de GPA', 'LINKEDIN']],
   estadosCanal: [['PENDIENTE', 'Pendiente'], ['PREPARADO', 'Preparado'], ['PROGRAMADO', 'Programado'], ['PUBLICADO', 'Publicado']],
   areas: ['Liderazgo', 'Toma de decisiones', 'Desarrollo personal', 'Relaciones humanas', 'Vida familiar', 'Vida profesional', 'Negocios y emprendimiento', 'Fe y propósito'],

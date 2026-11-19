@@ -212,6 +212,27 @@ window.RE = (function () {
     return res.blob();
   }
 
+  // ---------- Colección en Desarrollo de Talento (visible para todo el personal, sin avisos) ----------
+  // Copia de lo publicable en TAL_Coleccion (lista que lee todo el personal). Las listas RE_* siguen protegidas.
+  async function itemTalento(r) { return (await G.items('TAL_Coleccion', { filtro: "fields/Title eq '" + r.codigo + "'" }))[0] || null; }
+  async function publicarTalento(r) {
+    await leer(r);
+    let portada = '';
+    if (r.portada) {
+      try { const b = await blobPortada(r.portada); portada = CFG.carpetaTalento + '/' + slug(r) + '.' + (r.portada.split('.').pop() || 'jpg'); await G.subirArchivo(portada, b); }
+      catch (e) { console.warn('portada', e); portada = ''; }
+    }
+    const f = { coleccion: CFG.coleccion.id, codigo: r.codigo, titulo: r.titulo_editorial || r.titulo || r.codigo, referencia: referenciaCompleta(r), libro: nombreLibro(r.libro), libro_orden: ordenLibro(r.libro),
+      dimension: nombreDim(r.dimension), competencias: [r.competencia].concat(lista(r.competencias_sec)).filter(Boolean).join(';'), intro: r.intro || '', contenido: r.contenido || '', pregunta: r.pregunta || '',
+      portada, fecha_publicacion: (r.fecha_publicacion || hoy()) + 'T12:00:00Z', estado: 'PUBLICADA', actualizado: ahora() };
+    const ex = await itemTalento(r);
+    if (ex) await G.actualizar('TAL_Coleccion', ex._id, f); else await G.crear('TAL_Coleccion', Object.assign({ Title: r.codigo }, f));
+  }
+  async function retirarTalento(r) {
+    const ex = await itemTalento(r);
+    if (ex && ex.estado !== 'RETIRADA') await G.actualizar('TAL_Coleccion', ex._id, { estado: 'RETIRADA', actualizado: ahora() });
+  }
+
   // ---------- Permisos reales en SharePoint (API REST) ----------
   const lit = (t) => "'" + String(t).replace(/'/g, "''") + "'";
   async function sp(method, ruta, body, extra) {
@@ -322,5 +343,5 @@ window.RE = (function () {
   return { D, pad, hoy, dia, lista, textoFecha, nombreEstado, cargarReflexiones, leer, cargarCatalogos, sembrarCatalogos, cargarPrompts, promptVigente, guardarPrompt,
     cargarAccesos, cargarAprobaciones, asegurarSecuencia, normal, libro, nombreLibro, dim, nombreDim, referencia, referenciaCompleta, slug, nuevoCodigo, registrar, historial, versiones, version,
     crear, guardar, eliminar, LIMPIAR, aprobacionesDe, aprobadaEditorial, aprobar, distribucion, guardarDist, subirPortada, urlPortada, blobPortada,
-    estadoProteccion, proteger, darAcceso, quitarAcceso, nombreRol, puede, editableTexto, faltantes, publica, ordenLibro };
+    publicarTalento, retirarTalento, estadoProteccion, proteger, darAcceso, quitarAcceso, nombreRol, puede, editableTexto, faltantes, publica, ordenLibro };
 })();
