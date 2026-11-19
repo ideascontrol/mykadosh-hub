@@ -21,7 +21,8 @@ window.CFG = {
   // Dueño de la app: administra accesos y configuración. A quién pedir acceso.
   admins: ['operaciones@ideascontrol.com'],
   contactoAcceso: 'Martín Molina (operaciones@ideascontrol.com)',
-  logo: '/ideascontrol/MarketingGPA/img/gpa-logo.png',
+  logo: '/ideascontrol/Reflexiones/img/gpa-logo.png',          // logo GPA a color (fondo transparente)
+  logoBlanco: '/ideascontrol/Reflexiones/img/gpa-logo-blanco.png', // para fondos azules
   icono: '/ideascontrol/MarketingGPA/img/gpa-icono.png',
   carpetaPortadas: 'Reflexiones Estrategicas/Portadas',
   // Se publica como colección en Desarrollo de Talento (APP-108): visible para todo el personal, sin avisos ni correos

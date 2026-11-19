@@ -7,7 +7,7 @@
    ===================================================================== */
 window.Coleccion = (function () {
   const U = IC.ui, esc = U.esc, G = IC.graph;
-  const NOMBRES = { REFLEXIONES: { nombre: 'Reflexiones Estratégicas', marca: 'Growth Path Academy', lema: 'Historias que nos ayudan a comprender la vida, desarrollar nuestro carácter y tomar mejores decisiones.' } };
+  const NOMBRES = { REFLEXIONES: { nombre: 'Reflexiones Estratégicas', marca: 'Growth Path Academy', logo: '/ideascontrol/Reflexiones/img/gpa-logo-blanco.png', lema: 'Historias que nos ayudan a comprender la vida, desarrollar nuestro carácter y tomar mejores decisiones.' } };
   let items = null, filtro = { col: '', libro: '', dim: '', q: '' };
   const imgs = {};
   async function cargar() {
@@ -51,7 +51,7 @@ window.Coleccion = (function () {
     const libros = Array.from(new Set(C.slice().sort((a, b) => (Number(a.libro_orden) || 0) - (Number(b.libro_orden) || 0)).map((x) => x.libro).filter(Boolean)));
     const dims = Array.from(new Set(C.map((x) => x.dimension).filter(Boolean))).sort();
     c.innerHTML = (cols.length > 1 ? '<div class="ic-chips" style="margin-bottom:14px">' + cols.map((k) => '<button data-col="' + esc(k) + '" class="' + (k === filtro.col ? 'activo' : '') + '">' + esc(info(k).nombre) + '</button>').join('') + '</div>' : '') +
-      '<div class="col-hero"><span>' + esc(I.marca || 'Colección') + '</span><h1>' + esc(I.nombre) + '</h1><p>' + esc(I.lema) + '</p><small>' + C.length + (C.length === 1 ? ' lectura disponible' : ' lecturas disponibles') + '</small></div>' +
+      '<div class="col-hero">' + (I.logo ? '<img class="col-logo" src="' + I.logo + '" alt="' + esc(I.marca) + '">' : '') + '<span>' + esc(I.marca || 'Colección') + '</span><h1>' + esc(I.nombre) + '</h1><p>' + esc(I.lema) + '</p><small>' + C.length + (C.length === 1 ? ' lectura disponible' : ' lecturas disponibles') + '</small></div>' +
       '<div class="col-filtros"><input id="cQ" placeholder="Buscar" value="' + esc(filtro.q) + '">' +
       (libros.length > 1 ? '<select id="cL"><option value="">Todos los libros</option>' + libros.map((l) => '<option' + (l === filtro.libro ? ' selected' : '') + '>' + esc(l) + '</option>').join('') + '</select>' : '') +
       (dims.length > 1 ? '<select id="cD"><option value="">Todas las dimensiones</option>' + dims.map((d) => '<option' + (d === filtro.dim ? ' selected' : '') + '>' + esc(d) + '</option>').join('') + '</select>' : '') + '</div><div class="col-grid" id="cG"></div>';
@@ -74,7 +74,7 @@ window.Coleccion = (function () {
     const L = items.filter((y) => y.coleccion === x.coleccion), i = L.indexOf(x);
     const img = await portada(x.portada);
     c.innerHTML = '<a class="ic-volver" href="#colecciones">← ' + esc(info(x.coleccion).nombre) + '</a><article class="col-art">' +
-      '<div class="col-cab"><span>' + esc(info(x.coleccion).nombre) + '</span><h1>' + esc(x.titulo) + '</h1><p>' + esc(x.referencia) + '</p></div>' +
+      '<div class="col-cab">' + (info(x.coleccion).logo ? '<img class="col-logo" src="' + info(x.coleccion).logo + '" alt="' + esc(info(x.coleccion).marca) + '">' : '') + '<span>' + esc(info(x.coleccion).nombre) + '</span><h1>' + esc(x.titulo) + '</h1><p>' + esc(x.referencia) + '</p></div>' +
       (img ? '<img class="col-port" src="' + img + '" alt="">' : '') + '<div class="col-texto">' + limpio(x.contenido) + '</div>' +
       (x.pregunta ? '<div class="col-preg"><span>Una pregunta para llevarse</span><p>' + esc(x.pregunta) + '</p></div>' : '') +
       '<p class="col-fecha">' + esc(fecha(x.fecha_publicacion)) + ' · ' + esc(x.codigo) + '</p>' +

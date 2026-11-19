@@ -67,7 +67,7 @@ window.RE_PDF = (function () {
       { text: RE.referenciaCompleta(r), style: 'ref' }
     ], fillColor: C.navy, margin: [22, 22, 22, 20] }], [{ text: '', fillColor: C.oro, margin: [0, 1.5, 0, 1.5] }]] }, layout: 'noBorders', margin: [0, 0, 0, 22] };
     const contenido = [];
-    if (lg) contenido.push({ image: lg, width: 82, margin: [0, 0, 0, 14] });   // logo a color, sobre fondo blanco
+    if (lg) contenido.push({ image: lg, width: 120, margin: [0, 0, 0, 16] });   // logo GPA a color, sobre fondo blanco
     contenido.push(cab);
     // La portada se ajusta para caber en la primera página (no deja hojas en blanco)
     if (port) contenido.push({ image: port.data, fit: [ancho, 290], alignment: 'center', margin: [0, 0, 0, 22] });

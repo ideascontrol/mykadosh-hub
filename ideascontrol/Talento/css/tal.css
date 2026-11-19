@@ -69,3 +69,5 @@
 .col-fecha { color: #8a96a3; font-size: 13px; margin: 20px 0 0; }
 .col-nav { display: flex; justify-content: space-between; gap: 12px; margin-top: 24px; border-top: 1px solid var(--ic-borde); padding-top: 14px; } .col-nav a { color: #007A78; font-weight: 600; text-decoration: none; max-width: 48%; }
 @media (max-width: 600px) { .col-texto { font-size: 17px; } .col-cab h1, .col-hero h1 { font-size: 24px; } }
+.col-logo { display: block; height: 46px; width: auto; margin: 0 0 14px; }
+@media (max-width: 600px) { .col-logo { height: 38px; } }
