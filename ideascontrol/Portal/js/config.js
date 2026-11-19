@@ -35,7 +35,7 @@ window.APPS = [
     texto: 'Permisos, vacaciones, licencias, incapacidades y cambios de horario. Se tramitan solo con la Dirección de Operaciones.',
     url: '/ideascontrol/Novedades/', datos: 'SHAREPOINT', acceso: 'APP107' },
   { grupo: 'Desarrollo de Talento', id: 'APP-108', nombre: 'Desarrollo de Talento', icono: 'talento', color: 'dorado',
-    texto: 'Una idea práctica para aplicar hoy: piezas de los programas de formación del personal de IC.',
+    texto: 'Una idea práctica para aplicar hoy (piezas de formación del personal de IC) y Colecciones para leer cuando quiera, como Reflexiones Estratégicas.',
     url: '/ideascontrol/Talento/', datos: 'SHAREPOINT', acceso: 'APP108' },
   { grupo: 'Operaciones', id: 'APP-114', nombre: 'Proyectos', icono: 'tareas', color: 'dorado',
     texto: 'Implementaciones de T&A, TimeVision, biometría, puertas y torniquetes: cronograma desde plantillas, línea base, avance y bitácora.',
