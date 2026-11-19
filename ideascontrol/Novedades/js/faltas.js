@@ -66,7 +66,7 @@
 
   function form(f, alCambiar) {
     const nueva = !f; f = f || { fecha: Ope.hoy(), gravedad: 'LEVE', accion: 'REGISTRO', estado: 'ABIERTA', tecnico_id: filtroTec };
-    const tecOps = Ope.D.personal.filter((t) => t.estado !== 'INACTIVO' || t.Title === f.tecnico_id).map((t) => [t.Title, t.nombre]);
+    const tecOps = U.opcionesPersonal(Ope.D.personal, f.tecnico_id);
     U.modal(nueva ? 'Registrar falta' : f.Title + ' · ' + Ope.nombreTec(f.tecnico_id), '<form class="ic-form" id="fF"><div class="ic-campos">' +
       U.campo({ name: 'tecnico_id', label: 'Colaborador', t: 'select', op: tecOps, valor: f.tecnico_id, req: true, c: 'c8' }) +
       U.campo({ name: 'fecha', label: 'Fecha de la falta', t: 'date', valor: f.fecha, req: true, c: 'c4' }) +

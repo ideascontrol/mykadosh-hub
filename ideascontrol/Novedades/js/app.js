@@ -9,6 +9,9 @@
 const App = { usuario: null, vistas: {}, estado: {} };
 App.esAdmin = () => App.usuario && App.usuario.rol === 'ADMIN';
 App.esTecnico = () => App.usuario && App.usuario.rol === 'TECNICO';
+// Toda persona registrada en el personal (cualquier rol) puede pedir novedades y ver las suyas
+App.esColaborador = () => !!(App.usuario && App.usuario.tecnico);
+App.mias = () => App.esColaborador() ? App.solicitudes.filter((s) => s.tecnico_id === App.usuario.tecnico.Title) : [];
 const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNICO: 'Colaborador' };
 
 (function () {
@@ -81,8 +84,9 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
   function menu() {
     const r = App.usuario.rol;
     const it = [];
-    if (r === 'TECNICO') it.push(['nueva', 'Nueva solicitud', 'Solicite un permiso, vacaciones, licencia, reporte una incapacidad o pida un cambio de horario.', 'nueva', '']);
-    if (r === 'TECNICO') it.push(['mias', 'Mis solicitudes', 'Su histórico de solicitudes: estado y respuesta de la Dirección.', 'lista', '']);
+    const col = App.esColaborador();
+    if (col) it.push(['nueva', 'Nueva solicitud', 'Solicite un permiso, vacaciones, licencia, reporte una incapacidad o pida un cambio de horario.', 'nueva', '']);
+    if (col) it.push(['mias', 'Mis solicitudes', 'Sus solicitudes actuales y anteriores, en cualquier estado: pendientes, aprobadas, rechazadas o anuladas, con la respuesta de la Dirección.', 'lista', '']);
     if (r === 'TECNICO') it.push(['reporte', 'Mi reporte de novedades', 'Sus novedades entre fechas para enviar por correo: Excel, PDF o directo al correo.', 'reporte', '']);
     if (r === 'ADMIN') it.push(['bandeja', 'Bandeja de aprobación', 'Solicitudes pendientes con su impacto en la programación. Aprobar o rechazar.', 'bandeja', '']);
     if (r !== 'TECNICO') it.push(['todas', 'Solicitudes', 'Todas las solicitudes y su estado, con filtros.', 'lista', '']);
@@ -104,9 +108,12 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
     cargarSolicitudes().then((l) => {
       const p = l.filter((s) => s.estado === 'SOLICITADA').length, el = document.getElementById('cPend');
       if (el) el.textContent = p ? p + ' pendiente' + (p === 1 ? '' : 's') : 'Sin pendientes';
-      if (App.esTecnico()) {
-        const prox = l.filter((s) => s.estado === 'APROBADA' && s.fecha_fin >= Ope.hoy()).slice(-3);
-        if (prox.length) document.getElementById('resumen').innerHTML = '<div class="ic-alerta chica">Próximas ausencias aprobadas: ' + prox.map((s) => esc(tipoNov(s.tipo).nombre + ' ' + App.rango(s))).join(' · ') + '</div>';
+      if (App.esColaborador()) {
+        const m = App.mias(), pend = m.filter((s) => s.estado === 'SOLICITADA').length;
+        const prox = m.filter((s) => s.estado === 'APROBADA' && s.fecha_fin >= Ope.hoy()).slice(-3);
+        const txt = [pend ? 'Tiene ' + pend + ' solicitud' + (pend === 1 ? '' : 'es') + ' pendiente' + (pend === 1 ? '' : 's') + ' de aprobación' : '',
+          prox.length ? 'Próximas ausencias aprobadas: ' + prox.map((s) => tipoNov(s.tipo).nombre + ' ' + App.rango(s)).join(' · ') : ''].filter(Boolean);
+        if (txt.length) document.getElementById('resumen').innerHTML = '<div class="ic-alerta chica">' + esc(txt.join(' — ')) + ' · <a href="#mias">Ver mis solicitudes</a></div>';
       }
     }).catch((e) => U.aviso(U.mensajeError(e), 'warn'));
   }
@@ -116,7 +123,7 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
   // =====================================================================
   function vistaForm(c, aNombre) {
     const u = App.usuario;
-    const tecOps = Ope.D.personal.filter((t) => t.estado !== 'INACTIVO').map((t) => [t.Title, t.nombre + (t.vinculacion === Ope.ADMINISTRATIVO ? ' (administrativo)' : '')]);
+    const tecOps = U.opcionesPersonal(Ope.D.personal);   // misma lista agrupada que «Responsable» (Ideas Control / Administrativo / Técnicos de campo)
     c.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a><h1 class="ic-titulo">' + (aNombre ? 'Registrar novedad' : 'Nueva solicitud') + '</h1>' +
       '<p class="ic-subtitulo">' + (aNombre ? 'Registre la novedad a nombre del colaborador. Puede dejarla aprobada de una vez.' : 'La Dirección de Operaciones revisa el impacto en la programación y le responde aquí.') + '</p>' +
       '<form class="ic-form" id="fNov" autocomplete="off"><div class="ic-campos">' +
@@ -233,7 +240,7 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
   // ---------- Ficha de una solicitud (ventana) ----------
   App.abrirSolicitud = async function (s, alCambiar) {
     const t = tipoNov(s.tipo), u = App.usuario;
-    const propia = App.esTecnico() && u.tecnico && s.tecnico_id === u.tecnico.Title;
+    const propia = !!(u.tecnico && s.tecnico_id === u.tecnico.Title);
     let im = null; try { im = bloquea(s) && s.estado === 'SOLICITADA' ? await impacto(s) : null; } catch (e) { im = null; }
     const html = '<div class="ic-form"><div class="nov-ficha">' +
       '<div><span>Colaborador</span><b>' + esc(Ope.nombreTec(s.tecnico_id)) + '</b></div>' +
@@ -267,7 +274,7 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
       if (bN) bN.onclick = async () => {
         const ok = await U.confirmar('Anular ' + s.Title, s.estado === 'APROBADA' ? 'Se anula la novedad y se cancelan sus ausencias en la Programación.' : '¿Anular esta solicitud?', 'Anular', true);
         if (!ok) return;
-        try { await anular(s, App.esTecnico() ? 'por el colaborador' : 'por la Dirección'); U.aviso('Anulada', 'ok'); if (alCambiar) alCambiar(); } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
+        try { await anular(s, propia && !App.esAdmin() ? 'por el colaborador' : 'por la Dirección'); U.aviso('Anulada', 'ok'); if (alCambiar) alCambiar(); } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
       };
     });
   };
@@ -285,7 +292,15 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
   // ---------- Vistas de listas ----------
   async function vistaMias(c) {
     c.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a><div class="ic-barra"><div style="flex:1"><h1 class="ic-titulo">Mis solicitudes</h1></div><a class="ic-btn" href="#nueva">+ Nueva solicitud</a></div><div id="t"><div class="ic-vacio">Cargando…</div></div>';
-    const pintar = async () => { await cargarSolicitudes(); c.querySelector('#t').innerHTML = App.tablaSolicitudes(App.solicitudes, false); App.conectarSolicitudes(c, pintar); };
+    c.querySelector('.ic-barra').insertAdjacentHTML('afterend', '<div class="ic-filtros"><div class="ic-chips" id="fM"><button data-e="" class="activo">Todas</button>' + ESTADOS_NOV.map((e) => '<button data-e="' + e[0] + '">' + esc(e[1]) + '</button>').join('') + '</div></div>');
+    let est = '';
+    const dibujar = () => {
+      const m = App.mias(), l = m.filter((s) => !est || s.estado === est);
+      c.querySelectorAll('#fM button').forEach((b) => { const n = b.dataset.e ? m.filter((s) => s.estado === b.dataset.e).length : m.length; b.classList.toggle('activo', b.dataset.e === est); b.textContent = (b.dataset.e ? ESTADOS_NOV.find((e) => e[0] === b.dataset.e)[1] : 'Todas') + ' (' + n + ')'; });
+      c.querySelector('#t').innerHTML = App.tablaSolicitudes(l, false); App.conectarSolicitudes(c, pintar);
+    };
+    c.querySelectorAll('#fM button').forEach((b) => { b.onclick = () => { est = b.dataset.e; dibujar(); }; });
+    const pintar = async () => { await cargarSolicitudes(); dibujar(); };
     pintar().catch((e) => { c.querySelector('#t').innerHTML = '<div class="ic-alerta">' + esc(U.mensajeError(e)) + '</div>'; });
   }
   async function vistaBandeja(c) {

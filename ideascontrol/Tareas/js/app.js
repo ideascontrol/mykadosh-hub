@@ -207,7 +207,13 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
   }
   function vistaTareas(c) {
     const f = App.filtro;
-    const sel = (id, op, v) => '<select id="' + id + '">' + op.map((o) => '<option value="' + esc(o[0]) + '"' + (o[0] === v ? ' selected' : '') + '>' + esc(o[1]) + '</option>').join('') + '</select>';
+    const sel = (id, op, v) => '<select id="' + id + '">' + U.opcionesHTML(op, v) + '</select>';
+    // Filtro de personas: misma lista agrupada que «Responsable» (el filtro compara por nombre) + nombres antiguos de las tareas
+    const opsResponsables = () => {
+      const ops = U.opcionesPersonal(App.personal).map((o) => [o[1].replace(/ — inactivo$/, ''), o[1], o[2]]);
+      const otros = Array.from(new Set(App.tareas.map(nombreResp).filter((n) => n && !ops.some((o) => o[0] === n)))).sort();
+      return ops.concat(otros.map((n) => [n, n, 'Valor anterior']));
+    };
     c.innerHTML = '<div class="ic-barra"><div><h1 class="ic-titulo">Tareas</h1><p class="ic-subtitulo" style="margin:0">Haga clic en una tarea para actualizarla o agregar una anotación a la bitácora.</p></div><span class="espacio"></span>' +
       '<button class="ic-btn sec" id="bExcel">⬇ Excel</button><button class="ic-btn" id="bNueva">+ Nueva tarea</button></div>' +
       '<div class="ic-filtros">' + sel('fCli', [['', 'Todos los clientes']].concat(clientesConTareas().map((x) => [x.id, x.nombre])), f.cliente) +
@@ -215,7 +221,7 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
         sel('fSem', [['', 'Todo semáforo'], ['VENCIDA', 'Vencidas'], ['PROXIMA', 'Próximas a vencer'], ['A_TIEMPO', 'A tiempo'], ['SIN_FECHA', 'Sin fecha']], f.semaforo) +
         sel('fPri', [['', 'Toda prioridad']].concat(CFG.prioridades.map((p) => [p, p])), f.prioridad) +
         sel('fCat', [['', 'Toda categoría']].concat(categorias().map((p) => [p, p])), f.categoria) +
-        sel('fRes', [['', 'Todas las personas']].concat(Array.from(new Set(App.personal.map((p) => p.nombre).concat(App.tareas.map(nombreResp)).filter(Boolean))).sort().map((p) => [p, p])).concat([['__SIN__', 'Sin responsable']]), f.responsable) +
+        sel('fRes', [['', 'Todas las personas']].concat(opsResponsables()).concat([['__SIN__', 'Sin responsable']]), f.responsable) +
         '<input type="search" id="fQ" placeholder="Buscar…" value="' + esc(f.q) + '" style="flex:1;min-width:160px"></div><div id="lista"></div>';
     const pintar = () => {
       const L = filtradas(), varios = !f.cliente;

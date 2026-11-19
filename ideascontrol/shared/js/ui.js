@@ -182,5 +182,54 @@ IC.ui = (function () {
   // Texto sin tildes y en minúsculas, para búsquedas
   function norm(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
 
-  return { opcionesHTML, opcionesPersonal, VINCULACIONES, $, esc, aviso, pantalla, enrutar, fmt, mensajeError, modal, cerrarModal, confirmar, leerForm, marcarErrores, campo, conCarga, norm };
+  // ---------- Listas de sugerencias (clientes, sitios, planes…) ----------
+  // Reemplaza la lista nativa del navegador (<input list>) por una que busca por CUALQUIER parte del texto,
+  // sin tildes ni mayúsculas y con varias palabras (p. ej. «guapa», «agri gua»). Se aplica sola a todo <input list>.
+  function autocompletar(inp) {
+    if (inp.dataset.lista) return;
+    const idLista = inp.getAttribute('list'); if (!idLista) return;
+    inp.dataset.lista = idLista; inp.removeAttribute('list'); inp.setAttribute('autocomplete', 'off');
+    let caja = null, sel = -1, items = [];
+    const opciones = () => { const dl = document.getElementById(inp.dataset.lista); return dl ? Array.from(dl.options).map((o) => o.value || o.textContent).filter(Boolean) : []; };
+    const cerrar = () => { if (caja) { caja.remove(); caja = null; } sel = -1; };
+    const elegir = (v) => { inp.value = v; cerrar(); inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new Event('change', { bubbles: true })); };
+    const marcar = () => { if (!caja) return; Array.from(caja.children).forEach((d, i) => { d.style.background = i === sel ? '#e8f1fb' : ''; }); if (sel >= 0 && caja.children[sel]) caja.children[sel].scrollIntoView({ block: 'nearest' }); };
+    function abrir() {
+      const q = norm(inp.value).trim().split(/\s+/).filter(Boolean);
+      items = opciones().filter((o) => { const n = norm(o); return q.every((t) => n.indexOf(t) >= 0); });
+      if (q.length) { const t0 = q[0]; items.sort((a, b) => (norm(a).indexOf(t0) === 0 ? 0 : 1) - (norm(b).indexOf(t0) === 0 ? 0 : 1)); }
+      items = items.slice(0, 60);
+      if (!items.length || (items.length === 1 && items[0] === inp.value)) { cerrar(); return; }
+      if (!caja) {
+        caja = document.createElement('div');
+        caja.style.cssText = 'position:fixed;z-index:3000;background:#fff;border:1px solid #cfd8e3;border-radius:10px;box-shadow:0 12px 28px rgba(15,40,70,.16);max-height:260px;overflow:auto;padding:4px 0;font-size:14px';
+        document.body.appendChild(caja);
+        caja.addEventListener('mousedown', (e) => { e.preventDefault(); const d = e.target.closest('[data-i]'); if (d) elegir(items[Number(d.dataset.i)]); });
+      }
+      const r = inp.getBoundingClientRect();
+      caja.style.left = r.left + 'px'; caja.style.width = Math.max(r.width, 220) + 'px';
+      const abajo = window.innerHeight - r.bottom;
+      if (abajo < 200 && r.top > abajo) { caja.style.top = ''; caja.style.bottom = (window.innerHeight - r.top + 2) + 'px'; } else { caja.style.bottom = ''; caja.style.top = (r.bottom + 2) + 'px'; }
+      caja.innerHTML = items.map((o, i) => '<div data-i="' + i + '" style="padding:7px 12px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(o) + '</div>').join('');
+      sel = -1; marcar();
+    }
+    inp.addEventListener('input', (e) => { if (e.isTrusted !== false) abrir(); });
+    inp.addEventListener('focus', abrir);
+    inp.addEventListener('blur', () => setTimeout(cerrar, 120));
+    inp.addEventListener('keydown', (e) => {
+      if (!caja) { if (e.key === 'ArrowDown') abrir(); return; }
+      if (e.key === 'ArrowDown') { e.preventDefault(); sel = Math.min(items.length - 1, sel + 1); marcar(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); sel = Math.max(0, sel - 1); marcar(); }
+      else if (e.key === 'Enter' && sel >= 0) { e.preventDefault(); elegir(items[sel]); }
+      else if (e.key === 'Escape') cerrar();
+    });
+    window.addEventListener('scroll', (e) => { if (!caja || e.target === caja) return; if (document.activeElement === inp) { const k = sel; abrir(); sel = Math.min(k, items.length - 1); marcar(); } else cerrar(); }, true);
+  }
+  function mejorarListas(raiz) { (raiz || document).querySelectorAll && (raiz || document).querySelectorAll('input[list]').forEach(autocompletar); }
+  if (typeof MutationObserver !== 'undefined') {
+    const iniciar = () => { mejorarListas(document); new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach((n) => { if (n.nodeType === 1) { if (n.matches && n.matches('input[list]')) autocompletar(n); else mejorarListas(n); } }))).observe(document.body, { childList: true, subtree: true }); };
+    if (document.body) iniciar(); else document.addEventListener('DOMContentLoaded', iniciar);
+  }
+
+  return { autocompletar, mejorarListas, opcionesHTML, opcionesPersonal, VINCULACIONES, $, esc, aviso, pantalla, enrutar, fmt, mensajeError, modal, cerrarModal, confirmar, leerForm, marcarErrores, campo, conCarga, norm };
 })();

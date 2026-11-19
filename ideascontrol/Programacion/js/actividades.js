@@ -79,7 +79,7 @@
     if (edita) await Ope.sedes();
 
     // Misma lista y presentación que «Responsable» en Gestión de Clientes (IC.ui.opcionesPersonal, origen OPE_Tecnicos)
-    const tecOps = U.opcionesPersonal(Ope.D.tecnicos, a.tecnico_id);
+    const tecOps = U.opcionesPersonal(Ope.D.personal, a.tecnico_id);
     const tipoOps = Ope.D.tipos.filter((t) => t.estado !== 'INACTIVO' || t.Title === a.tipo).map((t) => [t.Title, t.nombre + ' (' + t.Title + ')']);
     const titulo = nueva ? 'Nueva actividad' : a.Title + ' · ' + Ope.nombreTipo(a.tipo);
 
@@ -225,7 +225,7 @@
 
   // ---------- Reprogramar: la original queda «Reprogramado» y se crea una nueva (trazabilidad) ----------
   function reprogramar(a, alCambiar) {
-    const tecOps = U.opcionesPersonal(Ope.D.tecnicos, a.tecnico_id);
+    const tecOps = U.opcionesPersonal(Ope.D.personal, a.tecnico_id);
     U.modal('Reprogramar ' + a.Title, '<form class="ic-form" id="fRep"><p class="ope-nota" style="margin-top:0">' + esc(Ope.etiqueta(a)) + ' · ' + esc(Ope.textoFecha(a.fecha, true)) + '</p><div class="ic-campos">' +
       U.campo({ name: 'fecha', label: 'Nueva fecha', t: 'date', valor: a.fecha, req: true, c: 'c4' }) +
       U.campo({ name: 'tecnico_id', label: 'Responsable', t: 'select', op: tecOps, valor: a.tecnico_id, c: 'c8' }) +
@@ -284,7 +284,7 @@
   let listaActual = [];
   App.vistas.actividades = async function (c) {
     if (!filtros.desde) { filtros.desde = Ope.lunesDe(Ope.hoy()); filtros.hasta = Ope.sumar(filtros.desde, 34); }
-    const tecOps = Ope.D.tecnicos.map((t) => '<option value="' + esc(t.Title) + '"' + (filtros.tec === t.Title ? ' selected' : '') + '>' + esc(t.nombre) + '</option>').join('');
+    const tecOps = U.opcionesHTML(U.opcionesPersonal(Ope.D.personal, filtros.tec), filtros.tec);   // misma lista agrupada que «Responsable»
     const tipoOps = Ope.D.tipos.map((t) => '<option value="' + esc(t.Title) + '"' + (filtros.tipo === t.Title ? ' selected' : '') + '>' + esc(t.nombre) + '</option>').join('');
     const estOps = [['ACTIVAS', 'Vigentes (sin canceladas ni reprogramadas)'], ['', 'Todos los estados']].concat(Ope.ESTADOS)
       .map((e) => '<option value="' + e[0] + '"' + (filtros.estado === e[0] ? ' selected' : '') + '>' + esc(e[1]) + '</option>').join('');

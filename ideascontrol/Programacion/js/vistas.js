@@ -25,7 +25,7 @@
   // =====================================================================
   App.vistas.agenda = async function (c) {
     App._agendaLeida = false;   // al entrar a la agenda se leen los datos más recientes
-    const tecOps = Ope.D.tecnicos.map((t) => '<option value="' + esc(t.Title) + '"' + (App.estado.tec === t.Title ? ' selected' : '') + '>' + esc(t.nombre) + '</option>').join('');
+    const tecOps = U.opcionesHTML(U.opcionesPersonal(Ope.D.personal, App.estado.tec), App.estado.tec);   // misma lista agrupada que «Responsable»
     const tipoOps = Ope.D.tipos.map((t) => '<option value="' + esc(t.Title) + '"' + (App.estado.tipo === t.Title ? ' selected' : '') + '>' + esc(t.nombre) + '</option>').join('');
     c.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a>' +
       '<div class="ic-barra"><div style="flex:1"><h1 class="ic-titulo">Agenda</h1><p class="ic-subtitulo" style="margin:0">Los días hábiles en rojo no tienen técnico de oficina. Clic en una actividad para verla o editarla.</p></div>' +
@@ -188,7 +188,7 @@
     const cand = candidatosOficina(s);
     if (!cand.length) { U.aviso('Ningún técnico de Ideas Control está libre ese día.', 'warn'); return; }
     U.modal('Turno de oficina · ' + Ope.textoFecha(s, true), '<form class="ic-form" id="fAs"><div class="ic-campos">' +
-      U.campo({ name: 'tecnico_id', label: 'Técnico de turno', t: 'select', op: cand.map((t) => [t.Title, t.nombre]), c: 'c12', req: true }) +
+      U.campo({ name: 'tecnico_id', label: 'Técnico de turno', t: 'select', op: U.opcionesPersonal(cand), c: 'c12', req: true }) +
       '</div><p class="ope-nota">Solo se listan técnicos de Ideas Control habilitados para Oficina y sin otra asignación ese día.</p>' +
       '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="aNo">Cancelar</button><button class="ic-btn" id="aOk">Asignar turno</button></div></form>',
     (cu) => {

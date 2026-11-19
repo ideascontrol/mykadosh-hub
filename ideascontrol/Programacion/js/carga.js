@@ -38,7 +38,7 @@
       ws['!autofilter'] = { ref: 'A1:L1' };
       XLSX.utils.book_append_sheet(wb, ws, 'Actividades');
 
-      const tecs = Ope.D.tecnicos.filter((t) => t.estado !== 'INACTIVO').map((t) => t.nombre).sort((a, b) => a.localeCompare(b, 'es'));
+      const tecs = Ope.D.personal.filter((t) => t.estado !== 'INACTIVO').map((t) => t.nombre).sort((a, b) => a.localeCompare(b, 'es'));
       const tipos = Ope.D.tipos.filter((t) => t.estado !== 'INACTIVO').map((t) => [t.Title, t.nombre]);
       const clis = empresas.map((e) => e.razon_social).filter(Boolean).sort((a, b) => a.localeCompare(b, 'es'));
       const n = Math.max(tecs.length, tipos.length, clis.length, sedes.length, 2);
@@ -119,7 +119,7 @@
       const tp = Ope.D.tipos.find((y) => U.norm(y.Title) === tx || U.norm(y.nombre) === tx);
       if (!tx) err.push('Falta el tipo'); else if (!tp) err.push('Tipo «' + t(x, 'Tipo *') + '» no existe'); else p.tipo = tp.Title;
       const rx = U.norm(t(x, 'Responsable'));
-      if (rx) { const tc = Ope.D.tecnicos.find((y) => U.norm(y.nombre) === rx || U.norm(y.Title) === rx); if (!tc) err.push('Responsable «' + t(x, 'Responsable') + '» no existe'); else p.tecnico_id = tc.Title; }
+      if (rx) { const tc = Ope.D.personal.find((y) => U.norm(y.nombre) === rx || U.norm(y.Title) === rx); if (!tc) err.push('Responsable «' + t(x, 'Responsable') + '» no existe'); else p.tecnico_id = tc.Title; }
       const cli = t(x, 'Cliente (contrata y paga)');
       if (cli) { const e = empresas.find((y) => U.norm(y.razon_social) === U.norm(cli)); p.cliente = e ? e.razon_social : cli; p.empresa_id = e ? e.Title : ''; p._enlazada = !!e; }
       const sit = t(x, 'Sitio / cliente final'); if (sit) p.sitio = sit;
