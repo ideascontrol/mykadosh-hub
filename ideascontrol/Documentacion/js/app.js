@@ -86,7 +86,7 @@
   // Área por el primer dígito del código (o por la columna Área); proceso por la serie (2 primeros dígitos) o por la columna Grupo
   function ubicar(d) {
     const area = areas.find((a) => a.bloque === d.codigo[0]) || areas.find((a) => clave(a.nombre) === clave(d.areaNombre)) || areas[0];
-    const grupo = area.grupos.find((g) => g.serie && g.serie.slice(0, 2) === d.codigo.slice(0, 2)) || area.grupos.find((g) => clave(g.nombre) === clave(d.grupoNombre)) || area.grupos[area.grupos.length - 1];
+    const grupo = area.grupos.find((g) => g.serie && g.serie.slice(0, 2) === d.codigo.slice(0, 2)) || area.grupos.find((g) => clave(g.nombre) === clave(d.grupoNombre)) || area.grupos.find((g) => g.porDefecto) || area.grupos[area.grupos.length - 1];
     return { area, grupo };
   }
   const docsDe = (area, grupo) => DOCS.filter((d) => d.area === area && (!grupo || d.grupo === grupo));
