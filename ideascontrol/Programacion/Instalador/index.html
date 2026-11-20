@@ -1299,10 +1299,14 @@ async function aplicarPermisos() {
       try { l = await sp('GET', base + '?$select=HasUniqueRoleAssignments'); }
       catch (e) { if (e.status === 404 || /404|no existe/i.test(e.message)) { log(lista + ': la lista aún no existe — dé clic en «Crear estructura» (paso 3) y luego repita «Aplicar permisos»', 'warn'); continue; } throw e; }
       if (!l.HasUniqueRoleAssignments) await sp('POST', base + '/breakroleinheritance(copyRoleAssignments=true,clearSubscopes=true)');
-      const asignados = ((await sp('GET', base + '/roleassignments?$select=PrincipalId')).value || []).map((x) => x.PrincipalId);
-      const ya = asignados.indexOf(grupo.Id) >= 0;
+      // Si el grupo ya tenía otro nivel (p. ej. «Leer» y ahora debe «Editar»), se corrige: queda exactamente el nivel definido
+      const asig = ((await sp('GET', base + '/roleassignments?$expand=RoleDefinitionBindings')).value || []).find((x) => x.PrincipalId === grupo.Id);
+      const actuales = asig ? (asig.RoleDefinitionBindings || []).filter((r) => Number(r.RoleTypeKind) !== 1) : [];
+      const ya = actuales.some((r) => r.Id === roles[tipo].Id);
       if (!ya) await sp('POST', base + '/roleassignments/addroleassignment(principalid=' + grupo.Id + ',roledefid=' + roles[tipo].Id + ')');
-      log(lista + ': ' + (tipo === 3 ? 'puede editar' : 'solo lectura') + ' (' + roles[tipo].Name + ')' + (ya ? ' — ya estaba' : ''), 'ok');
+      const quitar = actuales.filter((r) => r.Id !== roles[tipo].Id);
+      for (const r of quitar) await sp('POST', base + '/roleassignments/removeroleassignment(principalid=' + grupo.Id + ',roledefid=' + r.Id + ')');
+      log(lista + ': ' + (tipo === 3 ? 'puede agregar y editar' : 'solo lectura') + ' (' + roles[tipo].Name + ')' + (ya && !quitar.length ? ' — ya estaba' : quitar.length ? ' — corregido (antes: ' + quitar.map((r) => r.Name).join(', ') + ')' : ''), 'ok');
     }
     // 2b. NOV_Solicitudes: cada usuario solo lee y edita lo que él creó (la Dirección, como propietaria, ve todo)
     try {

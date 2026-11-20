@@ -76,13 +76,16 @@ IC.graph = (function () {
   }
 
   async function crear(lista, campos) {
-    const it = await llamar('POST', '/sites/' + sitioId + '/lists/' + await listaId(lista) + '/items', { fields: limpiar(campos) });
+    let it;
+    try { it = await llamar('POST', '/sites/' + sitioId + '/lists/' + await listaId(lista) + '/items', { fields: limpiar(campos) }); }
+    catch (e) { e.lista = e.lista || lista; throw e; }
     return plano(it);
   }
 
   // etag opcional: si se envía y otro usuario modificó el registro, falla con 412 (conflicto)
   async function actualizar(lista, itemId, campos, etag) {
-    return llamar('PATCH', '/sites/' + sitioId + '/lists/' + await listaId(lista) + '/items/' + itemId + '/fields', limpiar(campos, true), etag ? { 'If-Match': etag } : null);
+    try { return await llamar('PATCH', '/sites/' + sitioId + '/lists/' + await listaId(lista) + '/items/' + itemId + '/fields', limpiar(campos, true), etag ? { 'If-Match': etag } : null); }
+    catch (e) { e.lista = e.lista || lista; throw e; }
   }
 
   // Siguiente número de una secuencia (SYS_Secuencias) con control de concurrencia

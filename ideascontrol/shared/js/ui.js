@@ -71,7 +71,7 @@ IC.ui = (function () {
   // Traduce errores técnicos a mensajes para el usuario
   function mensajeError(e) {
     const m = String(e && e.message || e);
-    if (e && e.status === 403) return 'No tiene permiso para esta acción en SharePoint. Pida al administrador que lo agregue como miembro del sitio IC Apps.';
+    if (e && e.status === 403) return 'No tiene permiso para guardar' + (e.lista ? ' en la lista ' + e.lista : '') + ' de SharePoint. Avise a la Dirección de Operaciones: debe ejecutar «Aplicar permisos» en el Instalador de IC Apps.';
     if (e && e.status === 404) return 'No se encontró la información solicitada en SharePoint.';
     if (e && e.status === 412) return 'Otro usuario modificó este registro mientras usted lo editaba. Recargue e intente de nuevo.';
     if (/AADSTS65001|consent|admin approval/i.test(m)) return 'La app necesita la aprobación del administrador de Microsoft 365.';

@@ -434,7 +434,8 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
                 if (est && est !== agV.estado) { cambiosAg.estado = est; notas.push('estado ' + (ESTADOS_AG[agV.estado] || agV.estado) + ' → ' + ESTADOS_AG[est]); }
               }
               // Nota nueva en la bitácora: también queda en las observaciones de la actividad
-              if (enAgenda && String(v.nota || '').trim()) { cambiosAg.observaciones = [agV.observaciones, 'Tarea ' + t.Title + ': ' + v.nota.trim()].filter(Boolean).join('\n'); notas.push('nota agregada a las observaciones'); }
+              const lineaNota = 'Tarea ' + t.Title + ': ' + String(v.nota || '').trim();   // si un intento anterior ya la dejó (p. ej. falló el guardado de la tarea), no se repite
+              if (enAgenda && String(v.nota || '').trim() && String(agV.observaciones || '').indexOf(lineaNota) < 0) { cambiosAg.observaciones = [agV.observaciones, lineaNota].filter(Boolean).join('\n'); notas.push('nota agregada a las observaciones'); }
               if (notas.length) {
                 cambiosAg.motivo_cambio = 'Cambio desde la tarea ' + t.Title;
                 try { await G.actualizar('OPE_Actividades', agV._id, cambiosAg); }
