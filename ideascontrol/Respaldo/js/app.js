@@ -51,9 +51,18 @@ const App = { usuario: null };
   const hoja = (wb, nombre, filas, anchos) => { const ws = XLSX.utils.json_to_sheet(filas.length ? filas : [{ '': 'Sin datos' }]); if (anchos) ws['!cols'] = anchos.map((w) => ({ wch: w })); XLSX.utils.book_append_sheet(wb, ws, nombre); };
   const valor = (v) => v === null || v === undefined ? '' : typeof v === 'object' ? JSON.stringify(v) : (typeof v === 'string' && v.length > 32000 ? v.slice(0, 32000) + ' …[recortado en Excel; completo en el JSON]' : v);
 
-  async function respaldar(b, conArchivos) {
+  // Destino: carpeta elegida (disco interno, externo o USB; Chrome/Edge) o Descargas. Dentro se crea una subcarpeta por respaldo.
+  const puedeCarpeta = typeof window.showDirectoryPicker === 'function';
+  let destino = null;
+  async function guardar(blob, nombre) {
+    if (!destino) return descargar(blob, nombre);
+    const w = await (await destino.getFileHandle(nombre, { create: true })).createWritable(); await w.write(blob); await w.close();
+  }
+  async function respaldar(b, conArchivos, raizDestino) {
     caja.innerHTML = ''; b.disabled = true;
     const t0 = Date.now(), st = sello();
+    destino = null;
+    if (raizDestino) { try { destino = await raizDestino.getDirectoryHandle('Respaldo_ICApps_' + st, { create: true }); } catch (e) { log('No se pudo crear la carpeta del respaldo (' + e.message + '). Se descarga en Descargas.', 'warn'); } }
     try {
       await Promise.all([window.XLSX ? null : cargar('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'), !conArchivos || window.JSZip ? null : cargar('https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js')]);
       const sid = await G.sitio(CFG.sitio.host, CFG.sitio.ruta);
@@ -96,12 +105,12 @@ const App = { usuario: null };
       hoja(wb, 'Archivos', R.archivos.map((a) => ({ Biblioteca: a.biblioteca, Ruta: a.ruta, 'Tamaño KB': a.tamano_kb, Modificado: a.modificado, Por: a.por })), [20, 70, 10, 22, 26]);
       const usados = new Set(['Indice', 'Columnas', 'Permisos', 'Grupos', 'Archivos']);
       R.listas.forEach((l) => { let n = l.nombre.replace(/[\\/?*[\]:]/g, '_').slice(0, 31); let k = 2; while (usados.has(n)) n = n.slice(0, 28) + '_' + k++; usados.add(n); hoja(wb, n, l.items.map((x) => { const o = {}; Object.keys(x).forEach((c) => { o[c] = valor(x[c]); }); return o; })); });
-      XLSX.writeFile(wb, 'Respaldo_ICApps_' + st + '.xlsx');
-      descargar(new Blob([JSON.stringify(R, null, 1)], { type: 'application/json' }), 'Respaldo_ICApps_' + st + '.json');
-      if (zip && cuenta.n) { log('Comprimiendo ' + cuenta.n + ' archivos…'); descargar(await zip.generateAsync({ type: 'blob' }), 'Respaldo_ICApps_Archivos_' + st + '.zip'); }
+      await guardar(new Blob([XLSX.write(wb, { type: 'array', bookType: 'xlsx' })], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), 'Respaldo_ICApps_' + st + '.xlsx');
+      await guardar(new Blob([JSON.stringify(R, null, 1)], { type: 'application/json' }), 'Respaldo_ICApps_' + st + '.json');
+      if (zip && cuenta.n) { log('Comprimiendo ' + cuenta.n + ' archivos…'); await guardar(await zip.generateAsync({ type: 'blob' }), 'Respaldo_ICApps_Archivos_' + st + '.zip'); }
       const tot = R.listas.reduce((s, l) => s + l.items.length, 0);
       log('Listo en ' + Math.round((Date.now() - t0) / 1000) + ' s: ' + R.listas.length + ' listas, ' + tot + ' registros' + (permOk ? ', permisos y grupos' : '') + ', ' + R.archivos.length + ' archivos' + (zip ? ' (' + Math.round(cuenta.bytes / 1048576) + ' MB copiados)' : ' (solo inventario)') + '.', 'ok');
-      log('Guarde los archivos descargados en su OneDrive personal o en un disco externo, no en el sitio IC Apps ni en GitHub.', 'ok');
+      log(destino ? 'Guardado en la carpeta «' + (raizDestino.name || '') + '/' + destino.name + '».' : 'Quedó en Descargas. Muévalo a su OneDrive personal o a un disco externo, no al sitio IC Apps ni a GitHub.', 'ok');
     } catch (e) { console.error(e); log('Error: ' + U.mensajeError(e), 'err'); }
     b.disabled = false;
   }
@@ -114,10 +123,21 @@ const App = { usuario: null };
       '<li><b>ZIP</b> con los archivos de las bibliotecas del sitio (portadas, imágenes, adjuntos), si marca la casilla.</li></ul>' +
       '<p class="rs-nota">El respaldo tiene información confidencial (faltas, novedades, precios). Guárdelo en su OneDrive personal o en un disco externo. No lo suba a GitHub ni a una carpeta compartida.</p>' +
       '<label class="rs-chk"><input type="checkbox" id="cArch" checked> Incluir los archivos de las bibliotecas (ZIP)</label>' +
+      (puedeCarpeta ? '<div class="rs-dest"><b>Dónde guardar</b><label class="rs-chk"><input type="radio" name="dest" value="carpeta" checked> En la carpeta que yo elija: disco interno, disco externo o USB (se crea una subcarpeta con la fecha)</label><label class="rs-chk"><input type="radio" name="dest" value="descargas"> En Descargas</label></div>'
+        : '<p class="sec" style="margin:10px 0 0">Se guarda en Descargas. Para elegir la carpeta o un disco externo, abra esta página en Chrome o Edge en el computador.</p>') +
       '<div style="margin-top:12px"><button class="ic-btn" id="bResp">Descargar respaldo</button></div></div></section>' +
       '<section class="ic-bloque"><div class="cab"><h2>Avance</h2></div><div class="cuerpo"><div id="rsLog" class="rs-caja"><div class="rs-log">Listo para empezar.</div></div></div></section>';
     caja = c.querySelector('#rsLog');
-    const b = c.querySelector('#bResp'); b.onclick = () => respaldar(b, c.querySelector('#cArch').checked);
+    const b = c.querySelector('#bResp');
+    b.onclick = async () => {
+      let dir = null;
+      const r = c.querySelector('input[name=dest]:checked');
+      if (puedeCarpeta && r && r.value === 'carpeta') {   // se elige antes de empezar (el navegador lo exige tras el clic)
+        try { dir = await window.showDirectoryPicker({ id: 'ic-respaldo', mode: 'readwrite', startIn: 'documents' }); }
+        catch (e) { if (e.name !== 'AbortError') U.aviso('No se pudo abrir la carpeta: ' + e.message, 'err'); return; }
+      }
+      respaldar(b, c.querySelector('#cArch').checked, dir);
+    };
   }
 
   function encabezado() {
