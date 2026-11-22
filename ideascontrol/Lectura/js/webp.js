@@ -4,7 +4,8 @@
    • Sin pérdida (por defecto): WebP lossless con el codificador oficial libwebp (WebAssembly, @jsquash/webp).
      Cada píxel queda igual al PNG; el archivo suele quedar entre 20 % y 40 % más liviano.
    • Alta calidad: WebP con pérdida mínima (calidad 92): visualmente igual y mucho más liviano.
-   Resultado: descargar cada una, todas en un ZIP, o guardarlas en SharePoint (carpeta de la Lectura diaria).
+   Resultado: guardar cada una o todas en la carpeta de su computador que usted elija (Chrome / Edge),
+   descargarlas en un ZIP, o guardarlas en SharePoint (carpeta de la Lectura diaria).
    ===================================================================== */
 window.LD_WEBP = (function () {
   const U = IC.ui, esc = U.esc;
@@ -36,6 +37,38 @@ window.LD_WEBP = (function () {
   const kb = (n) => n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
   const nombreWebp = (n) => n.replace(/\.png$/i, '') + '.webp';
   function bajar(blob, nombre) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nombre; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 3000); }
+  // Elegir carpeta del computador (File System Access API: Chrome y Edge en computador). Sin ella: descarga normal.
+  const puedeCarpeta = typeof window.showDirectoryPicker === 'function';
+  const cancelado = (e) => e && e.name === 'AbortError';
+  async function guardarUna(x) {
+    const nombre = nombreWebp(x.file.name);
+    if (typeof window.showSaveFilePicker !== 'function') return bajar(x.webp, nombre);
+    try {
+      const h = await window.showSaveFilePicker({ id: 'ld-webp', startIn: 'pictures', suggestedName: nombre, types: [{ description: 'Imagen WebP', accept: { 'image/webp': ['.webp'] } }] });
+      const w = await h.createWritable(); await w.write(x.webp); await w.close();
+      U.aviso('Guardada: ' + h.name, 'ok');
+    } catch (e) { if (!cancelado(e)) U.aviso('No se pudo guardar: ' + e.message, 'err'); }
+  }
+  async function libre(dir, nombre) {   // no reemplaza: si ya existe, agrega (2), (3)…
+    const base = nombre.replace(/\.webp$/i, '');
+    for (let k = 1; ; k++) {
+      const n = k === 1 ? nombre : base + ' (' + k + ').webp';
+      try { await dir.getFileHandle(n); } catch (e) { if (e.name === 'NotFoundError') return n; throw e; }
+    }
+  }
+  async function guardarEnCarpeta(L) {
+    let dir;
+    try { dir = await window.showDirectoryPicker({ id: 'ld-webp', mode: 'readwrite', startIn: 'pictures' }); }
+    catch (e) { if (!cancelado(e)) U.aviso('No se pudo abrir la carpeta: ' + e.message, 'err'); return; }
+    let n = 0, renombradas = 0;
+    try {
+      for (const x of L) {
+        const nombre = await libre(dir, nombreWebp(x.file.name)); if (nombre !== nombreWebp(x.file.name)) renombradas++;
+        const w = await (await dir.getFileHandle(nombre, { create: true })).createWritable(); await w.write(x.webp); await w.close(); n++;
+      }
+      U.aviso(n + ' imagen' + (n === 1 ? '' : 'es') + ' guardada' + (n === 1 ? '' : 's') + ' en la carpeta «' + dir.name + '»' + (renombradas ? ' (' + renombradas + ' ya existían: se guardaron con (2), (3)… sin reemplazar)' : ''), 'ok', 7000);
+    } catch (e) { U.aviso('Se guardaron ' + n + ' de ' + L.length + '. ' + e.message, 'err', 9000); }
+  }
   const cargarZip = () => window.JSZip ? Promise.resolve(window.JSZip) : new Promise((ok, mal) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js'; s.onload = () => ok(window.JSZip); s.onerror = () => mal(new Error('No se pudo cargar la librería ZIP.')); document.head.appendChild(s); });
 
   function vista(raiz) {
@@ -43,7 +76,7 @@ window.LD_WEBP = (function () {
       '<section class="ic-bloque"><div class="cuerpo">' +
       '<div class="ic-chips" id="wModo" style="margin-bottom:12px"><button data-m="sinperdida">Sin pérdida (idéntica al PNG)</button><button data-m="alta">Alta calidad (más liviana)</button></div>' +
       '<label class="wp-zona" id="wZona"><input type="file" id="wArch" accept="image/png" multiple hidden><b>Arrastre aquí sus PNG</b><span>o haga clic para elegirlos (puede seleccionar muchos a la vez)</span></label>' +
-      '<div class="ic-acciones" id="wAcc" hidden style="margin-top:12px"><button class="ic-btn" id="wZip">⬇ Descargar todas (ZIP)</button><button class="ic-btn sec" id="wSP">Guardar en SharePoint</button><span class="espacio"></span><button class="ic-btn sec" id="wLimpiar">Limpiar</button></div>' +
+      '<div class="ic-acciones" id="wAcc" hidden style="margin-top:12px">' + (puedeCarpeta ? '<button class="ic-btn" id="wCarp">📁 Guardar todas en una carpeta…</button><button class="ic-btn sec" id="wZip">⬇ Todas en ZIP</button>' : '<button class="ic-btn" id="wZip">⬇ Descargar todas (ZIP)</button>') + '<button class="ic-btn sec" id="wSP">Guardar en SharePoint</button><span class="espacio"></span><button class="ic-btn sec" id="wLimpiar">Limpiar</button></div>' +
       '</div></section><div id="wLista"></div>';
     const zona = raiz.querySelector('#wZona'), inp = raiz.querySelector('#wArch');
     const pintarModo = () => raiz.querySelectorAll('#wModo button').forEach((b) => b.classList.toggle('activo', b.dataset.m === modo));
@@ -56,8 +89,8 @@ window.LD_WEBP = (function () {
         '<div class="ic-tabla-caja"><table class="ic-tabla"><thead><tr><th>Imagen</th><th>Tamaño</th><th>PNG</th><th>WebP</th><th></th></tr></thead><tbody>' +
         lista.map((x, i) => '<tr><td><b>' + esc(x.file.name) + '</b></td><td class="nw">' + (x.ancho ? x.ancho + ' × ' + x.alto : '') + '</td><td class="nw">' + kb(x.file.size) + '</td>' +
           '<td class="nw">' + (x.webp ? kb(x.webp.size) + ' <span class="sec">' + (x.webp.size <= x.file.size ? '−' + Math.round(100 - 100 * x.webp.size / x.file.size) + ' %' : '+' + Math.round(100 * x.webp.size / x.file.size - 100) + ' %') + '</span>' : x.estado === 'error' ? '<span style="color:#b3261e">' + esc(x.error) + '</span>' : '<span class="sec">' + (x.estado === 'conv' ? 'Convirtiendo…' : 'En cola') + '</span>') + '</td>' +
-          '<td>' + (x.webp ? '<button class="ic-btn sec chico" data-b="' + i + '">⬇ WebP</button>' : '') + '</td></tr>').join('') + '</tbody></table></div>';
-      raiz.querySelectorAll('[data-b]').forEach((b) => { b.onclick = () => { const x = lista[+b.dataset.b]; bajar(x.webp, nombreWebp(x.file.name)); }; });
+          '<td>' + (x.webp ? '<button class="ic-btn sec chico" data-b="' + i + '">' + (typeof window.showSaveFilePicker === 'function' ? '💾 Guardar…' : '⬇ WebP') + '</button>' : '') + '</td></tr>').join('') + '</tbody></table></div>';
+      raiz.querySelectorAll('[data-b]').forEach((b) => { b.onclick = () => guardarUna(lista[+b.dataset.b]); });
     }
     let corriendo = false;
     async function procesar() {
@@ -80,6 +113,8 @@ window.LD_WEBP = (function () {
     ['dragenter', 'dragover'].forEach((ev) => zona.addEventListener(ev, (e) => { e.preventDefault(); zona.classList.add('sobre'); }));
     ['dragleave', 'drop'].forEach((ev) => zona.addEventListener(ev, (e) => { e.preventDefault(); zona.classList.remove('sobre'); }));
     zona.addEventListener('drop', (e) => agregar(e.dataTransfer.files));
+    const bC = raiz.querySelector('#wCarp'); if (bC) bC.onclick = () => guardarEnCarpeta(lista.filter((x) => x.webp));
+    if (!puedeCarpeta) raiz.querySelector('.cuerpo').insertAdjacentHTML('beforeend', '<p class="sec" style="margin:10px 0 0">Para elegir la carpeta donde se guardan, abra esta página en Chrome o Edge en el computador. En este navegador van a la carpeta de Descargas.</p>');
     raiz.querySelector('#wLimpiar').onclick = () => { lista = []; pintar(); };
     raiz.querySelector('#wZip').onclick = async (ev) => {
       const b = ev.currentTarget;
