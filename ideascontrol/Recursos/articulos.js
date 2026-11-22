@@ -1,6 +1,20 @@
 /* Centro de conocimiento de Ideas Control: lista de artículos (newsletters). Generado por scratchpad/news/gen.py. */
 window.IC_ARTICULOS = [
  {
+  "slug": "diferencias-de-nomina",
+  "titulo": "¿Sabes por qué tu nómina cambia? Las diferencias empiezan antes del cálculo",
+  "titulo1": "¿Sabes por qué tu nómina cambia? Las diferencias empiezan",
+  "titulo2": "antes del cálculo",
+  "resumen": "Las diferencias de nómina pueden comenzar en el registro de asistencia. Cuando relacionas cada novedad con su origen, puedes rastrear cualquier cambio inesperado.",
+  "tema": "Nómina",
+  "fecha": "2026-11-23",
+  "fecha_txt": "23 de noviembre de 2026",
+  "minutos": 4,
+  "herramienta": "Diagnóstico de Madurez en Tiempo y Asistencia",
+  "herramienta_url": "https://www.mykadosh.com/ideascontrol/DiagnosticoMadurezTyA/",
+  "url": "https://www.mykadosh.com/ideascontrol/Recursos/diferencias-de-nomina/"
+ },
+ {
   "slug": "control-de-asistencia-remoto",
   "titulo": "Control de asistencia remoto: ¿y si tu equipo no trabaja siempre en sede?",
   "titulo1": "Control de asistencia remoto:",
