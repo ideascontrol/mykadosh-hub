@@ -4,6 +4,40 @@
    Las listas usan nombres internos sin tildes; Title guarda el ID de negocio.
    ===================================================================== */
 window.IC = window.IC || {};
+
+/* ---------- MODO PRUEBA (simulacro de restauración) ----------
+   Lo activa la app Respaldo › Restaurar, solo en la pestaña que abre (sessionStorage 'ic_modo_prueba').
+   En modo prueba: el sitio IC Apps se reemplaza por el sitio de prueba, y TODA escritura que no vaya al sitio de prueba
+   se bloquea (Graph, SharePoint y bibliotecas de otros sitios). Así ninguna prueba toca los datos reales. */
+IC.prueba = (function () {
+  let P = null; try { P = JSON.parse(sessionStorage.getItem('ic_modo_prueba') || 'null'); } catch (e) { P = null; }
+  if (!P || !P.ruta || !P.siteId || !P.web) return null;
+  const leer = (m) => !m || /^(GET|HEAD|OPTIONS)$/i.test(m);
+  const fetch0 = window.fetch.bind(window);
+  window.fetch = function (input, init) {
+    const url = String(typeof input === 'string' ? input : (input && input.url) || ''), m = (init && init.method) || (input && input.method) || 'GET';
+    const permitido = leer(m) || url.indexOf('login.microsoftonline.com') >= 0 ||
+      (url.indexOf('graph.microsoft.com') >= 0 && (url.indexOf('/sites/' + P.siteId) >= 0 || url.indexOf('/sites/' + encodeURIComponent(P.siteId)) >= 0)) ||
+      url.indexOf(P.web + '/_api/') === 0;
+    if (!permitido && (url.indexOf('graph.microsoft.com') >= 0 || url.indexOf('.sharepoint.com') >= 0)) {
+      return Promise.reject(Object.assign(new Error('Modo prueba: esta acción escribiría fuera del sitio de prueba y se bloqueó para proteger los datos reales.'), { status: 403 }));
+    }
+    return fetch0(input, init);
+  };
+  function aviso() {
+    if (document.getElementById('icPrueba')) return;
+    const b = document.createElement('div'); b.id = 'icPrueba';
+    b.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:5000;background:#b3261e;color:#fff;font:600 14px/1.4 Inter,system-ui,sans-serif;padding:8px 14px;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;box-shadow:0 -2px 10px rgba(0,0,0,.25)';
+    b.innerHTML = '<span>MODO PRUEBA · Está viendo el sitio de prueba (' + P.ruta + '), no los datos reales. Lo que guarde aquí no afecta IC Apps.</span>';
+    const x = document.createElement('button'); x.textContent = 'Salir del modo prueba';
+    x.style.cssText = 'background:#fff;color:#b3261e;border:0;border-radius:8px;padding:5px 12px;font-weight:700;cursor:pointer';
+    x.onclick = () => { try { sessionStorage.removeItem('ic_modo_prueba'); } catch (e) { /* */ } location.reload(); };
+    b.appendChild(x); document.body.appendChild(b); document.body.style.paddingBottom = '44px';
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', aviso); else aviso();
+  return P;
+})();
+
 IC.graph = (function () {
   const BASE = 'https://graph.microsoft.com/v1.0';
   const espera = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -35,6 +69,7 @@ IC.graph = (function () {
   // ---------- Sitio y listas ----------
   let sitioId = null; const listas = {};
   async function sitio(host, ruta) {
+    if (IC.prueba && ruta === IC.prueba.origen) { sitioId = IC.prueba.siteId; return sitioId; }   // modo prueba: el sitio IC Apps es el de prueba
     if (!sitioId) sitioId = (await llamar('GET', '/sites/' + host + ':' + ruta + '?$select=id')).id;
     return sitioId;
   }

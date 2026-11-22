@@ -5,7 +5,7 @@
    Nada se guarda en este repositorio (es público): el respaldo queda solo en el equipo de quien lo descarga.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-117', nombre: 'Respaldo de IC Apps', version: '0.1.1' },
+  app: { id: 'APP-117', nombre: 'Respaldo de IC Apps', version: '0.2.0' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -17,6 +17,8 @@ window.CFG = {
   spScopes: ['https://ideascontrolsas.sharepoint.com/AllSites.FullControl'],
   logo: '/ideascontrol/assets/ideascontrol.webp',
   admins: ['operaciones@ideascontrol.com'],
+  spRaiz: 'https://ideascontrolsas.sharepoint.com',
+  prueba: { ruta: '/sites/ICAppsPrueba', titulo: 'IC Apps Prueba' },   // sitio para simulacros de restauración
   // Columnas internas de SharePoint que no son datos del negocio (no se copian)
   omitir: ['ContentType', 'Attachments', 'Edit', 'LinkTitleNoMenu', 'LinkTitle', 'DocIcon', 'ItemChildCount', 'FolderChildCount', '_UIVersionString',
     '_ComplianceFlags', '_ComplianceTag', '_ComplianceTagWrittenTime', '_ComplianceTagUserId', 'AppAuthorLookupId', 'AppEditorLookupId', '@odata.etag']

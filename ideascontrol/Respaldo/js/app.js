@@ -25,9 +25,9 @@ const App = { usuario: null };
 
   async function permisos(titulo) {
     const base = "web/lists/getbytitle('" + titulo.replace(/'/g, "''") + "')";
-    const l = await sp(base + '?$select=HasUniqueRoleAssignments');
+    const l = await sp(base + '?$select=HasUniqueRoleAssignments,ReadSecurity,WriteSecurity');
     const a = (await sp(base + '/roleassignments?$expand=Member,RoleDefinitionBindings')).value || [];
-    return { unicos: !!l.HasUniqueRoleAssignments, asignaciones: a.map((x) => ({ principal: x.Member && (x.Member.Title || x.Member.LoginName), tipo: x.Member && (x.Member.PrincipalType === 8 ? 'Grupo' : x.Member.PrincipalType === 1 ? 'Persona' : 'Otro'),
+    return { unicos: !!l.HasUniqueRoleAssignments, lectura_items: l.ReadSecurity, escritura_items: l.WriteSecurity, asignaciones: a.map((x) => ({ principal: x.Member && (x.Member.Title || x.Member.LoginName), tipo: x.Member && (x.Member.PrincipalType === 8 ? 'Grupo' : x.Member.PrincipalType === 1 ? 'Persona' : 'Otro'),
       correo: x.Member && x.Member.Email || '', niveles: (x.RoleDefinitionBindings || []).map((r) => r.Name || ROLES[r.RoleTypeKind] || r.RoleTypeKind) })) };
   }
 
@@ -77,7 +77,8 @@ const App = { usuario: null };
         const items = await G.todas('/sites/' + sid + '/lists/' + l.id + '/items?$expand=fields&$top=999');
         const L = { nombre: l.displayName, descripcion: l.description || '', creada: l.createdDateTime, modificada: l.lastModifiedDateTime,
           columnas: cols.filter((c) => !c.hidden && CFG.omitir.indexOf(c.name) < 0).map((c) => ({ nombre: c.name, titulo: c.displayName, tipo: Object.keys(c).find((k) => ['text', 'number', 'dateTime', 'boolean', 'choice', 'lookup', 'personOrGroup', 'currency', 'calculated', 'hyperlinkOrPicture'].indexOf(k) >= 0) || '',
-            multilinea: !!(c.text && c.text.allowMultipleLines), opciones: c.choice ? c.choice.choices : null, indexada: !!c.indexed, requerida: !!c.required, solo_lectura: !!c.readOnly })),
+            multilinea: !!(c.text && c.text.allowMultipleLines), opciones: c.choice ? c.choice.choices : null, indexada: !!c.indexed, requerida: !!c.required, solo_lectura: !!c.readOnly,
+            formato_fecha: c.dateTime ? c.dateTime.format : undefined, decimales: c.number ? c.number.decimalPlaces : undefined, texto_libre: c.choice ? !!c.choice.allowTextEntry : undefined, descripcion: c.description || undefined })),
           items: items.map((x) => { const f = Object.assign({}, x.fields); CFG.omitir.forEach((k) => delete f[k]); return Object.assign({ _id: x.id }, f, { _creado_por: x.createdBy && x.createdBy.user && x.createdBy.user.email || '', _modificado_por: x.lastModifiedBy && x.lastModifiedBy.user && x.lastModifiedBy.user.email || '' }); }) };
         if (permOk) { try { L.permisos = await permisos(l.displayName); } catch (e) { permOk = false; log('No se pudieron leer los permisos (' + e.message + '). El respaldo sigue sin ellos.', 'warn'); } }
         R.listas.push(L);
@@ -116,7 +117,8 @@ const App = { usuario: null };
   }
 
   function vista(c) {
-    c.innerHTML = '<div class="ic-barra"><div><h1 class="ic-titulo">Respaldo de IC Apps</h1><p class="ic-subtitulo" style="margin:0">Descarga a su computador una copia completa del sitio IC Apps. Solo lee: no cambia nada en SharePoint.</p></div></div>' +
+    if ((location.hash || '').slice(1) === 'restaurar') return RS_RESTAURAR.vista(c);
+    c.innerHTML = '<div class="ic-chips" style="margin-bottom:14px"><button class="activo">Respaldar</button><button onclick="location.hash=\'restaurar\'">Restaurar / simulacro</button></div><div class="ic-barra"><div><h1 class="ic-titulo">Respaldo de IC Apps</h1><p class="ic-subtitulo" style="margin:0">Descarga a su computador una copia completa del sitio IC Apps. Solo lee: no cambia nada en SharePoint.</p></div></div>' +
       '<section class="ic-bloque"><div class="cuerpo"><p style="margin-top:0">Se descargan:</p><ul class="rs-ul">' +
       '<li><b>Excel</b> para leer: índice de listas, columnas de cada lista, permisos, grupos con sus miembros, inventario de archivos y una hoja con los datos de cada lista.</li>' +
       '<li><b>JSON</b> completo: el mismo contenido sin recortes. Es el que sirve para reconstruir el sitio si algo se pierde.</li>' +
@@ -158,7 +160,7 @@ const App = { usuario: null };
       const email = String(cuenta.username || '').toLowerCase();
       if (CFG.admins.indexOf(email) < 0) { U.pantalla(raiz, { logo: CFG.logo, titulo: 'Sin acceso', texto: 'El respaldo es solo para la Dirección de Operaciones.', boton: 'Volver al portal', alClic: () => IC.portal.volver() }); return; }
       App.usuario = { email, nombre: cuenta.name || email };
-      encabezado(); vista(raiz);
+      encabezado(); vista(raiz); window.addEventListener('hashchange', () => vista(raiz));
     } catch (e) { console.error(e); U.pantalla(raiz, { logo: CFG.logo, titulo: 'No se pudo cargar la app', texto: U.mensajeError(e), boton: 'Reintentar', alClic: () => location.reload() }); }
   }
   window.addEventListener('DOMContentLoaded', arrancar);
