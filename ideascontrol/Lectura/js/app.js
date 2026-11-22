@@ -453,7 +453,7 @@ const App = { usuario: null, ex: null, plan: null, word: null, dia: '', lect: nu
     const u = App.usuario;
     document.getElementById('encabezado').innerHTML = '<a href="#"><img class="logo" src="' + CFG.logo + '" alt="Ideas Control"></a>' +
       '<div class="app-nombre"><b>' + esc(CFG.app.nombre) + '</b><span>Lectura diaria · v' + CFG.app.version + '</span></div><div class="espacio"></div>' +
-      '<nav class="ld-nav"><a href="#" data-r="">Día</a><a href="#generar" data-r="generar">Generar versículos</a><a href="#dias" data-r="dias">Días</a><a href="#archivos" data-r="archivos">Archivos</a></nav>' +
+      '<nav class="ld-nav"><a href="#" data-r="">Día</a><a href="#generar" data-r="generar">Generar versículos</a><a href="#dias" data-r="dias">Días</a><a href="#archivos" data-r="archivos">Archivos</a><a href="#webp" data-r="webp">PNG → WebP</a></nav>' +
       '<div class="ic-user">' + IC.portal.boton() + '<div class="datos"><b>' + esc(u.nombre) + '</b><span>Uso personal</span></div><div class="ic-avatar">' + esc(u.iniciales) + '</div><button class="ic-btn sec chico" id="btnSalir">Salir</button></div>';
     document.getElementById('encabezado').hidden = false;
     document.getElementById('btnSalir').onclick = () => IC.auth.salir();
@@ -828,7 +828,7 @@ const App = { usuario: null, ex: null, plan: null, word: null, dia: '', lect: nu
       leerPlantillas().catch(() => { /* originales */ });
       await leerConf();
       if (sinExcel) { App.ex = { filas: [], ultima: 1 }; App.plan = App.plan || {}; location.hash = '#archivos'; }
-      U.enrutar({ '': () => vistaDia(raiz), generar: () => vistaGenerar(raiz), dias: () => vistaDias(raiz), archivos: () => vistaArchivos(raiz) }, marcarNav);
+      U.enrutar({ '': () => vistaDia(raiz), generar: () => vistaGenerar(raiz), dias: () => vistaDias(raiz), archivos: () => vistaArchivos(raiz), webp: () => LD_WEBP.vista(raiz) }, marcarNav);
       if (sinExcel) U.aviso('No pude abrir el Excel en SharePoint. Súbalo en «Archivos».', 'warn', 9000);
     } catch (e) {
       console.error(e);
