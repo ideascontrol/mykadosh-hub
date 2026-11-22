@@ -70,22 +70,22 @@ window.MKT_IMG = (function () {
 
   // ---------- Variedad entre publicaciones: personas y ubicación del logo (fijas por pieza, distintas entre piezas seguidas) ----------
   const PERSONAS = [
-    'mujer de unos 30 años, cabello negro largo y liso, blusa azul claro',
-    'hombre de unos 50 años, canoso, barba corta, camisa blanca y chaleco',
-    'mujer de unos 45 años, cabello rizado castaño, gafas, blazer gris',
-    'hombre joven de unos 25 años, piel morena, cabello corto rizado, polo de trabajo',
-    'mujer de unos 55 años, cabello corto canoso, saco vino tinto',
-    'hombre de unos 35 años, piel trigueña, sin barba, camisa a cuadros',
-    'mujer joven de unos 28 años, piel morena, trenzas, camisa de dotación',
-    'hombre de unos 40 años, calvo, gafas de marco negro, suéter azul marino',
-    'grupo de tres personas de edades y rasgos distintos conversando',
-    'mujer de unos 38 años, cabello recogido, chaleco de supervisora de planta',
-    'hombre de unos 60 años, bigote, camisa manga larga beige',
-    'mujer de unos 33 años, cabello ondulado rojizo, chaqueta de jean'
+    'operaria de planta de unos 35 años, piel trigueña, cabello recogido bajo cofia, dotación azul y tapabocas en el cuello',
+    'auxiliar de bodega de unos 25 años, piel morena, chaleco reflectivo, guantes de carga',
+    'analista de nómina de unos 45 años, gafas, cabello corto, camisa sencilla, frente a un computador con planillas',
+    'supervisor de turno de unos 50 años, canoso, casco blanco y chaleco, tabla con planilla en la mano',
+    'auxiliar de aseo de unos 40 años, uniforme de empresa de aseo sin logos, en la recepción de una sede',
+    'vigilante de unos 55 años, bigote, uniforme oscuro sin logos, en una portería junto al biométrico',
+    'agente de contact center de unos 22 años, diadema puesta, buzo informal',
+    'jefe de Gestión Humana de unos 48 años, cabello ondulado, blazer gris, en una oficina con carpetas',
+    'maestro de obra de unos 45 años, piel curtida por el sol, casco amarillo y botas',
+    'trabajadora de cultivo o empacadora de unos 30 años, delantal, botas de caucho, cabello en trenza',
+    'cuadrilla de tres trabajadores de distintas edades llegando al turno y marcando en el biométrico',
+    'conductor de reparto de unos 38 años, gorra, chaqueta de trabajo, junto a un furgón sin marcas'
   ];
-  const POS_LOGO = ['abajo a la izquierda', 'arriba a la izquierda', 'abajo a la derecha', 'arriba a la derecha', 'abajo al centro', 'arriba al centro'];
+  const POS_LOGO = ['esquina inferior izquierda', 'esquina superior izquierda', 'esquina inferior derecha', 'esquina superior derecha'];   // siempre en una esquina
   const numDe = (id) => { const m = String(id || '').match(/(\d+)\s*$/); if (m) return +m[1]; let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) % 9973; return h; };
-  const variedad = (id) => { const n = numDe(id); return { personas: PERSONAS[n % PERSONAS.length], logo: POS_LOGO[(n * 5) % POS_LOGO.length] }; };
+  const variedad = (id) => { const n = numDe(id); return { personas: PERSONAS[n % PERSONAS.length], logo: POS_LOGO[(n * 3) % POS_LOGO.length] }; };
 
   // ---------- el prompt de una publicación (o de una lámina del carrusel: k = 1…N) ----------
   // Varias imágenes: carrusel, o cualquier pieza (p. ej. TikTok en fotos) cuyo diseño trae 2 o más láminas
@@ -113,7 +113,7 @@ window.MKT_IMG = (function () {
       'Formato: ' + (p.formato || 'Imagen') + (vid && lam ? ' → imagen para el TRAMO ' + k + ' de ' + N + ' del video (se usa como clip en CapCut; todas con la misma línea visual)' : vid ? ' → genera la PORTADA del video' : lam ? ' → imagen ' + k + ' de ' + N + ' (todas con la misma línea visual)' : esCarrusel(p) ? ' → genera UNA IMAGEN POR LÁMINA, todas con la misma línea visual' : ''),
       'Fecha de publicación: ' + M().fLarga(p.fecha),
       'Tema: ' + limpio(p.titulo || t.tema || '')];
-    L.push('Qué se ve' + (lam ? ' (línea visual de todas las imágenes)' : '') + ': ' + (d.descripcion || 'propón una escena que represente el tema con personas reales en un contexto laboral colombiano'));
+    L.push('Qué se ve' + (lam ? ' (línea visual de todas las imágenes)' : '') + ': ' + (d.descripcion || 'propón una escena documental que represente el tema, con trabajadores reales en una empresa colombiana'));
     const va = variedad(p.Title);
     L.push('Ubicación del logo (obligatoria en esta pieza): ' + va.logo + (N > 1 ? ', la misma en todas las imágenes de esta pieza' : ''));
     L.push('Personas (si la pieza lleva personas): ' + va.personas + '. ' + (N > 1 ? 'Son las mismas personas en todas las imágenes de esta pieza.' : 'Deben ser personas DISTINTAS a las de las imágenes anteriores de esta conversación: otra cara, edad, peinado y ropa.'));

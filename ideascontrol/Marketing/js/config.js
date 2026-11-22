@@ -4,7 +4,7 @@
    Datos: MKT_Temas, MKT_Publicaciones, MKT_Metricas (IC Apps). Piezas: Documentos/Marketing/Piezas/<PUB>/
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-112', nombre: 'Marketing', version: '0.10.6' },
+  app: { id: 'APP-112', nombre: 'Marketing', version: '0.10.7' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -101,5 +101,5 @@ window.CFG = {
     historia: '1080 × 1920 px (vertical 9:16)'
   },
   // Guía de marca para el brief de las piezas (ChatGPT / Canva / CapCut)
-  marca: 'Marca Ideas Control: azul #0E76BC, teal #159090, dorado #C9A227, azul oscuro #0B2945; logo de huella (azul/verde/dorado) arriba a la izquierda; tipografía sans-serif (Inter/Montserrat); estilo limpio, profesional, B2B, Colombia. Medidas: Facebook e Instagram 1080×1350, LinkedIn 546×312, historia/Reel 1080×1920. Pocas palabras en la imagen; el mensaje largo va en el copy.'
+  marca: 'Marca Ideas Control: azul #0E76BC, teal #159090, dorado #C9A227, azul oscuro #0B2945; logo de huella (azul/verde/dorado) pequeño en una esquina; tipografía sans-serif (Inter/Montserrat); fotografía corporativa, industrial y documental, con trabajadores reales (no modelos ni personajes de IA) en empresas colombianas; los colores de marca solo en textos y elementos gráficos, no en la foto. Medidas: Facebook e Instagram 1080×1350, LinkedIn 546×312, historia/Reel 1080×1920. Pocas palabras en la imagen; el mensaje largo va en el copy.'
 };
