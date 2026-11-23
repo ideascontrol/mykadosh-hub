@@ -356,9 +356,12 @@ const App = { usuario: null, c: null, base: null, hist: null, filtro: { q: '', c
       if (!cuenta) { U.pantalla(raiz, { logo: CFG.logo, titulo: CFG.app.nombre, texto: 'Ingrese con su cuenta de Microsoft de Ideas Control.', boton: 'Iniciar sesión', alClic: () => IC.auth.entrar() }); return; }
       try { sessionStorage.removeItem('ic_volver_url'); } catch (e) { /* sin almacenamiento */ }
       const email = String(cuenta.username || '').toLowerCase();
-      if (CFG.usuarios.indexOf(email) < 0) { U.pantalla(raiz, { logo: CFG.logo, titulo: 'Sin acceso', texto: 'Esta app es solo para Gerencia General, Dirección Comercial y Dirección de Operaciones.', boton: 'Volver al portal', alClic: () => IC.portal.volver() }); return; }
-      App.usuario = { nombre: cuenta.name || email, email, iniciales: U.fmt.iniciales(cuenta.name || email) };
       await G.sitio(CFG.sitio.host, CFG.sitio.ruta);
+      // Acceso: la lista fija de CFG.usuarios, o quien en Comercial (SYS_Usuarios) es administrador o gestiona productos
+      let ok = CFG.usuarios.indexOf(email) >= 0;
+      if (!ok) { try { const u = (await G.items('SYS_Usuarios')).find((x) => String(x.email || '').toLowerCase() === email && x.estado === 'ACTIVO'); ok = !!u && (u.rol === 'ADMIN' || u.gestiona_productos === true); } catch (e) { ok = false; } }
+      if (!ok) { U.pantalla(raiz, { logo: CFG.logo, titulo: 'Sin acceso', texto: 'Esta app es para quienes gestionan productos y precios en Comercial.', boton: 'Volver al portal', alClic: () => IC.portal.volver() }); return; }
+      App.usuario = { nombre: cuenta.name || email, email, iniciales: U.fmt.iniciales(cuenta.name || email) };
       await G.listaId(CFG.lista);   // comprueba que la lista exista
       borrarBorrador(); App.c = nuevo();
       cargarHist().catch(() => { /* sugerencias opcionales */ });

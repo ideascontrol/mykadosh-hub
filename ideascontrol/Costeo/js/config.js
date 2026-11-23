@@ -4,7 +4,7 @@
    Cada cálculo se usa una vez y se guarda como registro histórico (CAL_Costeos).
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-110', nombre: 'Calculadora de costos y precios', version: '0.1.3' },
+  app: { id: 'APP-110', nombre: 'Calculadora de costos y precios', version: '0.1.4' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -15,7 +15,7 @@ window.CFG = {
   sitio: { host: 'ideascontrolsas.sharepoint.com', ruta: '/sites/ICApps' },
   logo: '/ideascontrol/assets/ideascontrol.webp',
   lista: 'CAL_Costeos',
-  // Quién puede usar la app (Gerencia General, Dirección Comercial y Dirección de Operaciones)
+  // Quién puede usar la app: estos correos + quien en Comercial (Administración › Usuarios) es administrador o «Gestiona productos: Sí»
   usuarios: ['operaciones@ideascontrol.com', 'patricia@ideascontrol.com', 'margarita@ideascontrol.com'],
   // Quién puede borrar un registro del historial (solo para corregir errores)
   puedenBorrar: ['operaciones@ideascontrol.com'],

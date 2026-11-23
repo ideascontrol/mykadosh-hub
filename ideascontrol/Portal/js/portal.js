@@ -107,7 +107,9 @@
       IC.graph.items('SYS_Usuarios').then((r) => {
         const u = r.find((x) => String(x.email || '').toLowerCase() === email && x.estado === 'ACTIVO');
         acceso.APP101 = u ? (u.rol === 'ADMIN' ? 'Administrador' : 'Comercial') : false;
-      }).catch(() => { acceso.APP101 = false; }),   // sin permiso sobre la lista = sin acceso a Comercial
+        // Calculadora de costos: Dirección de Operaciones, o en Comercial administrador / «Gestiona productos»
+        acceso.APP110 = ['operaciones@ideascontrol.com', 'patricia@ideascontrol.com', 'margarita@ideascontrol.com'].indexOf(email) >= 0 ? 'Gestiona precios' : u && (u.rol === 'ADMIN' || u.gestiona_productos === true) ? 'Gestiona precios' : false;
+      }).catch(() => { acceso.APP101 = false; acceso.APP110 = ['operaciones@ideascontrol.com', 'patricia@ideascontrol.com', 'margarita@ideascontrol.com'].indexOf(email) >= 0 ? 'Gestiona precios' : false; }),   // sin permiso sobre la lista = sin acceso a Comercial
       Promise.all([
         IC.graph.items('SYS_Accesos').catch(() => []),
         IC.graph.items('OPE_Tecnicos').catch(() => [])
