@@ -5,7 +5,8 @@
    Cálculo (igual que el Excel simple):
      línea «Por unidad» = cantidad × costo × cantidad a calcular · línea «Total» = cantidad × costo (se reparte)
      prestaciones = % × líneas de familia Personal · costo unitario = total ÷ cantidad a calcular
-     precio = costo unitario ÷ (1 − margen − comisión − otros) · IVA aparte
+     precio = costo unitario ÷ (1 − margen − comisión − otros), redondeado hacia arriba al múltiplo de $1.000 · IVA aparte
+     (utilidad y margen real se calculan con el precio redondeado)
    ===================================================================== */
 const App = { usuario: null, c: null, base: null, hist: null, filtro: { q: '', categoria: '' } };
 
@@ -51,11 +52,12 @@ const App = { usuario: null, c: null, base: null, hist: null, filtro: { q: '', c
     const total = tot.reduce((s, x) => s + x, 0) + prest;
     const costoU = q > 0 ? total / q : 0;
     const resto = 1 - num(c.margen) - num(c.comision) - num(c.otros);
-    const precio = resto > 0 ? costoU / resto : null;
+    const precioCalc = resto > 0 ? costoU / resto : null;
+    const precio = precioCalc === null ? null : Math.ceil(precioCalc / 1000 - 1e-9) * 1000;   // múltiplo de $1.000 hacia arriba
     const precioIva = precio === null ? null : precio * (1 + num(c.iva));
     const utilidad = precio === null ? null : precio * (1 - num(c.comision) - num(c.otros)) - costoU;
     const margenReal = precio ? utilidad / precio : null;
-    return { q, tot, prest, total, costoU, resto, precio, precioIva, utilidad, margenReal, faltaTasa, personal,
+    return { q, tot, prest, total, costoU, resto, precio, precioCalc, precioIva, utilidad, margenReal, faltaTasa, personal,
       precioTotal: precio === null ? null : precio * q, precioIvaTotal: precioIva === null ? null : precioIva * q, utilidadTotal: utilidad === null ? null : utilidad * q };
   }
   // Cada «Nuevo cálculo» empieza limpio: no se conserva borrador (solo se borra el de versiones anteriores)
@@ -180,7 +182,7 @@ const App = { usuario: null, c: null, base: null, hist: null, filtro: { q: '', c
     const v = (x) => x === null ? '—' : cop(x), a = aviso(c, r);
     return '<table class="cal-res"><thead><tr><th></th><th>Por unidad</th><th>Total (' + esc(verNum(r.q)) + ')</th></tr></thead><tbody>' +
       '<tr><td>Costo</td><td>' + cop(r.costoU) + '</td><td>' + cop(r.total) + '</td></tr>' +
-      '<tr class="grande"><td>Precio sugerido<span>antes de IVA</span></td><td>' + v(r.precio) + '</td><td>' + v(r.precioTotal) + '</td></tr>' +
+      '<tr class="grande"><td>Precio sugerido<span>antes de IVA · redondeado al múltiplo de $1.000 superior' + (r.precio !== null && Math.abs(r.precio - r.precioCalc) >= 0.5 ? ' (calculado: ' + cop(r.precioCalc) + ')' : '') + '</span></td><td>' + v(r.precio) + '</td><td>' + v(r.precioTotal) + '</td></tr>' +
       '<tr><td>Precio con IVA</td><td><b>' + v(r.precioIva) + '</b></td><td><b>' + v(r.precioIvaTotal) + '</b></td></tr>' +
       '<tr><td>Utilidad</td><td>' + v(r.utilidad) + '</td><td>' + v(r.utilidadTotal) + '</td></tr>' +
       '<tr><td>Margen real</td><td><b>' + (r.margenReal === null ? '—' : pct(r.margenReal)) + '</b></td><td></td></tr></tbody></table>' +
