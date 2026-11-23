@@ -4,7 +4,7 @@
    está en la lista SYS_Microapps (columna url), esa tiene prioridad.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-100', nombre: 'Portal de Ideas Control', version: '0.2.1' },
+  app: { id: 'APP-100', nombre: 'Portal de Ideas Control', version: '0.2.2' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -52,20 +52,20 @@ window.APPS = [
   { grupo: 'Gestión Humana y Administrativa', id: 'APP-107', nombre: 'Novedades del personal', icono: 'novedad', color: '',
     texto: 'Permisos, vacaciones, licencias, incapacidades y cambios de horario. Se tramitan solo con la Dirección de Operaciones.',
     url: '/ideascontrol/Novedades/', datos: 'SHAREPOINT', acceso: 'APP107' },
-  // ---------- Comercial ----------
-  { grupo: 'Comercial', id: 'APP-101', nombre: 'Cotizaciones', icono: 'comercial', color: 'teal',
+  // ---------- Gestión Comercial ----------
+  { grupo: 'Gestión Comercial', id: 'APP-101', nombre: 'Cotizaciones', icono: 'comercial', color: 'teal',
     texto: 'Nueva cotización, cotizaciones con PDF, pendientes de seguimiento, contenido para compartir y tablero comercial.',
     url: '/ideascontrol/Comercial/', datos: 'SHAREPOINT', acceso: 'APP101' },
-  { grupo: 'Comercial', id: 'APP-115', nombre: 'Clientes', icono: 'comercial', color: 'dorado',
+  { grupo: 'Gestión Comercial', id: 'APP-115', nombre: 'Clientes', icono: 'comercial', color: 'dorado',
     texto: 'Empresas y contactos: prospectos y clientes, sus sedes y personas de contacto.',
     url: '/ideascontrol/Clientes/', datos: 'SHAREPOINT', acceso: 'APP101' },
-  { grupo: 'Comercial', id: 'APP-101-PRD', nombre: 'Productos', icono: 'calc', color: '',
+  { grupo: 'Gestión Comercial', id: 'APP-101-PRD', nombre: 'Productos', icono: 'calc', color: '',
     texto: 'Catálogo con foto, ficha técnica, precios (también por volumen) e inventario.',
     url: '/ideascontrol/Comercial/#productos', datos: 'SHAREPOINT', fija: true, acceso: 'APP101' },
-  { grupo: 'Comercial', id: 'APP-110', nombre: 'Calculadora de costos y precios', icono: 'calc', color: 'dorado',
+  { grupo: 'Gestión Comercial', id: 'APP-110', nombre: 'Calculadora de costos y precios', icono: 'calc', color: 'dorado',
     texto: 'Precio sugerido a partir de los costos directos de un producto o servicio. Cada cálculo queda guardado en el historial.',
     url: '/ideascontrol/Costeo/', datos: 'SHAREPOINT', acceso: 'APP110' },   // Comercial: administrador o «Gestiona productos»
-  { grupo: 'Comercial', id: 'APP-112', nombre: 'Marketing', icono: 'mkt', color: 'teal',
+  { grupo: 'Gestión Comercial', id: 'APP-112', nombre: 'Marketing', icono: 'mkt', color: 'teal',
     texto: 'Plan de contenidos de redes: temas, publicaciones por red, aprobación (mínimo 2), métricas y resumen para gerencia.',
     url: '/ideascontrol/Marketing/', datos: 'SHAREPOINT', solo: ['operaciones@ideascontrol.com', 'patricia@ideascontrol.com', 'margarita@ideascontrol.com'] },
   // ---------- Gestión Documental ----------
