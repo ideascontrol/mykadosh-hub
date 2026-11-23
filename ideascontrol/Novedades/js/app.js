@@ -121,11 +121,12 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
   // =====================================================================
   // FORMULARIO DE SOLICITUD (colaborador, o Dirección a nombre de un colaborador)
   // =====================================================================
-  function vistaForm(c, aNombre) {
+  function vistaForm(c, aNombre, ed) {   // ed: solicitud propia que se modifica
     const u = App.usuario;
+    if (ed && !puedeModificar(ed)) { c.innerHTML = '<a class="ic-volver" href="#mias">← Mis solicitudes</a><div class="ic-alerta">Esta solicitud ya no se puede modificar: solo se puede hasta ' + CFG.diasModificar + ' días antes de su inicio, y mientras esté solicitada o aprobada. Pida el cambio a la Dirección de Operaciones.</div>'; return; }
     const tecOps = U.opcionesPersonal(Ope.D.personal);   // misma lista agrupada que «Responsable» (Ideas Control / Administrativo / Técnicos de campo)
-    c.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a><h1 class="ic-titulo">' + (aNombre ? 'Registrar novedad' : 'Nueva solicitud') + '</h1>' +
-      '<p class="ic-subtitulo">' + (aNombre ? 'Registre la novedad a nombre del colaborador. Puede dejarla aprobada de una vez.' : 'La Dirección de Operaciones revisa el impacto en la programación y le responde aquí.') + '</p>' +
+    c.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a><h1 class="ic-titulo">' + (ed ? 'Modificar ' + esc(ed.Title) : aNombre ? 'Registrar novedad' : 'Nueva solicitud') + '</h1>' +
+      '<p class="ic-subtitulo">' + (ed ? 'Puede modificarla hasta ' + CFG.diasModificar + ' días antes del inicio.' + (ed.estado === 'APROBADA' ? ' <b>Ya estaba aprobada: al guardar vuelve a quedar «Solicitada» y la Dirección debe aprobarla de nuevo.</b>' : '') : aNombre ? 'Registre la novedad a nombre del colaborador. Puede dejarla aprobada de una vez.' : 'La Dirección de Operaciones revisa el impacto en la programación y le responde aquí.') + '</p>' +
       '<form class="ic-form" id="fNov" autocomplete="off"><div class="ic-campos">' +
       (aNombre ? U.campo({ name: 'tecnico_id', label: 'Colaborador', t: 'select', op: tecOps, req: true, c: 'c6' }) : '') +
       U.campo({ name: 'tipo', label: 'Tipo de novedad', t: 'select', op: TIPOS_NOV.map((t) => [t.id, t.nombre]), req: true, c: aNombre ? 'c6' : 'c6' }) +
@@ -138,8 +139,13 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
       U.campo({ name: 'motivo', label: 'Motivo / observaciones', t: 'textarea', c: 'c12', filas: 3, req: true }) +
       (aNombre ? '<div class="ic-campo c12"><label class="ic-check"><input type="checkbox" name="aprobar"> <span>Dejarla aprobada (si es técnico, queda bloqueado en la Programación)</span></label></div>' : '') +
       '</div><div id="nota"></div><div id="resDias" class="ope-dia-panel"></div><div id="imp" class="ope-val-panel"></div>' +
-      '<div class="ic-acciones"><a class="ic-btn sec" href="#">Cancelar</a><button class="ic-btn" id="bEnviar">' + (aNombre ? 'Registrar' : 'Enviar solicitud') + '</button></div></form>';
+      '<div class="ic-acciones"><a class="ic-btn sec" href="' + (ed ? '#mias' : '#') + '">Cancelar</a><button class="ic-btn" id="bEnviar">' + (ed ? 'Guardar cambios' : aNombre ? 'Registrar' : 'Enviar solicitud') + '</button></div></form>';
     const f = c.querySelector('#fNov');
+    if (ed) {   // precarga
+      f.tipo.value = ed.tipo; f.fecha_inicio.value = ed.fecha_inicio; f.fecha_fin.value = ed.fecha_fin || ed.fecha_inicio; f.motivo.value = ed.motivo || '';
+      f.hora_inicio.value = ed.hora_inicio || ''; f.hora_fin.value = ed.hora_fin || ''; f.modalidad.value = ed.modalidad || 'DIAS';
+      c.querySelectorAll('#chMod button').forEach((x) => x.classList.toggle('activo', x.dataset.m === f.modalidad.value));
+    }
     c.querySelectorAll('#chMod button').forEach((b) => { b.onclick = () => { c.querySelectorAll('#chMod button').forEach((x) => x.classList.toggle('activo', x === b)); f.modalidad.value = b.dataset.m; refrescar(); }; });
     const leer = () => {
       const v = U.leerForm(f);
@@ -179,6 +185,7 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
     }
     f.addEventListener('change', refrescar); f.addEventListener('input', (ev) => { if (ev.target.type === 'date' || ev.target.type === 'time') refrescar(ev); });
     f.tipo.dispatchEvent(new Event('change', { bubbles: true }));
+    if (ed) { if (ed.subtipo) f.subtipo.value = ed.subtipo; if (ed.modalidad === 'HORAS' && tipoNov(ed.tipo).horas) { f.modalidad.value = 'HORAS'; c.querySelectorAll('#chMod button').forEach((x) => x.classList.toggle('activo', x.dataset.m === 'HORAS')); } refrescar(); }
     f.onsubmit = async (ev) => {
       ev.preventDefault();
       const v = leer(), err = {};
@@ -188,24 +195,78 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
       if (v.modalidad !== 'HORAS' && v.fecha_fin && v.fecha_fin < v.fecha_inicio) err.fecha_fin = 'Es anterior a la fecha inicial';
       if (v.modalidad === 'HORAS' && (!v.hora_inicio || !v.hora_fin)) err.hora_inicio = 'Indique las horas';
       if (!v.motivo) err.motivo = 'Cuéntele a la Dirección el motivo';
+      if (ed && v.fecha_inicio && diasPara(v.fecha_inicio) < CFG.diasModificar) err.fecha_inicio = 'Al modificar, la nueva fecha debe ser al menos ' + CFG.diasModificar + ' días después de hoy';
       if (!U.marcarErrores(f, err)) return;
       if (!v.tecnico_id) { U.aviso('Su correo no está registrado en el personal. Pida a la Dirección que lo registre.', 'err'); return; }
       const fin = v.modalidad === 'HORAS' ? v.fecha_inicio : (v.fecha_fin || v.fecha_inicio);
       const campos = { tecnico_id: v.tecnico_id, tipo: v.tipo, subtipo: tipoNov(v.tipo).subtipos.length ? v.subtipo : '', modalidad: v.modalidad, fecha_inicio: v.fecha_inicio, fecha_fin: fin,
         hora_inicio: v.modalidad === 'HORAS' ? v.hora_inicio : '', hora_fin: v.modalidad === 'HORAS' ? v.hora_fin : '', dias_habiles: v.modalidad === 'HORAS' ? 0 : diasHabiles(v.fecha_inicio, fin).length,
         motivo: v.motivo, estado: 'SOLICITADA', solicitante: u.email, registrado_por: aNombre ? u.nombre : '' };
+      if (ed) {
+        try {
+          await U.conCarga(c.querySelector('#bEnviar'), async () => {
+            const cambios = Object.assign({}, campos); delete cambios.solicitante; delete cambios.registrado_por;
+            if (ed.estado === 'APROBADA') {
+              await cancelarAusencias(ed, 'Novedad ' + ed.Title + ' modificada por el colaborador');
+              Object.assign(cambios, { actividades: '', respuesta: [ed.respuesta, 'Modificada por el colaborador el ' + Ope.textoFecha(Ope.hoy()) + ': requiere nueva aprobación'].filter(Boolean).join(' · '), resuelto_por: '', fecha_respuesta: null });
+            }
+            await G.actualizar('NOV_Solicitudes', ed._id, cambios, ed._etag);
+            await Ope.auditar('NOVEDAD', ed.Title, 'MODIFICAR', { tipo: ed.tipo, fecha_inicio: ed.fecha_inicio, fecha_fin: ed.fecha_fin, estado: ed.estado }, cambios);
+          });
+          U.aviso('Solicitud modificada: ' + ed.Title + (ed.estado === 'APROBADA' ? ' (queda pendiente de nueva aprobación)' : ''), 'ok', 7000);
+          location.hash = 'mias';
+        } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
+        return;
+      }
       try {
         await U.conCarga(c.querySelector('#bEnviar'), async () => {
           const n = await G.siguiente('NOV');
           campos.Title = 'NOV-' + Ope.pad(n, 6);
           const it = await G.crear('NOV_Solicitudes', campos);
           await Ope.auditar('NOVEDAD', campos.Title, 'CREAR', null, campos);
+          if (aNombre && correoDe(v.tecnico_id) !== u.email) {   // que el colaborador la vea y la pueda modificar
+            try { await entregarAlColaborador(normal(Object.assign({}, it))); }
+            catch (e) { U.aviso('Registrada, pero ' + Ope.nombreTec(v.tecnico_id) + ' no la verá en «Mis solicitudes»: ' + e.message, 'warn', 9000); }
+          }
           if (aNombre && v.aprobar) await resolver(normal(it), true, 'Registrada por la Dirección');
         });
         U.aviso((aNombre ? 'Novedad registrada: ' : 'Solicitud enviada: ') + campos.Title, 'ok', 6000);
         location.hash = aNombre ? 'todas' : 'mias';
       } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
     };
+  }
+
+  // ---------- Que el colaborador vea y pueda modificar lo suyo ----------
+  // NOV_Solicitudes solo deja ver y editar a cada persona lo que ella misma creó (autor). Si la Dirección registra
+  // a nombre de alguien, se deja como autor al colaborador (SharePoint REST, sin crear versión).
+  const correoDe = (id) => { const t = Ope.tec(id); return t ? String(t.email || '').toLowerCase() : ''; };
+  async function spRest(method, ruta, body) {
+    const r = await fetch(CFG.spWeb + '/_api/' + ruta, { method, headers: Object.assign({ Authorization: 'Bearer ' + await IC.auth.tokenPara(CFG.spScopes), Accept: 'application/json;odata=nometadata' }, body ? { 'Content-Type': 'application/json;odata=verbose' } : {}), body: body ? JSON.stringify(body) : undefined });
+    const t = await r.text(); let d = {}; try { d = t ? JSON.parse(t) : {}; } catch (e) { d = {}; }
+    if (!r.ok) throw new Error((d['odata.error'] && d['odata.error'].message && d['odata.error'].message.value) || ('SharePoint ' + r.status));
+    return d;
+  }
+  async function entregarAlColaborador(s) {
+    const email = correoDe(s.tecnico_id);
+    if (!email) throw new Error(Ope.nombreTec(s.tecnico_id) + ' no tiene correo registrado en el personal');
+    await spRest('POST', 'web/ensureuser', { logonName: 'i:0#.f|membership|' + email });
+    const r = await spRest('POST', "web/lists/getbytitle('NOV_Solicitudes')/items(" + s._id + ')/ValidateUpdateListItem', { formValues: [
+      { __metadata: { type: 'SP.ListItemFormUpdateValue' }, FieldName: 'Author', FieldValue: '[{"Key":"i:0#.f|membership|' + email + '"}]' }], bNewDocumentUpdate: true });
+    const mal = (r.value || []).find((v) => v.HasException);
+    if (mal) throw new Error(mal.ErrorMessage || 'No se pudo cambiar el autor');
+    s._autor_email = email;
+  }
+  App.entregarAlColaborador = entregarAlColaborador;
+  const ajena = (s) => !!correoDe(s.tecnico_id) && s._autor_email && s._autor_email !== correoDe(s.tecnico_id);
+  App.ajena = ajena;
+  const diasPara = (f) => Math.round((new Date(f + 'T12:00:00') - new Date(Ope.hoy() + 'T12:00:00')) / 864e5);
+  // El colaborador modifica lo suyo (Solicitada o Aprobada) hasta CFG.diasModificar días antes del inicio
+  const puedeModificar = (s) => !!(App.usuario.tecnico && s.tecnico_id === App.usuario.tecnico.Title) && (s.estado === 'SOLICITADA' || s.estado === 'APROBADA') && diasPara(s.fecha_inicio) >= CFG.diasModificar;
+  async function cancelarAusencias(s, motivo) {
+    if (!s.actividades) return;
+    const ids = String(s.actividades).split(';').filter(Boolean);
+    await Ope.cargarRango(s.fecha_inicio, s.fecha_fin, true);
+    for (const id of ids) { const a = Ope.buscar(id); if (a && Ope.activa(a)) await Ope.actualizarActividad(a, { estado: 'CANCELADO', motivo_cambio: motivo }, 'CAMBIO_ESTADO'); }
   }
 
   // ---------- Aprobar / rechazar / anular ----------
@@ -228,11 +289,7 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
     await Ope.auditar('NOVEDAD', s.Title, 'CAMBIO_ESTADO', { estado: s.estado }, cambios);
   }
   async function anular(s, motivo) {
-    if (s.actividades) {
-      const ids = String(s.actividades).split(';').filter(Boolean);
-      await Ope.cargarRango(s.fecha_inicio, s.fecha_fin, true);
-      for (const id of ids) { const a = Ope.buscar(id); if (a && Ope.activa(a)) await Ope.actualizarActividad(a, { estado: 'CANCELADO', motivo_cambio: 'Novedad ' + s.Title + ' anulada' }, 'CAMBIO_ESTADO'); }
-    }
+    await cancelarAusencias(s, 'Novedad ' + s.Title + ' anulada');
     await G.actualizar('NOV_Solicitudes', s._id, { estado: 'ANULADA', respuesta: [s.respuesta, 'Anulada: ' + motivo].filter(Boolean).join(' · '), fecha_respuesta: new Date().toISOString(), resuelto_por: App.usuario.nombre }, s._etag);
     await Ope.auditar('NOVEDAD', s.Title, 'ANULAR', { estado: s.estado }, { estado: 'ANULADA', motivo });
   }
@@ -252,12 +309,18 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
       (s.actividades ? '<p class="ope-nota">Ausencias en la Programación: ' + esc(s.actividades.split(';').length) + ' día(s).</p>' : '') +
       (im ? '<div class="ope-val-panel">' + htmlImpacto(im) + '</div>' : '') +
       (App.esAdmin() && s.estado === 'SOLICITADA' ? U.campo({ name: 'resp', label: 'Respuesta al colaborador', t: 'textarea', c: 'c12', filas: 2, ph: 'Opcional al aprobar; obligatoria al rechazar' }) : '') +
+      (propia && (s.estado === 'SOLICITADA' || s.estado === 'APROBADA') && !puedeModificar(s) && s.fecha_inicio >= Ope.hoy() ? '<p class="ope-nota">Ya no se puede modificar (faltan menos de ' + CFG.diasModificar + ' días para el inicio). Si necesita un cambio, pídalo a la Dirección.</p>' : '') +
+      (App.esAdmin() && ajena(s) ? '<p class="ope-nota" style="color:#8a5a00">' + esc(Ope.nombreTec(s.tecnico_id)) + ' todavía no la ve en «Mis solicitudes». <a href="#" id="sEntregar">Hacerla visible para el colaborador</a></p>' : '') +
       '<p class="ope-nota">' + esc(s.Title) + ' · solicitada ' + esc(U.fmt.fechaHora(s._creado)) + (s.registrado_por ? ' · registrada por ' + esc(s.registrado_por) : '') + '</p>' +
       '<div class="ic-acciones"><button class="ic-btn sec" id="sCerrar">Cerrar</button>' +
+      (puedeModificar(s) ? '<a class="ic-btn sec" href="#editar/' + encodeURIComponent(s.Title) + '" id="sMod">Modificar</a>' : '') +
       ((propia && s.estado === 'SOLICITADA') || (App.esAdmin() && (s.estado === 'SOLICITADA' || s.estado === 'APROBADA')) ? '<button class="ic-btn sec peligro-txt" id="sAnular">Anular</button>' : '') +
       (App.esAdmin() && s.estado === 'SOLICITADA' ? '<button class="ic-btn peligro" id="sRech">Rechazar</button><button class="ic-btn" id="sAprob">Aprobar</button>' : '') + '</div></div>';
     U.modal(s.Title + ' · ' + t.nombre, html, (cu) => {
       cu.querySelector('#sCerrar').onclick = U.cerrarModal;
+      const bM = cu.querySelector('#sMod'); if (bM) bM.onclick = () => U.cerrarModal();
+      const bE = cu.querySelector('#sEntregar');
+      if (bE) bE.onclick = async (ev) => { ev.preventDefault(); try { await entregarAlColaborador(s); U.aviso('Ahora ' + Ope.nombreTec(s.tecnico_id) + ' la ve en «Mis solicitudes»', 'ok'); U.cerrarModal(); if (alCambiar) alCambiar(); } catch (e) { U.aviso(e.message, 'err', 8000); } };
       const resp = () => { const el = cu.querySelector('[name=resp]'); return el ? el.value.trim() : ''; };
       const hecho = (txt) => { U.aviso(txt, 'ok'); U.cerrarModal(); if (alCambiar) alCambiar(); };
       const bA = cu.querySelector('#sAprob');
@@ -333,7 +396,17 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
     const dibujar = () => {
       filtros.tec = c.querySelector('#fT').value; filtros.tipo = c.querySelector('#fTi').value; filtros.estado = c.querySelector('#fE').value;
       const l = App.solicitudes.filter((s) => (!filtros.tec || s.tecnico_id === filtros.tec) && (!filtros.tipo || s.tipo === filtros.tipo) && (!filtros.estado || s.estado === filtros.estado));
-      c.querySelector('#t').innerHTML = App.tablaSolicitudes(l, true); App.conectarSolicitudes(c, pintar);
+      const aj = App.esAdmin() ? App.solicitudes.filter(ajena) : [];
+      c.querySelector('#t').innerHTML = (aj.length ? '<div class="ic-alerta chica" style="margin-bottom:10px">' + aj.length + ' solicitud' + (aj.length === 1 ? '' : 'es') + ' registrada' + (aj.length === 1 ? '' : 's') + ' por la Dirección no se ve' + (aj.length === 1 ? '' : 'n') + ' en «Mis solicitudes» de su colaborador. <button class="ic-btn chico" id="bEntregar">Hacerlas visibles</button></div>' : '') +
+        App.tablaSolicitudes(l, true);
+      App.conectarSolicitudes(c, pintar);
+      const bE = c.querySelector('#bEntregar');
+      if (bE) bE.onclick = () => U.conCarga(bE, async () => {
+        let ok = 0; const mal = [];
+        for (const x of aj) { try { await entregarAlColaborador(x); ok++; } catch (e) { mal.push(x.Title + ' (' + e.message + ')'); } }
+        U.aviso(ok + ' ahora visible' + (ok === 1 ? '' : 's') + ' para su colaborador' + (mal.length ? '. Sin cambiar: ' + mal.join('; ') : ''), mal.length ? 'warn' : 'ok', 10000);
+        await pintar();
+      });
     };
     const pintar = async () => { await cargarSolicitudes(); dibujar(); };
     c.querySelectorAll('.ic-filtros select').forEach((s) => { s.onchange = dibujar; });
@@ -395,9 +468,10 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
         return;
       }
       pintarEncabezado();
-      const permitidas = ['', 'todas', 'calendario'].concat(menu().map((i) => i[0]));
+      const permitidas = ['', 'todas', 'calendario', 'editar'].concat(menu().map((i) => i[0]));
       const rutas = {
-        '': () => vistaMenu(raiz), nueva: () => vistaForm(raiz, false), registrar: () => vistaForm(raiz, true), mias: () => vistaMias(raiz),
+        '': () => vistaMenu(raiz), nueva: () => vistaForm(raiz, false),
+        editar: async () => { const id = decodeURIComponent((location.hash.split('/')[1] || '')); await cargarSolicitudes(); const s = App.solicitudes.find((x) => x.Title === id); if (s) vistaForm(raiz, false, s); else location.hash = 'mias'; }, registrar: () => vistaForm(raiz, true), mias: () => vistaMias(raiz),
         bandeja: () => vistaBandeja(raiz), todas: () => vistaTodas(raiz), calendario: () => vistaCalendario(raiz),
         faltas: () => App.vistas.faltas(raiz), personal: () => App.vistas.personal(raiz), reporte: () => App.vistas.reporte(raiz)
       };

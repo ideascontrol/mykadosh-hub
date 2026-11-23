@@ -4,7 +4,7 @@
    del personal de Operaciones. Se tramitan solo con la Dirección de Operaciones.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-107', nombre: 'Novedades del personal', version: '0.1.6 · Etapa 1' },
+  app: { id: 'APP-107', nombre: 'Novedades del personal', version: '0.1.7 · Etapa 1' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -12,6 +12,10 @@ window.CFG = {
     scopes: ['User.Read', 'Sites.ReadWrite.All']
   },
   sitio: { host: 'ideascontrolsas.sharepoint.com', ruta: '/sites/ICApps' },
+  // SharePoint REST: dejar como autor de la solicitud al colaborador (la lista solo deja ver y editar lo propio)
+  spWeb: 'https://ideascontrolsas.sharepoint.com/sites/ICApps',
+  spScopes: ['https://ideascontrolsas.sharepoint.com/AllSites.FullControl'],
+  diasModificar: 3,   // el colaborador puede modificar su solicitud hasta 3 días antes del inicio
   logo: '/ideascontrol/assets/ideascontrol.webp',
   manual: '1103-MAN-GER',
   politica: 'Las solicitudes de permisos, vacaciones, licencias, cambios de horario y demás novedades del personal se tramitan y agendan exclusivamente a través de la Dirección de Operaciones. La Dirección validará su impacto en la programación de servicios y proyectos antes de su aprobación; ninguna ausencia se entenderá autorizada sin este trámite previo.'

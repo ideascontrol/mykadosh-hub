@@ -88,6 +88,7 @@ IC.graph = (function () {
     o._id = it.id; o._etag = it['@odata.etag'] || it.eTag;
     o._creado = it.createdDateTime; o._modificado = it.lastModifiedDateTime;
     o._autor = it.createdBy && it.createdBy.user ? it.createdBy.user.displayName : '';
+    o._autor_email = it.createdBy && it.createdBy.user ? String(it.createdBy.user.email || '').toLowerCase() : '';
     o._editor = it.lastModifiedBy && it.lastModifiedBy.user ? it.lastModifiedBy.user.displayName : '';
     return o;
   }
