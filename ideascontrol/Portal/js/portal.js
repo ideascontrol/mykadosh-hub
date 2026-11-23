@@ -69,9 +69,8 @@
       html += '</div>';
     });
     const dueno = (CFG.verSitios || []).indexOf(String(cuenta.username || '').toLowerCase()) >= 0;   // solo la Dirección de Operaciones
-    if (dueno) html += '<div class="ic-seccion">Sitios de SharePoint</div><div class="ic-grid">' + CFG.sitios.map((s) =>
-      '<a class="ic-card" href="' + esc(s.url) + '" target="_blank" rel="noopener"><div class="icono">' + ICO.sitio + '</div><h3>' + esc(s.nombre) + '</h3><p>' + esc(s.texto) + '</p></a>').join('') +
-      '<a class="ic-card dorado" href="#" id="bMatriz"><div class="icono">' + ICO.tareas + '</div><h3>Matriz de accesos (Excel)</h3><p>Qué apps y módulos ve cada usuario de IC y con qué rol. Se arma con los datos actuales.</p></a></div>';
+    if (dueno) html += '<div class="ic-seccion">Otros Procesos</div><div class="ic-grid">' + CFG.sitios.map((s, i) =>
+      '<a class="ic-card' + (i === 0 ? ' dorado' : '') + '" href="' + esc(s.url) + '" target="_blank" rel="noopener"><div class="icono">' + (i === 0 ? ICO.checklist || ICO.sitio : ICO.sitio) + '</div><h3>' + esc(s.nombre) + '</h3><p>' + esc(s.texto) + '</p></a>').join('') + '</div>';
     if (oficina) html += '<div class="ic-seccion">Herramientas para clientes (públicas)</div><div class="ic-grid">' +
       '<a class="ic-card teal" href="/ideascontrol/Herramientas/" target="_blank" rel="noopener"><div class="icono">' + ICO.tareas + '</div><h3>Centro de herramientas empresariales ↗</h3>' +
       '<p>Diagnósticos, calculadoras y soluciones de Tiempo y Asistencia para compartir con clientes. Se abre en una ventana nueva.</p></a></div>';

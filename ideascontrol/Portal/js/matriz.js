@@ -53,7 +53,7 @@ window.MatrizAccesos = (function () {
       doc: oficina ? 'Consulta' : tec ? 'Pendiente (permiso SharePoint)' : 'Según permisos de SharePoint',
       cli: dueno ? 'Dirección' : '',
       mkt: ({ 'operaciones@ideascontrol.com': 'Dirección de Operaciones', 'patricia@ideascontrol.com': 'Gerencia General', 'margarita@ideascontrol.com': 'Dirección Comercial' })[email] || '',
-      cal: ({ 'operaciones@ideascontrol.com': 'Dirección de Operaciones', 'patricia@ideascontrol.com': 'Gerencia General', 'margarita@ideascontrol.com': 'Dirección Comercial' })[email] || '',
+      cal: ({ 'operaciones@ideascontrol.com': 'Dirección de Operaciones', 'patricia@ideascontrol.com': 'Gerencia General', 'margarita@ideascontrol.com': 'Dirección Comercial' })[email] || (usr && (usr.rol === 'ADMIN' || usr.gestiona_productos === true) ? 'Gestiona precios' : ''),
       chk: email === 'operaciones@ideascontrol.com' ? 'Dirección' : '',
       por: dueno ? 'Dirección' : '',
       _nombre: (usr && usr.nombre) || (mios[0] && mios[0].nombre) || (tec && tec.nombre) || '',

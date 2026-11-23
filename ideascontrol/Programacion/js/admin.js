@@ -8,6 +8,7 @@
   const PESTANAS = [['tecnicos', 'Técnicos y habilidades'], ['tipos', 'Tipos de actividad'], ['accesos', 'Accesos'], ['festivos', 'Festivos']];
 
   App.vistas.admin = function (c) {
+    const h = (location.hash.split('/')[1] || ''); if (PESTANAS.some((p) => p[0] === h)) pestana = h;   // enlace directo: #admin/tipos, #admin/accesos…
     c.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a><h1 class="ic-titulo">Administración</h1>' +
       '<p class="ic-subtitulo">Lo que antes estaba en la hoja «Listas» del Excel.</p>' +
       '<div class="ic-barra"><div class="ic-chips" id="tabs">' + PESTANAS.map((p) => '<button data-p="' + p[0] + '"' + (p[0] === pestana ? ' class="activo"' : '') + '>' + p[1] + '</button>').join('') + '</div>' +

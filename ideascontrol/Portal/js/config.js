@@ -4,7 +4,7 @@
    está en la lista SYS_Microapps (columna url), esa tiene prioridad.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-100', nombre: 'Portal de Ideas Control', version: '0.1.27' },
+  app: { id: 'APP-100', nombre: 'Portal de Ideas Control', version: '0.2.0' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -13,67 +13,70 @@ window.CFG = {
   },
   sitio: { host: 'ideascontrolsas.sharepoint.com', ruta: '/sites/ICApps' },
   logo: '/ideascontrol/assets/ideascontrol.webp',
-  // Quién ve la sección «Sitios de SharePoint» del Portal
+  // Quién ve la sección «Otros Procesos» del Portal (antes «Sitios de SharePoint»)
   verSitios: ['operaciones@ideascontrol.com'],
   sitios: [
-    { nombre: 'Ideas Control (documentos)', url: 'https://ideascontrolsas.sharepoint.com/sites/IdeasControl', texto: 'Bibliotecas de documentos: clientes, comercial, administración y documentación maestra.' },
-    { nombre: 'IC Apps (datos de las microapps)', url: 'https://ideascontrolsas.sharepoint.com/sites/ICApps', texto: 'Listas de SharePoint donde guardan su información las microapps internas.' },
-    { nombre: 'Respaldo de IC Apps', url: '/ideascontrol/Respaldo/', texto: 'Descarga una copia completa del sitio IC Apps: datos de todas las listas, columnas, permisos, grupos y archivos. Guárdela en su OneDrive personal.' },
-    { nombre: 'Instalador IC Apps', url: '/ideascontrol/Programacion/Instalador/', texto: 'Crea o completa las listas de SharePoint de las microapps (Programación, Novedades, Talento, Clientes, Costos, Marketing, Checklist) y aplica permisos.' },
-    { nombre: 'Instalador de Comercial', url: '/ideascontrol/Comercial/Instalador/', texto: 'Crea o completa las listas de Comercial: empresas, productos, precios, cotizaciones e interacciones. Se puede repetir sin duplicar.' },
-    { nombre: 'De Dios para el camino · Lectura diaria', url: '/ideascontrol/Lectura/', texto: 'Personal: 3 versículos por día con Claude, elegir uno, documentar el Word, prompt de la imagen y texto para Facebook.' },
-    { nombre: 'Marketing GPA · Growth Path Academy', url: '/ideascontrol/MarketingGPA/', texto: 'Personal: plan de contenido GPA (288 publicaciones), mejorar la semana con Claude, copys, prompts de imagen, Word, métricas, leads y pauta.' },
-    { nombre: 'Reflexiones Estratégicas · Growth Path Academy', url: '/ideascontrol/Reflexiones/', texto: 'Colección editorial de GPA: reflexiones a partir de relatos bíblicos. Biblioteca, editor, calendario, prompt maestro, distribución y web pública. Acceso por persona.' },
+    { nombre: 'Administrativos', url: '/ideascontrol/Administrativos/', interna: true, texto: 'Instaladores, respaldos, datos de las microapps, administración, matriz de accesos y tablas maestras, en un solo lugar.' },
+    { nombre: 'De Dios para el camino · Lectura diaria', url: '/ideascontrol/Lectura/', interna: true, texto: 'Personal: 3 versículos por día con Claude, elegir uno, documentar el Word, prompt de la imagen, texto para Facebook y PNG → WebP.' },
+    { nombre: 'Marketing GPA · Growth Path Academy', url: '/ideascontrol/MarketingGPA/', interna: true, texto: 'Personal: plan de contenido GPA, mejorar la semana con Claude, copys, prompts de imagen, Word, métricas, leads y pauta.' }
   ]
 };
 
 // datos: SHAREPOINT | GITHUB | POWERAPPS · acceso: cómo se verifica el permiso del usuario
 // soloOficina: no se muestra a los técnicos (quienes solo tienen acceso como Técnico a la Programación)
 window.APPS = [
-  { grupo: 'Operaciones', id: 'APP-106', nombre: 'Programación de Operaciones', icono: 'agenda', color: '',
+  // ---------- Gestión de Operaciones ----------
+  { grupo: 'Gestión de Operaciones', id: 'APP-106', nombre: 'Programación de Operaciones', icono: 'agenda', color: '',
     texto: 'Agenda de técnicos: instalaciones, mantenimientos, soporte, rotación de oficina y programación semanal.',
     url: '/ideascontrol/Programacion/', datos: 'SHAREPOINT', acceso: 'APP106' },
-  { grupo: 'Operaciones', id: 'APP-107', nombre: 'Novedades del personal', icono: 'novedad', color: 'teal',
-    texto: 'Permisos, vacaciones, licencias, incapacidades y cambios de horario. Se tramitan solo con la Dirección de Operaciones.',
-    url: '/ideascontrol/Novedades/', datos: 'SHAREPOINT', acceso: 'APP107' },
-  { grupo: 'Desarrollo de Talento', id: 'APP-108', nombre: 'Desarrollo de Talento', icono: 'talento', color: 'dorado',
-    texto: 'Una idea práctica para aplicar hoy: piezas de formación del personal de IC en el Muro.',
-    url: '/ideascontrol/Talento/', datos: 'SHAREPOINT', acceso: 'APP108' },
-  { grupo: 'Desarrollo de Talento', id: 'APP-116', nombre: 'Colecciones de lectura', icono: 'libro', color: 'teal',
-    texto: 'Lecturas para todo el personal, como Reflexiones Estratégicas de Growth Path Academy. Solo lectura.',
-    url: '/ideascontrol/Colecciones/', datos: 'SHAREPOINT', fija: true },   // lectura para todos; control total solo operaciones@ (CFG.admins de la app)
-  { grupo: 'Operaciones', id: 'APP-114', nombre: 'Proyectos', icono: 'tareas', color: 'dorado',
+  { grupo: 'Gestión de Operaciones', id: 'APP-114', nombre: 'Proyectos', icono: 'tareas', color: 'dorado',
     texto: 'Implementaciones de T&A, TimeVision, biometría, puertas y torniquetes: cronograma desde plantillas, línea base, avance y bitácora.',
     url: '/ideascontrol/Proyectos/', datos: 'SHAREPOINT', acceso: 'APP114' },
-  { grupo: 'Operaciones', id: 'APP-109', nombre: 'Gestión de Clientes', icono: 'tareas', color: 'teal',
+  { grupo: 'Gestión de Operaciones', id: 'APP-109', nombre: 'Gestión de Clientes', icono: 'tareas', color: 'teal',
     texto: 'Tareas y pendientes de cada cliente: plan de trabajo, semáforo de vencimientos y resumen de estados.',
     url: '/ideascontrol/Tareas/', datos: 'SHAREPOINT', fija: true },   // todo el personal de IC ve y actualiza las tareas
-  { grupo: 'Operaciones', id: 'APP-102', nombre: 'Soporte técnico (tickets)', icono: 'ticket', color: '',
+  { grupo: 'Gestión de Operaciones', id: 'APP-102', nombre: 'Soporte técnico (tickets)', icono: 'ticket', color: '',
     texto: 'Centro de tiquetes: registre y siga sus casos de soporte, implementaciones y seguimiento de recursos. Se abre en una pestaña nueva.',
     url: 'https://mesadeayuda.timevisionbi.com/', datos: 'EXTERNA', fija: true },   // activa para todo el personal; externa = pestaña nueva
-  { grupo: 'Operaciones', id: 'APP-111', nombre: 'TimeVision BI', icono: 'bi', color: 'dorado',
+  { grupo: 'Gestión de Operaciones', id: 'APP-111', nombre: 'TimeVision BI', icono: 'bi', color: 'dorado',
     texto: 'Tableros de análisis de tiempo y asistencia con los datos de Myintelli. Se abre en una pestaña nueva.',
-    url: 'https://timevisionbi.com/', datos: 'EXTERNA', fija: true },   // activa para todo el personal; externa = pestaña nueva
-  { grupo: 'Comercial', id: 'APP-101', nombre: 'Comercial', icono: 'comercial', color: 'teal',
-    texto: 'Productos y precios, cotizaciones con PDF, interacciones y tablero comercial.',
+    url: 'https://timevisionbi.com/', datos: 'EXTERNA', fija: true },
+  // ---------- Gestión Humana y Administrativa (antes «Desarrollo de Talento») ----------
+  { grupo: 'Gestión Humana y Administrativa', id: 'APP-108', nombre: 'Desarrollo de Talento', icono: 'talento', color: 'dorado',
+    texto: 'Una idea práctica para aplicar hoy: piezas de formación del personal de IC en el Muro.',
+    url: '/ideascontrol/Talento/', datos: 'SHAREPOINT', acceso: 'APP108' },
+  { grupo: 'Gestión Humana y Administrativa', id: 'APP-116', nombre: 'Colecciones de lectura', icono: 'libro', color: 'teal',
+    texto: 'Lecturas para todo el personal, como Reflexiones Estratégicas de Growth Path Academy. Solo lectura.',
+    url: '/ideascontrol/Colecciones/', datos: 'SHAREPOINT', fija: true },   // lectura para todos; control total solo operaciones@ (CFG.admins de la app)
+  { grupo: 'Gestión Humana y Administrativa', id: 'APP-107', nombre: 'Novedades del personal', icono: 'novedad', color: '',
+    texto: 'Permisos, vacaciones, licencias, incapacidades y cambios de horario. Se tramitan solo con la Dirección de Operaciones.',
+    url: '/ideascontrol/Novedades/', datos: 'SHAREPOINT', acceso: 'APP107' },
+  { grupo: 'Gestión Humana y Administrativa', id: 'APP-RE', nombre: 'Reflexiones Estratégicas', icono: 'libro', color: 'dorado',
+    texto: 'Colección editorial de Growth Path Academy: biblioteca, editor, calendario y publicación en Colecciones de lectura.',
+    url: '/ideascontrol/Reflexiones/', datos: 'SHAREPOINT', fija: true, solo: ['operaciones@ideascontrol.com'] },
+  // ---------- Comercial ----------
+  { grupo: 'Comercial', id: 'APP-101', nombre: 'Cotizaciones', icono: 'comercial', color: 'teal',
+    texto: 'Nueva cotización, cotizaciones con PDF, pendientes de seguimiento, contenido para compartir y tablero comercial.',
     url: '/ideascontrol/Comercial/', datos: 'SHAREPOINT', acceso: 'APP101' },
   { grupo: 'Comercial', id: 'APP-115', nombre: 'Clientes', icono: 'comercial', color: 'dorado',
     texto: 'Empresas y contactos: prospectos y clientes, sus sedes y personas de contacto.',
     url: '/ideascontrol/Clientes/', datos: 'SHAREPOINT', acceso: 'APP101' },
+  { grupo: 'Comercial', id: 'APP-101-PRD', nombre: 'Productos', icono: 'calc', color: '',
+    texto: 'Catálogo con foto, ficha técnica, precios (también por volumen) e inventario.',
+    url: '/ideascontrol/Comercial/#productos', datos: 'SHAREPOINT', fija: true, acceso: 'APP101' },
   { grupo: 'Comercial', id: 'APP-110', nombre: 'Calculadora de costos y precios', icono: 'calc', color: 'dorado',
     texto: 'Precio sugerido a partir de los costos directos de un producto o servicio. Cada cálculo queda guardado en el historial.',
     url: '/ideascontrol/Costeo/', datos: 'SHAREPOINT', acceso: 'APP110' },   // Comercial: administrador o «Gestiona productos»
   { grupo: 'Comercial', id: 'APP-112', nombre: 'Marketing', icono: 'mkt', color: 'teal',
     texto: 'Plan de contenidos de redes: temas, publicaciones por red, aprobación (mínimo 2), métricas y resumen para gerencia.',
     url: '/ideascontrol/Marketing/', datos: 'SHAREPOINT', solo: ['operaciones@ideascontrol.com', 'patricia@ideascontrol.com', 'margarita@ideascontrol.com'] },
-  { grupo: 'Documentación', id: 'APP-105', nombre: 'Gestión documental', icono: 'docs', color: 'dorado',
+  // ---------- Gestión Documental ----------
+  { grupo: 'Gestión Documental', id: 'APP-105', nombre: 'Manuales y Procedimientos', icono: 'docs', color: 'dorado',
     texto: 'Manuales, procedimientos, instructivos, formatos y políticas vigentes de Ideas Control.',
     url: '/ideascontrol/Documentacion/', datos: 'SHAREPOINT', fija: true },
-  { grupo: 'Documentación', id: 'APP-113', nombre: 'Checklist de Operaciones', icono: 'checklist', color: 'teal',
+  { grupo: 'Gestión Documental', id: 'APP-113', nombre: 'Checklist de Operaciones', icono: 'checklist', color: 'teal',
     texto: 'Lo que tiene y lo que le falta al área: estructura, políticas, procesos, formatos, indicadores y gobierno, con avance y acceso directo a cada manual.',
-    url: '/ideascontrol/Checklist/', datos: 'SHAREPOINT', solo: ['operaciones@ideascontrol.com'] },
-  { grupo: 'Próximamente', id: 'APP-104', nombre: 'Encuestas CSAT / NPS', icono: 'encuesta', color: '',
-    texto: 'CSAT después de cada servicio; NPS cada 3 o 6 meses.', url: '', datos: 'SHAREPOINT', pronto: true, soloOficina: true }
+    url: '/ideascontrol/Checklist/', datos: 'SHAREPOINT', solo: ['operaciones@ideascontrol.com'] }
 ];
 
 // Herramientas públicas para clientes (no piden inicio de sesión)
