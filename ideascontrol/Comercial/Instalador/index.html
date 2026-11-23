@@ -124,7 +124,7 @@ const LISTAS = [
     ['stock_minimo', 'n'], ['estado', 'c', ESTADO, 1]] },
   { n: 'MAE_Precios', title: 'precio_id', d: 'Historial de precios de venta', cols: [
     ['producto_id', 't', null, 1], ['valor', 'n'], ['moneda', 'c', ['COP', 'USD']], ['fecha_inicio', 'd'], ['fecha_fin', 'd'], ['activo', 'b', null, 1],
-    ['cantidad_desde', 'n'], ['cantidad_hasta', 'n']] },
+    ['cantidad_desde', 'n'], ['cantidad_hasta', 'n'], ['costeo_id', 't', null, 1]] },   // costeo_id: cálculo de la Calculadora de costos (CAL_Costeos) que originó el precio
   { n: 'MAE_Distribuidores', title: 'distribuidor_id', d: 'Proveedores de productos', cols: [
     ['nombre', 't'], ['nit', 't'], ['pais', 't'], ['contacto', 't'], ['telefono', 't'], ['email', 't'], ['estado', 'c', ESTADO]] },
   { n: 'MAE_ProductoDistribuidor', title: 'producto_distribuidor_id', d: 'Precio de compra por distribuidor', cols: [

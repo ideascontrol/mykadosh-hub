@@ -298,7 +298,8 @@ const App = { usuario: null, c: null, base: null, hist: null, filtro: { q: '', c
       '<div class="ic-ficha-cab"><div class="principal"><span class="ic-tag" style="background:#E6F0FA;color:#0A5A90">' + esc(h.Title) + '</span>' +
         '<h1>' + esc(h.producto) + '</h1><div class="meta"><span>' + esc(fechaCorta(h.fecha)) + '</span><span>Elaboró: ' + esc(h.autor_nombre || h.autor_email || '') + '</span>' +
         (h.categoria ? '<span>' + esc(h.categoria) + '</span>' : '') + (h.codigo ? '<span>Código ' + esc(h.codigo) + '</span>' : '') + '</div></div>' +
-        '<div class="cal-noimp" style="display:flex;gap:8px;flex-wrap:wrap"><button class="ic-btn" id="bBase">Usar como base</button><button class="ic-btn sec" id="bImp">Imprimir / PDF</button>' +
+        '<div class="cal-noimp" style="display:flex;gap:8px;flex-wrap:wrap"><a class="ic-btn" href="/ideascontrol/Comercial/#productos/nuevo?costeo=' + encodeURIComponent(h.Title) + '">Crear producto con este precio</a>' +
+        '<a class="ic-btn sec" href="/ideascontrol/Comercial/#productos/elegir?costeo=' + encodeURIComponent(h.Title) + '">Aplicar a un producto existente</a><button class="ic-btn sec" id="bBase">Usar como base</button><button class="ic-btn sec" id="bImp">Imprimir / PDF</button>' +
         (CFG.puedenBorrar.indexOf(App.usuario.email) >= 0 ? '<button class="ic-btn peligro" id="bDel">Eliminar</button>' : '') + '</div></div>' +
       '<div class="cal-det"><section class="ic-bloque"><div class="cab"><h2>Costos</h2><span class="sec">Cantidad calculada: ' + esc(verNum(h.cantidad)) + ' ' + esc(String(h.unidad || '').toLowerCase()) + '</span></div><div class="cuerpo cal-scroll">' +
         '<table class="ic-tabla cal-tdet"><thead><tr><th>Familia</th><th>Concepto</th><th>Tipo</th><th class="n">Cant.</th><th class="n">Costo unitario</th><th class="n">Total</th></tr></thead><tbody>' +
@@ -315,7 +316,19 @@ const App = { usuario: null, c: null, base: null, hist: null, filtro: { q: '', c
         '<tr><td>Utilidad</td><td>' + cop(h.utilidad_unitaria) + '</td><td>' + cop(Number(h.utilidad_unitaria) * Number(h.cantidad)) + '</td></tr></tbody></table>' +
         '<div class="cal-aviso ' + (ok ? 'bien' : 'mal') + '">' + (ok ? '✔' : '⚠') + ' Margen real ' + pct(h.margen_real) + '</div>' +
         '<dl class="cal-dl">' + dato('Margen deseado', pct(h.margen)) + dato('Comisión', pct(h.comision)) + dato('Otros sobre la venta', pct(h.otros)) +
-          (Number(h.tasa_usd) ? dato('Tasa USD → COP', esc(verNum(h.tasa_usd))) : '') + '</dl></div></section></div>';
+          (Number(h.tasa_usd) ? dato('Tasa USD → COP', esc(verNum(h.tasa_usd))) : '') + '</dl><div id="usos" class="cal-usos"></div></div></section></div>';
+    // Productos que usan este cálculo como precio (MAE_Precios.costeo_id)
+    (async () => {
+      try {
+        const pr = (await G.items('MAE_Precios', { top: 5000 })).filter((x) => x.costeo_id === h.Title);
+        if (!pr.length) { raiz.querySelector('#usos').innerHTML = '<p class="sec" style="margin:10px 0 0">Todavía no se ha llevado a ningún producto.</p>'; return; }
+        const prods = await G.items('MAE_Productos', { top: 5000 });
+        raiz.querySelector('#usos').innerHTML = '<p style="margin:12px 0 4px"><b>Usado como precio en:</b></p><ul style="margin:0;padding-left:18px">' + pr.map((x) => {
+          const p = prods.find((y) => y.Title === x.producto_id) || {};
+          return '<li><a href="/ideascontrol/Comercial/#productos/' + encodeURIComponent(x.producto_id) + '">' + esc(p.nombre || x.producto_id) + '</a> · ' + cop(x.valor) + ' desde ' + esc(fechaCorta(String(x.fecha_inicio || '').slice(0, 10) + 'T12:00:00')) + (x.activo ? ' · <b>vigente</b>' : ' · ya no vigente') + '</li>';
+        }).join('') + '</ul>';
+      } catch (e) { /* sin acceso a Comercial: no se muestra */ }
+    })();
     raiz.querySelector('#bImp').onclick = () => window.print();
     raiz.querySelector('#bBase').onclick = async () => {
       App.base = Object.assign(nuevo(), { producto: h.producto || '', codigo: h.codigo || '', categoria: h.categoria || '', unidad: h.unidad || 'Unidad', cantidad: Number(h.cantidad) || 1,

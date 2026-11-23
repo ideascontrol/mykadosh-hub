@@ -2,6 +2,8 @@
    APP-101 · Comercial — Productos, precios, inventario, compras y fotos
    Rutas: #productos · #productos/nuevo · #productos/PRD-000001 · #productos/PRD-000001/editar
    Listas: MAE_Productos · MAE_Precios · MAE_InventarioCortes · MAE_Distribuidores · MAE_ProductoDistribuidor
+   Desde la Calculadora de costos (APP-110): #productos/nuevo?costeo=COS-0001 (producto nuevo) · #productos/elegir?costeo=COS-0001 (nuevo precio
+   para un producto existente). El precio guarda costeo_id; el detalle de costos se queda en CAL_Costeos y en la lista solo se ve el precio.
    Fotos: biblioteca "Documentos" de IC Apps › Imagenes_Productos/[CODIGO].webp (una foto principal por producto)
    ===================================================================== */
 (function () {
@@ -124,12 +126,42 @@
   }
 
   // ---------- Enrutador interno ----------
+  // ---------- Cálculo de costos que llega desde la Calculadora (APP-110) ----------
+  const URL_COSTEO = '/ideascontrol/Costeo/#ver/';
+  let costeo = null;
+  async function leerCosteo(id) {
+    if (!id) { costeo = null; return null; }
+    if (costeo && costeo.Title === id) return costeo;
+    const l = await G.items('CAL_Costeos', { filtro: "fields/Title eq '" + id.replace(/'/g, "''") + "'", top: 1 });
+    costeo = l[0] || null;
+    if (!costeo) U.aviso('No se encontró el cálculo ' + id, 'warn');
+    return costeo;
+  }
+  const pct0 = (f) => (Math.round(Number(f || 0) * 1000) / 10).toLocaleString('es-CO') + ' %';
+  const cajaCosteo = (k) => '<div class="ic-alerta chica" style="margin-bottom:12px">Precio tomado del cálculo <a href="' + URL_COSTEO + encodeURIComponent(k.Title) + '" target="_blank"><b>' + esc(k.Title) + '</b></a> · ' + esc(k.producto || '') +
+    ' · costo unitario ' + U.fmt.cop(k.costo_unitario) + ' · margen real ' + pct0(k.margen_real) + '. El detalle de costos se queda en la Calculadora.</div>';
+  const unidadDe = (u) => /hora|d[ií]a|jornada/i.test(u || '') ? 'DIA' : /usuario|licencia/i.test(u || '') ? 'LICENCIA' : /servicio|proyecto|mes|a[ñn]o|env[ií]o|kil[oó]metro/i.test(u || '') ? 'SERVICIO' : /lote|paquete/i.test(u || '') ? 'PAQUETE' : 'UND';
+  // Crea un precio con costeo_id; si la columna aún no existe (falta el Instalador), lo guarda sin ella y avisa
+  async function crearPrecio(campos) {
+    try { return await G.crear('MAE_Precios', campos); }
+    catch (e) {
+      if (!campos.costeo_id || !/costeo_id|field|campo/i.test(String(e.message || ''))) throw e;
+      const c2 = Object.assign({}, campos); delete c2.costeo_id;
+      const r = await G.crear('MAE_Precios', c2);
+      U.aviso('El precio se guardó, pero sin el enlace al cálculo: falta ejecutar «Crear estructura» en el Instalador de Comercial.', 'warn', 9000);
+      return r;
+    }
+  }
+
   App.vistas['productos'] = async function (c) {
-    const partes = (location.hash || '').replace(/^#/, '').split('/');
+    const hash = (location.hash || '').replace(/^#/, ''), q = new URLSearchParams(hash.split('?')[1] || '');
+    const partes = hash.split('?')[0].split('/');
     c.innerHTML = '<div class="ic-centro" style="min-height:40vh"><div><div class="ic-spinner"></div></div></div>';
     try {
       await cargar();
+      if (q.get('costeo') && App.usuario.gestiona_productos) await leerCosteo(q.get('costeo'));   // se mantiene hasta usarlo o cancelar
       if (partes[1] === 'nuevo') return App.usuario.gestiona_productos ? vistaForm(c, null) : vistaLista(c);
+      if (partes[1] === 'elegir') return vistaLista(c);   // elegir el producto al que se aplica el precio de un cálculo
       if (partes[1] && partes[2] === 'editar') return App.usuario.gestiona_productos ? vistaForm(c, productoPorId(partes[1])) : vistaFicha(c, partes[1]);
       if (partes[1]) return vistaFicha(c, partes[1]);
       return vistaLista(c);
@@ -143,6 +175,13 @@
   // LISTA
   // =====================================================================
   function vistaLista(c) {
+    setTimeout(() => {
+      if (!costeo || !App.usuario.gestiona_productos) return;
+      const lugar = c.querySelector('.ic-filtros'); if (!lugar || c.querySelector('#bCosteo')) return;
+      lugar.insertAdjacentHTML('beforebegin', '<div class="ic-alerta" id="bCosteo" style="margin-bottom:12px"><b>Precio del cálculo ' + esc(costeo.Title) + ': ' + U.fmt.cop(costeo.precio_unitario) + '</b> (' + esc(costeo.producto || '') + '). ' +
+        'Abra el producto al que le aplicará este precio, o <a href="#productos/nuevo?costeo=' + encodeURIComponent(costeo.Title) + '">cree un producto nuevo con él</a>. <a href="#productos" id="bCosteoX">Cancelar</a></div>');
+      c.querySelector('#bCosteoX').onclick = () => { costeo = null; };
+    }, 0);
     const admin = App.usuario.es_admin, gestiona = App.usuario.gestiona_productos;
     c.innerHTML =
       '<a class="ic-volver" href="#">← Menú principal</a>' +
@@ -191,6 +230,8 @@
   function vistaForm(c, p) {
     const nuevo = !p;
     p = p || { tipo: 'EQUIPO', unidad: 'UND', maneja_inventario: true, aplica_iva: true, descripcion_editable: false, estado: 'ACTIVO' };
+    const k = nuevo ? costeo : null;   // producto nuevo desde un cálculo de costos
+    if (k) { p = Object.assign({}, p, { nombre: k.producto || '', codigo: k.codigo || '', descripcion_corta: k.producto || '', unidad: unidadDe(k.unidad) }); if (p.unidad !== 'UND') Object.assign(p, { tipo: p.unidad === 'LICENCIA' ? 'LICENCIA' : 'SERVICIO', maneja_inventario: false }); }
     const volver = '#productos' + (nuevo ? '' : '/' + esc(p.Title));
     const si = (v) => (v ? 'SI' : 'NO');
     c.innerHTML =
@@ -225,8 +266,8 @@
           U.campo({ name: 'garantia_meses', label: 'Garantía (meses)', valor: p.garantia_meses, modo: 'numeric', c: 'c3' }) +
           U.campo({ name: 'stock_minimo', label: 'Stock mínimo', valor: p.stock_minimo, modo: 'numeric', c: 'c3', ayuda: 'Alerta de inventario bajo' }) +
         '</div></fieldset>' +
-        (nuevo ? '<fieldset><legend>Precio de venta inicial</legend><div class="ic-campos">' +
-          U.campo({ name: 'valor', label: 'Precio antes de IVA', req: true, modo: 'decimal', c: 'c4', ph: 'Ej.: 1580000' }) +
+        (nuevo ? '<fieldset><legend>Precio de venta inicial</legend>' + (k ? cajaCosteo(k) : '') + '<div class="ic-campos">' +
+          U.campo({ name: 'valor', label: 'Precio antes de IVA', req: true, modo: 'decimal', c: 'c4', ph: 'Ej.: 1580000', valor: k ? String(Math.round(Number(k.precio_unitario))) : undefined }) +
           U.campo({ name: 'moneda', label: 'Moneda', t: 'select', op: [['COP', 'COP'], ['USD', 'USD']], valor: 'COP', vacio: false, c: 'c4' }) +
           U.campo({ name: 'fecha_inicio', label: 'Vigente desde', t: 'date', valor: hoy(), c: 'c4' }) +
         '</div></fieldset>' : '') +
@@ -281,8 +322,10 @@
             id = 'PRD-' + pad(await G.siguiente('PRD'), 6);
             Object.keys(campos).forEach((k) => { if (campos[k] === null || campos[k] === '') delete campos[k]; });
             await G.crear('MAE_Productos', Object.assign({ Title: id, estado: 'ACTIVO' }, campos));
-            await G.crear('MAE_Precios', { Title: 'PRE-' + pad(await G.siguiente('PRE'), 6), producto_id: id, valor: Number(String(v.valor).replace(/,/g, '.')), moneda: v.moneda, fecha_inicio: v.fecha_inicio || hoy(), activo: true });
-            U.aviso('Producto creado: ' + v.nombre, 'ok');
+            const nv = Number(String(v.valor).replace(/,/g, '.'));
+            await crearPrecio(Object.assign({ Title: 'PRE-' + pad(await G.siguiente('PRE'), 6), producto_id: id, valor: nv, moneda: v.moneda, fecha_inicio: v.fecha_inicio || hoy(), activo: true },
+              k && nv === Math.round(Number(k.precio_unitario)) && v.moneda === 'COP' ? { costeo_id: k.Title } : {}));
+            U.aviso('Producto creado: ' + v.nombre + (k ? ' (precio del cálculo ' + k.Title + ')' : ''), 'ok'); costeo = null;
           } else {
             await G.actualizar('MAE_Productos', p._id, campos, p._etag);
             U.aviso('Cambios guardados', 'ok');
@@ -336,7 +379,8 @@
             '<p class="ic-conteo" style="margin:8px 0 0">Al cotizar, el unitario se toma del rango donde cae la cantidad. Vigente desde ' + U.fmt.fecha(escV[0].fecha_inicio) + '.</p></div></div>' : '') +
           '<div class="ic-bloque"><div class="cab"><h2>Historial de precios</h2>' + (gestiona ? '<button class="ic-btn chico" id="btnPrecio">+ Nuevo precio</button>' : '') + '</div><div class="cuerpo">' +
             (historial.length ? agrupar(historial).map((h) => '<div class="ic-item" style="cursor:default"><div style="flex:1"><div class="titulo">' + (h._grupo ? '<span class="sec" style="display:inline;margin-right:6px">Por volumen · ' + h._grupo.length + ' rangos:</span>' + precio(Math.max.apply(null, h._grupo.map((x) => Number(x.valor))), h.moneda) + ' a ' + precio(Math.min.apply(null, h._grupo.map((x) => Number(x.valor))), h.moneda) : precio(h.valor, h.moneda)) + (h.activo ? ' <span class="ic-tag cliente">Vigente</span>' : '') + '</div>' +
-              '<div class="sec">Desde ' + U.fmt.fecha(h.fecha_inicio) + (h.fecha_fin ? ' hasta ' + U.fmt.fecha(h.fecha_fin) : '') + (h._autor ? ' · ' + esc(h._autor) : '') + '</div></div></div>').join('') : '<div class="ic-vacio" style="padding:18px">Sin precios registrados.</div>') +
+              '<div class="sec">Desde ' + U.fmt.fecha(h.fecha_inicio) + (h.fecha_fin ? ' hasta ' + U.fmt.fecha(h.fecha_fin) : '') + (h._autor ? ' · ' + esc(h._autor) : '') +
+                (h.costeo_id && gestiona ? ' · <a href="' + URL_COSTEO + encodeURIComponent(h.costeo_id) + '" target="_blank" title="Ver el detalle de costos">Cálculo ' + esc(h.costeo_id) + '</a>' : '') + '</div></div></div>').join('') : '<div class="ic-vacio" style="padding:18px">Sin precios registrados.</div>') +
           '</div></div>' +
           (p.maneja_inventario ? '<div class="ic-bloque"><div class="cab"><h2>Inventario' + (co ? ': ' + U.fmt.num(co.cantidad) + ' und' : '') + '</h2>' + (admin ? '<button class="ic-btn chico sec" id="btnCorte">+ Registrar corte</button>' : '') + '</div><div class="cuerpo">' +
             (cortes.length ? cortes.slice(0, 6).map((x) => '<div class="ic-item" style="cursor:default"><div><div class="titulo">' + U.fmt.num(x.cantidad) + ' und</div><div class="sec">Corte ' + U.fmt.fecha(x.fecha_corte) + (x.observaciones ? ' · ' + esc(x.observaciones) : '') + '</div></div></div>').join('') : '<div class="ic-vacio" style="padding:18px">Sin cortes de inventario.</div>') +
@@ -356,6 +400,7 @@
       catch (er) { console.error(er); U.aviso(U.mensajeError(er), 'err', 7000); }
     };
     U.$('#btnPrecio', c).onclick = () => formPrecio(p, pv, c);
+    if (costeo) setTimeout(() => formPrecio(p, pv, c), 0);   // viene de la Calculadora: abre «Nuevo precio» con el valor del cálculo
     const be = U.$('#btnEscalas', c); if (be) be.onclick = () => formPrecio(p, pv, c, true);
     const bc = U.$('#btnCorte', c); if (bc) bc.onclick = () => formCorte(p, c);
     const bco = U.$('#btnCompra', c); if (bco) bco.onclick = () => formCompra(p, c);
@@ -369,10 +414,10 @@
 
   // ---------- Nuevo precio (cierra el vigente) ----------
   // filas (opcional) = [{desde, hasta, valor}] para precios por volumen; sin filas, precio único
-  async function registrarPrecio(p, valor, moneda, desde, filas) {
+  async function registrarPrecio(p, valor, moneda, desde, filas, costeoId) {
     const vig = datos.precios.filter((x) => x.producto_id === p.Title && x.activo);
     for (const x of vig) await G.actualizar('MAE_Precios', x._id, { activo: false, fecha_fin: desde > soloFecha(x.fecha_inicio) ? diaAnterior(desde) : soloFecha(x.fecha_inicio) });
-    if (!filas || !filas.length) { await G.crear('MAE_Precios', { Title: 'PRE-' + pad(await G.siguiente('PRE'), 6), producto_id: p.Title, valor, moneda, fecha_inicio: desde, activo: true }); return; }
+    if (!filas || !filas.length) { await crearPrecio(Object.assign({ Title: 'PRE-' + pad(await G.siguiente('PRE'), 6), producto_id: p.Title, valor, moneda, fecha_inicio: desde, activo: true }, costeoId ? { costeo_id: costeoId } : {})); return; }
     for (const r of filas) {
       const it = { Title: 'PRE-' + pad(await G.siguiente('PRE'), 6), producto_id: p.Title, valor: r.valor, moneda, fecha_inicio: desde, activo: true, cantidad_desde: r.desde };
       if (r.hasta !== null) it.cantidad_hasta = r.hasta;
@@ -403,13 +448,14 @@
       '<td><input data-r="valor" inputmode="decimal" value="' + v(r.valor) + '"></td><td><button type="button" class="ic-btn chico sec" data-quitar title="Quitar rango">✕</button></td></tr>';
   }
   function formPrecio(p, pv, c, abrirVolumen) {
-    const esc0 = escalas(p.Title), vol = abrirVolumen || esc0.length > 0;
+    const k = abrirVolumen ? null : costeo;
+    const esc0 = escalas(p.Title), vol = !k && (abrirVolumen || esc0.length > 0);
     const filas0 = esc0.length ? esc0.map((x) => ({ desde: x.cantidad_desde, hasta: hastaDe(x) === Infinity ? '' : x.cantidad_hasta, valor: x.valor })) : [{ desde: 1 }, {}];
     U.modal((vol ? 'Precios por volumen · ' : 'Nuevo precio · ') + p.nombre, '<form class="ic-form" id="fPre" novalidate>' +
       (esc0.length ? '<p class="ic-conteo">Tabla vigente desde ' + U.fmt.fecha(esc0[0].fecha_inicio) + '. Al guardar, la anterior queda en el historial.</p>' : pv ? '<p class="ic-conteo">Precio vigente: <b>' + precio(pv.valor, pv.moneda) + '</b> desde ' + U.fmt.fecha(pv.fecha_inicio) + '. Al guardar, queda en el historial.</p>' : '') +
-      '<div class="ic-campos">' + U.campo({ name: 'modo', label: 'Tipo de precio', t: 'select', op: [['UNICO', 'Precio único'], ['VOLUMEN', 'Por volumen (rangos de cantidad)']], valor: vol ? 'VOLUMEN' : 'UNICO', vacio: false, c: 'c12' }) +
-      '<div class="ic-campo c4" id="cValor"' + (vol ? ' hidden' : '') + '><label for="f_valor">Precio antes de IVA <span class="req">*</span></label><input id="f_valor" name="valor" inputmode="decimal"></div>' +
-      U.campo({ name: 'moneda', label: 'Moneda', t: 'select', op: [['COP', 'COP'], ['USD', 'USD']], valor: (esc0[0] || pv || {}).moneda || 'COP', vacio: false, c: 'c4' }) +
+      (k ? cajaCosteo(k) : '') + '<div class="ic-campos">' + U.campo({ name: 'modo', label: 'Tipo de precio', t: 'select', op: [['UNICO', 'Precio único'], ['VOLUMEN', 'Por volumen (rangos de cantidad)']], valor: vol ? 'VOLUMEN' : 'UNICO', vacio: false, c: 'c12' }) +
+      '<div class="ic-campo c4" id="cValor"' + (vol ? ' hidden' : '') + '><label for="f_valor">Precio antes de IVA <span class="req">*</span></label><input id="f_valor" name="valor" inputmode="decimal"' + (k ? ' value="' + Math.round(Number(k.precio_unitario)) + '"' : '') + '></div>' +
+      U.campo({ name: 'moneda', label: 'Moneda', t: 'select', op: [['COP', 'COP'], ['USD', 'USD']], valor: k ? 'COP' : (esc0[0] || pv || {}).moneda || 'COP', vacio: false, c: 'c4' }) +
       U.campo({ name: 'fecha_inicio', label: 'Vigente desde', t: 'date', valor: hoy(), c: 'c4' }) + '</div>' +
       '<div id="cRangos"' + (vol ? '' : ' hidden') + '><p class="ic-conteo" style="margin:4px 0 6px">Precio unitario antes de IVA según la cantidad cotizada. Deje «Hasta» vacío en el último rango para «en adelante».</p>' +
         '<table class="ic-tabla" id="tRangos"><thead><tr><th>Desde</th><th>Hasta</th><th>Unitario</th><th></th></tr></thead><tbody>' + filas0.map(filaRango).join('') + '</tbody></table>' +
@@ -422,7 +468,7 @@
       enlazar();
       modo.onchange = () => { const v = modo.value === 'VOLUMEN'; U.$('#cRangos', m).hidden = !v; U.$('#cValor', m).hidden = v; };
       U.$('#bAddR', m).onclick = () => { const ult = tb.lastElementChild, h = ult ? Number(String(ult.querySelector('[data-r=hasta]').value).replace(/\./g, '')) : 0; tb.insertAdjacentHTML('beforeend', filaRango({ desde: h > 0 ? h + 1 : '' })); enlazar(); };
-      U.$('#bC', m).onclick = U.cerrarModal;
+      U.$('#bC', m).onclick = () => { costeo = null; U.cerrarModal(); };
       U.$('#fPre', m).onsubmit = async (ev) => {
         ev.preventDefault();
         const v = U.leerForm(ev.target);
@@ -435,7 +481,7 @@
           if (!U.marcarErrores(ev.target, v.valor === '' || isNaN(n) || n < 0 ? { valor: 'Precio no válido' } : {})) return;
         }
         await U.conCarga(U.$('#bG', m), async () => {
-          try { await registrarPrecio(p, n, v.moneda, v.fecha_inicio || hoy(), filas); U.cerrarModal(); await cargar(true); vistaFicha(c, p.Title); U.aviso(filas ? 'Tabla de precios por volumen guardada' : 'Precio actualizado', 'ok'); }
+          try { await registrarPrecio(p, n, v.moneda, v.fecha_inicio || hoy(), filas, k && !filas && v.moneda === 'COP' && n === Math.round(Number(k.precio_unitario)) ? k.Title : null); costeo = null; U.cerrarModal(); await cargar(true); vistaFicha(c, p.Title); U.aviso(filas ? 'Tabla de precios por volumen guardada' : 'Precio actualizado', 'ok'); }
           catch (er) { U.aviso(U.mensajeError(er), 'err', 7000); }
         });
       };
