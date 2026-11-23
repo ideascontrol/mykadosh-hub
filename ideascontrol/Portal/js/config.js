@@ -4,7 +4,7 @@
    está en la lista SYS_Microapps (columna url), esa tiene prioridad.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-100', nombre: 'Portal de Ideas Control', version: '0.2.0' },
+  app: { id: 'APP-100', nombre: 'Portal de Ideas Control', version: '0.2.1' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -18,6 +18,7 @@ window.CFG = {
   sitios: [
     { nombre: 'Administrativos', url: '/ideascontrol/Administrativos/', interna: true, texto: 'Instaladores, respaldos, datos de las microapps, administración, matriz de accesos y tablas maestras, en un solo lugar.' },
     { nombre: 'De Dios para el camino · Lectura diaria', url: '/ideascontrol/Lectura/', interna: true, texto: 'Personal: 3 versículos por día con Claude, elegir uno, documentar el Word, prompt de la imagen, texto para Facebook y PNG → WebP.' },
+    { nombre: 'Reflexiones Estratégicas · Growth Path Academy', url: '/ideascontrol/Reflexiones/', texto: 'Colección editorial de GPA: biblioteca, editor, calendario y publicación en Colecciones de lectura.' },
     { nombre: 'Marketing GPA · Growth Path Academy', url: '/ideascontrol/MarketingGPA/', interna: true, texto: 'Personal: plan de contenido GPA, mejorar la semana con Claude, copys, prompts de imagen, Word, métricas, leads y pauta.' }
   ]
 };
@@ -51,9 +52,6 @@ window.APPS = [
   { grupo: 'Gestión Humana y Administrativa', id: 'APP-107', nombre: 'Novedades del personal', icono: 'novedad', color: '',
     texto: 'Permisos, vacaciones, licencias, incapacidades y cambios de horario. Se tramitan solo con la Dirección de Operaciones.',
     url: '/ideascontrol/Novedades/', datos: 'SHAREPOINT', acceso: 'APP107' },
-  { grupo: 'Gestión Humana y Administrativa', id: 'APP-RE', nombre: 'Reflexiones Estratégicas', icono: 'libro', color: 'dorado',
-    texto: 'Colección editorial de Growth Path Academy: biblioteca, editor, calendario y publicación en Colecciones de lectura.',
-    url: '/ideascontrol/Reflexiones/', datos: 'SHAREPOINT', fija: true, solo: ['operaciones@ideascontrol.com'] },
   // ---------- Comercial ----------
   { grupo: 'Comercial', id: 'APP-101', nombre: 'Cotizaciones', icono: 'comercial', color: 'teal',
     texto: 'Nueva cotización, cotizaciones con PDF, pendientes de seguimiento, contenido para compartir y tablero comercial.',

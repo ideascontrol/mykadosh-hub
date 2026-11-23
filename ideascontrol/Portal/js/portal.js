@@ -69,11 +69,12 @@
       html += '</div>';
     });
     const dueno = (CFG.verSitios || []).indexOf(String(cuenta.username || '').toLowerCase()) >= 0;   // solo la Dirección de Operaciones
-    if (dueno) html += '<div class="ic-seccion">Otros Procesos</div><div class="ic-grid">' + CFG.sitios.map((s, i) =>
-      '<a class="ic-card' + (i === 0 ? ' dorado' : '') + '" href="' + esc(s.url) + '" target="_blank" rel="noopener"><div class="icono">' + (i === 0 ? ICO.checklist || ICO.sitio : ICO.sitio) + '</div><h3>' + esc(s.nombre) + '</h3><p>' + esc(s.texto) + '</p></a>').join('') + '</div>';
-    if (oficina) html += '<div class="ic-seccion">Herramientas para clientes (públicas)</div><div class="ic-grid">' +
-      '<a class="ic-card teal" href="/ideascontrol/Herramientas/" target="_blank" rel="noopener"><div class="icono">' + ICO.tareas + '</div><h3>Centro de herramientas empresariales ↗</h3>' +
-      '<p>Diagnósticos, calculadoras y soluciones de Tiempo y Asistencia para compartir con clientes. Se abre en una ventana nueva.</p></a></div>';
+    // Otros Procesos: lo de la Dirección de Operaciones (solo dueño) + el Centro de herramientas para clientes (personal de oficina)
+    const otros = (dueno ? CFG.sitios.map((s, i) =>
+      '<a class="ic-card' + (i === 0 ? ' dorado' : '') + '" href="' + esc(s.url) + '" target="_blank" rel="noopener"><div class="icono">' + (i === 0 ? ICO.checklist || ICO.sitio : /Reflexiones/.test(s.nombre) ? ICO.libro || ICO.sitio : ICO.sitio) + '</div><h3>' + esc(s.nombre) + '</h3><p>' + esc(s.texto) + '</p></a>').join('') : '') +
+      (oficina ? '<a class="ic-card teal" href="/ideascontrol/Herramientas/" target="_blank" rel="noopener"><div class="icono">' + ICO.tareas + '</div><h3>Centro de herramientas empresariales ↗</h3>' +
+        '<p>Diagnósticos, calculadoras y soluciones de Tiempo y Asistencia para compartir con clientes. Se abre en una ventana nueva.</p></a>' : '');
+    if (otros) html += '<div class="ic-seccion">Otros Procesos</div><div class="ic-grid">' + otros + '</div>';
     html += '<div class="ic-pie">' + CFG.app.id + ' · v' + CFG.app.version + ' · Las apps internas guardan sus datos en SharePoint (IC Apps) con la cuenta de Microsoft 365 de cada usuario.</div>';
     raiz.innerHTML = html;
     const bm = raiz.querySelector('#bMatriz');
