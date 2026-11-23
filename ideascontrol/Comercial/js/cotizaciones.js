@@ -302,8 +302,8 @@
         '<td><input class="num" data-i="' + i + '" data-k="precio_unitario" inputmode="decimal" value="' + (isNaN(l.precio_unitario) ? '' : esc(l.precio_unitario)) + '"' + (l.precio_editable ? ' placeholder="Precio"' : ' readonly title="Precio del catálogo"') + '>' + etiquetaRango(l) + '</td>' +
         '<td><input class="num" data-i="' + i + '" data-k="descuento_porcentaje" inputmode="decimal" value="' + esc(l.descuento_porcentaje || '') + '" placeholder="0"></td>' +
         '<td class="tot"><b data-tot="' + i + '">' + (isNaN(r.neto) ? '—' : dinero(r.neto, F.moneda)) + '</b><span class="aviso" data-av="' + i + '">' + avisoLinea(l, tope) + '</span></td>' +
-        '<td class="acc"><button type="button" title="Subir" data-mov="-1" data-i="' + i + '"' + (i === 0 ? ' disabled' : '') + '>▲</button><button type="button" title="Bajar" data-mov="1" data-i="' + i + '"' + (i === F.lineas.length - 1 ? ' disabled' : '') + '>▼</button><button type="button" title="Quitar" class="quitar" data-quitar="' + i + '">✕</button></td></tr>'; };
-    z.innerHTML = '<div class="ic-grilla-caja"><table class="ic-grilla"><thead><tr><th class="n">#</th><th>Código / producto</th><th>Descripción</th><th style="width:130px">Ciudad / sede</th><th style="width:80px">Cant.</th><th style="width:120px">Unitario (' + F.moneda + ')</th><th style="width:80px">Desc. %</th><th style="width:130px;text-align:right">Total</th><th style="width:96px"></th></tr></thead>' +
+        '<td class="acc">' + (App.usuario.gestiona_productos && l.producto_id ? '<button type="button" title="Actualizar el precio en el catálogo de productos" data-precio="' + i + '">$</button>' : '') + '<button type="button" title="Subir" data-mov="-1" data-i="' + i + '"' + (i === 0 ? ' disabled' : '') + '>▲</button><button type="button" title="Bajar" data-mov="1" data-i="' + i + '"' + (i === F.lineas.length - 1 ? ' disabled' : '') + '>▼</button><button type="button" title="Quitar" class="quitar" data-quitar="' + i + '">✕</button></td></tr>'; };
+    z.innerHTML = '<div class="ic-grilla-caja"><table class="ic-grilla"><thead><tr><th class="n">#</th><th>Código / producto</th><th>Descripción</th><th style="width:130px">Ciudad / sede</th><th style="width:80px">Cant.</th><th style="width:120px">Unitario (' + F.moneda + ')</th><th style="width:80px">Desc. %</th><th style="width:130px;text-align:right">Total</th><th style="width:' + (App.usuario.gestiona_productos ? 124 : 96) + 'px"></th></tr></thead>' +
       '<tbody>' + F.lineas.map(fila).join('') +
         '<tr class="agregar"><td class="n">' + (F.lineas.length + 1) + '</td><td colspan="8"><div class="ic-buscar">' + ICO_BUSCAR + '<input id="bPrd" type="search" placeholder="Agregar producto: escriba código o nombre" autocomplete="off"></div><div class="ic-sugerencias" id="sPrd"></div></td></tr></tbody>' +
       '<tfoot id="gPie"></tfoot></table></div>' +
@@ -315,7 +315,10 @@
       U.$('#sPrd', z).innerHTML = r.map((p) => { const pv = App.productos.precioVigente(p.Title), co = App.productos.ultimoCorte(p.Title);
         return '<button type="button" data-id="' + esc(p.Title) + '"><b>' + esc(p.codigo) + ' · ' + esc(p.nombre) + '</b><span>' + (pv ? (App.productos.escalas(p.Title).length ? 'Por volumen · ' + App.productos.escalas(p.Title).length + ' rangos desde ' + dinero(Math.min.apply(null, App.productos.escalas(p.Title).map((x) => Number(x.valor))), pv.moneda) : dinero(pv.valor, pv.moneda)) + ' antes de IVA' : 'Sin precio') +
           (p.maneja_inventario ? ' · Inventario: ' + (co ? U.fmt.num(co.cantidad) : 'sin corte') : '') + '</span></button>'; }).join('') || (t ? '<div class="vacio">Sin resultados</div>' : '');
-      U.$('#sPrd', z).querySelectorAll('button').forEach((b) => { b.onclick = () => agregarProducto(c, b.dataset.id); });
+      if (t && App.usuario.gestiona_productos) U.$('#sPrd', z).insertAdjacentHTML('beforeend', '<button type="button" data-nuevo="1" class="nuevo-prd" style="background:#eef5fc"><b style="color:#0E76BC">+ Crear producto «' + esc(inp.value.trim()) + '»</b><span>No está en el catálogo: créelo aquí sin salir de la cotización</span></button>');
+      U.$('#sPrd', z).querySelectorAll('button[data-id]').forEach((b) => { b.onclick = () => agregarProducto(c, b.dataset.id); });
+      const bn = U.$('#sPrd', z).querySelector('[data-nuevo]');
+      if (bn) bn.onclick = () => App.productos.nuevoEnVentana(inp.value.trim(), (id) => { agregarProducto(c, id); U.aviso('Producto creado y agregado a la cotización', 'ok'); });
     };
     z.querySelectorAll('[data-k]').forEach((el) => { el.oninput = () => {
       const l = F.lineas[Number(el.dataset.i)], k = el.dataset.k;
@@ -335,6 +338,10 @@
     function enlazarTablas() { z.querySelectorAll('[data-tabla]').forEach((b) => { b.onclick = () => verTabla(c, Number(b.dataset.tabla)); }); }
     enlazarTablas();
     z.querySelectorAll('[data-mov]').forEach((b) => { b.onclick = () => { const i = Number(b.dataset.i), j = i + Number(b.dataset.mov); const t = F.lineas[i]; F.lineas[i] = F.lineas[j]; F.lineas[j] = t; pintarLineas(c); }; });
+    z.querySelectorAll('[data-precio]').forEach((b) => { b.onclick = () => {
+      const i = Number(b.dataset.precio), l = F.lineas[i];
+      App.productos.precioEnVentana(l.producto_id, () => { refrescarPrecio(l); pintarLineas(c); pintarConds(c); U.aviso('Precio actualizado en el catálogo y en esta línea', 'ok'); });
+    }; });
     z.querySelectorAll('[data-quitar]').forEach((b) => { b.onclick = () => { F.lineas.splice(Number(b.dataset.quitar), 1); pintarLineas(c); pintarDatos(c); pintarConds(c); }; });
     totales(c);
   }
@@ -343,6 +350,12 @@
     if (isNaN(l.precio_unitario)) return 'Falta la TRM para convertir el precio';
     if (Number(l.descuento_porcentaje) > tope) return 'Descuento sobre el tope (' + tope.toLocaleString('es-CO') + ' %)';
     return '';
+  }
+  // Vuelve a tomar el precio vigente del catálogo (después de actualizarlo desde la cotización)
+  function refrescarPrecio(l) {
+    const pv = App.productos.precioVigente(l.producto_id), base = pv ? Number(pv.valor) : 0, mb = pv ? pv.moneda || 'COP' : F.moneda;
+    Object.assign(l, { precio_base: base, moneda_base: base > 0 ? mb : F.moneda, precio_unitario: base > 0 ? precioEn(base, mb) : NaN, precio_editable: !(base > 0) });
+    l.escalas = App.productos.escalas(l.producto_id).length > 0; l.rango_desde = null; aplicarEscala(l);
   }
   function agregarProducto(c, id) {
     const p = productoDe(id); if (!p) return;

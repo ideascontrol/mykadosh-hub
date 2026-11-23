@@ -227,16 +227,18 @@
   // =====================================================================
   // FORMULARIO (administradores y usuarios con «Gestiona productos»)
   // =====================================================================
-  function vistaForm(c, p) {
+  // opc (desde Cotizaciones, en una ventana): { nombre, alGuardar(id), alCancelar() } — no navega fuera de la cotización
+  function vistaForm(c, p, opc) {
     const nuevo = !p;
     p = p || { tipo: 'EQUIPO', unidad: 'UND', maneja_inventario: true, aplica_iva: true, descripcion_editable: false, estado: 'ACTIVO' };
-    const k = nuevo ? costeo : null;   // producto nuevo desde un cálculo de costos
+    if (opc && opc.nombre && nuevo) p = Object.assign({}, p, { nombre: opc.nombre });
+    const k = nuevo && !opc ? costeo : null;   // producto nuevo desde un cálculo de costos
     if (k) { p = Object.assign({}, p, { nombre: k.producto || '', codigo: k.codigo || '', descripcion_corta: k.producto || '', unidad: unidadDe(k.unidad) }); if (p.unidad !== 'UND') Object.assign(p, { tipo: p.unidad === 'LICENCIA' ? 'LICENCIA' : 'SERVICIO', maneja_inventario: false }); }
     const volver = '#productos' + (nuevo ? '' : '/' + esc(p.Title));
     const si = (v) => (v ? 'SI' : 'NO');
-    c.innerHTML =
+    c.innerHTML = (opc ? '' :
       '<a class="ic-volver" href="' + volver + '">← ' + (nuevo ? 'Productos' : esc(p.nombre)) + '</a>' +
-      '<h1 class="ic-titulo">' + (nuevo ? 'Nuevo producto' : 'Editar producto') + '</h1><p class="ic-subtitulo">' + (nuevo ? 'Los campos con <span style="color:var(--ic-err)">*</span> son obligatorios.' : esc(p.Title)) + '</p>' +
+      '<h1 class="ic-titulo">' + (nuevo ? 'Nuevo producto' : 'Editar producto') + '</h1>') + '<p class="ic-subtitulo">' + (nuevo ? 'Los campos con <span style="color:var(--ic-err)">*</span> son obligatorios.' : esc(p.Title)) + '</p>' +
       '<form class="ic-form" id="fPrd" novalidate>' +
         '<fieldset><legend>Identificación</legend><div class="ic-campos">' +
           '<div class="ic-campo c4"><label for="f_prefijo">Código <span class="req">*</span></label><select id="f_prefijo">' + PREFIJOS.map((x) => '<option value="' + x[0] + '"' + (prefijoDe(p.codigo) === x[0] ? ' selected' : '') + '>' + x[0] + ' — ' + esc(x[1]) + '</option>').join('') + '</select>' +
@@ -271,9 +273,10 @@
           U.campo({ name: 'moneda', label: 'Moneda', t: 'select', op: [['COP', 'COP'], ['USD', 'USD']], valor: 'COP', vacio: false, c: 'c4' }) +
           U.campo({ name: 'fecha_inicio', label: 'Vigente desde', t: 'date', valor: hoy(), c: 'c4' }) +
         '</div></fieldset>' : '') +
-        '<div class="ic-acciones"><a class="ic-btn sec" href="' + volver + '">Cancelar</a><button class="ic-btn" type="submit" id="btnGuardar">' + (nuevo ? 'Crear producto' : 'Guardar cambios') + '</button></div>' +
+        '<div class="ic-acciones">' + (opc ? '<button type="button" class="ic-btn sec" id="btnCancelarPrd">Cancelar</button>' : '<a class="ic-btn sec" href="' + volver + '">Cancelar</a>') + '<button class="ic-btn" type="submit" id="btnGuardar">' + (nuevo ? 'Crear producto' : 'Guardar cambios') + '</button></div>' +
       '</form>';
     const f = U.$('#fPrd', c);
+    if (opc) U.$('#btnCancelarPrd', c).onclick = () => (opc.alCancelar || U.cerrarModal)();
     const tipo = f.querySelector('[name=tipo]');
     // Tipo de código: con prefijo propio propone el siguiente consecutivo y el tipo de producto; FAB se escribe a mano
     const selPref = f.querySelector('#f_prefijo'), inCod = f.querySelector('#f_codigo');
@@ -331,7 +334,7 @@
             U.aviso('Cambios guardados', 'ok');
           }
           await cargar(true);
-          location.hash = 'productos/' + id;
+          if (opc && opc.alGuardar) opc.alGuardar(id); else location.hash = 'productos/' + id;
         } catch (er) { console.error(er); U.aviso(U.mensajeError(er), 'err', 7000); }
       });
     };
@@ -447,8 +450,9 @@
     return '<tr><td><input data-r="desde" inputmode="numeric" value="' + v(r.desde) + '"></td><td><input data-r="hasta" inputmode="numeric" value="' + v(r.hasta) + '" placeholder="en adelante"></td>' +
       '<td><input data-r="valor" inputmode="decimal" value="' + v(r.valor) + '"></td><td><button type="button" class="ic-btn chico sec" data-quitar title="Quitar rango">✕</button></td></tr>';
   }
-  function formPrecio(p, pv, c, abrirVolumen) {
-    const k = abrirVolumen ? null : costeo;
+  // opc (desde Cotizaciones): { alGuardar() } — al guardar no vuelve a la ficha del producto
+  function formPrecio(p, pv, c, abrirVolumen, opc) {
+    const k = abrirVolumen || opc ? null : costeo;
     const esc0 = escalas(p.Title), vol = !k && (abrirVolumen || esc0.length > 0);
     const filas0 = esc0.length ? esc0.map((x) => ({ desde: x.cantidad_desde, hasta: hastaDe(x) === Infinity ? '' : x.cantidad_hasta, valor: x.valor })) : [{ desde: 1 }, {}];
     U.modal((vol ? 'Precios por volumen · ' : 'Nuevo precio · ') + p.nombre, '<form class="ic-form" id="fPre" novalidate>' +
@@ -481,7 +485,7 @@
           if (!U.marcarErrores(ev.target, v.valor === '' || isNaN(n) || n < 0 ? { valor: 'Precio no válido' } : {})) return;
         }
         await U.conCarga(U.$('#bG', m), async () => {
-          try { await registrarPrecio(p, n, v.moneda, v.fecha_inicio || hoy(), filas, k && !filas && v.moneda === 'COP' && n === Math.round(Number(k.precio_unitario)) ? k.Title : null); costeo = null; U.cerrarModal(); await cargar(true); vistaFicha(c, p.Title); U.aviso(filas ? 'Tabla de precios por volumen guardada' : 'Precio actualizado', 'ok'); }
+          try { await registrarPrecio(p, n, v.moneda, v.fecha_inicio || hoy(), filas, k && !filas && v.moneda === 'COP' && n === Math.round(Number(k.precio_unitario)) ? k.Title : null); costeo = null; U.cerrarModal(); await cargar(true); if (opc && opc.alGuardar) opc.alGuardar(); else vistaFicha(c, p.Title); U.aviso(filas ? 'Tabla de precios por volumen guardada' : 'Precio actualizado', 'ok'); }
           catch (er) { U.aviso(U.mensajeError(er), 'err', 7000); }
         });
       };
@@ -593,5 +597,14 @@
   }
 
   // Expuesto para la carga masiva y, más adelante, para las cotizaciones
-  App.productos = { cargar, datos, precioVigente, escalas, rangoTxt, tablaEscalas, hastaDe, ultimoCorte, normCodigo, nombreFoto, urlFoto, registrarPrecio, diaAnterior, hoy };
+  // Desde Cotizaciones (sin salir de la cotización): crear un producto o actualizar su precio en una ventana
+  function nuevoEnVentana(nombre, alGuardar) {
+    U.modal('Nuevo producto', '<div id="mPrd"></div>', (m) => vistaForm(m.querySelector('#mPrd'), null, { nombre, alGuardar: (id) => { U.cerrarModal(); alGuardar(id); } }));
+    const caja = document.querySelector('#ic-modal .ic-modal'); if (caja) caja.style.maxWidth = '980px';
+  }
+  function precioEnVentana(id, alGuardar) {
+    const p = datos.productos.find((x) => x.Title === id); if (!p) return;
+    formPrecio(p, precioVigente(id), null, false, { alGuardar });
+  }
+  App.productos = { nuevoEnVentana, precioEnVentana, cargar, datos, precioVigente, escalas, rangoTxt, tablaEscalas, hastaDe, ultimoCorte, normCodigo, nombreFoto, urlFoto, registrarPrecio, diaAnterior, hoy };
 })();
