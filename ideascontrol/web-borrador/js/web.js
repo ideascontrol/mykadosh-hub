@@ -7,7 +7,7 @@
   const BASE = '/ideascontrol/web-borrador/';
   // Aplicación web de Google Apps Script que guarda la solicitud en Google Sheets y avisa a info@ideascontrol.com
   // (código completo en web-borrador/apps-script/Code.gs). Pegar aquí la URL /exec de la implementación.
-  const CONTACTO_URL = '';
+  const CONTACTO_URL = 'https://script.google.com/macros/s/AKfycbx_Y54_wDcVyotAzwM9YXRLIdYnS0zqOcLEUUk4mvwSjAxoUmOCrc9gSpuKGdOTuFuIjQ/exec';
   const VERSION_POLITICA = '1.1';
   const TEXTO_AUTORIZACION = 'Autorizo de manera previa, expresa e informada a Ideas Control Equipos y Soluciones S.A.S. para tratar mis datos personales con la finalidad de atender mi solicitud, contactarme y compartirme información sobre sus soluciones, conforme a su Política de Tratamiento de Datos Personales (Ley 1581 de 2012).';
   const L = {
