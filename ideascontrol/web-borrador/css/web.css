@@ -155,10 +155,10 @@ section { padding: 84px 0; }
 @media (max-width: 900px) { .clientes2 { grid-template-columns: 1fr; } .ayuda .op { grid-template-columns: 1fr; } }
 
 /* Cumplimiento */
-.paises { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 30px; }
+.paises { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 30px; }
 .paises div { border: 1px solid var(--borde); border-radius: var(--r); padding: 22px; border-top: 4px solid var(--teal); }
 .paises h3 { font-size: 18px; margin-bottom: 8px; } .paises ul { margin: 0; padding-left: 18px; color: var(--gris); font-size: 14.5px; }
-@media (max-width: 900px) { .paises { grid-template-columns: 1fr; } }
+@media (max-width: 1100px) { .paises { grid-template-columns: 1fr 1fr; } } @media (max-width: 600px) { .paises { grid-template-columns: 1fr; } }
 
 /* Confianza */
 .logos { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-top: 28px; }

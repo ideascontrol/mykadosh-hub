@@ -20,7 +20,7 @@
   function encabezado() {
     const h = document.getElementById('cabecera'); if (!h) return;
     h.innerHTML =
-      '<div class="top"><div class="cont"><span>🌎 Colombia · Panamá · Ecuador</span><span class="esp"></span>' +
+      '<div class="top"><div class="cont"><span>🌎 Colombia · Panamá · Ecuador · Costa Rica</span><span class="esp"></span>' +
       '<a class="ocm" href="tel:+573228506363">PBX +57 322 850 6363</a><a href="' + L.wa + '" target="_blank" rel="noopener">WhatsApp +57 321 318 4853</a><a class="ocm" href="mailto:info@ideascontrol.com">info@ideascontrol.com</a></div></div>' +
       '<div class="menu" id="menu"><div class="cont"><a class="logo" href="' + L.inicio + '"><img src="/ideascontrol/assets/ideascontrol.webp" alt="Ideas Control Equipos y Soluciones S.A.S."></a>' +
       '<nav><a href="' + ancla('soluciones') + '">Soluciones</a><a href="' + ancla('productos') + '">Productos</a><a href="' + ancla('herramientas') + '">Herramientas</a><a href="' + ancla('alianza') + '">Alianza GPA</a><a href="' + ancla('conocimiento') + '">Conocimiento</a><a href="' + L.nosotros + '">Nosotros</a></nav>' +
@@ -34,7 +34,7 @@
     const p = document.getElementById('pie'); if (!p) return;
     p.className = 'pie';
     p.innerHTML = '<div class="cont"><div><span class="lg"><img src="/ideascontrol/assets/ideascontrol.webp" alt="Ideas Control"></span>' +
-      '<p style="margin:0">Tecnología que conecta con las personas y transforma la gestión empresarial.<br>Colombia · Panamá · Ecuador<br>Aliado estratégico: Growth Path Academy</p>' +
+      '<p style="margin:0">Tecnología que conecta con las personas y transforma la gestión empresarial.<br>Colombia · Panamá · Ecuador · Costa Rica<br>Aliado estratégico: Growth Path Academy</p>' +
       '<p style="margin-top:12px">Calle 85 #16-28, Oficina 402, Bogotá D.C.</p></div>' +
       '<div><h4>Soluciones</h4><a href="' + ancla('soluciones') + '">Equipos biométricos</a><a href="' + ancla('soluciones') + '">Plataforma de tiempo y asistencia</a><a href="' + ancla('timevision') + '">TimeVision BI</a><a href="' + ancla('productos') + '">Control de acceso y torniquetes</a><a href="' + ancla('otras') + '">Visitantes e inventarios RFID</a><a href="' + L.nosotros + '#alianza">Alianza IC + GPA</a></div>' +
       '<div><h4>Clientes</h4><a href="' + L.ayuda + '" target="_blank" rel="noopener">Centro de ayuda</a><a href="' + L.pago + '" target="_blank" rel="noopener">Paga aquí</a><a href="' + L.herramientas + '">Herramientas gratuitas</a><a href="' + L.conocimiento + '">Centro de conocimiento</a></div>' +
@@ -57,7 +57,7 @@
 
   // Formulario estándar IC (como PilotoTyA): nombre y apellido, correo corporativo, EMPRESA en mayúsculas, país, consentimiento
   const PERSONALES = ['gmail.com', 'googlemail.com', 'hotmail.com', 'hotmail.es', 'hotmail.co', 'outlook.com', 'outlook.es', 'live.com', 'live.com.mx', 'msn.com', 'yahoo.com', 'yahoo.es', 'yahoo.com.co', 'yahoo.com.mx', 'ymail.com', 'icloud.com', 'me.com', 'aol.com', 'protonmail.com', 'proton.me'];
-  const PAISES = [['CO', 'Colombia', '+57'], ['PA', 'Panamá', '+507'], ['EC', 'Ecuador', '+593'], ['PE', 'Perú', '+51'], ['MX', 'México', '+52'], ['CL', 'Chile', '+56'], ['US', 'Estados Unidos', '+1'], ['XX', 'Otro país', '']];
+  const PAISES = [['CO', 'Colombia', '+57'], ['PA', 'Panamá', '+507'], ['EC', 'Ecuador', '+593'], ['CR', 'Costa Rica', '+506'], ['PE', 'Perú', '+51'], ['MX', 'México', '+52'], ['CL', 'Chile', '+56'], ['US', 'Estados Unidos', '+1'], ['XX', 'Otro país', '']];
   function formulario() {
     const f = document.getElementById('fContacto'); if (!f) return;
     f.pais.innerHTML = PAISES.map((p) => '<option value="' + p[0] + '">' + p[1] + (p[2] ? ' (' + p[2] + ')' : '') + '</option>').join('');
