@@ -209,3 +209,21 @@ section { padding: 84px 0; }
 .texto { max-width: 820px; font-size: 16.5px; } .texto h2 { font-size: 24px; margin: 34px 0 10px; } .texto p { color: #33475b; }
 
 @media (max-width: 760px) { .top .ocm { display: none; } .flota.a { top: -30px; } .borrador { font-size: 11px; padding: 5px 9px; left: auto; right: 10px; bottom: 10px; opacity: .9; } }
+
+/* Productos */
+.prods { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 32px; }
+.prod { border: 1px solid var(--borde); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 6px; background: #fff; }
+.prod .img { height: 150px; margin-bottom: 8px; }
+.prod h3 { font-size: 17px; } .prod p { margin: 0; color: var(--gris); font-size: 14px; } .prod .mas { margin-top: auto; padding-top: 8px; font-weight: 700; font-size: 14px; text-decoration: none; }
+@media (max-width: 900px) { .prods { grid-template-columns: 1fr 1fr; } } @media (max-width: 560px) { .prods { grid-template-columns: 1fr; } }
+/* Nosotros */
+.linea { position: relative; margin: 26px 0 0; padding-left: 26px; border-left: 3px solid var(--teal); }
+.linea div { position: relative; margin-bottom: 22px; } .linea div::before { content: ''; position: absolute; left: -35px; top: 4px; width: 15px; height: 15px; border-radius: 50%; background: #fff; border: 3px solid var(--teal); }
+.linea b { display: block; color: var(--navy); font-size: 16px; } .linea p { margin: 4px 0 0; }
+.mv { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 10px; } .mv > div { background: var(--claro); border-radius: var(--r); padding: 24px; } .mv h2 { margin-top: 0 !important; }
+.valores { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-top: 18px; }
+.valores div { border: 1px solid var(--borde); border-top: 4px solid var(--oro); border-radius: 12px; padding: 16px; font-size: 14.5px; color: var(--gris); } .valores b { display: block; color: var(--tinta); margin-bottom: 6px; }
+.lineas3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 18px; }
+.lineas3 div { border: 1px solid var(--borde); border-radius: var(--r); padding: 20px; } .lineas3 h3 { font-size: 16.5px; margin-bottom: 8px; color: var(--teal); } .lineas3 ul { margin: 0; padding-left: 18px; color: var(--gris); font-size: 14.5px; }
+.destacado { font-size: 18px; font-weight: 700; color: var(--navy); border-left: 4px solid var(--oro); padding-left: 14px; margin: 22px 0; }
+@media (max-width: 900px) { .mv, .lineas3 { grid-template-columns: 1fr; } }
