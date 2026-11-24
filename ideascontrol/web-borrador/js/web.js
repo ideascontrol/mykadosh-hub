@@ -33,6 +33,9 @@
       '<button class="burger" aria-label="Menú" id="burger">☰</button></div></div>';
     const m = document.getElementById('menu');
     document.getElementById('burger').onclick = () => m.classList.toggle('abierto');
+    // Fijo al bajar: solo el menú; la franja de países y teléfonos sube y desaparece
+    const ajustar = () => { h.style.top = -h.querySelector('.top').offsetHeight + 'px'; };
+    ajustar(); window.addEventListener('resize', ajustar);
     m.querySelectorAll('nav a, .acc a').forEach((a) => a.addEventListener('click', () => m.classList.remove('abierto')));
   }
   function pie() {
