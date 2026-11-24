@@ -227,3 +227,31 @@ section { padding: 84px 0; }
 .lineas3 div { border: 1px solid var(--borde); border-radius: var(--r); padding: 20px; } .lineas3 h3 { font-size: 16.5px; margin-bottom: 8px; color: var(--teal); } .lineas3 ul { margin: 0; padding-left: 18px; color: var(--gris); font-size: 14.5px; }
 .destacado { font-size: 18px; font-weight: 700; color: var(--navy); border-left: 4px solid var(--oro); padding-left: 14px; margin: 22px 0; }
 @media (max-width: 900px) { .mv, .lineas3 { grid-template-columns: 1fr; } }
+
+/* TimeVision (basado en la landing /ideascontrol/TimeVision/) */
+.tv .preg { display: grid; gap: 10px; margin: 22px 0 24px; }
+.tv .preg div { display: grid; grid-template-columns: 38px 1fr; column-gap: 12px; align-items: start; }
+.tv .preg i { grid-row: span 2; width: 38px; height: 38px; border-radius: 10px; background: var(--claro); color: var(--teal); font-style: normal; font-weight: 800; display: grid; place-items: center; font-size: 13px; }
+.tv .preg b { color: var(--navy); } .tv .preg span { color: var(--gris); font-size: 14.5px; }
+.tablero .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.tablero .tabs span { font-size: 11.5px; font-weight: 700; padding: 5px 10px; border-radius: 999px; background: var(--navy2); color: #a9bdd0; } .tablero .tabs .on { background: var(--teal); color: #fff; }
+.tablero .k { grid-template-columns: repeat(3, 1fr); }
+.tablero .k em { display: block; font-style: normal; font-size: 10.5px; margin-top: 2px; } .tablero em.mal { color: #F3A29A; } .tablero em.bien { color: #7FD6C2; }
+.tablero .g { grid-template-columns: 1.25fr 1fr; }
+.tablero .ba { display: grid; grid-template-columns: 92px 1fr auto; gap: 8px; align-items: center; margin: 9px 0; } .tablero .ba span { font-size: 11px; color: #cfdbe7; } .tablero .ba b { font-size: 11px; color: #fff; }
+.tablero .ba i.o { background: var(--oro); }
+.tablero .sem { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 10px; margin-top: 10px; } .tablero .sem span { display: flex; gap: 6px; align-items: center; font-size: 11px; }
+.tablero .sem i { width: 10px; height: 10px; border-radius: 50%; flex: none; } .sem i.ok { background: #2FBF8F; } .sem i.warn { background: #E3C24E; } .sem i.bad { background: #E5675B; }
+.tablero .al { background: var(--navy2); border-radius: 10px; padding: 12px; margin-top: 10px; font-size: 12px; } .tablero .al b { color: #fff; }
+.tablero .al p { margin: 7px 0 0; padding-left: 10px; border-left: 3px solid; color: #dbe5ef; } .al .a1 { border-color: #E5675B !important; } .al .a2 { border-color: #E3C24E !important; } .al .a3 { border-color: #5EA8E0 !important; }
+.tablero .nota-tv { margin: 10px 0 0; font-size: 10.5px; color: #8ea6bd; }
+.flujo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 34px; }
+.flujo div { border: 1px solid var(--borde); border-radius: 14px; padding: 16px; position: relative; } .flujo i { font-style: normal; font-weight: 800; color: #fff; background: var(--teal); width: 26px; height: 26px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 13px; margin-bottom: 8px; }
+.flujo b { display: block; color: var(--navy); } .flujo span { font-size: 13.5px; color: var(--gris); }
+@media (max-width: 900px) { .flujo { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .tablero .k, .tablero .g { grid-template-columns: 1fr; } .flujo { grid-template-columns: 1fr; } }
+/* Logos de la alianza */
+.alianza .par span { display: inline-flex; align-items: center; padding: 8px 14px; } .alianza .par img { height: 46px; width: auto; display: block; }
+.logos2 { display: flex; align-items: center; gap: 16px; margin: 14px 0 6px; flex-wrap: wrap; } .logos2 img { height: 52px; width: auto; } .logos2 span { font-size: 26px; font-weight: 800; color: var(--gris); }
+/* Aviso de envío */
+.toast { position: fixed; left: 50%; top: 18px; transform: translateX(-50%); z-index: 100; background: var(--teal); color: #fff; padding: 14px 20px; border-radius: 12px; box-shadow: var(--sombra); font-weight: 600; max-width: calc(100% - 32px); }

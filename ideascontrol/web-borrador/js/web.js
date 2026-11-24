@@ -5,11 +5,16 @@
    ===================================================================== */
 (function () {
   const BASE = '/ideascontrol/web-borrador/';
+  // Aplicación web de Google Apps Script que guarda la solicitud en Google Sheets y avisa a info@ideascontrol.com
+  // (código completo en web-borrador/apps-script/Code.gs). Pegar aquí la URL /exec de la implementación.
+  const CONTACTO_URL = '';
+  const VERSION_POLITICA = '1.1';
+  const TEXTO_AUTORIZACION = 'Autorizo de manera previa, expresa e informada a Ideas Control Equipos y Soluciones S.A.S. para tratar mis datos personales con la finalidad de atender mi solicitud, contactarme y compartirme información sobre sus soluciones, conforme a su Política de Tratamiento de Datos Personales (Ley 1581 de 2012).';
   const L = {
     inicio: BASE, nosotros: BASE + 'nosotros/', politica: '/ideascontrol/Privacidad/',
     herramientas: '/ideascontrol/Herramientas/', diagnostico: '/ideascontrol/DiagnosticoMadurezTyA/', piloto: '/ideascontrol/PilotoTyA/',
     conocimiento: '/ideascontrol/Recursos/', ayuda: 'https://mesadeayuda.timevisionbi.com/', pago: 'https://checkout.wompi.co/l/VPOS_AwaH2Y',
-    timevision: 'https://timevisionbi.com/',
+    timevision: '/ideascontrol/TimeVision/',
     wa: 'https://wa.me/573213184853?text=' + encodeURIComponent('Hola Ideas Control, vengo de la página web y quiero más información.'),
     facebook: 'https://www.facebook.com/BiometricosenColombia', instagram: 'https://www.instagram.com/ideascontrol.co', youtube: 'https://www.youtube.com/@ideascontrooficial'
   };
@@ -36,7 +41,7 @@
     p.innerHTML = '<div class="cont"><div><span class="lg"><img src="/ideascontrol/assets/ideascontrol.webp" alt="Ideas Control"></span>' +
       '<p style="margin:0">Tecnología que conecta con las personas y transforma la gestión empresarial.<br>Colombia · Panamá · Ecuador · Costa Rica<br>Aliado estratégico: Growth Path Academy</p>' +
       '<p style="margin-top:12px">Calle 85 #16-28, Oficina 402, Bogotá D.C.</p></div>' +
-      '<div><h4>Soluciones</h4><a href="' + ancla('soluciones') + '">Equipos biométricos</a><a href="' + ancla('soluciones') + '">Plataforma de tiempo y asistencia</a><a href="' + ancla('timevision') + '">TimeVision BI</a><a href="' + ancla('productos') + '">Control de acceso y torniquetes</a><a href="' + ancla('otras') + '">Visitantes e inventarios RFID</a><a href="' + L.nosotros + '#alianza">Alianza IC + GPA</a></div>' +
+      '<div><h4>Soluciones</h4><a href="' + ancla('soluciones') + '">Equipos biométricos</a><a href="' + ancla('soluciones') + '">Plataforma de tiempo y asistencia</a><a href="' + ancla('timevision') + '">TimeVision BI</a><a href="' + ancla('productos') + '">Control de acceso y torniquetes</a><a href="' + L.nosotros + '#alianza">Alianza IC + GPA</a></div>' +
       '<div><h4>Clientes</h4><a href="' + L.ayuda + '" target="_blank" rel="noopener">Centro de ayuda</a><a href="' + L.pago + '" target="_blank" rel="noopener">Paga aquí</a><a href="' + L.herramientas + '">Herramientas gratuitas</a><a href="' + L.conocimiento + '">Centro de conocimiento</a></div>' +
       '<div><h4>Síguenos</h4><a href="' + L.facebook + '" target="_blank" rel="noopener">Facebook</a><a href="' + L.instagram + '" target="_blank" rel="noopener">Instagram</a><a href="' + L.youtube + '" target="_blank" rel="noopener">YouTube</a><a href="#" class="ph">[ENLACE: LinkedIn]</a></div>' +
       '<div class="base"><span>© ' + new Date().getFullYear() + ' Ideas Control Equipos y Soluciones S.A.S.</span><span><a href="' + L.politica + '">Política de Tratamiento de Datos</a><a href="' + L.nosotros + '">Nosotros</a></span></div></div>';
@@ -73,10 +78,47 @@
       ok = marcar('necesidad', f.necesidad.value.trim().length < 5 ? 'Cuéntanos brevemente qué necesitas' : '') && ok;
       ok = marcar('acepto', !f.acepto.checked ? 'Debes aceptar la Política de Tratamiento de Datos' : '') && ok;
       if (!ok) return;
-      // BORRADOR: todavía no se envía. Al publicar se conecta a Google Apps Script como las demás landings.
-      document.getElementById('fNota').innerHTML = '<b>Borrador:</b> el formulario está validado pero todavía no envía. Se conecta a Google Apps Script antes de publicar la web.';
+      if (f.hp.value) return; // trampa para robots
+      const nota = document.getElementById('fNota'), btn = document.getElementById('fEnviar');
+      if (!CONTACTO_URL) { nota.innerHTML = '<b>Envío pendiente de conexión:</b> falta pegar la URL de Apps Script en js/web.js.'; return; }
+      const pais = PAISES.find((p) => p[0] === f.pais.value) || PAISES[0];
+      const datos = {
+        nombre: nom, correo: mail, empresa: f.empresa.value.trim().toUpperCase(), pais: pais[1], codigo_pais: pais[2],
+        telefono: f.telefono.value.trim(), necesidad: f.necesidad.value.trim(), origen: 'Página web · Agenda tu asesoría',
+        acepto_politica: 'SI', version_politica: VERSION_POLITICA, texto_autorizacion: TEXTO_AUTORIZACION,
+        url_pagina: location.href.split('#')[0], hp: f.hp.value
+      };
+      const q = new URLSearchParams(location.search); ['utm_source', 'utm_medium', 'utm_campaign'].forEach((k) => { datos[k] = q.get(k) || ''; });
+      btn.disabled = true; btn.textContent = 'Enviando…'; nota.textContent = '';
+      fetch(CONTACTO_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(datos) })
+        .then((r) => r.json())
+        .then((d) => {
+          if (!d || !d.ok) throw new Error((d && d.error) || 'Error');
+          f.reset(); f.querySelectorAll('.c').forEach((c) => { c.classList.remove('mal'); const er = c.querySelector('.err'); if (er) er.textContent = ''; });
+          nota.textContent = 'Usamos tus datos solo para responder tu solicitud.';
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          aviso('Gracias. Recibimos tu solicitud y un asesor de Ideas Control te contactará pronto.');
+        })
+        .catch(() => { nota.innerHTML = '<b>No pudimos enviar tu solicitud.</b> Inténtalo de nuevo o escríbenos a info@ideascontrol.com.'; })
+        .finally(() => { btn.disabled = false; btn.textContent = 'Enviar solicitud'; });
     };
   }
 
-  document.addEventListener('DOMContentLoaded', () => { encabezado(); pie(); articulos(); formulario(); });
+  function aviso(txt) {
+    const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = txt;
+    document.body.appendChild(t); setTimeout(() => t.remove(), 7000);
+  }
+
+  // Enlaces a otras páginas o landings: se abren en una ventana nueva. La navegación dentro de la web (inicio, Nosotros, anclas) sigue en la misma.
+  function ventanasNuevas() {
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest && e.target.closest('a[href]'); if (!a || a.target) return;
+      const h = a.getAttribute('href'); if (!h || h[0] === '#' || /^(mailto|tel):/i.test(h)) return;
+      const u = new URL(a.href, location.href);
+      if (u.origin === location.origin && u.pathname.indexOf(BASE) === 0) return;
+      e.preventDefault(); window.open(u.href, '_blank', 'noopener');
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', () => { encabezado(); pie(); articulos(); formulario(); ventanasNuevas(); });
 })();
