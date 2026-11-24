@@ -12,7 +12,7 @@
   const TEXTO_AUTORIZACION = 'Autorizo de manera previa, expresa e informada a Ideas Control Equipos y Soluciones S.A.S. para tratar mis datos personales con la finalidad de atender mi solicitud, contactarme y compartirme información sobre sus soluciones, conforme a su Política de Tratamiento de Datos Personales (Ley 1581 de 2012).';
   const L = {
     inicio: BASE, nosotros: BASE + 'nosotros/', politica: '/ideascontrol/Privacidad/',
-    herramientas: '/ideascontrol/Herramientas/', diagnostico: '/ideascontrol/DiagnosticoMadurezTyA/', piloto: '/ideascontrol/PilotoTyA/',
+    herramientas: '/ideascontrol/Herramientas/', diagnostico: '/ideascontrol/DiagnosticoMadurezTyA/', tya: '/ideascontrol/PilotoTyA/',
     conocimiento: '/ideascontrol/Recursos/', ayuda: 'https://mesadeayuda.timevisionbi.com/', pago: 'https://checkout.wompi.co/l/VPOS_AwaH2Y',
     timevision: '/ideascontrol/TimeVision/',
     wa: 'https://wa.me/573213184853?text=' + encodeURIComponent('Hola Ideas Control, vengo de la página web y quiero más información.'),
