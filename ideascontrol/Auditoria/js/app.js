@@ -281,10 +281,11 @@ const App = { usuario: null };
     const z = U.$('#tabla', c), F = S.filtrados;
     if (!F.length) { z.innerHTML = '<div class="ic-form">' + (S.eventos.length ? 'Ningún evento coincide con los filtros.' : 'No hubo cambios en ese rango de fechas.') + '</div>'; return; }
     const acc = { 'Creó': 'c', 'Modificó': 'm', 'Eliminó': 'e' };
-    z.innerHTML = '<div class="ic-tabla-caja"><table class="ic-tabla"><thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Registro</th><th class="om">App · lista</th><th>Qué cambió</th></tr></thead><tbody>' +
-      F.slice(0, S.mostrar).map((e) => '<tr><td class="f">' + esc(U.fmt.fechaHora(e.fecha)) + (e.version ? '<small>v' + esc(e.version) + '</small>' : '') + '</td>' +
+    z.innerHTML = '<div class="ic-tabla-caja"><table class="ic-tabla au-tabla"><colgroup><col class="c-f"><col class="c-u"><col class="c-a"><col class="c-r"><col class="c-l om"><col></colgroup><thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th><th>Registro</th><th class="om">App · lista</th><th>Qué cambió</th></tr></thead><tbody>' +
+      F.slice(0, S.mostrar).map((e) => { const d = new Date(e.fecha); return '<tr><td class="f">' + esc(d.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })) +
+        '<small>' + esc(d.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit' })) + (e.version ? ' · v' + esc(e.version) : '') + '</small></td>' +
         '<td>' + esc(e.usuario || '—') + '<small>' + esc(e.email) + '</small></td><td><span class="au-acc ' + acc[e.accion] + '">' + e.accion + '</span></td>' +
-        '<td><b>' + esc(e.registro) + '</b></td><td class="om">' + esc(e.app) + '<small>' + esc(e.lista) + '</small></td><td>' + celdaCambios(e) + '</td></tr>').join('') +
+        '<td><b>' + esc(e.registro) + '</b></td><td class="om">' + esc(e.app) + '<small>' + esc(e.lista) + '</small></td><td>' + celdaCambios(e) + '</td></tr>'; }).join('') +
       '</tbody></table></div>' + (F.length > S.mostrar ? '<p style="text-align:center"><button class="ic-btn sec" id="bMas">Ver ' + Math.min(300, F.length - S.mostrar) + ' más (de ' + (F.length - S.mostrar) + ')</button></p>' : '');
     const bm = U.$('#bMas', z); if (bm) bm.onclick = () => { S.mostrar += 300; pintar(c); };
   }

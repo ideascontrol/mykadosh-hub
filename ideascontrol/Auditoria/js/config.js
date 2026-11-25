@@ -5,7 +5,7 @@
    y nadie lo puede editar desde las apps. Solo la Dirección de Operaciones abre esta app.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-119', nombre: 'Auditoría de registros', version: '0.2.0' },
+  app: { id: 'APP-119', nombre: 'Auditoría de registros', version: '0.2.1' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
