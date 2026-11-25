@@ -17,6 +17,7 @@ window.CFG = {
   verSitios: ['operaciones@ideascontrol.com'],
   sitios: [
     { nombre: 'Administrativos', url: '/ideascontrol/Administrativos/', interna: true, texto: 'Instaladores, respaldos, datos de las microapps, administración, matriz de accesos y tablas maestras, en un solo lugar.' },
+    { nombre: 'Auditoría de registros', url: '/ideascontrol/Auditoria/', interna: true, texto: 'Quién creó, modificó o eliminó cada registro de las microapps (agenda, clientes, productos, cotizaciones…) y qué cambió. Descarga en Excel.' },
     { nombre: 'De Dios para el camino · Lectura diaria', url: '/ideascontrol/Lectura/', interna: true, texto: 'Personal: 3 versículos por día con Claude, elegir uno, documentar el Word, prompt de la imagen, texto para Facebook y PNG → WebP.' },
     { nombre: 'Reflexiones Estratégicas · Growth Path Academy', url: '/ideascontrol/Reflexiones/', texto: 'Colección editorial de GPA: biblioteca, editor, calendario y publicación en Colecciones de lectura.' },
     { nombre: 'Marketing GPA · Growth Path Academy', url: '/ideascontrol/MarketingGPA/', interna: true, texto: 'Personal: plan de contenido GPA, mejorar la semana con Claude, copys, prompts de imagen, Word, métricas, leads y pauta.' }

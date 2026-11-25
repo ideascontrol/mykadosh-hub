@@ -32,6 +32,7 @@ window.CFG = {
     ['Administración', [
       ['Comercial · Administración', 'Usuarios de Comercial (rol y «Gestiona productos»), condiciones comerciales y parámetros de la cotización.', '/ideascontrol/Comercial/#admin', 'AD', 'dorado'],
       ['Programación · Accesos', 'Quién entra a la Programación, Novedades, Proyectos y Talento, y con qué rol.', '/ideascontrol/Programacion/#admin/accesos', 'AD', 'dorado'],
+      ['Auditoría de registros', 'Quién creó, modificó o eliminó cada registro de las microapps y qué cambió (historial de SharePoint).', '/ideascontrol/Auditoria/', 'AU', 'dorado'],
       ['Matriz de accesos (Excel)', 'Qué apps y módulos ve cada usuario de IC y con qué rol. Se arma con los datos actuales.', '#matriz', 'MX', 'dorado']
     ]],
     ['Tablas maestras', [
