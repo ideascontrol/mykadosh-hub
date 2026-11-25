@@ -5,7 +5,7 @@
    y nadie lo puede editar desde las apps. Solo la Dirección de Operaciones abre esta app.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-119', nombre: 'Auditoría de registros', version: '0.1.0' },
+  app: { id: 'APP-119', nombre: 'Auditoría de registros', version: '0.2.0' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -18,8 +18,11 @@ window.CFG = {
   logo: '/ideascontrol/assets/ideascontrol.webp',
   admins: ['operaciones@ideascontrol.com'],
   diasPorDefecto: 7,
-  maxRegistros: 2500,          // registros con cambios por consulta; si hay más, se pide un rango más corto
   versionesAGuardar: 100,      // al activar el historial en una lista
+  // Listas técnicas que no se muestran: contadores de consecutivos y la bitácora interna de eventos (repetiría lo mismo)
+  ignorar: ['SYS_Secuencias', 'SYS_Auditoria'],
+  // Listas que se muestran (quién y cuándo) pero sin consultar el detalle campo por campo
+  sinDetalle: [],
   // A qué app pertenece cada lista (por prefijo; gana el primero que coincida)
   apps: [
     ['COT_', 'Cotizaciones'], ['COM_', 'Agenda comercial'],
