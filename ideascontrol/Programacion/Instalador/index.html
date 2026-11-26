@@ -190,6 +190,9 @@ const LISTAS = [
   { n: 'TAR_Tareas', title: 'tarea_id', d: 'Tareas y pendientes por cliente (plan de trabajo y seguimiento)', cols: [
     ['cliente_id', 't', null, 1], ['cliente_nombre', 't'], ['plan', 't'], ['item', 'm'], ['categoria', 't'], ['responsable', 't'], ['prioridad', 't'],
     ['estado', 't', null, 1], ['fecha_apertura', 'd'], ['fecha_inicio', 'd'], ['fecha_limite', 'd', null, 1], ['fecha_cierre', 'd'], ['progreso', 'n'], ['bitacora', 'm'], ['orden', 'n'], ['responsable_id', 't'], ['agenda', 't']] },
+  // APP-109 · Categorías de las tareas (se administran en Seguimiento por cliente › Categorías)
+  { n: 'TAR_Categorias', title: 'nombre', d: 'Categorías de las tareas por cliente, con su descripción (ayuda al elegirla)', cols: [
+    ['descripcion', 'm'], ['orden', 'n'], ['estado', 'c', ESTADO]] },
   // APP-113 · Checklist de Operaciones (antes Checklist_Operaciones_IC.xlsx). estado, prioridad, categoría y tipo son texto: se reclasifican desde la app
   { n: 'CHK_Items', title: 'item_id', d: 'Checklist de Operaciones: elementos del área (estructura, políticas, procesos, formatos, indicadores, gobierno)', cols: [
     ['orden', 'n'], ['categoria', 't', null, 1], ['tipo', 't'], ['elemento', 'm'], ['prioridad', 't'], ['estado', 't', null, 1], ['responsable', 't'],
@@ -270,6 +273,116 @@ const LISTAS = [
 ];
 // Datos iniciales tomados de la hoja «Listas» del Excel 2506-MAN-OPE. Solo se cargan los que no existan (por Title).
 const SEMILLAS = {
+ "TAR_Categorias": [
+  {
+   "Title": "Comercial",
+   "descripcion": "Oportunidades, propuestas, cotizaciones y nuevos negocios.",
+   "orden": 10,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "Seguimiento al cliente",
+   "descripcion": "Llamadas, correos, compromisos y pendientes con clientes.",
+   "orden": 20,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "Atención al cliente",
+   "descripcion": "Solicitudes, consultas, requerimientos y acompañamiento.",
+   "orden": 30,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "Soporte técnico",
+   "descripcion": "Problemas técnicos que requieren diagnóstico o solución.",
+   "orden": 40,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "Incidente",
+   "descripcion": "Fallas, interrupciones o situaciones que afectan el servicio.",
+   "orden": 50,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "Instalación",
+   "descripcion": "Instalación de dispositivos biométricos o infraestructura.",
+   "orden": 60,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "Implementación",
+   "descripcion": "Puesta en marcha de soluciones de software o hardware.",
+   "orden": 70,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "Mantenimiento",
+   "descripcion": "Mantenimientos preventivos y correctivos.",
+   "orden": 80,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "Inspección / Visita técnica",
+   "descripcion": "Revisiones presenciales, verificaciones y diagnósticos.",
+   "orden": 90,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "Software / Configuración",
+   "descripcion": "Parámetros, ajustes, usuarios, permisos y configuraciones.",
+   "orden": 100,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "Desarrollo / Mejoras",
+   "descripcion": "Nuevas funcionalidades, ajustes de aplicaciones y personalizaciones.",
+   "orden": 110,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "Capacitación",
+   "descripcion": "Formación a clientes, usuarios y administradores.",
+   "orden": 120,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "Integración",
+   "descripcion": "Conexiones con otros sistemas, plataformas o aplicaciones.",
+   "orden": 130,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "Calidad / Servicio",
+   "descripcion": "Evaluaciones, satisfacción, inconformidades y compromisos de mejora.",
+   "orden": 140,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "Facturación / Cartera",
+   "descripcion": "Facturas, pagos, saldos y asuntos administrativos comerciales.",
+   "orden": 150,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "Renovación / Contrato",
+   "descripcion": "Renovaciones, vencimientos, condiciones y acuerdos contractuales.",
+   "orden": 160,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "Documentación",
+   "descripcion": "Manuales, actas, informes, procedimientos y entregables.",
+   "orden": 170,
+   "estado": "ACTIVO"
+  },
+  {
+   "Title": "Gestión interna",
+   "descripcion": "Actividades administrativas o coordinaciones internas relacionadas con el cliente.",
+   "orden": 180,
+   "estado": "ACTIVO"
+  }
+ ],
  "OPE_Tipos": [
   {
    "Title": "INS",
@@ -1259,7 +1372,7 @@ const PERMISOS_TECNICOS = [
   ['PRY_Proyectos', 2], ['PRY_Tareas', 3], ['PRY_Bitacora', 3], ['PRY_Plantillas', 2], ['PRY_PlantillaTareas', 2], ['PRY_Planes', 2], ['PRY_Pendientes', 3], ['PRY_Reuniones', 2], ['PRY_Documentos', 2], ['SYS_Festivos', 2], ['SYS_Accesos', 2], ['SYS_Microapps', 2],
   ['NOV_Solicitudes', 3],       // además: cada técnico solo ve y edita sus propias solicitudes
   ['TAL_Programas', 2], ['TAL_Piezas', 2], ['TAL_Lecturas', 3], ['TAL_Coleccion', 2],
-  ['TAR_Tareas', 3], ['MAE_Empresas', 2]   // APP-109 Gestión de Clientes: todo el personal ve y actualiza las tareas
+  ['TAR_Tareas', 3], ['TAR_Categorias', 2], ['MAE_Empresas', 2]   // APP-109 Gestión de Clientes: todo el personal ve y actualiza las tareas
 ];
 let tecnicosLista = [];
 async function pintarTecnicos() {

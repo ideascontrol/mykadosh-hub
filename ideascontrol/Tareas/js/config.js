@@ -4,7 +4,7 @@
    por cliente como «Plan de Trabajo - Papeles Nacionales»).
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-109', nombre: 'Seguimiento por cliente', version: '0.2.4' },
+  app: { id: 'APP-109', nombre: 'Seguimiento por cliente', version: '0.3.0' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -38,7 +38,8 @@ window.CFG = {
     'Esperando Proveedor': 'Espera proveedor', 'Resuelto': 'Finalizada', 'Cerrado': 'Finalizada',
     'En espera del cliente': 'Espera cliente', 'En espera de tercero': 'Espera proveedor', 'En espera interna': 'Espera interna' },
   prioridades: ['Alta', 'Media', 'Baja'],
-  // Categorías con su definición (se muestra como ayuda al crear o editar una tarea)
+  // Categorías iniciales con su definición. Desde v0.3.0 se administran en la app (#categorias, lista TAR_Categorias);
+  // estas se usan solo mientras la lista no exista y para cargarla la primera vez.
   categorias: [
     ['Comercial', 'Oportunidades, propuestas, cotizaciones y nuevos negocios.'],
     ['Seguimiento al cliente', 'Llamadas, correos, compromisos y pendientes con clientes.'],

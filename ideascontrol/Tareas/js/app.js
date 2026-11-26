@@ -1,11 +1,11 @@
 /* =====================================================================
    APP-109 · Seguimiento por cliente — tareas y pendientes por cliente
-   Vistas: #  resumen · #tareas  listado con filtros · #reportes  reportes detallados · #importar  Excel
-   Datos: TAR_Tareas (IC Apps) · clientes de MAE_Empresas (Comercial) · personal de OPE_Tecnicos
+   Vistas: #  resumen · #tareas  listado con filtros · #reportes  reportes detallados · #importar  Excel · #categorias  (solo Dirección)
+   Datos: TAR_Tareas (IC Apps) · categorías de TAR_Categorias (si la lista aún no existe, las de config.js) · clientes de MAE_Empresas (Comercial) · personal de OPE_Tecnicos
    Agenda: una tarea se puede agendar en la Programación de Operaciones (OPE_Actividades, origen TAREA, tar_id = ID de la tarea)
    Semáforo: Vencida · Próxima a vencer (≤ CFG.diasAviso) · A tiempo · Sin fecha · Cerrada
    ===================================================================== */
-const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], tipos: [], festivos: {}, filtro: { cliente: '', estado: 'ACTIVAS', prioridad: '', categoria: '', semaforo: '', responsable: '', q: '' } };
+const App = { usuario: null, cats: [], catsLista: false, tareas: [], clientes: [], personal: [], acts: [], tipos: [], festivos: {}, filtro: { cliente: '', estado: 'ACTIVAS', prioridad: '', categoria: '', semaforo: '', responsable: '', q: '' } };
 
 (function () {
   const U = IC.ui, esc = U.esc, G = IC.graph;
@@ -43,7 +43,7 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
       .sort((a, b) => String(a.cliente_nombre).localeCompare(String(b.cliente_nombre)) || (Number(a.orden) || 0) - (Number(b.orden) || 0) || String(a.Title).localeCompare(b.Title));
   }
   // Pasa las categorías anteriores a la lista nueva (una sola vez por tarea)
-  const equivalente = (c) => { if (!c) return c; const k = Object.keys(CFG.equivalencias || {}).find((x) => U.norm(x) === U.norm(c)); return k ? CFG.equivalencias[k] : c; };
+  const equivalente = (c) => { if (!c || (App.cats.length && App.cats.some((x) => x.nombre === c))) return c; const k = Object.keys(CFG.equivalencias || {}).find((x) => U.norm(x) === U.norm(c)); return k ? CFG.equivalencias[k] : c; };
   const estadoEquiv = (e) => { if (!e) return e; const k = Object.keys(CFG.equivEstados || {}).find((x) => U.norm(x) === U.norm(e)); return k ? CFG.equivEstados[k] : e; };
   async function convertirCategorias() {
     const viejas = App.tareas.filter((t) => (t.categoria && equivalente(t.categoria) !== t.categoria) || (t.estado && estadoEquiv(t.estado) !== t.estado));
@@ -55,6 +55,14 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
     await cargar();
     U.aviso(viejas.length + ' tareas pasaron a las categorías y estados nuevos', 'ok', 6000);
   }
+  // Categorías: lista TAR_Categorias (se administran en #categorias). Sin la lista, o vacía, se usan las de config.js
+  async function cargarCategorias() {
+    try { App.cats = (await G.items('TAR_Categorias', { top: 500 })).map((x) => ({ _id: x._id, nombre: x.Title, descripcion: x.descripcion || '', orden: Number(x.orden) || 0, estado: x.estado || 'ACTIVO' })); App.catsLista = true; }
+    catch (e) { App.cats = []; App.catsLista = false; }
+    App.cats.sort((a, b) => a.orden - b.orden || a.nombre.localeCompare(b.nombre));
+  }
+  const catsBase = () => (App.cats.length ? App.cats : CFG.categorias.map((c, i) => ({ nombre: c[0], descripcion: c[1], orden: (i + 1) * 10, estado: 'ACTIVO' })));
+  const catsActivas = () => catsBase().filter((c) => c.estado !== 'INACTIVO');
   async function cargarClientes() {
     try { App.clientes = (await G.items('MAE_Empresas', { top: 5000 })).filter((e) => e.estado !== 'INACTIVO').map((e) => ({ id: e.Title, nombre: e.razon_social })); }
     catch (e) { App.clientes = []; }
@@ -118,7 +126,7 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
     document.getElementById('encabezado').innerHTML =
       '<a href="#"><img class="logo" src="' + CFG.logo + '" alt="Ideas Control"></a>' +
       '<div class="app-nombre"><b>' + esc(CFG.app.nombre) + '</b><span>' + CFG.app.id + ' · v' + CFG.app.version + '</span></div><div class="espacio"></div>' +
-      '<nav class="tar-nav"><a href="#" data-r="">Resumen</a><a href="#tareas" data-r="tareas">Tareas</a><a href="#pendientes" data-r="pendientes">Pendientes</a><a href="#reportes" data-r="reportes">Reportes detallados</a>' + (esAdmin() ? '<a href="#importar" data-r="importar">Importar</a>' : '') + '</nav>' +
+      '<nav class="tar-nav"><a href="#" data-r="">Resumen</a><a href="#tareas" data-r="tareas">Tareas</a><a href="#pendientes" data-r="pendientes">Pendientes</a><a href="#reportes" data-r="reportes">Reportes detallados</a>' + (esAdmin() ? '<a href="#importar" data-r="importar">Importar</a><a href="#categorias" data-r="categorias">Categorías</a>' : '') + '</nav>' +
       '<div class="ic-user">' + IC.portal.boton() + '<div class="datos"><b>' + esc(u.nombre) + '</b><span>' + (esAdmin() ? 'Dirección de Operaciones' : 'Personal IC') + '</span></div>' +
       '<div class="ic-avatar" title="' + esc(u.email) + '">' + esc(u.iniciales) + '</div><button class="ic-btn sec chico" id="btnSalir">Salir</button></div>';
     document.getElementById('encabezado').hidden = false;
@@ -188,11 +196,11 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
     }; });
   }
   const resumir = (s, n) => { s = String(s || '').replace(/\s+/g, ' ').trim(); return s.length > n ? s.slice(0, n - 1) + '…' : s; };
-  const CAT = CFG.categorias.map((c) => c[0]);
-  const ayudaCat = (n) => (CFG.categorias.find((c) => c[0] === n) || [n, ''])[1];
+  const catNombres = () => catsActivas().map((c) => c.nombre);
+  const ayudaCat = (n) => (catsBase().find((c) => c.nombre === n) || { descripcion: '' }).descripcion;
   // Las oficiales primero; luego las que ya traen tareas antiguas o importadas
-  const categorias = () => { const s = new Set(CAT); App.tareas.forEach((t) => { if (t.categoria) s.add(t.categoria); }); return Array.from(s); };
-  const otrasCategorias = () => categorias().filter((c) => CAT.indexOf(c) < 0);
+  const categorias = () => { const s = new Set(catNombres()); App.tareas.forEach((t) => { if (t.categoria) s.add(t.categoria); }); return Array.from(s); };
+  const otrasCategorias = () => { const k = catNombres(); return categorias().filter((c) => k.indexOf(c) < 0); };
 
   // =====================================================================
   // TAREAS (listado con filtros)
@@ -363,7 +371,7 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
       '<div class="ic-campo c6"><label for="f_plan">Plan / proyecto</label><input id="f_plan" name="plan" list="dlPlan" value="' + esc(v0.plan || '') + '" placeholder="Ej.: Implementación software T&A"><datalist id="dlPlan">' + planes.map((p) => '<option value="' + esc(p) + '">').join('') + '</datalist></div>' +
       U.campo({ name: 'item', label: 'Tarea', t: 'textarea', valor: v0.item, req: true, filas: 3, c: 'c12' }) +
       '<div class="ic-campo c4"><label for="f_categoria">Categoría</label><select id="f_categoria" name="categoria"><option value="">Seleccione…</option>' +
-        CFG.categorias.map((c) => '<option value="' + esc(c[0]) + '" title="' + esc(c[1]) + '"' + (c[0] === v0.categoria ? ' selected' : '') + '>' + esc(c[0]) + '</option>').join('') +
+        catsActivas().map((c) => '<option value="' + esc(c.nombre) + '" title="' + esc(c.descripcion) + '"' + (c.nombre === v0.categoria ? ' selected' : '') + '>' + esc(c.nombre) + '</option>').join('') +
         (otrasCategorias().length ? '<optgroup label="Usadas antes">' + otrasCategorias().map((c) => '<option value="' + esc(c) + '"' + (c === v0.categoria ? ' selected' : '') + '>' + esc(c) + '</option>').join('') + '</optgroup>' : '') +
         '</select><span class="ayuda" id="ayCat"></span></div>' +
       '<div class="ic-campo c4"><label for="f_responsable_id">Responsable</label>' + selResponsable(v0) + '</div>' +
@@ -628,6 +636,61 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
     if (m2) return m2[0]; if (m) return (m[3].length === 2 ? '20' + m[3] : m[3]) + '-' + pad(m[2], 2) + '-' + pad(m[1], 2);
     return '';
   }
+  // =====================================================================
+  // CATEGORÍAS (solo Dirección): crear, editar, ordenar y desactivar. No se borran: las tareas antiguas conservan su categoría.
+  // =====================================================================
+  function vistaCategorias(c) {
+    const uso = {}; App.tareas.forEach((t) => { if (t.categoria) uso[t.categoria] = (uso[t.categoria] || 0) + 1; });
+    const L = catsBase();
+    let aviso = '';
+    if (!App.catsLista) aviso = '<div class="ic-alerta" style="margin-bottom:14px"><b>Falta crear la lista de categorías.</b> Abra el <a href="/ideascontrol/Programacion/Instalador/" target="_blank">Instalador de Programación</a>, haga clic en «Crear estructura» y vuelva a esta pantalla. Mientras tanto se usan las categorías de siempre.</div>';
+    else if (!App.cats.length) aviso = '<div class="ic-alerta" style="margin-bottom:14px">La lista de categorías está vacía. <button class="ic-btn chico" id="bSembrar">Cargar las ' + CFG.categorias.length + ' categorías actuales</button></div>';
+    c.innerHTML = '<div class="ic-barra"><div><h1 class="ic-titulo">Categorías de tareas</h1><p class="ic-subtitulo" style="margin:0">Las categorías activas aparecen al crear o editar una tarea, con su descripción como ayuda. Una categoría desactivada ya no se ofrece, pero las tareas que la tienen la conservan.</p></div>' +
+      (App.catsLista && App.cats.length ? '<button class="ic-btn" id="bNuevaCat">+ Nueva categoría</button>' : '') + '</div>' + aviso +
+      '<div class="ic-tabla-caja"><table class="ic-tabla"><thead><tr><th style="width:70px">Orden</th><th>Categoría</th><th>Descripción (ayuda)</th><th style="width:90px">Tareas</th><th style="width:100px">Estado</th><th style="width:90px"></th></tr></thead><tbody>' +
+      L.map((x, i) => '<tr' + (x.estado === 'INACTIVO' ? ' style="opacity:.55"' : '') + '><td>' + esc(x.orden) + '</td><td><b>' + esc(x.nombre) + '</b></td><td>' + esc(x.descripcion) + '</td><td>' + (uso[x.nombre] || 0) + '</td>' +
+        '<td>' + (x.estado === 'INACTIVO' ? 'Inactiva' : 'Activa') + '</td><td>' + (x._id ? '<button class="ic-btn sec chico" data-cat="' + i + '">Editar</button>' : '') + '</td></tr>').join('') +
+      '</tbody></table></div>';
+    const bs = U.$('#bSembrar', c);
+    if (bs) bs.onclick = () => U.conCarga(bs, async () => {
+      try { for (const [i, k] of CFG.categorias.entries()) await G.crear('TAR_Categorias', { Title: k[0], descripcion: k[1], orden: (i + 1) * 10, estado: 'ACTIVO' }); await cargarCategorias(); U.aviso('Categorías cargadas', 'ok'); vistaCategorias(c); }
+      catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
+    });
+    const bn = U.$('#bNuevaCat', c); if (bn) bn.onclick = () => formCategoria(c, null);
+    c.querySelectorAll('[data-cat]').forEach((b) => { b.onclick = () => formCategoria(c, L[Number(b.dataset.cat)]); });
+  }
+  function formCategoria(c, x) {
+    const nueva = !x, sig = (catsBase().reduce((m, k) => Math.max(m, k.orden), 0) || 0) + 10;
+    x = x || { nombre: '', descripcion: '', orden: sig, estado: 'ACTIVO' };
+    const usadas = App.tareas.filter((t) => t.categoria === x.nombre).length;
+    U.modal(nueva ? 'Nueva categoría' : 'Editar categoría',
+      '<form id="fCat" class="ic-form" autocomplete="off"><div class="ic-campos">' +
+      U.campo({ name: 'nombre', label: 'Nombre', req: true, valor: x.nombre, c: 'c8', ph: 'Ej.: Terminación de contrato' }) +
+      U.campo({ name: 'orden', label: 'Orden', modo: 'numeric', valor: String(x.orden), c: 'c4' }) +
+      U.campo({ name: 'descripcion', label: 'Descripción (se muestra como ayuda al elegirla)', t: 'textarea', valor: x.descripcion, c: 'c12' }) +
+      U.campo({ name: 'estado', label: 'Estado', t: 'select', op: [['ACTIVO', 'Activa'], ['INACTIVO', 'Inactiva (ya no se ofrece)']], valor: x.estado, vacio: false, c: 'c6' }) +
+      (!nueva && usadas ? '<p class="ic-conteo c12" style="margin:0">' + usadas + ' tarea(s) usan esta categoría. Si cambia el nombre, también se actualizan.</p>' : '') +
+      '</div><div class="ic-acciones"><button type="button" class="ic-btn sec" id="cCancel">Cancelar</button><button class="ic-btn" id="cGuardar">Guardar</button></div></form>', (cu) => {
+    const f = cu.querySelector('#fCat');
+    cu.querySelector('#cCancel').onclick = () => U.cerrarModal();
+    f.onsubmit = (e) => { e.preventDefault(); U.conCarga(cu.querySelector('#cGuardar'), async () => {
+      const nombre = f.nombre.value.trim().replace(/\s+/g, ' ');
+      if (!nombre) { U.aviso('Escriba el nombre de la categoría', 'err'); return; }
+      if (catsBase().some((k) => k !== x && U.norm(k.nombre) === U.norm(nombre))) { U.aviso('Ya existe una categoría con ese nombre', 'err'); return; }
+      const campos = { Title: nombre, descripcion: f.descripcion.value.trim(), orden: Number(f.orden.value) || sig, estado: f.estado.value };
+      try {
+        if (nueva) await G.crear('TAR_Categorias', campos);
+        else {
+          await G.actualizar('TAR_Categorias', x._id, campos);
+          if (nombre !== x.nombre) for (const t of App.tareas.filter((t) => t.categoria === x.nombre)) await G.actualizar('TAR_Tareas', t._id, { categoria: nombre });
+        }
+        await Promise.all([cargarCategorias(), nueva || nombre === x.nombre ? null : cargar()]);
+        U.cerrarModal(); U.aviso(nueva ? 'Categoría creada: ' + nombre : 'Categoría guardada', 'ok'); vistaCategorias(c);
+      } catch (e2) { U.aviso(U.mensajeError(e2), 'err', 8000); }
+    }); };
+    });
+  }
+
   function vistaImportar(c) {
     c.innerHTML = '<h1 class="ic-titulo">Importar un plan de trabajo</h1><p class="ic-subtitulo">Suba un Excel con la hoja «Plan de Trabajo» (como el de Papeles Nacionales): una fila por tarea con Item, Categoría, Responsable, Prioridad, Estado, fechas, % de progreso y comentarios. Las columnas calculadas (ID, días, semáforo) se ignoran: la app las calcula.</p>' +
       '<form class="ic-form" id="fImp"><div class="ic-campos">' +
@@ -702,10 +765,10 @@ const App = { usuario: null, tareas: [], clientes: [], personal: [], acts: [], t
       if (!email.endsWith(CFG.dominio)) { U.pantalla(raiz, { logo: CFG.logo, titulo: 'Sin acceso', texto: 'Esta app es para el personal de Ideas Control: ingrese con su cuenta ' + CFG.dominio + '.', boton: 'Volver al portal', alClic: () => IC.portal.volver() }); return; }
       App.usuario = { nombre: cuenta.name || email, email, iniciales: U.fmt.iniciales(cuenta.name || email) };
       await G.sitio(CFG.sitio.host, CFG.sitio.ruta);
-      await Promise.all([cargar(), cargarClientes(), cargarPersonal(), cargarAgenda()]);
+      await Promise.all([cargar(), cargarClientes(), cargarPersonal(), cargarAgenda(), cargarCategorias()]);
       if (esAdmin()) await convertirCategorias();
       pintarEncabezado();
-      U.enrutar({ '': () => vistaResumen(raiz), tareas: () => vistaTareas(raiz), pendientes: () => vistaPendientes(raiz), reportes: () => vistaReportes(raiz), importar: () => (esAdmin() ? vistaImportar(raiz) : vistaResumen(raiz)) }, marcarNav);
+      U.enrutar({ '': () => vistaResumen(raiz), tareas: () => vistaTareas(raiz), pendientes: () => vistaPendientes(raiz), reportes: () => vistaReportes(raiz), importar: () => (esAdmin() ? vistaImportar(raiz) : vistaResumen(raiz)), categorias: () => (esAdmin() ? vistaCategorias(raiz) : vistaResumen(raiz)) }, marcarNav);
     } catch (e) {
       console.error(e);
       const falta = /No existe la lista TAR_/.test(e.message);

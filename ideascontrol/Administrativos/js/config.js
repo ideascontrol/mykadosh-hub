@@ -39,6 +39,7 @@ window.CFG = {
       ['Técnicos y personal', 'Personal de IC (Ideas Control, Administrativo, Técnicos de campo): correo, vinculación y matriz de habilidades. Es la lista de «Responsables» de todas las apps.', '/ideascontrol/Programacion/#admin/tecnicos', 'TM', 'teal'],
       ['Tipos de actividad', 'Categorías de actividad de la Programación (instalación, mantenimiento, soporte, oficina, ausencia…).', '/ideascontrol/Programacion/#admin/tipos', 'TM', 'teal'],
       ['Festivos', 'Días festivos que usan la Programación y Novedades para contar días hábiles.', '/ideascontrol/Programacion/#admin/festivos', 'TM', 'teal'],
+      ['Categorías de tareas', 'Categorías de las tareas por cliente (Seguimiento por cliente): crear, editar, ordenar y desactivar.', '/ideascontrol/Tareas/#categorias', 'TM', 'teal'],
       ['Productos y categorías', 'Catálogo de Comercial: productos, categorías, precios e inventario.', '/ideascontrol/Comercial/#productos', 'TM', 'teal']
     ]]
   ]
