@@ -218,16 +218,18 @@ const LISTAS = [
   { n: 'PRY_Bitacora', title: 'bitacora_id', d: 'Proyectos: bitácora de cambios (usuario, fecha/hora, campo, valor anterior y nuevo)', cols: [
     ['proyecto_id', 't', null, 1], ['tarea_id', 't'], ['fecha_hora', 't'], ['usuario', 't'], ['campo', 't'], ['anterior', 'm'], ['nuevo', 'm'], ['comentario', 'm'], ['evidencia', 'm']] },
   { n: 'PRY_Reuniones', title: 'reunion_id', d: 'Proyectos: reuniones, comités y acuerdos', cols: [
-    ['proyecto_id', 't', null, 1], ['fecha', 't'], ['tipo', 't'], ['asistentes', 'm'], ['objetivo', 'm'], ['acuerdos', 'm'], ['decisiones', 'm'], ['acta', 't']] },
+    ['proyecto_id', 't', null, 1], ['fecha', 't'], ['tipo', 't'], ['asistentes', 'm'], ['objetivo', 'm'], ['acuerdos', 'm'], ['decisiones', 'm'], ['acta', 't'],
+    ['numero', 'n'], ['asistentes_ic', 'm'], ['asistentes_cliente', 'm'], ['avances', 'm'], ['proximos_pasos', 'm'], ['semaforo', 't'], ['datos', 'm']] },
   { n: 'PRY_Pendientes', title: 'pendiente_id', d: 'Proyectos: compromisos, riesgos y problemas', cols: [
-    ['proyecto_id', 't', null, 1], ['tipo', 't'], ['descripcion', 'm'], ['impacto', 'm'], ['responsable', 't'], ['accion', 'm'], ['fecha_objetivo', 't'], ['estado', 't'], ['evidencia', 'm'], ['reunion_id', 't']] },
+    ['proyecto_id', 't', null, 1], ['tipo', 't'], ['descripcion', 'm'], ['impacto', 'm'], ['responsable', 't'], ['accion', 'm'], ['fecha_objetivo', 't'], ['estado', 't'], ['evidencia', 'm'], ['reunion_id', 't'],
+    ['responsable_email', 't'], ['tarea_id', 't']] },
   { n: 'PRY_Cambios', title: 'cambio_id', d: 'Proyectos: solicitudes de control de cambios (2611-FOR-OPE)', cols: [
     ['proyecto_id', 't', null, 1], ['fecha', 't'], ['solicitante', 't'], ['descripcion', 'm'], ['motivo', 'm'], ['impacto', 'm'], ['requiere_cotizacion', 't'], ['estado', 't'],
     ['aprobacion_ic', 't'], ['aceptacion_cliente', 'm'], ['version_plan', 'n']] },
   { n: 'PRY_Aprobaciones', title: 'aprobacion_id', d: 'Proyectos: aprobaciones (línea base, cambios, documentos, excepciones). Basta Martín Molina o Patricia Ramírez', cols: [
     ['proyecto_id', 't', null, 1], ['objeto', 't'], ['objeto_id', 't'], ['aprobador', 't'], ['cargo', 't'], ['fecha_hora', 't'], ['decision', 't'], ['comentarios', 'm'], ['evidencia', 'm'], ['registrado_por', 't']] },
   { n: 'PRY_Documentos', title: 'documento_id', d: 'Proyectos: documentos y evidencias del proyecto', cols: [
-    ['proyecto_id', 't', null, 1], ['formato', 't'], ['nombre', 't'], ['version', 't'], ['fecha', 't'], ['responsable', 't'], ['estado', 't'], ['enlace', 't']] },
+    ['proyecto_id', 't', null, 1], ['formato', 't'], ['nombre', 't'], ['version', 't'], ['fecha', 't'], ['responsable', 't'], ['estado', 't'], ['enlace', 't'], ['datos', 'm']] },
   { n: 'CHK_Catalogo', title: 'catalogo_id', d: 'Checklist de Operaciones: categorías, tipos de elemento, tipos de documento, áreas y series', cols: [
     ['grupo', 't', null, 1], ['codigo', 't'], ['nombre', 't'], ['descripcion', 'm'], ['orden', 'n']] },
   // APP-110 · Calculadora de costos y precios. Cada cálculo guardado es un registro histórico; lineas = JSON con las líneas de costo

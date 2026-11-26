@@ -1,12 +1,14 @@
 /* =====================================================================
    APP-114 · Proyectos — ficha del proyecto (#p/PRY-0001[/pestaña])
    Pestañas: Resumen · Cronograma (fases plegables, filtros, Gantt, edición con bitácora) · Línea base y versiones · Bitácora
-   Las pestañas de reuniones, compromisos, riesgos, cambios, documentos y cierre llegan en las etapas siguientes.
+   · Reuniones y compromisos · Riesgos y problemas · Documentos y actas · Cierre (estas cuatro en seguimiento.js / actas.js).
+   El control de cambios llega en la etapa siguiente.
    ===================================================================== */
 (function () {
   const U = IC.ui, G = IC.graph, esc = U.esc;
-  const PESTANAS = [['resumen', 'Resumen'], ['cronograma', 'Cronograma'], ['linea', 'Línea base y versiones'], ['bitacora', 'Bitácora']];
-  const PROXIMAS = ['Reuniones y compromisos', 'Riesgos y problemas', 'Control de cambios', 'Documentos y actas', 'Cierre'];
+  const PESTANAS = [['resumen', 'Resumen'], ['cronograma', 'Cronograma'], ['linea', 'Línea base y versiones'], ['bitacora', 'Bitácora'],
+    ['reuniones', 'Reuniones y compromisos'], ['riesgos', 'Riesgos y problemas'], ['documentos', 'Documentos y actas'], ['cierre', 'Cierre']];
+  const PROXIMAS = ['Control de cambios'];
   const S = { id: '', p: null, tareas: [], planes: [], base: null, plegadas: {}, f: { q: '', ventana: '', resp: '', org: '', fase: '', estado: '', salud: '', ocultarNA: true } };
 
   // ---------- Carga ----------
@@ -64,9 +66,13 @@
       '<div class="pry-tabs">' + PESTANAS.map((x) => '<a href="#p/' + esc(p.Title) + '/' + x[0] + '" class="' + (x[0] === tab ? 'on' : '') + '">' + x[1] + '</a>').join('') +
       PROXIMAS.map((x) => '<span class="pry-tab-off" title="Etapa siguiente">' + x + '</span>').join('') + '</div><div id="pTab"></div>';
     const d = c.querySelector('#pTab');
-    ({ resumen, cronograma, linea, bitacora })[tab](d, c);
+    const seg = App.seg || {};
+    ({ resumen, cronograma, linea, bitacora, reuniones: seg.reuniones, riesgos: seg.riesgos, documentos: seg.documentos, cierre: seg.cierre })[tab](d, c);
   }
   const recargar = async (c) => { await cargar(S.id); App.vistas.proyecto(c); };
+  // Lo que usan las pestañas de seguimiento (seguimiento.js) y las actas (actas.js)
+  App.pry = { S, editable, puedeTarea, porId, recargar, cargar: () => cargar(S.id), editarTarea: (t, c) => editarTarea(t, c), tareaPropia: (c, pre) => tareaPropia(c, pre),
+    reprogramar: (m) => reprogramar(m), sincronizar: () => sincronizarProyecto() };
 
   // =====================================================================
   // RESUMEN
@@ -386,19 +392,21 @@
   }
   const finDeFase = (f) => hijos(f).reduce((m, x) => Math.max(m, x.orden), f.orden);
 
-  function tareaPropia(c) {
+  function tareaPropia(c, pre) {
+    pre = pre || {};
     const fases = S.tareas.filter(PRY.esFase);
     if (!fases.length) { U.aviso('Primero cree una fase con «+ Fase».', 'warn'); return; }
     U.modal('Agregar tarea propia del proyecto', '<form class="ic-form" id="fN"><div class="ic-campos">' +
-      U.campo({ name: 'id_padre', label: 'Fase', t: 'select', op: fases.map((x) => [x.tarea_id, x.tarea_id + ' · ' + x.actividad]), req: true, c: 'c6' }) +
+      U.campo({ name: 'id_padre', label: 'Fase', t: 'select', op: fases.map((x) => [x.tarea_id, x.tarea_id + ' · ' + x.actividad]), valor: pre.id_padre, req: true, c: 'c6' }) +
       '<div class="ic-campo c6"><label for="f_ubicar">Ubicación en la fase</label><select id="f_ubicar" name="ubicar"></select></div>' +
       U.campo({ name: 'tipo', label: 'Tipo', t: 'select', op: CFG.tipos.filter((x) => x !== 'Fase').map((x) => [x, x]), valor: 'Tarea', vacio: false, c: 'c3' }) +
       U.campo({ name: 'duracion', label: 'Duración (días hábiles)', t: 'number', valor: 1, c: 'c3' }) +
-      U.campo({ name: 'actividad', label: 'Actividad', req: true, c: 'c6' }) + U.campo({ name: 'descripcion', label: 'Descripción', t: 'textarea', filas: 2, c: 'c12' }) +
-      U.campo({ name: 'responsable_email', label: 'Responsable', t: 'select', op: PRY.D.personas.map((x) => [x.email, x.nombre]), vacio: 'Sin asignar', c: 'c6' }) +
-      U.campo({ name: 'organizacion', label: 'Organización', t: 'select', op: CFG.organizaciones.map((x) => [x, x]), valor: 'IC', c: 'c6' }) +
-      U.campo({ name: 'predecesoras', label: 'Predecesoras (IDs separados por ;)', c: 'c6' }) + U.campo({ name: 'criterio', label: 'Criterio de cumplimiento', c: 'c6' }) +
-      U.campo({ name: 'comentario', label: 'Motivo / comentario para la bitácora', req: true, c: 'c12' }) + '</div>' +
+      U.campo({ name: 'actividad', label: 'Actividad', req: true, valor: pre.actividad, c: 'c6' }) + U.campo({ name: 'descripcion', label: 'Descripción', t: 'textarea', filas: 2, valor: pre.descripcion, c: 'c12' }) +
+      U.campo({ name: 'responsable_email', label: 'Responsable', t: 'select', op: PRY.D.personas.map((x) => [x.email, x.nombre]), valor: pre.responsable_email, vacio: 'Sin asignar', c: 'c6' }) +
+      U.campo({ name: 'organizacion', label: 'Organización', t: 'select', op: CFG.organizaciones.map((x) => [x, x]), valor: pre.organizacion || 'IC', c: 'c6' }) +
+      U.campo({ name: 'predecesoras', label: 'Predecesoras (IDs separados por ;)', c: 'c6' }) + U.campo({ name: 'criterio', label: 'Criterio de cumplimiento', valor: pre.criterio, c: 'c6' }) +
+      U.campo({ name: 'comentario', label: 'Motivo / comentario para la bitácora', req: true, valor: pre.comentario, c: 'c12' }) + '</div>' +
+      (pre.nota ? '<p class="pry-nota">' + esc(pre.nota) + '</p>' : '') +
       '<p class="pry-nota">La ubicación ordena la lista; el orden en que se ejecuta lo dan las predecesoras.</p>' +
       '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="nNo">Cancelar</button><button class="ic-btn" id="nOk">Agregar</button></div></form>', (cu) => {
       const f = cu.querySelector('#fN'); cu.querySelector('#nNo').onclick = U.cerrarModal;
@@ -433,7 +441,8 @@
             await reprogramar('Tarea propia ' + t.tarea_id + ' agregada');
             await sincronizarProyecto();
           });
-          U.cerrarModal(); U.aviso(t.tarea_id + ' agregada', 'ok'); App.vistas.proyecto(c);
+          U.cerrarModal(); U.aviso(t.tarea_id + ' agregada', 'ok');
+          if (pre.alCrear) await pre.alCrear(porId(t.tarea_id)); else App.vistas.proyecto(c);
         } catch (e2) { U.aviso(U.mensajeError(e2), 'err', 8000); }
       };
     });

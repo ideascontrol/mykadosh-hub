@@ -8,14 +8,15 @@
    Describe solo lo que la app hace hoy (Etapa 2). Cada cambio de pantalla actualiza este archivo.
    ===================================================================== */
 window.IC_AYUDA = {
-  version: '0.1.3',
-  actualizado: '2026-11-12',
+  version: '0.2.0',
+  actualizado: '2026-11-26',
   CATEGORIAS: [
     ['inicio', 'Primeros pasos'],
     ['proyectos', 'Crear y administrar proyectos'],
     ['cronograma', 'Cronograma y tareas'],
     ['linea', 'Línea base, avance y atraso'],
     ['bitacora', 'Bitácora'],
+    ['seguimiento', 'Reuniones, riesgos, documentos y cierre'],
     ['admin', 'Administración'],
     ['problemas', 'Preguntas frecuentes']
   ],
@@ -28,6 +29,10 @@ window.IC_AYUDA = {
     ['p/*/cronograma', 'cronograma'],
     ['p/*/linea', 'linea-base'],
     ['p/*/bitacora', 'bitacora'],
+    ['p/*/reuniones', 'reuniones'],
+    ['p/*/riesgos', 'riesgos'],
+    ['p/*/documentos', 'documentos'],
+    ['p/*/cierre', 'cierre'],
     ['admin', 'adm-resumen']
   ],
   DESTACADOS: ['crear', 'tarea-actualizar', 'programar', 'planear', 'linea-base', 'faq'],
@@ -64,8 +69,65 @@ window.IC_AYUDA = {
     claves: 'version etapa novedades proximamente gris reuniones riesgos cambios documentos cierre',
     html: `
 <p><b>Disponible (Etapa 2):</b> portafolio, crear proyectos desde las plantillas GNT, cronograma con fases y Gantt, actualización de tareas, tareas propias, línea base y versiones del plan, bitácora y <a href="#ayuda/programar">enlace con la Programación de Operaciones</a> (programar tareas a los técnicos y completarlas al ejecutarse).</p>
-<p><b>Próximas etapas</b> (pestañas en gris dentro del proyecto): reuniones y compromisos, riesgos y problemas, control de cambios, documentos y actas, y cierre. Mientras llegan, esos registros se llevan como indica el manual 2600-MAN-OPE.</p>` },
+<p><b>Etapa 3:</b> <a href="#ayuda/reuniones">reuniones y compromisos</a> con acta 2610, <a href="#ayuda/riesgos">riesgos y problemas</a>, <a href="#ayuda/visita">visitas técnicas desde una reunión</a>, <a href="#ayuda/documentos">documentos y actas</a> y <a href="#ayuda/cierre">cierre</a> con acta 2609 (y su variante de terminación de contrato).</p>
+<p><b>Próxima etapa</b> (pestaña en gris): control de cambios. Mientras llega, se lleva como indica el manual 2600-MAN-OPE (2611-FOR-OPE).</p>` },
 
+  { id: 'reuniones', cat: 'seguimiento', titulo: 'Reuniones y compromisos (acta 2610)', resumen: 'Registrar una reunión o comité, sus compromisos y generar el acta de comité e informe de estado.',
+    claves: 'reunion comite acta 2610 compromisos decisiones acuerdos notas pendientes asistentes semaforo avances proximos pasos',
+    html: `
+<ol class="pasos">
+<li>En el proyecto, pestaña <b>Reuniones y compromisos</b>, presione <b class="bt">+ Registrar reunión</b> (líder o administrador).</li>
+<li>Complete fecha, tipo, N° de comité, asistentes de IC y del cliente, y el objetivo.</li>
+<li>Use <b>Sugerir desde el cronograma</b> para llenar «Avances» (tareas completadas desde el último comité y las que están en curso) y «Próximos pasos». Corrija lo que haga falta.</li>
+<li>Agregue los <b>compromisos</b>, <b>decisiones</b>, <b>visitas técnicas</b>, <b>riesgos</b> y <b>problemas</b> que salieron, con responsable y fecha.</li>
+<li>Elija <b class="bt">Guardar (notas y pendientes)</b> si solo quiere dejar el registro, o <b class="bt">Guardar y generar acta 2610</b> para crear el PDF.</li>
+</ol>
+<ul>
+<li>El acta toma sola el <b>estado del proyecto</b>: avance real y planeado, próximo hito, desviación contra la línea base, tareas del cliente pendientes y controles de cambio. Es una foto del día de la reunión; en una reunión ya guardada puede actualizarla con «Actualizar con los datos de hoy».</li>
+<li>El semáforo se sugiere así: <b>Rojo</b> si el cierre se mueve más de 5 días hábiles; <b>Amarillo</b> si hay desviación o tareas del cliente atrasadas; si no, <b>Verde</b>. Puede cambiarlo.</li>
+<li>Las <b>notas internas</b> no salen en el acta.</li>
+<li>El PDF se guarda en la carpeta del proyecto con el nombre 2610-FOR-OPE_Cliente_AAAA-MM-DD.pdf y queda en <a href="#ayuda/documentos">Documentos y actas</a>.</li>
+<li>Cuando el cliente responda, abra la reunión y presione <b class="bt">Registrar aceptación</b>.</li>
+</ul>` },
+  { id: 'visita', cat: 'seguimiento', titulo: 'Programar una visita técnica desde una reunión', resumen: 'La visita se vuelve tarea del cronograma y se programa en la agenda de Operaciones.',
+    claves: 'visita tecnica programar agenda programacion operaciones tecnico compromiso',
+    html: `
+<ol class="pasos">
+<li>En la reunión, agregue una fila <b>+ Visita técnica</b> con la descripción y el responsable, y guarde. También puede usar el botón <b class="bt">Programar visita</b> de la lista de compromisos.</li>
+<li>La app propone una <b>tarea propia</b> «Visita técnica: …» en la fase en curso. Revise la fase, la duración y las predecesoras y presione <b>Agregar</b>.</li>
+<li>Se abre la tarea: prográmela en la agenda de Operaciones como cualquier otra tarea (técnico, fecha y tipo).</li>
+</ol>
+<ul><li>Cuando la visita queda <b>Ejecutada</b> en Programación, la tarea se completa y el compromiso se cierra solo.</li></ul>` },
+  { id: 'riesgos', cat: 'seguimiento', titulo: 'Riesgos y problemas', resumen: 'Registrar, hacer seguimiento y cerrar riesgos y problemas del proyecto.',
+    claves: 'riesgo problema impacto accion seguimiento cerrar',
+    html: `
+<ul>
+<li><b>Riesgo</b>: algo que podría pasar y afectar el proyecto. <b>Problema</b>: algo que ya está pasando.</li>
+<li>Se registran en la pestaña <b>Riesgos y problemas</b> (<b class="bt">+ Riesgo o problema</b>) o dentro de una reunión.</li>
+<li>Cada uno lleva impacto, acción, responsable, fecha y estado (Abierto, En seguimiento, Cerrado). Al cerrarlo, escriba el seguimiento o la evidencia.</li>
+<li>Los abiertos salen en la sección 5 del acta de comité 2610. Todo cambio queda en la bitácora.</li>
+</ul>` },
+  { id: 'documentos', cat: 'seguimiento', titulo: 'Documentos y actas', resumen: 'Las actas que genera la app y los demás documentos del proyecto.',
+    claves: 'documentos actas formatos 2602 2604 2606 2607 2608 enlace carpeta',
+    html: `
+<ul>
+<li>Las actas 2610 y 2609 que genera la app aparecen aquí solas, con su enlace al PDF y su estado (Generado, Enviado al cliente, Aceptado).</li>
+<li>Los demás documentos (acta de inicio 2602, diseño 2604, UAT 2606, salida en vivo 2607, traspaso 2608…) se guardan en la carpeta del proyecto y se registran con <b class="bt">+ Registrar documento</b> pegando su enlace.</li>
+<li>Los documentos registrados con su formato llenan solos las fechas de la sección «Entregables» del acta de cierre 2609.</li>
+</ul>` },
+  { id: 'cierre', cat: 'seguimiento', titulo: 'Cierre del proyecto (acta 2609)', resumen: 'Acta de cierre y entrega o, en terminaciones de contrato, su variante con el checklist de offboarding.',
+    claves: 'cierre acta 2609 entrega terminacion offboarding indicadores hitos csat hypercare traspaso soporte aceptacion cerrar proyecto',
+    html: `
+<ol class="pasos">
+<li>Abra la pestaña <b>Cierre</b>. La app arma el borrador con lo que ya sabe: fechas, entregables registrados, indicadores (cumplimiento de hitos y desviación del cierre) y los pendientes abiertos.</li>
+<li>Complete lo que falta (alcance contratado y entregado, hypercare, CSAT, traspaso a soporte) y presione <b class="bt">Guardar borrador</b> las veces que quiera.</li>
+<li>Con todo listo, <b class="bt">Guardar y generar PDF</b>: se guarda en la carpeta del proyecto.</li>
+<li>Cuando el cliente acepte por correo, <b class="bt">Registrar aceptación</b>. Con el acta aceptada aparece <b class="bt">Cerrar el proyecto</b>.</li>
+</ol>
+<ul>
+<li>En proyectos de <b>terminación de contrato T&A</b> (plantilla GNT-007) el acta es la variante de terminación: datos de la terminación, los controles del checklist obligatorio de offboarding (Pendiente, Completado o No aplica, con su evidencia) y los pendientes posteriores.</li>
+<li>Si el proyecto incluye TimeVision, aparece el anexo de cierre TimeVision.</li>
+</ul>` },
   { id: 'portafolio', cat: 'inicio', titulo: 'El portafolio', resumen: 'Indicadores, filtros y la lista de proyectos.',
     claves: 'portafolio inicio lista proyectos indicadores filtros buscar activos vencidas lider',
     html: `

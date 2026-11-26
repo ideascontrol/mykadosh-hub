@@ -100,3 +100,14 @@ td.gantt > i.hoy { position: absolute; top: 0; bottom: 0; width: 2px; background
 .pry-prog { border: 1px solid var(--ic-borde); border-radius: 10px; padding: 10px 12px; margin-bottom: 12px; }
 .pry-prog-cab { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 6px; }
 .pry-lnk { border: 0; background: none; color: var(--ic-azul); font-size: 12px; font-weight: 600; cursor: pointer; padding: 0 4px; text-decoration: underline; }
+
+/* Seguimiento: reuniones, pendientes, documentos y cierre */
+.pry-form-reu .pry-fila-pend { display: grid; grid-template-columns: 130px 1.6fr 1fr 1fr 1fr 140px 34px; gap: 6px; margin-bottom: 6px; align-items: center; }
+.pry-form-reu .pry-fila-pend [hidden] { display: block !important; visibility: hidden; }
+.pry-sug { font-weight: 600; font-size: 12px; margin-left: 8px; }
+.pry-est-mini { background: #F3F7FB; border: 1px solid var(--ic-borde); border-radius: 10px; padding: 10px 12px; font-size: 13px; color: var(--ic-gris); margin: 4px 0 12px; }
+.pry-h4 { margin: 18px 0 8px; font-size: 14px; color: var(--ic-teal); } .pry-h4 small { color: var(--ic-gris); font-weight: 400; }
+.pry-g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; } .pry-g4 label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--ic-gris); }
+.pry-cierre { padding-top: 4px; } .pry-cierre .ic-tabla input, .pry-cierre .ic-tabla select { width: 100%; min-width: 0; }
+.ic-modal .pry-form-reu { min-width: min(980px, 92vw); }
+@media (max-width: 800px) { .pry-form-reu .pry-fila-pend { grid-template-columns: 1fr 1fr; } .pry-g4 { grid-template-columns: 1fr 1fr; } }

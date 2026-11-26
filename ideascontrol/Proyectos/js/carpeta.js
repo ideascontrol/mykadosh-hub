@@ -1,6 +1,6 @@
 /* =====================================================================
    APP-114 · Proyectos — carpeta del proyecto en SharePoint (sitio Ideas Control)
-   Al crear un proyecto se crea: 01_CLIENTES › [carpeta del cliente] › 02_Proyectos › [PRY-0001 Nombre del proyecto]
+   Al crear un proyecto se crea: 01_CLIENTES › [carpeta del cliente] › 02_Proyectos › [Año]_[Proyecto]  (como indican 2609/2610-FOR-OPE)
    - La carpeta del cliente se busca entre las que ya existen (por código de cliente, NIT o razón social).
      Si no existe, se crea con el mismo nombre que usa Comercial para guardar las cotizaciones: «[código o NIT] [RAZÓN SOCIAL]».
    - Nunca borra ni renombra nada; si una carpeta ya existe, la usa.
@@ -37,7 +37,7 @@
         { name: nombre, folder: {}, '@microsoft.graph.conflictBehavior': 'fail' });
     } catch (e) {
       if (e.status !== 409) throw e;   // ya existe: se usa
-      return await G.llamar('GET', '/drives/' + drive.id + '/root:/' + ruta(padre.concat([nombre])) + '?$select=name,webUrl');
+      return await G.llamar('GET', '/drives/' + drive.id + '/root:/' + ruta(padre.concat([nombre])) + '?$select=id,name,webUrl');
     }
   }
   // Crea (o reutiliza) la carpeta del proyecto y devuelve { webUrl, ruta }
@@ -47,9 +47,38 @@
     const cliente = existente ? existente.name : nombreCarpeta(((emp && (emp.codigo_cliente || emp.nit)) || '') + ' ' + ((emp && emp.razon_social) || p.cliente));
     if (!existente) await asegurar([], cliente);
     await asegurar([cliente], CFG.docs.subcarpeta);
-    const it = await asegurar([cliente, CFG.docs.subcarpeta], nombreCarpeta(p.Title + ' ' + p.nombre));
-    return { webUrl: it.webUrl, ruta: [CFG.docs.biblioteca, cliente, CFG.docs.subcarpeta, it.name].join(' › ') };
+    const anio = String(p.inicio || new Date().toISOString()).slice(0, 4);
+    const it = await asegurar([cliente, CFG.docs.subcarpeta], nombreCarpeta(anio + '_' + p.nombre));
+    return { id: it.id, driveId: drive.id, webUrl: it.webUrl, ruta: [CFG.docs.biblioteca, cliente, CFG.docs.subcarpeta, it.name].join(' › ') };
+  }
+  // Carpeta del proyecto: la del enlace guardado (sirve cualquier carpeta de SharePoint) o, si no hay, la que crea la app
+  async function carpetaDe(p, emp) {
+    if (/^https?:\/\//.test(p.carpeta || '')) {
+      try {
+        const enc = btoa(unescape(encodeURIComponent(p.carpeta))).replace(/=+$/, '').replace(/\//g, '_').replace(/\+/g, '-');
+        const it = await G.llamar('GET', '/shares/u!' + enc + '/driveItem?$select=id,name,webUrl,parentReference,folder');
+        if (it.folder) return { driveId: it.parentReference.driveId, id: it.id, webUrl: it.webUrl, nueva: false };
+      } catch (e) { console.warn('Carpeta guardada', e); }
+    }
+    const cp = await crear(p, emp);
+    return Object.assign(cp, { nueva: true });
+  }
+  // Sube un PDF a la carpeta del proyecto. nombreAnterior: el del acta que se regenera (se reemplaza); si no, no pisa otro archivo
+  async function subir(p, emp, nombre, blob, nombreAnterior) {
+    const cf = await carpetaDe(p, emp);
+    let nom = nombreAnterior || nombre;
+    if (!nombreAnterior) {
+      for (let i = 2; i < 30; i++) {
+        try { await G.llamar('GET', '/drives/' + cf.driveId + '/items/' + cf.id + ':/' + encodeURIComponent(nom) + '?$select=id'); nom = nombre.replace(/\.pdf$/i, ' (' + i + ').pdf'); }
+        catch (e) { if (e.status === 404) break; throw e; }
+      }
+    }
+    const res = await fetch('https://graph.microsoft.com/v1.0/drives/' + cf.driveId + '/items/' + cf.id + ':/' + encodeURIComponent(nom) + ':/content',
+      { method: 'PUT', headers: { Authorization: 'Bearer ' + await IC.auth.token(), 'Content-Type': 'application/pdf' }, body: blob });
+    if (!res.ok) { const e = new Error('SharePoint respondió ' + res.status); e.status = res.status; throw e; }
+    const it = await res.json();
+    return { webUrl: it.webUrl, nombre: it.name, carpetaUrl: cf.webUrl, carpetaNueva: cf.nueva };
   }
   const explicar = (e) => e.status === 403 || e.status === 401 ? 'no tiene permiso para crear carpetas en ' + CFG.docs.biblioteca + ' (sitio Ideas Control)' : U.mensajeError(e);
-  window.PRY_CARPETA = { crear, explicar };
+  window.PRY_CARPETA = { crear, subir, explicar, nombreCarpeta };
 })();
