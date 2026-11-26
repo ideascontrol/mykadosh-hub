@@ -89,7 +89,8 @@ window.IC_AYUDA = {
 <li><b>Cliente</b>: escriba y elija la empresa de la lista. La lista es la base de Comercial: si el cliente no aparece, créelo primero en la app Comercial (aquí no se crean clientes).</li>
 <li>Escriba el <b>nombre del proyecto</b> y, si la tiene, la <b>Orden de Servicio</b> y su fecha.</li>
 <li><b>Fecha de inicio</b>: viene el siguiente día hábil; cámbiela si se acordó otra. Elija el <b>líder IC</b> y el <b>contacto</b> del cliente.</li>
-<li>Pegue el enlace de la <b>carpeta del proyecto</b> en SharePoint y la descripción del alcance contratado.</li>
+<li><b>Carpeta del proyecto</b>: con la casilla marcada, la app la crea sola en SharePoint (Ideas Control › 01_CLIENTES › [cliente] › 02_Proyectos › [ID y nombre]) y guarda el enlace. Si la carpeta del cliente ya existe, usa esa. Si prefiere una carpeta que ya tiene, desmarque la casilla y pegue su enlace.</li>
+<li>Escriba la descripción del alcance contratado.</li>
 <li><b>Escenario</b>: al elegirlo se marcan solas las plantillas que le corresponden. <a href="#ayuda/escenarios">Ver escenarios</a>.</li>
 <li><b>Tareas que aplican</b>: revise la lista. Lo que no está en el alcance se <b>desmarca</b> y se escribe el motivo (<a href="#ayuda/no-aplica">más sobre «No aplica»</a>). Lo que falta se agrega con <b class="bt">+ Agregar tarea propia</b>, eligiendo la fase.</li>
 <li>Presione <b class="bt">Crear proyecto</b>. La app le asigna el código (PRY-0001…), calcula las fechas y abre el cronograma.</li>

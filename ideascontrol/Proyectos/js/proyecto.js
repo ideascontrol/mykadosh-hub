@@ -85,11 +85,20 @@
       '<div class="pry-2col"><div class="ic-tabla-caja pry-caja"><div class="pry-caja-cab"><h3>Datos del proyecto</h3>' + (editable() ? '<button class="ic-btn sec chico" id="bEd">Editar</button>' : '') + '</div><dl class="pry-dl">' +
         dato('Cliente', esc(p.cliente)) + dato('Contacto', esc(p.contacto)) + dato('Líder IC', esc(p.lider)) + dato('Orden de Servicio', esc([p.os_numero, PRY.textoFecha(PRY.dia(p.os_fecha), true)].filter(Boolean).join(' · '))) +
         dato('Escenario', esc(p.escenario)) + dato('Plantillas', esc(p.plantillas)) + dato('Inicio', esc(PRY.textoFecha(p.inicio, true))) + dato('Línea base', p.linea_base_fecha ? esc(PRY.textoFecha(PRY.dia(p.linea_base_fecha), true)) + (p.version_plan ? ' · plan v' + esc(p.version_plan) : '') : 'Sin aprobar') +
-        dato('Salud', App.tagSalud(p.salud) + (p.explicacion_salud ? ' ' + esc(p.explicacion_salud) : '')) + dato('Carpeta', p.carpeta ? (/^https?:/.test(p.carpeta) ? '<a href="' + esc(p.carpeta) + '" target="_blank" rel="noopener">Abrir carpeta ↗</a>' : esc(p.carpeta)) : '') +
+        dato('Salud', App.tagSalud(p.salud) + (p.explicacion_salud ? ' ' + esc(p.explicacion_salud) : '')) + dato('Carpeta', p.carpeta ? (/^https?:/.test(p.carpeta) ? '<a href="' + esc(p.carpeta) + '" target="_blank" rel="noopener">Abrir carpeta ↗</a>' : esc(p.carpeta)) : editable() ? '<button class="ic-btn sec chico" id="bCarpeta">Crear carpeta en SharePoint</button>' : '') +
         dato('Alcance', esc(p.alcance || p.descripcion)) + dato('Exclusiones', esc(p.exclusiones)) + dato('Supuestos', esc(p.supuestos)) + dato('Entregables', esc(p.entregables)) + dato('Participantes', esc(p.participantes)) + '</dl></div>' +
       '<div><div class="ic-tabla-caja pry-caja"><h3>Vencidas</h3>' + lista(venc, 'No hay tareas vencidas.') + '</div><div class="ic-tabla-caja pry-caja"><h3>Vencen en los próximos 7 días</h3>' + lista(prox, 'Nada vence en los próximos 7 días.') + '</div></div></div>';
     d.querySelectorAll('tr[data-t]').forEach((tr) => { tr.onclick = () => editarTarea(porId(tr.dataset.t), c); });
     const b = d.querySelector('#bEd'); if (b) b.onclick = () => editarProyecto(c);
+    const bc = d.querySelector('#bCarpeta');
+    if (bc) bc.onclick = () => U.conCarga(bc, async () => {
+      try {
+        const emp = (await PRY.empresas()).find((e) => e.Title === p.empresa_id);
+        const cp = await PRY_CARPETA.crear(p, emp);
+        await G.actualizar('PRY_Proyectos', p._id, { carpeta: cp.webUrl });
+        U.aviso('Carpeta creada: ' + cp.ruta, 'ok', 8000); recargar(c);
+      } catch (e) { U.aviso('No se pudo crear la carpeta: ' + PRY_CARPETA.explicar(e), 'err', 10000); }
+    });
   }
 
   function editarProyecto(c) {

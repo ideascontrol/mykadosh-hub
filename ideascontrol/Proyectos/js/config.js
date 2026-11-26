@@ -6,7 +6,7 @@
    Datos en IC Apps (listas PRY_*). Clientes: MAE_Empresas / MAE_Contactos (Comercial).
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-114', nombre: 'Proyectos', version: '0.1.4 · Etapa 2' },
+  app: { id: 'APP-114', nombre: 'Proyectos', version: '0.1.5 · Etapa 2' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -16,6 +16,8 @@ window.CFG = {
   },
   sitio: { host: 'ideascontrolsas.sharepoint.com', ruta: '/sites/ICApps' },
   logo: '/ideascontrol/assets/ideascontrol.webp',
+  // Carpeta de cada proyecto: sitio Ideas Control › 01_CLIENTES › [cliente] › 02_Proyectos › [PRY-0001 Nombre] (se crea sola al crear el proyecto)
+  docs: { host: 'ideascontrolsas.sharepoint.com', ruta: '/sites/IdeasControl', biblioteca: '01_CLIENTES', subcarpeta: '02_Proyectos' },
   manual: '2600-MAN-OPE',
   urlDoc: '/ideascontrol/Documentacion/#/doc/',
   // Administración de la app (además de quien tenga rol ADMIN en SYS_Accesos para APP-114)

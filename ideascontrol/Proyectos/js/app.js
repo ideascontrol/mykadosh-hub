@@ -141,7 +141,9 @@ const App = { usuario: null, rol: '', proyectos: [], tareasTodas: [], vistas: {}
       U.campo({ name: 'inicio', label: 'Fecha de inicio', t: 'date', req: true, valor: PRY.sigHabil(PRY.hoy()), c: 'c3' }) +
       U.campo({ name: 'lider_email', label: 'Líder IC', t: 'select', op: PRY.D.personas.map((p) => [p.email, p.nombre]), valor: lider ? lider.email : '', req: true, c: 'c3' }) +
       '<div class="ic-campo c6"><label for="f_contacto_id">Contacto del cliente</label><select id="f_contacto_id" name="contacto_id"><option value="">Elija primero el cliente</option></select></div>' +
-      U.campo({ name: 'carpeta', label: 'Enlace a la carpeta del proyecto (SharePoint)', c: 'c6', ph: 'Ideas Control › 01_Clientes › cliente › 02_Proyectos' }) +
+      '<div class="ic-campo c6"><label class="ic-check" style="margin-top:22px"><input type="checkbox" id="f_crearCarpeta" name="crear_carpeta" checked> <span>Crear la carpeta del proyecto en SharePoint</span></label>' +
+        '<span class="ayuda" id="ayCarpeta">Ideas Control › 01_CLIENTES › [cliente] › 02_Proyectos › [ID y nombre del proyecto]. Si la carpeta del cliente ya existe, se usa esa.</span>' +
+        '<input id="f_carpeta" name="carpeta" placeholder="Pegue el enlace de una carpeta existente" hidden></div>' +
       U.campo({ name: 'descripcion', label: 'Descripción / alcance contratado', t: 'textarea', filas: 2, c: 'c12' }) + '</div></fieldset>' +
       '<fieldset><legend>2. Escenario y plantillas</legend><div class="ic-campos">' +
       U.campo({ name: 'escenario', label: 'Escenario', t: 'select', op: CFG.escenarios.map((e) => [e.id, e.nombre]), req: true, c: 'c6' }) + '</div>' +
@@ -151,6 +153,7 @@ const App = { usuario: null, rol: '', proyectos: [], tareasTodas: [], vistas: {}
       '<fieldset><legend>3. Tareas que aplican</legend><div id="nvT"><p class="pry-nota">Elija las plantillas para ver sus tareas.</p></div></fieldset>' +
       '<div class="ic-acciones"><span id="nvE" class="pry-nota" style="margin-right:auto"></span><a class="ic-btn sec" href="#">Cancelar</a><button class="ic-btn" id="nvOk">Crear proyecto</button></div></form>';
     const f = c.querySelector('#fN');
+    f.crear_carpeta.onchange = () => { const si = f.crear_carpeta.checked; f.carpeta.hidden = si; f.querySelector('#ayCarpeta').hidden = !si; if (!si) f.carpeta.focus(); };
     let empresa = null, comb = null, base = null, extras = [], regs = {};
     f.querySelector('#f_cliente').onchange = async (e) => {
       empresa = emp.find((x) => U.norm(x.razon_social) === U.norm(e.target.value)) || null;
@@ -259,9 +262,18 @@ const App = { usuario: null, rol: '', proyectos: [], tareasTodas: [], vistas: {}
         Object.keys(proyecto).forEach((k) => { if (proyecto[k] === '' || proyecto[k] == null) delete proyecto[k]; });
         est.textContent = 'Creando el proyecto…';
         await G.crear('PRY_Proyectos', proyecto);
+        let avisoCarpeta = '';
+        if (f.crear_carpeta.checked) {
+          est.textContent = 'Creando la carpeta en SharePoint…';
+          try {
+            const cp = await PRY_CARPETA.crear(proyecto, empresa);
+            const reg = (await G.items('PRY_Proyectos', { filtro: "fields/Title eq '" + id + "'", top: 1 }))[0];
+            if (reg) await G.actualizar('PRY_Proyectos', reg._id, { carpeta: cp.webUrl });
+          } catch (e3) { console.warn(e3); avisoCarpeta = ' No se pudo crear la carpeta: ' + PRY_CARPETA.explicar(e3) + '. Puede crearla después desde la ficha del proyecto.'; }
+        }
         await PRY.enParalelo(tareas, 4, (t) => G.crear('PRY_Tareas', App.filaTarea(id, t)), (h, tot) => { est.textContent = 'Copiando tareas: ' + h + ' de ' + tot + '…'; });
         await PRY.bitacora(id, '', [{ campo: 'Proyecto creado', antes: '', despues: proyecto.plantillas + ' · ' + tareas.length + ' registros' }], 'Escenario: ' + proyecto.escenario, '', App.usuario.nombre);
-        U.aviso('Proyecto ' + id + ' creado. Revise duraciones y dependencias y apruebe la línea base.', 'ok', 8000);
+        U.aviso('Proyecto ' + id + ' creado. Revise duraciones y dependencias y apruebe la línea base.' + avisoCarpeta, avisoCarpeta ? 'warn' : 'ok', avisoCarpeta ? 12000 : 8000);
         location.hash = '#p/' + id + '/cronograma';
       } catch (e2) {
         b.disabled = false; est.textContent = '';
