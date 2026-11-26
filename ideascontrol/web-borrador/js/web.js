@@ -99,7 +99,7 @@
           if (!d || !d.ok) throw new Error((d && d.error) || 'Error');
           f.reset(); f.querySelectorAll('.c').forEach((c) => { c.classList.remove('mal'); const er = c.querySelector('.err'); if (er) er.textContent = ''; });
           nota.textContent = 'Usamos tus datos solo para responder tu solicitud.';
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          window.scrollTo(0, 0);
           aviso('Gracias. Recibimos tu solicitud y un asesor de Ideas Control te contactará pronto.');
         })
         .catch(() => { nota.innerHTML = '<b>No pudimos enviar tu solicitud.</b> Inténtalo de nuevo o escríbenos a info@ideascontrol.com.'; })
