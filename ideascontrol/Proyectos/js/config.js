@@ -1,11 +1,12 @@
 /* =====================================================================
    APP-114 · Proyectos — configuración
    Proyectos de implementación de Ideas Control (manual 2600-MAN-OPE):
-   T&A, TimeVision (reportes y análisis de T&A, no WFM), biometría, puertas, torniquetes y migración de plataformas.
+   T&A, TimeVision (reportes y análisis de T&A, no WFM), biometría, puertas, torniquetes, migración de plataformas
+   y terminación de contratos T&A (offboarding de cliente, GNT-007).
    Datos en IC Apps (listas PRY_*). Clientes: MAE_Empresas / MAE_Contactos (Comercial).
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-114', nombre: 'Proyectos', version: '0.1.3 · Etapa 2' },
+  app: { id: 'APP-114', nombre: 'Proyectos', version: '0.1.4 · Etapa 2' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -38,6 +39,7 @@ window.CFG = {
     { id: 'PUE', nombre: 'Puerta / control de acceso', plantillas: ['GNT-004'] },
     { id: 'TOR', nombre: 'Torniquete', plantillas: ['GNT-005'] },
     { id: 'MIG', nombre: 'Migración de plataformas', plantillas: ['GNT-006'] },
+    { id: 'TERM', nombre: 'Terminación de contrato T&A', plantillas: ['GNT-007'] },
     { id: 'COMB', nombre: 'Proyecto combinado', plantillas: [] }
   ],
   // Tareas comunes: al combinar plantillas se dejan una sola vez (la primera plantilla manda)
