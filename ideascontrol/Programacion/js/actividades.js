@@ -147,7 +147,9 @@
         if (fuente.ciu && (!fCiu.value.trim() || fCiu.value === fCiu.dataset.auto)) { fCiu.value = fuente.ciu; fCiu.dataset.auto = fuente.ciu; }
         ay.textContent = fDir.value === fuente.dir ? 'Tomada de ' + fuente.de + '. Si la cambia aquí, solo cambia en esta actividad; el dato original no se modifica.' : 'Dirección propia de esta actividad (la de ' + fuente.de + ' es: ' + fuente.dir + ').';
       };
-      let turno = 0, sedeBase = a.sede || '';
+      // Sede ya guardada que no corresponde a este cliente (quedó así por una coincidencia de nombre): no se usa
+      let turno = 0, sedeBase = a.sede || '', sedeQuitada = '';
+      if (sedeBase && App.sedesCandidatas && !App.sedesCandidatas(a).some((x) => x.Title === sedeBase)) { sedeQuitada = sedeBase; sedeBase = ''; }
       const refrescar = async () => {
         const p = leer(), n = ++turno;
         cuerpo.querySelector('#cEquipos').hidden = !Ope.usaEquipos(p.tipo);
@@ -164,6 +166,7 @@
           selS.innerHTML = '<option value="">' + (cands.length > 1 ? '— elegir sede —' : '— sin sede —') + '</option>' + ops.map((x) => '<option value="' + esc(x.Title) + '"' + (x.Title === sel ? ' selected' : '') + '>' + esc(x.Title + ' · ' + (x.ciudad || '') + ' · ' + (x.direccion || '')) + '</option>').join('');
           cuerpo.querySelector('#aySede').textContent = cands.length > 1 ? (p.sitio || p.cliente) + ' tiene ' + cands.length + ' sedes registradas: elija dónde es el servicio.' : '';
         }
+        if (sedeQuitada && !selS.value) { cuerpo.querySelector('#cSede').hidden = false; selS.innerHTML = '<option value="">— sin sede —</option>'; cuerpo.querySelector('#aySede').textContent = 'Tenía la sede ' + sedeQuitada + ', que es de otro cliente con nombre parecido: se quitó. Guarde para corregir la actividad.'; }
         sugerirDireccion(selS.value, emp);
         if (!p.fecha) return;
         try { await Ope.cargarMes(Ope.ym(p.fecha)); } catch (e) { /* sin conexión: se valida con lo que hay */ }
