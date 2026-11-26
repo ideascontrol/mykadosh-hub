@@ -200,7 +200,7 @@ window.Ope = (function () {
         entidad, registro_id: registro, accion, antes: antes ? JSON.stringify(antes) : '', despues: despues ? JSON.stringify(despues) : '' });
     } catch (e) { console.warn('Auditoría no registrada', e); }
   }
-  const CAMPOS_ACT = ['fecha', 'tecnico_id', 'tipo', 'cliente', 'empresa_id', 'ciudad', 'equipos', 'hora_inicio', 'ticket_os', 'estado', 'observaciones', 'reprograma_de', 'autorizado', 'motivo_cambio', 'origen', 'sitio', 'sede', 'pry_id', 'pry_tarea', 'tar_id'];
+  const CAMPOS_ACT = ['fecha', 'tecnico_id', 'tipo', 'cliente', 'empresa_id', 'ciudad', 'equipos', 'hora_inicio', 'ticket_os', 'estado', 'observaciones', 'reprograma_de', 'autorizado', 'motivo_cambio', 'origen', 'sitio', 'sede', 'direccion', 'pry_id', 'pry_tarea', 'tar_id'];
   function soloCampos(o) { const r = {}; CAMPOS_ACT.forEach((k) => { if (o[k] !== undefined) r[k] = o[k]; }); return r; }
 
   // Cliente principal = quien contrata y paga (p. ej. Casa Limpia) · sitio = cliente final donde se instala
@@ -297,11 +297,17 @@ window.Ope = (function () {
     } catch (e) { console.warn(e); IC.ui.aviso('La actividad quedó guardada, pero no se pudo actualizar la tarea ' + act.tar_id + ' (' + IC.ui.mensajeError(e) + ').', 'warn', 8000); }
   }
 
+  const avisoDireccion = () => IC.ui.aviso('La actividad se guardó sin la dirección: falta actualizar la lista. Abra el Instalador IC Apps y haga clic en «Crear estructura».', 'warn', 9000);
   async function crearActividad(a) {
     const n = await G.siguiente('PRG');
     const campos = Object.assign(soloCampos(a), { Title: 'PRG-' + pad(n, 6) });
     if (campos.equipos === '') delete campos.equipos;
-    let it; try { it = await G.crear('OPE_Actividades', campos); } catch (e) { throw explicarColumna(e); }
+    let it;
+    try { it = await G.crear('OPE_Actividades', campos); }
+    catch (e) {   // sin la columna «direccion» (falta «Crear estructura» en el Instalador): se guarda sin ella
+      if (!('direccion' in campos) || !/direccion/i.test(e.message)) throw explicarColumna(e);
+      delete campos.direccion; it = await G.crear('OPE_Actividades', campos); avisoDireccion();
+    }
     recordar(it);
     await auditar('ACTIVIDAD', it.Title, 'CREAR', null, campos);
     if (campos.tar_id) await sincronizarTarea(Object.assign({}, campos, { fecha: dia(campos.fecha) }), null);
@@ -310,7 +316,11 @@ window.Ope = (function () {
   async function actualizarActividad(actual, cambios, accion) {
     const campos = soloCampos(cambios);
     if (campos.equipos === '') campos.equipos = null;
-    try { await G.actualizar('OPE_Actividades', actual._id, campos, actual._etag); } catch (e) { throw explicarColumna(e); }
+    try { await G.actualizar('OPE_Actividades', actual._id, campos, actual._etag); }
+    catch (e) {
+      if (!('direccion' in campos) || !/direccion/i.test(e.message)) throw explicarColumna(e);
+      delete campos.direccion; await G.actualizar('OPE_Actividades', actual._id, campos, actual._etag); avisoDireccion();
+    }
     const nuevo = (await G.items('OPE_Actividades', { filtro: "fields/Title eq '" + actual.Title + "'" }))[0];
     if (actual.fecha !== nuevo.fecha) { /* cambió de mes */ }
     recordar(nuevo);

@@ -93,6 +93,7 @@
       '<div class="ic-campo c6"><label for="f_sitio">Sitio / cliente final (dónde se instala)</label><input id="f_sitio" name="sitio" list="dlSitios" value="' + esc(a.sitio || '') + '" placeholder="Ej.: Clínica Los Nogales · vacío si es el mismo cliente">' +
         '<datalist id="dlSitios"></datalist><span class="ayuda">Si el servicio es para un cliente de su cliente (p. ej. los clientes de Casa Limpia).</span></div>' +
       '<div class="ic-campo c12" id="cSede" hidden><label for="f_sede">Sede</label><select id="f_sede" name="sede"></select><span class="ayuda" id="aySede"></span></div>' +
+      '<div class="ic-campo c12"><label for="f_direccion">Dirección del servicio</label><input id="f_direccion" name="direccion" value="' + esc(a.direccion || '') + '" placeholder="Se toma de la empresa o de la sede; puede cambiarla"><span class="ayuda" id="ayDir"></span></div>' +
       U.campo({ name: 'ciudad', label: 'Ciudad', valor: a.ciudad, c: 'c3', ph: 'Siempre la ciudad' }) +
       '<div class="ic-campo c3" id="cEquipos"><label for="f_equipos">Equipos</label><input id="f_equipos" name="equipos" type="number" min="0" step="1" value="' + esc(a.equipos === undefined ? '' : a.equipos) + '"><span class="ayuda" id="ayCarga"></span></div>' +
       U.campo({ name: 'hora_inicio', label: 'Hora inicio', t: 'time', valor: a.hora_inicio, c: 'c3' }) +
@@ -130,7 +131,23 @@
         if (!v.sede && !a.sede) delete p.sede;      // sin sede: no se envía (la columna puede no existir aún)
         return p;
       };
-      let turno = 0;
+      // Dirección y ciudad: se proponen desde la sede elegida o desde la empresa (Comercial). Se pueden cambiar aquí
+      // sin tocar el dato original. Si el usuario ya escribió otra cosa, no se sobrescribe.
+      const fDir = f.direccion, fCiu = f.ciudad;
+      fDir.dataset.auto = a.direccion || ''; fCiu.dataset.auto = a.ciudad || '';
+      const sugerirDireccion = (sedeId, emp) => {
+        const sitioEmp = f.sitio.value ? empresas.find((e) => U.norm(e.razon_social) === U.norm(f.sitio.value)) : null;
+        const sede = sedeId ? (Ope.D.sedes || []).find((y) => y.Title === sedeId) : null;
+        const fuente = sede && sede.direccion ? { dir: sede.direccion, ciu: sede.ciudad, de: 'la sede ' + sede.Title } :
+          sitioEmp && sitioEmp.direccion ? { dir: sitioEmp.direccion, ciu: sitioEmp.ciudad, de: 'la empresa ' + sitioEmp.Title + ' (Comercial)' } :
+          emp && emp.direccion ? { dir: emp.direccion, ciu: emp.ciudad, de: 'la empresa ' + emp.Title + ' (Comercial)' } : null;
+        const ay = cuerpo.querySelector('#ayDir');
+        if (!fuente) { ay.textContent = ''; return; }
+        if (!fDir.value.trim() || fDir.value === fDir.dataset.auto) { fDir.value = fuente.dir; fDir.dataset.auto = fuente.dir; }
+        if (fuente.ciu && (!fCiu.value.trim() || fCiu.value === fCiu.dataset.auto)) { fCiu.value = fuente.ciu; fCiu.dataset.auto = fuente.ciu; }
+        ay.textContent = fDir.value === fuente.dir ? 'Tomada de ' + fuente.de + '. Si la cambia aquí, solo cambia en esta actividad; el dato original no se modifica.' : 'Dirección propia de esta actividad (la de ' + fuente.de + ' es: ' + fuente.dir + ').';
+      };
+      let turno = 0, sedeBase = a.sede || '';
       const refrescar = async () => {
         const p = leer(), n = ++turno;
         cuerpo.querySelector('#cEquipos').hidden = !Ope.usaEquipos(p.tipo);
@@ -139,14 +156,15 @@
         cuerpo.querySelector('#dlSitios').innerHTML = Ope.sitiosConocidos(p.cliente).map((x) => '<option value="' + esc(x) + '">').join('');
         // Sede de la empresa (lista de sedes registradas): se elige cuando la empresa tiene varias
         const selS = cuerpo.querySelector('#f_sede'), cands = App.sedesCandidatas ? App.sedesCandidatas(Object.assign({}, p, { ciudad: '' })) : [];
-        const actual = selS.value || a.sede || '';
+        const actual = selS.dataset.tocado ? selS.value : selS.value || sedeBase;
         cuerpo.querySelector('#cSede').hidden = !cands.length && !actual;
         if (cands.length || actual) {
           const ops = cands.slice(); if (actual && !ops.some((x) => x.Title === actual)) { const x = (Ope.D.sedes || []).find((y) => y.Title === actual); if (x) ops.push(x); }
-          const sel = actual || (cands.length === 1 ? cands[0].Title : '');
+          const sel = selS.dataset.tocado ? selS.value : actual || (cands.length === 1 ? cands[0].Title : '');   // si el usuario eligió «sin sede», se respeta
           selS.innerHTML = '<option value="">' + (cands.length > 1 ? '— elegir sede —' : '— sin sede —') + '</option>' + ops.map((x) => '<option value="' + esc(x.Title) + '"' + (x.Title === sel ? ' selected' : '') + '>' + esc(x.Title + ' · ' + (x.ciudad || '') + ' · ' + (x.direccion || '')) + '</option>').join('');
           cuerpo.querySelector('#aySede').textContent = cands.length > 1 ? (p.sitio || p.cliente) + ' tiene ' + cands.length + ' sedes registradas: elija dónde es el servicio.' : '';
         }
+        sugerirDireccion(selS.value, emp);
         if (!p.fecha) return;
         try { await Ope.cargarMes(Ope.ym(p.fecha)); } catch (e) { /* sin conexión: se valida con lo que hay */ }
         if (n !== turno) return;
@@ -180,6 +198,8 @@
           (otras.length ? '<div class="ope-dia-items">' + otras.map((x) => '<span class="ope-chip" style="--c:' + App.colorTipo(x.tipo) + '">' + esc(Ope.etiqueta(x)) + '</span>').join('') + '</div>' : '<div class="ope-nota">No hay otras actividades ese día.</div>') +
           (Ope.esHabil(p.fecha) ? '<div class="ope-nota">Sin asignar (en oficina): ' + esc(r.sinAsignar.filter((t) => t.Title !== p.tecnico_id).map((t) => t.nombre).join(', ') || 'nadie') + '</div>' : '');
       };
+      f.sede.addEventListener('change', () => { f.sede.dataset.tocado = '1'; });
+      f.cliente.addEventListener('change', () => { delete f.sede.dataset.tocado; f.sede.value = ''; sedeBase = ''; });   // otro cliente: la sede se vuelve a proponer
       f.addEventListener('input', refrescar); f.addEventListener('change', refrescar);
       refrescar();
 
@@ -441,7 +461,7 @@
         return {
           'N°': a.Title, 'Fecha': fecha(a.fecha), 'Día': Ope.DIAS[Ope.dow(a.fecha) - 1], 'Técnico': Ope.nombreTec(a.tecnico_id),
           'Vinculación': t ? (t.vinculacion === 'TECNICO_CAMPO' ? 'Técnico de campo' : 'Ideas Control') : '', 'Tipo': Ope.nombreTipo(a.tipo), 'Cód.': a.tipo,
-          'Cliente (contrata)': a.cliente || '', 'Sitio / cliente final': a.sitio || '', 'Ciudad': a.ciudad || '',
+          'Cliente (contrata)': a.cliente || '', 'Sitio / cliente final': a.sitio || '', 'Dirección': a.direccion || '', 'Ciudad': a.ciudad || '',
           'Equipos': a.equipos === '' || a.equipos === undefined ? '' : Number(a.equipos), 'Hora inicio': a.hora_inicio || '', 'Ticket / OS': a.ticket_os || '',
           'Estado': Ope.nombreEstado(a.estado), 'Observaciones': a.observaciones || '', 'Reprograma de': a.reprograma_de || '', 'Motivo del cambio': a.motivo_cambio || ''
         };

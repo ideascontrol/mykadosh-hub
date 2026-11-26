@@ -105,7 +105,7 @@
         t += '  Oficina (turno): ' + (r.oficina.map((x) => Ope.nombreTec(x.tecnico_id)).join(', ') || (r.estado === 'VACIO' ? 'sin técnico (definido)' : '⚠ SIN ASIGNAR')) + '\n';
         r.campo.sort(Ope.orden).forEach((a) => {
           t += '  • ' + Ope.nombreTec(a.tecnico_id) + ' — ' + Ope.nombreTipo(a.tipo) + (Ope.usaEquipos(a.tipo) && a.equipos ? ' (' + a.equipos + ' eq.)' : '') +
-            (a.sitio ? ' · ' + a.sitio + (a.cliente ? ' (' + a.cliente + ')' : '') : a.cliente ? ' · ' + a.cliente : '') + (a.ciudad ? ' · ' + a.ciudad : '') + (a.hora_inicio ? ' · ' + a.hora_inicio : '') + (a.ticket_os ? ' · ' + a.ticket_os : '') + '\n';
+            (a.sitio ? ' · ' + a.sitio + (a.cliente ? ' (' + a.cliente + ')' : '') : a.cliente ? ' · ' + a.cliente : '') + (a.direccion ? ' · ' + a.direccion : '') + (a.ciudad ? ' · ' + a.ciudad : '') + (a.hora_inicio ? ' · ' + a.hora_inicio : '') + (a.ticket_os ? ' · ' + a.ticket_os : '') + '\n';
         });
         if (r.ausentes.length) t += '  Ausentes: ' + r.ausentes.map((x) => Ope.nombreTec(x.tecnico_id)).join(', ') + '\n';
         if (r.sinAsignar.length && Ope.esHabil(s)) t += '  Sin asignar (en oficina): ' + r.sinAsignar.map((x) => x.nombre).join(', ') + '\n';
@@ -135,7 +135,7 @@
           const del = acts.filter((a) => a.fecha === s && (a.tecnico_id || '') === t.Title && a.tipo !== 'OFI').sort(Ope.orden);
           const turno = acts.some((a) => a.fecha === s && a.tecnico_id === t.Title && a.tipo === 'OFI');
           let cel = del.map((a) => '<div class="ope-sem-item" data-id="' + esc(a.Title) + '">' + App.chipTipo(a.tipo) + ' ' + esc(a.tipo === 'AUS' ? 'Ausencia' : (a.sitio || a.cliente || Ope.nombreTipo(a.tipo))) +
-            '<span class="sec">' + esc([a.sitio && a.cliente ? a.cliente : '', a.ciudad, a.hora_inicio, Ope.usaEquipos(a.tipo) && a.equipos ? a.equipos + ' eq.' : ''].filter(Boolean).join(' · ')) + '</span>' + (Ope.validar(a).errores.length ? ' <span class="ope-rojo" title="' + esc(Ope.validar(a).errores.join('; ')) + '">⚠</span>' : '') + '</div>').join('');
+            '<span class="sec">' + esc([a.sitio && a.cliente ? a.cliente : '', a.direccion, a.ciudad, a.hora_inicio, Ope.usaEquipos(a.tipo) && a.equipos ? a.equipos + ' eq.' : ''].filter(Boolean).join(' · ')) + '</span>' + (Ope.validar(a).errores.length ? ' <span class="ope-rojo" title="' + esc(Ope.validar(a).errores.join('; ')) + '">⚠</span>' : '') + '</div>').join('');
           if (turno) cel = '<div class="ope-sem-item turno">Turno de oficina</div>' + cel;
           if (!cel && Ope.esHabil(s) && t.vinculacion === 'IDEAS_CONTROL' && t.estado !== 'INACTIVO') cel = '<span class="ope-nota">Sin asignar · oficina</span>';
           return '<td class="' + (Ope.esHabil(s) ? '' : 'nohabil') + '">' + cel + '</td>';

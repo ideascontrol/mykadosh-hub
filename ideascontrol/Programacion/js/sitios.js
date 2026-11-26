@@ -64,7 +64,8 @@
     });
     return { filas: listaSedes.map((x) => Object.assign({ sede: x, acts: por[x.Title] }, resumen(por[x.Title]))), ambiguas };
   }
-  App.sedesCandidatas = (a) => candidatas(a, Ope.D.sedes || []);
+  // En el formulario: sin «sitio», solo cuentan las sedes del mismo cliente (no las de un cliente final de otro con nombre parecido)
+  App.sedesCandidatas = (a) => candidatas(a, Ope.D.sedes || []).filter((x) => a.sitio || n(x.sitio) === n(a.cliente) || parecido(x.cliente_principal, a.cliente));
 
   // Agrupa las actividades del cliente por sitio
   function sitios(acts) {
