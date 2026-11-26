@@ -258,6 +258,19 @@ window.IC_AYUDA = {
 </ul>
 <div class="tip">Si la Programación no alcanzó a actualizar la tarea (por ejemplo, sin conexión), se completa sola la próxima vez que el líder o el responsable abran el proyecto.</div>` },
 
+  { id: 'tarea-eliminar', cat: 'cronograma', titulo: 'Eliminar una tarea', resumen: 'Quitar del proyecto una tarea que sobra; qué pasa con las que dependían de ella.',
+    claves: 'eliminar borrar quitar tarea sobra retirar no aplica',
+    html: `
+<ol class="pasos">
+<li>En el cronograma, abra la tarea y presione <b class="bt">Eliminar tarea</b> (líder del proyecto o administrador).</li>
+<li>Lea el aviso y confirme. No se puede deshacer.</li>
+</ol>
+<ul>
+<li>Las tareas que dependían de ella pasan a depender de sus predecesoras, y las fechas se recalculan solas.</li>
+<li>Si la tarea ya tenía avance, el aviso lo indica antes de confirmar.</li>
+<li>El retiro queda en la <b>bitácora</b>: quién, cuándo y qué tarea era.</li>
+</ul>
+<div class="tip">Si la tarea solo no aplica a este cliente, es mejor marcarla <b>«No aplica»</b> con el motivo: deja la constancia en el proyecto.</div>` },
   { id: 'tarea-propia', cat: 'cronograma', titulo: 'Agregar tareas propias', resumen: 'Tareas que no vienen en la plantilla: dónde van, cómo se ubican y cómo se corrigen.',
     claves: 'agregar nueva tarea propia adicional extra pro-001 ubicacion posicion orden editar texto corregir',
     html: `

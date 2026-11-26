@@ -266,11 +266,12 @@
         U.campo({ name: 'predecesoras', label: 'Predecesoras (IDs separados por ;)', valor: t.predecesoras, c: 'c6' }) +
         U.campo({ name: 'inicio_plan', label: 'Inicio plan', t: 'date', valor: t.inicio_plan, c: 'c3', ayuda: PRY.listaPred(t).length ? 'Lo fijan las predecesoras' : 'Sin predecesoras: puede fijarse' }) + '</div></fieldset>' : '') +
       (puede ? U.campo({ name: 'comentario', label: 'Comentario para la bitácora', c: 'c12' }) : '') +
-      '<div class="ic-acciones"><button type="button" class="ic-btn sec" id="tHis">Historial</button><span style="flex:1"></span><button type="button" class="ic-btn sec" id="tNo">Cerrar</button>' + (puede ? '<button class="ic-btn" id="tOk">Guardar</button>' : '') + '</div></form>', (cu) => {
+      '<div class="ic-acciones">' + (lider ? '<button type="button" class="ic-btn peligro" id="tDel">Eliminar tarea</button>' : '') + '<button type="button" class="ic-btn sec" id="tHis">Historial</button><span style="flex:1"></span><button type="button" class="ic-btn sec" id="tNo">Cerrar</button>' + (puede ? '<button class="ic-btn" id="tOk">Guardar</button>' : '') + '</div></form>', (cu) => {
       const f = cu.querySelector('#fT');
       App.prog.montar(cu, t, S.p, () => recargar(c));
       cu.querySelector('#tNo').onclick = U.cerrarModal;
       cu.querySelector('#tHis').onclick = () => { U.cerrarModal(); S.filtroBit = t.tarea_id; location.hash = '#p/' + S.p.Title + '/bitacora'; };
+      const bDel = cu.querySelector('#tDel'); if (bDel) bDel.onclick = () => eliminarTarea(t, c);
       const est = f.querySelector('[name=estado]'), pct = f.querySelector('[name=porcentaje]');
       const motivo = f.querySelector('[name=motivo_no_aplica]').closest('.ic-campo'), expl = f.querySelector('[name=explicacion_salud]').closest('.ic-campo');
       const ver = () => { motivo.hidden = !PRY.esNA({ estado: est.value }); expl.hidden = f.querySelector('[name=salud]').value === 'Normal' && !t.explicacion_salud; };
@@ -330,6 +331,33 @@
         } catch (e2) { U.aviso(U.mensajeError(e2), 'err', 8000); }
       };
     });
+  }
+
+  // ---------- Eliminar una tarea (líder del proyecto o administrador) ----------
+  // Las tareas que dependían de ella pasan a depender de sus predecesoras, para no romper la cadena; queda en la bitácora.
+  async function eliminarTarea(t, c) {
+    const mias = PRY.listaPred(t), dep = S.tareas.filter((x) => x !== t && PRY.listaPred(x).indexOf(t.tarea_id) >= 0);
+    const conAvance = Number(t.porcentaje) > 0 || t.inicio_real || ['En curso', 'En revisión', 'Completada'].indexOf(t.estado) >= 0;
+    const txt = 'Se eliminará ' + t.tarea_id + ' · ' + t.actividad + ' de este proyecto. No se puede deshacer.' +
+      (conAvance ? '\n\nOjo: esta tarea ya tiene avance registrado (' + (t.estado || '') + ', ' + (Number(t.porcentaje) || 0) + ' %).' : '') +
+      (dep.length ? '\n\nDependen de ella: ' + dep.map((x) => x.tarea_id).join(', ') + '. Pasarán a depender de ' + (mias.length ? mias.join(', ') : 'ninguna tarea (quedan sin predecesora)') + ' y las fechas se recalculan.' : '') +
+      (S.base ? '\n\nLa línea base aprobada la conserva como referencia.' : '') +
+      '\n\nSi la tarea solo no aplica a este cliente, puede marcarla «No aplica» con el motivo: así queda la constancia.\n\nEl retiro queda registrado en la bitácora.';
+    if (!(await U.confirmar('Eliminar tarea', txt, 'Eliminar', true))) return;
+    try {
+      for (const x of dep) {
+        const nuevo = PRY.listaPred(x).filter((id) => id !== t.tarea_id).concat(mias).filter((id, i, a) => a.indexOf(id) === i && id !== x.tarea_id).join(';');
+        await G.actualizar('PRY_Tareas', x._id, { predecesoras: nuevo || null });
+        await PRY.bitacora(S.p.Title, x.tarea_id, [{ campo: 'Predecesoras', antes: x.predecesoras || '', despues: nuevo }], 'Por eliminación de ' + t.tarea_id, '', App.usuario.nombre);
+        x.predecesoras = nuevo;
+      }
+      await G.eliminar('PRY_Tareas', t._id);
+      S.tareas = S.tareas.filter((x) => x !== t);
+      await PRY.bitacora(S.p.Title, t.tarea_id, [{ campo: 'Tarea eliminada', antes: t.tarea_id + ' · ' + t.actividad + (t.responsable ? ' · ' + t.responsable : '') + ' · ' + (t.estado || '') + ' ' + (Number(t.porcentaje) || 0) + ' %', despues: '' }], '', '', App.usuario.nombre);
+      await reprogramar('Reprogramación por eliminación de ' + t.tarea_id);
+      await sincronizarProyecto();
+      U.aviso(t.tarea_id + ' eliminada', 'ok'); App.vistas.proyecto(c);
+    } catch (e) { U.aviso(U.mensajeError(e), 'err', 9000); recargar(c); }
   }
 
   // Recalcula fechas plan de todo el proyecto y guarda solo las que cambian (una línea de bitácora por tarea movida)
