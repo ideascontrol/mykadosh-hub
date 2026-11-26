@@ -158,6 +158,7 @@
         conds: conds.map((x) => x.condicion_id).filter(Boolean), introTocada: true,
         // Condiciones «editables al cotizar»: se conserva el texto que el comercial dejó en el borrador
         textos: conds.reduce((o, x) => { const m = D.condiciones.find((y) => y.Title === x.condicion_id); if (m && m.editable_al_cotizar) o[x.condicion_id] = x.texto || ''; return o; }, {}) };
+      F.lineas.forEach(marcarManual);
     } else {
       F = { cot: null, empresa_id: '', sucursal_id: '', contacto_id: '', fecha: hoy(), moneda: P.MONEDA_DEFECTO || 'COP', trm: '', linea: 'VENTA_HW',
         titulo_seccion: '', texto_introduccion: '', observaciones: '', lineas: [], conds: [], introTocada: false, textos: {} };
@@ -299,11 +300,11 @@
           (l.ficha_tecnica ? '<span class="sec">+ ' + (function (n) { return n + (n === 1 ? ' línea' : ' líneas'); })(String(l.ficha_tecnica).split(/\r?\n/).filter(Boolean).length) + ' de ficha técnica (salen en el PDF)</span>' : '') + '</td>' +
         '<td><input data-i="' + i + '" data-k="ciudad_sede" value="' + esc(l.ciudad_sede) + '"></td>' +
         '<td><input class="num" data-i="' + i + '" data-k="cantidad" inputmode="decimal" value="' + esc(l.cantidad) + '"></td>' +
-        '<td><input class="num" data-i="' + i + '" data-k="precio_unitario" inputmode="decimal" value="' + (isNaN(l.precio_unitario) ? '' : esc(l.precio_unitario)) + '"' + (l.precio_editable ? ' placeholder="Precio"' : ' readonly title="Precio del catálogo"') + '>' + etiquetaRango(l) + '</td>' +
+        '<td><input class="num" data-i="' + i + '" data-k="precio_unitario" inputmode="decimal" value="' + (isNaN(l.precio_unitario) ? '' : esc(l.precio_unitario)) + '"' + (l.precio_editable ? ' placeholder="Precio"' : ' readonly title="Precio del catálogo. Para cambiarlo solo en esta cotización use el botón $"') + (l._manual ? ' style="border-color:#C9A227;background:#FFFBEA"' : '') + '>' + (l._manual ? notaManual(l) : etiquetaRango(l)) + '</td>' +
         '<td><input class="num" data-i="' + i + '" data-k="descuento_porcentaje" inputmode="decimal" value="' + esc(l.descuento_porcentaje || '') + '" placeholder="0"></td>' +
         '<td class="tot"><b data-tot="' + i + '">' + (isNaN(r.neto) ? '—' : dinero(r.neto, F.moneda)) + '</b><span class="aviso" data-av="' + i + '">' + avisoLinea(l, tope) + '</span></td>' +
-        '<td class="acc">' + (App.usuario.gestiona_productos && l.producto_id ? '<button type="button" title="Actualizar el precio en el catálogo de productos" data-precio="' + i + '">$</button>' : '') + '<button type="button" title="Subir" data-mov="-1" data-i="' + i + '"' + (i === 0 ? ' disabled' : '') + '>▲</button><button type="button" title="Bajar" data-mov="1" data-i="' + i + '"' + (i === F.lineas.length - 1 ? ' disabled' : '') + '>▼</button><button type="button" title="Quitar" class="quitar" data-quitar="' + i + '">✕</button></td></tr>'; };
-    z.innerHTML = '<div class="ic-grilla-caja"><table class="ic-grilla"><thead><tr><th class="n">#</th><th>Código / producto</th><th>Descripción</th><th style="width:130px">Ciudad / sede</th><th style="width:80px">Cant.</th><th style="width:120px">Unitario (' + F.moneda + ')</th><th style="width:80px">Desc. %</th><th style="width:130px;text-align:right">Total</th><th style="width:' + (App.usuario.gestiona_productos ? 124 : 96) + 'px"></th></tr></thead>' +
+        '<td class="acc">' + (l.producto_id && (l._manual || !l.precio_editable) ? (l._manual ? '<button type="button" title="Volver al precio de lista del catálogo" data-precio="' + i + '">↺</button>' : '<button type="button" title="Cambiar el precio solo en esta cotización (el catálogo de productos no cambia)" data-precio="' + i + '">$</button>') : '') + '<button type="button" title="Subir" data-mov="-1" data-i="' + i + '"' + (i === 0 ? ' disabled' : '') + '>▲</button><button type="button" title="Bajar" data-mov="1" data-i="' + i + '"' + (i === F.lineas.length - 1 ? ' disabled' : '') + '>▼</button><button type="button" title="Quitar" class="quitar" data-quitar="' + i + '">✕</button></td></tr>'; };
+    z.innerHTML = '<div class="ic-grilla-caja"><table class="ic-grilla"><thead><tr><th class="n">#</th><th>Código / producto</th><th>Descripción</th><th style="width:130px">Ciudad / sede</th><th style="width:80px">Cant.</th><th style="width:120px">Unitario (' + F.moneda + ')</th><th style="width:80px">Desc. %</th><th style="width:130px;text-align:right">Total</th><th style="width:' + (124) + 'px"></th></tr></thead>' +
       '<tbody>' + F.lineas.map(fila).join('') +
         '<tr class="agregar"><td class="n">' + (F.lineas.length + 1) + '</td><td colspan="8"><div class="ic-buscar">' + ICO_BUSCAR + '<input id="bPrd" type="search" placeholder="Agregar producto: escriba código o nombre" autocomplete="off"></div><div class="ic-sugerencias" id="sPrd"></div></td></tr></tbody>' +
       '<tfoot id="gPie"></tfoot></table></div>' +
@@ -325,7 +326,7 @@
       if (k === 'descripcion' || k === 'ciudad_sede') { l[k] = el.value; if (k === 'ciudad_sede') l._sedeAuto = false; }
       else l[k] = el.value === '' ? (k === 'descuento_porcentaje' ? 0 : NaN) : num(el.value);
       if (k === 'precio_unitario') l.precio_base = l.precio_unitario, l.moneda_base = F.moneda;
-      if (k === 'cantidad' && l.escalas) {   // precio por volumen: el unitario sigue a la cantidad
+      if (k === 'cantidad' && l.escalas && !l._manual) {   // precio por volumen: el unitario sigue a la cantidad (salvo precio fijado a mano)
         aplicarEscala(l);
         const pi = z.querySelector('[data-i="' + el.dataset.i + '"][data-k="precio_unitario"]'); if (pi) pi.value = isNaN(l.precio_unitario) ? '' : l.precio_unitario;
         const et = z.querySelector('[data-tabla="' + el.dataset.i + '"]'); if (et) { et.outerHTML = etiquetaRango(l); enlazarTablas(); }
@@ -338,9 +339,12 @@
     function enlazarTablas() { z.querySelectorAll('[data-tabla]').forEach((b) => { b.onclick = () => verTabla(c, Number(b.dataset.tabla)); }); }
     enlazarTablas();
     z.querySelectorAll('[data-mov]').forEach((b) => { b.onclick = () => { const i = Number(b.dataset.i), j = i + Number(b.dataset.mov); const t = F.lineas[i]; F.lineas[i] = F.lineas[j]; F.lineas[j] = t; pintarLineas(c); }; });
+    // $ = precio especial solo para esta cotización (el precio de lista del catálogo no cambia; se cambia en Productos). ↺ = volver al de lista.
     z.querySelectorAll('[data-precio]').forEach((b) => { b.onclick = () => {
       const i = Number(b.dataset.precio), l = F.lineas[i];
-      App.productos.precioEnVentana(l.producto_id, () => { refrescarPrecio(l); pintarLineas(c); pintarConds(c); U.aviso('Precio actualizado en el catálogo y en esta línea', 'ok'); });
+      if (l._manual) { l._manual = false; refrescarPrecio(l); pintarLineas(c); pintarConds(c); U.aviso('La línea volvió al precio de lista', 'ok'); return; }
+      l._manual = true; l.precio_editable = true; pintarLineas(c);
+      const pi = z.querySelector('[data-i="' + i + '"][data-k="precio_unitario"]'); if (pi) { pi.focus(); pi.select(); }
     }; });
     z.querySelectorAll('[data-quitar]').forEach((b) => { b.onclick = () => { F.lineas.splice(Number(b.dataset.quitar), 1); pintarLineas(c); pintarDatos(c); pintarConds(c); }; });
     totales(c);
@@ -351,7 +355,24 @@
     if (Number(l.descuento_porcentaje) > tope) return 'Descuento sobre el tope (' + tope.toLocaleString('es-CO') + ' %)';
     return '';
   }
-  // Vuelve a tomar el precio vigente del catálogo (después de actualizarlo desde la cotización)
+  // Precio de lista del catálogo para la línea (en la moneda de la cotización)
+  function precioLista(l) {
+    const pv = App.productos.precioVigente(l.producto_id, l.escalas ? Number(l.cantidad) || 1 : undefined);
+    return pv && Number(pv.valor) > 0 ? precioEn(Number(pv.valor), pv.moneda || 'COP') : NaN;
+  }
+  function notaManual(l) {
+    const li = precioLista(l);
+    return '<span class="sec" style="display:block;font-size:11px;color:#8A6D0B">Solo en esta cotización' + (isNaN(li) ? '' : ' · lista ' + dinero(li, F.moneda)) + '</span>';
+  }
+  // Al abrir un borrador: si el precio guardado no es el de lista, era un precio fijado a mano en esta cotización
+  function marcarManual(l) {
+    if (l.precio_editable || !l.producto_id) return;
+    const li = precioLista(l);
+    if (isNaN(li) || Math.abs(li - Number(l.precio_unitario)) < 0.005) return;
+    if (l.escalas && App.productos.escalas(l.producto_id).some((x) => Math.abs(precioEn(Number(x.valor), x.moneda || 'COP') - Number(l.precio_unitario)) < 0.005)) return;   // es otro rango de la tabla
+    Object.assign(l, { _manual: true, precio_editable: true });
+  }
+  // Vuelve a tomar el precio vigente del catálogo
   function refrescarPrecio(l) {
     const pv = App.productos.precioVigente(l.producto_id), base = pv ? Number(pv.valor) : 0, mb = pv ? pv.moneda || 'COP' : F.moneda;
     Object.assign(l, { precio_base: base, moneda_base: base > 0 ? mb : F.moneda, precio_unitario: base > 0 ? precioEn(base, mb) : NaN, precio_editable: !(base > 0) });

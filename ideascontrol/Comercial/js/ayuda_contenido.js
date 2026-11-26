@@ -142,18 +142,19 @@ window.IC_AYUDA = {
 </ol>
 <div class="tip">La barra de abajo siempre muestra el total. Si algo falta (por ejemplo, un precio en 0), la app se lo dice al guardar e indica la línea.</div>` },
 
-  { id: 'cot-productos', cat: 'cotizaciones', titulo: 'Productos, precios y descuentos en la cotización', resumen: 'El precio viene del catálogo; cuándo se escribe a mano; descuentos y orden de las líneas.',
-    claves: 'precio descuento linea producto viaticos cantidad orden subir bajar quitar descripcion editable tope trm dolares',
+  { id: 'cot-productos', cat: 'cotizaciones', titulo: 'Productos, precios y descuentos en la cotización', resumen: 'El precio viene del catálogo; cómo dar un precio especial solo en esta cotización; descuentos y orden de las líneas.',
+    claves: 'precio descuento linea producto viaticos cantidad orden subir bajar quitar descripcion editable tope trm dolares cambiar precio especial lista',
     html: `
 <ul>
-<li><b>El precio viene del catálogo</b> y no se cambia en la cotización. Solo se escribe a mano cuando en el catálogo está en 0 (por ejemplo, viáticos).</li>
+<li><b>El precio viene del catálogo</b> (precio de lista). Cuando en el catálogo está en 0 (por ejemplo, viáticos), se escribe a mano.</li>
+<li><b>Precio especial solo para esta cotización</b>: botón <b>$</b> de la línea. El precio queda editable, la casilla se pone amarilla y debajo dice «Solo en esta cotización · lista $…». <b>El catálogo no cambia.</b> Con <b>↺</b> la línea vuelve al precio de lista.</li>
 <li><b>Descuento %</b> por línea. Si supera el tope de Parámetros, se permite, pero la cotización queda marcada <b>«Descuento sobre el tope»</b>.</li>
 <li><b>Descripción</b>: se puede editar solo en los productos marcados como editables (servicios, viáticos). Úsela para precisar fechas, ciudad o alcance.</li>
 <li><b>Orden</b>: con ▲ y ▼ sube o baja una línea; con ✕ la quita.</li>
 <li><b>Ciudad o sede</b>: se llena con la sede elegida; puede cambiarla en cada línea.</li>
 <li><b>Otra moneda</b>: si un producto tiene precio en dólares y la cotización es en pesos (o al revés), la app pide la <b>TRM de referencia</b> y convierte.</li>
 </ul>
-<div class="ojo">Si un precio del catálogo está mal, no lo corrija en la cotización: pida al administrador que registre el precio correcto en Productos.</div>` },
+<div class="ojo">El botón $ cambia el precio solo en esa cotización. Si el precio de lista está mal o cambió, no lo corrija ahí: el precio de lista se cambia en <b>Productos</b> (quien gestiona productos).</div>` },
 
   { id: 'cot-borrador', cat: 'cotizaciones', titulo: 'Guardar borrador y vista previa', resumen: 'Dejar una cotización a medias y revisar el PDF sin guardar nada.',
     claves: 'borrador guardar despues continuar vista previa revisar ver pdf antes',
