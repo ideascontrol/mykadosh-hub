@@ -88,7 +88,7 @@
       <div class="num">5</div>
       <div style="flex:1">
         <h2>Permisos de los técnicos</h2>
-        <p>Los técnicos <b>no</b> se agregan como miembros del sitio IC Apps (verían también los datos de Comercial). Este paso crea el grupo de SharePoint <b>«IC Apps Tecnicos»</b>, le da permiso <b>solo</b> sobre las listas de la Programación y de Novedades (cada técnico ve solo sus solicitudes), deja <b>Faltas</b> visible solo para usted, deja las <b>Colecciones de lectura</b> en solo lectura para todos (usted con control total), guarda el correo de cada técnico y lo agrega al grupo. Para un técnico nuevo: escriba su correo aquí y vuelva a clic en «Aplicar permisos».</p>
+        <p>Los técnicos <b>no</b> se agregan como miembros del sitio IC Apps (verían también los datos de Comercial). Este paso crea el grupo de SharePoint <b>«IC Apps Tecnicos»</b>, le da permiso <b>solo</b> sobre las listas de la Programación y de Novedades (cada técnico ve solo sus solicitudes), deja <b>Faltas</b> visible solo para usted, deja las <b>Colecciones de lectura</b> en solo lectura para todos (usted con control total), guarda el correo de cada técnico y lo agrega al grupo. A quien tenga <b>Consulta</b> en Novedades (se asigna en Novedades › Personal) le permite ver todas las solicitudes. Para un técnico nuevo: escriba su correo aquí y vuelva a clic en «Aplicar permisos».</p>
         <p><b>Requisito (una vez):</b> en Entra ID › la app › Permisos de API, el permiso <b>SharePoint › AllSites.FullControl</b> (delegado) con consentimiento del administrador.</p>
         <div id="tablaTec" style="margin:8px 0 12px"></div>
         <button id="btnPermisos" disabled>Aplicar permisos</button>
@@ -1375,7 +1375,8 @@ const PERMISOS_TECNICOS = [
   ['PRY_Proyectos', 2], ['PRY_Tareas', 3], ['PRY_Bitacora', 3], ['PRY_Plantillas', 2], ['PRY_PlantillaTareas', 2], ['PRY_Planes', 2], ['PRY_Pendientes', 3], ['PRY_Reuniones', 2], ['PRY_Documentos', 2], ['SYS_Festivos', 2], ['SYS_Accesos', 2], ['SYS_Microapps', 2],
   ['NOV_Solicitudes', 3],       // además: cada técnico solo ve y edita sus propias solicitudes
   ['TAL_Programas', 2], ['TAL_Piezas', 2], ['TAL_Lecturas', 3], ['TAL_Coleccion', 2],
-  ['TAR_Tareas', 3], ['TAR_Categorias', 2], ['MAE_Empresas', 2]   // APP-109 Gestión de Clientes: todo el personal ve y actualiza las tareas
+  ['TAR_Tareas', 3], ['TAR_Categorias', 2], ['MAE_Empresas', 2],   // APP-109 Gestión de Clientes: todo el personal ve y actualiza las tareas
+  ['SYS_Accesos', 2]            // solo lectura: cada app reconoce el rol que la Dirección le dio a la persona (p. ej. Consulta en Novedades)
 ];
 let tecnicosLista = [];
 async function pintarTecnicos() {
@@ -1488,6 +1489,37 @@ async function aplicarPermisos() {
         log(t.fields.nombre + ': correo ' + (em ? 'guardado' : 'quitado') + ' en OPE_Tecnicos', 'ok');
       }
     }
+    // 4. Novedades · Consulta: quien tenga rol Consulta (o Dirección) en APP-107 ve todas las solicitudes.
+    //    NOV_Solicitudes deja ver a cada quien solo lo suyo; el nivel «Editar» (incluye «Administrar listas») salta esa restricción solo en esta lista.
+    try {
+      const acc = listasExistentes.SYS_Accesos ? await itemsDeLista('SYS_Accesos') : [];
+      const consulta = Array.from(new Set(acc.map((i) => i.fields).filter((f) => f.app_id === 'APP-107' && f.estado !== 'INACTIVO' && (f.rol === 'CONSULTA' || f.rol === 'ADMIN'))
+        .map((f) => String(f.email || '').trim().toLowerCase()).filter(Boolean)));
+      const base = "web/lists/getbytitle('NOV_Solicitudes')";
+      const editar = await sp('GET', 'web/roledefinitions/getbytype(6)?$select=Id,Name');
+      const asig = (await sp('GET', base + '/roleassignments?$expand=Member,RoleDefinitionBindings')).value || [];
+      const ids = [];
+      for (const em of consulta) {
+        try {
+          const u = await sp('POST', 'web/ensureuser', { logonName: 'i:0#.f|membership|' + em });
+          ids.push(u.Id);
+          const a = asig.find((x) => x.PrincipalId === u.Id);
+          const ligas = a ? ((a.RoleDefinitionBindings && (a.RoleDefinitionBindings.results || a.RoleDefinitionBindings)) || []) : [];
+          if (ligas.some((r) => r.Id === editar.Id)) log('Novedades · Consulta: ' + em + ' ya veía todas las solicitudes', 'ok');
+          else { await sp('POST', base + '/roleassignments/addroleassignment(principalid=' + u.Id + ',roledefid=' + editar.Id + ')'); log('Novedades · Consulta: ' + em + ' ahora ve todas las solicitudes', 'ok'); }
+        } catch (e) { log('Novedades · Consulta: no se pudo habilitar ' + em + ' — ' + e.message, 'warn'); }
+      }
+      // A quien ya no tiene Consulta se le quita ese permiso individual (los grupos no se tocan)
+      for (const x of asig) {
+        const m = x.Member || {};
+        if (Number(m.PrincipalType) !== 1 || ids.indexOf(x.PrincipalId) >= 0) continue;
+        const ligas = (x.RoleDefinitionBindings && (x.RoleDefinitionBindings.results || x.RoleDefinitionBindings)) || [];
+        if (!ligas.some((r) => r.Id === editar.Id)) continue;
+        await sp('POST', base + '/roleassignments/removeroleassignment(principalid=' + x.PrincipalId + ',roledefid=' + editar.Id + ')');
+        log('Novedades · Consulta: ' + (m.Email || m.Title || x.PrincipalId) + ' ya no tiene Consulta — vuelve a ver solo sus solicitudes', 'ok');
+      }
+      if (!consulta.length) log('Novedades · Consulta: nadie tiene ese rol', 'info');
+    } catch (e) { log('Novedades · Consulta: no se pudo aplicar (' + e.message + ')', 'warn'); }
     log('Listo. Los técnicos del grupo entran al Portal y a la Programación con su cuenta; no ven Comercial.', 'ok');
     log('Para quitar a alguien: SharePoint › IC Apps › Configuración › Permisos del sitio › grupo «' + CFG.grupoTecnicos + '».', 'info');
     estadoPaso(5, 'ok');
