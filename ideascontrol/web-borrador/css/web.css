@@ -291,4 +291,4 @@ section[id], [id="otras"], [id="cronologia"] { scroll-margin-top: 84px; }
 .postimpl .etapas { margin-top: 0; align-content: center; }
 @media (max-width: 900px) { .ruta { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 560px) { .ruta { grid-template-columns: 1fr 1fr; } }
-.pagos .mp.full { padding: 0; background: none; min-width: 0; } .pagos .mp.full img { height: 38px; border-radius: 8px; box-shadow: 0 0 0 2px #fff; }
+.pagos .mp.full { padding: 0 10px; min-width: 0; } .pagos .mp.full img { height: 32px; }
