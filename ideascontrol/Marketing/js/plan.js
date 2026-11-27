@@ -143,7 +143,8 @@ window.MKT_PLAN = (function () {
       ok.onclick = async () => {
         if (!plan) return;
         if (!(await U.confirmar('Reemplazar el plan', 'Se borrarán ' + borrar.temas.length + ' tema(s) y ' + borrar.pubs.length + ' publicación(es), y se cargarán ' + plan.temas.length + ' tema(s) y ' + plan.temas.reduce((n, t) => n + t.pubs.length, 0) + ' publicación(es) del Excel.\n\nNo se puede deshacer.', 'Reemplazar'))) return;
-        await aplicar(plan, borrar, m, alTerminar);
+        // La confirmación usa la misma ventana: se abre una nueva solo para el avance
+        U.modal('Reemplazando el plan', '<div class="ic-form"><div id="rpRes"><p><b>Empezando…</b></p></div></div>', (m2) => { aplicar(plan, borrar, m2, alTerminar); });
       };
     });
   }
