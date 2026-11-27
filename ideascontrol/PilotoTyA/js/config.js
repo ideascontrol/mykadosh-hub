@@ -7,7 +7,7 @@
 window.IC_CONFIG = {
   /* URL del Web App de Google Apps Script (termina en /exec).
      Mientras esté vacía, el formulario NO simula éxito: muestra un error de configuración. */
-  ENDPOINT_URL: 'https://script.google.com/macros/s/AKfycbwGt0M2Uk2DiwVphpiPgTutLdjUGhw2N7yvQ6nc9s2IrbxQY1qCDLrAn3-i5WXm3R1u/exec',
+  ENDPOINT_URL: 'https://script.google.com/macros/s/AKfycbxMID0E_3kETKsThgDScSXgM2aRPD-wQL0ashg5quTaeFnvD3HR-c_SwAnWMjDMR-Imww/exec',
 
   /* Versión vigente de las políticas. DEBE coincidir con la propiedad
      POLICY_VERSION del backend; si no coincide, el backend rechaza el registro. */
