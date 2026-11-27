@@ -51,7 +51,7 @@
     const grupos = [];
     apps.forEach((a) => { if (grupos.indexOf(a.grupo) < 0) grupos.push(a.grupo); });
     let html = '<h1 class="ic-titulo">' + saludo() + ', ' + esc(String(cuenta.name || '').split(' ')[0]) + '</h1>' +
-      '<p class="ic-subtitulo">Entrada única a las microapps de Ideas Control. Ya inició sesión: las apps internas abren sin pedir de nuevo su cuenta.</p>' +
+      '<p class="ic-subtitulo">Un espacio centralizado para acceder a las herramientas, recursos y soluciones que apoyan nuestra operación.</p>' +
       '<div id="hoy" class="pt-hoy">' + (hoy ? hoy : '') + '</div>';
     grupos.forEach((g) => {
       html += '<div class="ic-seccion">' + esc(g) + '</div><div class="ic-grid">';
