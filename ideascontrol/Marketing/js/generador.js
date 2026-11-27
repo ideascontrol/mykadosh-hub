@@ -92,7 +92,8 @@ window.MKT_GEN = (function () {
   function matriz(t) {
     const campos = [['tema', 'Tema / título de trabajo'], ['hook', 'Hook / Guion'], ['problema', 'Problema'], ['autoridad', 'Autoridad'], ['solucion', 'Solución'], ['cta', 'CTA'],
       ['valor', 'Valor Agregado'], ['seo', 'SEO'], ['objetivo', 'Objetivo'], ['enfoque', 'Enfoque'], ['proposito', 'Propósito'], ['promesa', 'Promesa'], ['microapp', 'Microapp sugerida'],
-      ['cta_microapp', 'CTA sugerido con microapp'], ['palabras', 'Palabras clave'], ['categoria', 'Categoría']];
+      ['cta_microapp', 'CTA sugerido con microapp'], ['palabras', 'Palabras clave'], ['categoria', 'Categoría'],
+      ['publico', 'Público prioritario'], ['etapa_embudo', 'Etapa del embudo'], ['recurso_visual', 'Recurso visual / indicación de producción'], ['control_previo', 'Control previo a publicación (verificar antes de publicar)']];
     return campos.filter((c) => t[c[0]]).map((c) => c[1] + ': ' + String(t[c[0]]).replace(/\s+/g, ' ').trim()).join('\n');
   }
   function armarPrompt(t, tipo) {
@@ -600,7 +601,8 @@ window.MKT_GEN = (function () {
   // Al generar se guarda una «foto» de la matriz del tema; si después cambia, se avisa para volver a generar.
   const CAMPOS_MATRIZ = [['tema', 'Tema'], ['kpis', 'KPIs'], ['hook', 'Hook / guion'], ['problema', 'Problema'], ['autoridad', 'Autoridad'], ['solucion', 'Solución'], ['cta', 'CTA'],
     ['valor', 'Valor agregado'], ['seo', 'SEO'], ['objetivo', 'Objetivo'], ['enfoque', 'Enfoque'], ['proposito', 'Propósito'], ['promesa', 'Promesa'], ['microapp', 'Microapp sugerida'],
-    ['cta_microapp', 'CTA con microapp'], ['palabras', 'Palabras clave'], ['categoria', 'Categoría'], ['hashtags', 'Hashtags'], ['semana_inicio', 'Semana']];
+    ['cta_microapp', 'CTA con microapp'], ['palabras', 'Palabras clave'], ['categoria', 'Categoría'], ['hashtags', 'Hashtags'], ['semana_inicio', 'Semana'],
+    ['publico', 'Público prioritario'], ['etapa_embudo', 'Etapa del embudo'], ['recurso_visual', 'Recurso visual'], ['control_previo', 'Control previo']];
   const valorTema = (t, k) => k === 'semana_inicio' ? M().dia(t[k]) : String(t[k] || '').replace(/\s+/g, ' ').trim();
   const rutaFoto = (t, tipo) => (tipo === 'contenido' ? GC.carpetaSemanas : GC.carpetaNewsletters) + '/' + lunesTema(t) + '/Tema_generado_' + tipo + '.json';
   async function fotoTema(t, tipo) {

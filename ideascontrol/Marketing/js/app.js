@@ -64,6 +64,8 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     catch (e) { App.colsMet = null; }
     try { const r = await G.llamar('GET', '/sites/' + await G.sitio(CFG.sitio.host, CFG.sitio.ruta) + '/lists/' + await G.listaId(L.pubs) + '/columns?$select=name&$top=200'); App.colsPub = (r.value || []).map((c) => c.name); }
     catch (e) { App.colsPub = null; }
+    try { const r = await G.llamar('GET', '/sites/' + await G.sitio(CFG.sitio.host, CFG.sitio.ruta) + '/lists/' + await G.listaId(L.temas) + '/columns?$select=name&$top=200'); App.colsTema = (r.value || []).map((c) => c.name); }
+    catch (e) { App.colsTema = null; }
   }
   const tieneCol = (c) => !App.colsMet || App.colsMet.indexOf(c) >= 0;
   // Semana de la campaña (lunes) ≠ fecha de publicación. Columna fecha_semana (llega con el instalador);
@@ -528,7 +530,7 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
   // =====================================================================
   function vistaTemas(raiz) {
     const F = App.filtro;
-    raiz.innerHTML = '<div class="ic-barra"><div><h1 class="ic-titulo">Banco de temas</h1><p class="ic-subtitulo" style="margin:0">Cada tema alimenta las publicaciones de la semana en todas las redes.</p></div><span class="espacio"></span><button class="ic-btn" id="bNuevo">+ Tema</button></div>' +
+    raiz.innerHTML = '<div class="ic-barra"><div><h1 class="ic-titulo">Banco de temas</h1><p class="ic-subtitulo" style="margin:0">Cada tema alimenta las publicaciones de la semana en todas las redes.</p></div><span class="espacio"></span>' + (MKT_PLAN.puede() ? '<button class="ic-btn sec" id="bPlan">Reemplazar plan desde una semana</button> ' : '') + '<button class="ic-btn" id="bNuevo">+ Tema</button></div>' +
       '<div class="ic-filtros"><div class="ic-buscar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="fq" placeholder="Buscar tema, hook, problema, SEO…" value="' + esc(F.q) + '" autocomplete="off"></div></div><div id="tabla"></div>';
     const pintar = () => {
       const t = U.norm(F.q).split(/\s+/).filter(Boolean);
@@ -542,11 +544,13 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
     };
     raiz.querySelector('#fq').addEventListener('input', (e) => { F.q = e.target.value; pintar(); });
     raiz.querySelector('#bNuevo').onclick = () => { location.hash = 'tema/nuevo'; };
+    const bpl = raiz.querySelector('#bPlan'); if (bpl) bpl.onclick = () => MKT_PLAN.dialogo(async () => { await cargar(); vistaTemas(raiz); });
     pintar();
   }
   const CAMPOS_TEMA = [['tema', 'Tema / título de trabajo', 't'], ['semana_inicio', 'Semana (lunes)', 'date'], ['categoria', 'Categoría', 't'], ['hook', 'Hook / guion', 'm'], ['problema', 'Problema', 'm'],
     ['autoridad', 'Autoridad', 'm'], ['solucion', 'Solución', 'm'], ['cta', 'CTA', 'm'], ['valor', 'Valor agregado', 'm'], ['seo', 'SEO', 't'], ['objetivo', 'Objetivo', 'm'], ['enfoque', 'Enfoque', 'm'],
-    ['proposito', 'Propósito', 'm'], ['promesa', 'Promesa', 'm'], ['kpis', 'KPIs', 'm'], ['microapp', 'Microapp sugerida', 't'], ['cta_microapp', 'CTA sugerido con microapp', 'm'], ['hashtags', 'Hashtags', 'm'], ['palabras', 'Palabras clave', 'm']];
+    ['proposito', 'Propósito', 'm'], ['promesa', 'Promesa', 'm'], ['kpis', 'KPIs', 'm'], ['microapp', 'Microapp sugerida', 't'], ['cta_microapp', 'CTA sugerido con microapp', 'm'], ['hashtags', 'Hashtags', 'm'], ['palabras', 'Palabras clave', 'm'],
+    ['publico', 'Público prioritario', 'm'], ['recurso_visual', 'Recurso visual / indicación de producción', 'm'], ['etapa_embudo', 'Etapa del embudo', 't'], ['control_previo', 'Control previo a publicación', 'm']];
   function vistaTema(raiz) {
     const id = decodeURIComponent(location.hash.split('/')[1] || ''), nuevo = id === 'nuevo';
     const t = nuevo ? { semana_inicio: lunesDe(hoyISO()) } : temaDe(id);
@@ -566,6 +570,8 @@ const App = { usuario: null, temas: [], pubs: [], mets: [], semana: null, filtro
       ev.preventDefault();
       const v = U.leerForm(f);
       if (!v.tema) { U.marcarErrores(f, { tema: 'Obligatorio' }); return; }
+      // Columnas nuevas (público, recurso visual, etapa, control previo): llegan con el instalador; sin ellas no se envían
+      if (App.colsTema) Object.keys(v).forEach((k) => { if (App.colsTema.indexOf(k) < 0) delete v[k]; });
       await U.conCarga(raiz.querySelector('#bGuardar'), async () => {
         try {
           if (nuevo) {
