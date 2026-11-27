@@ -82,7 +82,7 @@ section { padding: 84px 0; }
 /* Cifras y franja alianza */
 .cifras { background: var(--navy); color: #fff; padding: 30px 0; }
 .cifras .cont { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
-.cifras div { border-left: 3px solid var(--oro); padding-left: 14px; }
+.cifras .cont > div { border-left: 3px solid var(--oro); padding-left: 14px; }
 .cifras b { display: block; font-size: 30px; color: var(--oro2); } .cifras .ph, .tablero .ph { font-size: .8em; color: #6B5310; } .cifras span { font-size: 13px; color: #cfdbe7; }
 .franja { background: var(--oro); padding: 16px 0; }
 .franja .cont { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; color: var(--navy); }
