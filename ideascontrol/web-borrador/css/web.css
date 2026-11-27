@@ -153,7 +153,8 @@ section { padding: 84px 0; }
 .ayuda .op { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 16px 0; }
 .ayuda .op span { background: #fff; border-radius: 10px; padding: 10px; font-size: 13.5px; color: var(--gris); }
 .pagos { background: var(--azul); color: #fff; border-radius: 20px; padding: 26px; } .pagos p { color: #dbeaf7; }
-.pagos .med { display: flex; gap: 8px; margin: 16px 0; flex-wrap: wrap; } .pagos .med span { background: #fff; color: var(--navy); font-weight: 800; border-radius: 8px; padding: 6px 12px; font-size: 13px; }
+.pagos .med { display: flex; gap: 8px; margin: 16px 0; flex-wrap: wrap; } .pagos .mp { background: #fff; color: var(--navy); font-weight: 800; border-radius: 8px; height: 38px; min-width: 64px; padding: 0 12px; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; }
+.pagos .mp img { height: 22px; width: auto; display: block; } .pagos .btn svg { color: var(--azul); } .pagos .seguro { display: flex; align-items: center; gap: 6px; font-size: 12.5px; margin: 12px 0 0; color: #dbeaf7; }
 @media (max-width: 900px) { .clientes2 { grid-template-columns: 1fr; } .ayuda .op { grid-template-columns: 1fr; } }
 
 /* Cumplimiento */
