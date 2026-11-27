@@ -162,58 +162,79 @@
       return;
     }
 
-    var payload = {
-      request_id: state.requestId,
+    var utm = (CFG.SEND_UTM && state.utm) || {};
+    var lead = {
+      action: 'crear_lead',
       nombre: results.nombre.value,
       apellido: results.apellido.value,
-      nombre_completo: results.nombre.value + ' ' + results.apellido.value,   // compatibilidad con el script anterior mientras se publica el nuevo
-      correo_empresarial: results.correo.value,
+      email: results.correo.value,
       codigo_pais: results.codigo_pais.value,
       telefono: results.telefono.value,
       empresa: results.empresa.value.toLocaleUpperCase('es-CO'),
       pais: results.pais.value,
-      acepta_politicas: true,
-      version_politicas: CFG.POLICY_VERSION,
-      fecha_aceptacion: state.acceptedAt || new Date().toISOString(),
       hp: $('sitio_web').value,
-      elapsed_ms: Date.now() - state.startedAt
+      fuente: CFG.FUENTE,
+      landing_id: CFG.LANDING_ID,
+      microapp_id: CFG.MICROAPP_ID,
+      utm_source: utm.utm_source || '', utm_medium: utm.utm_medium || '', utm_campaign: utm.utm_campaign || '',
+      utm_content: utm.utm_content || '', utm_term: utm.utm_term || ''
     };
-    if (CFG.SEND_UTM) payload.utm = state.utm;
-
-    send(payload);
+    send(lead);
   });
 
-  function send(payload) {
+  /* Texto exacto de la autorización (evidencia en la hoja Consentimientos). */
+  function textoAutorizacion() {
+    var l = document.querySelector('label[for="acepta"]');
+    return l ? l.textContent.replace(/\*/g, '').replace(/\s+/g, ' ').trim() : '';
+  }
+
+  /* POST a la API de microapps (Base_Maestra). text/plain evita el preflight CORS, que Apps Script no responde. */
+  function post(body, signal) {
+    return fetch(CFG.ENDPOINT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(body),
+      redirect: 'follow',
+      credentials: 'omit',
+      signal: signal
+    }).then(function (res) {
+      return res.text().then(function (t) {
+        var d = null;
+        try { d = JSON.parse(t); } catch (e) { /* respuesta no JSON */ }
+        if (res.status !== 200 || !d || d.ok !== true) { var err = new Error('API'); err.data = d; throw err; }
+        return d;
+      });
+    });
+  }
+
+  function send(lead) {
     setLoading(true);
     var ctrl = ('AbortController' in window) ? new AbortController() : null;
     var timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, CFG.REQUEST_TIMEOUT_MS || 20000);
+    var signal = ctrl ? ctrl.signal : undefined;
 
-    // text/plain evita el preflight CORS, que Apps Script no responde.
-    fetch(CFG.ENDPOINT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload),
-      redirect: 'follow',
-      credentials: 'omit',
-      signal: ctrl ? ctrl.signal : undefined
-    })
-      .then(function (res) {
-        return res.text().then(function (t) {
-          var data = null;
-          try { data = JSON.parse(t); } catch (e) { /* respuesta no JSON */ }
-          return { http: res.status, data: data };
-        });
+    // 1) Lead (si ya se creó en un intento anterior, no se duplica) · 2) Consentimiento
+    var paso1 = state.leadId ? Promise.resolve({ lead_id: state.leadId }) : post(lead, signal);
+    paso1
+      .then(function (d) {
+        if (!d.lead_id) throw new Error('SIN_ID');
+        state.leadId = d.lead_id;
+        return post({
+          action: 'registrar_consentimiento',
+          lead_id: state.leadId,
+          tipo: 'tratamiento_datos',
+          version_politica: CFG.POLICY_VERSION,
+          aceptado: true,
+          fecha_aceptacion: state.acceptedAt || new Date().toISOString(),
+          texto_autorizacion: textoAutorizacion(),
+          url_pagina: location.href.split('#')[0],
+          fuente: CFG.FUENTE
+        }, signal);
       })
-      .then(function (r) {
-        clearTimeout(timer);
-        var d = r.data;
-        // Éxito SOLO si el backend confirma que la fila quedó guardada.
-        if (r.http === 200 && d && d.ok === true && d.saved === true && d.id) return success();
-        failure(d);
-      })
+      .then(function () { clearTimeout(timer); success(); })
       .catch(function (err) {
         clearTimeout(timer);
-        failure({ code: err && err.name === 'AbortError' ? 'TIMEOUT' : 'NETWORK' });
+        failure({ code: err && err.name === 'AbortError' ? 'TIMEOUT' : (err && err.message === 'API') ? 'API' : 'NETWORK' });
       });
   }
 

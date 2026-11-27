@@ -7,11 +7,16 @@
 window.IC_CONFIG = {
   /* URL del Web App de Google Apps Script (termina en /exec).
      Mientras esté vacía, el formulario NO simula éxito: muestra un error de configuración. */
-  ENDPOINT_URL: 'https://script.google.com/macros/s/AKfycbxMID0E_3kETKsThgDScSXgM2aRPD-wQL0ashg5quTaeFnvD3HR-c_SwAnWMjDMR-Imww/exec',
+  ENDPOINT_URL: 'https://script.google.com/macros/s/AKfycbwGt0M2Uk2DiwVphpiPgTutLdjUGhw2N7yvQ6nc9s2IrbxQY1qCDLrAn3-i5WXm3R1u/exec',
 
-  /* Versión vigente de las políticas. DEBE coincidir con la propiedad
-     POLICY_VERSION del backend; si no coincide, el backend rechaza el registro. */
-  POLICY_VERSION: 'TYA-LEAD-2026-10-v2',
+  /* Identificación en la Base_Maestra_Microapps_Ideas_Control (pestañas Landings y Microapps). */
+  LANDING_ID: 'LAN-001',
+  MICROAPP_ID: 'APP-006',
+  FUENTE: 'Landing APP-006 - Piloto T&A',
+
+  /* Versión de la Política de Tratamiento de Datos (1106-MAN-GER) que acepta la persona.
+     Igual que en las demás landings; se guarda en la hoja Consentimientos. */
+  POLICY_VERSION: '1.1',
 
   /* Dominios de correo personal que se rechazan (lista explícita y editable).
      Mantenerla IGUAL a la propiedad BLOCKED_DOMAINS del backend. */
@@ -34,8 +39,7 @@ window.IC_CONFIG = {
   CLOSE_AFTER_SECONDS: 12,
   CLOSE_REDIRECT_URL: 'https://www.ideascontrol.com',
 
-  /* Parámetros UTM: se capturan pero NO se envían, porque la hoja LEADS no
-     tiene columna "origen". Activar solo si se aprueba ampliar la BD. */
+  /* Parámetros UTM (origen del lead): se guardan en las columnas utm_ de Leads. */
   SEND_UTM: true,
 
   /* Tiempo máximo de espera de la respuesta del backend (ms). */

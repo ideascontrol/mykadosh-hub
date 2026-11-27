@@ -1,3 +1,4 @@
+/* OBSOLETO desde 2026-11-27: el piloto ahora envía a la API de microapps (Base_Maestra_Microapps_Ideas_Control), igual que las demás landings. Este script queda solo como referencia. */
 /**
  * Backend - Landing Piloto biometrico 15 dias - Ideas Control
  * Google Apps Script desplegado como Aplicacion web.
