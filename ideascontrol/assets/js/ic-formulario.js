@@ -3,7 +3,7 @@
    assets/js/ic-formulario.js — requiere ic-paises.js e ic-validacion.js.
 
    Mismos campos y reglas en todas las landings (modelo: PilotoTyA):
-     Nombre y apellido · Correo empresarial · Código de país + Teléfono ·
+     Nombre · Apellido · Correo empresarial · Código de país + Teléfono ·
      Empresa · País · [Número de empleados] · Autorización de datos ·
      campo trampa antispam (invisible).
    - El código de país actualiza el país, y el país sugiere el código
@@ -66,8 +66,9 @@ window.IC_FORM = (function () {
     var partes = texto.split('Política de Tratamiento de Datos Personales');
     var politica = o.politicaUrl ? '<a href="' + esc(o.politicaUrl) + '" target="_blank" rel="noopener">Política de Tratamiento de Datos Personales</a>' : 'Política de Tratamiento de Datos Personales';
     var html = '<div class="form-grid">' +
-      campo('nombre', 'Nombre y apellido', '<input id="' + id('nombre') + '" type="text" autocomplete="name" maxlength="120">') +
-      campo('email', 'Correo empresarial', '<input id="' + id('email') + '" type="email" autocomplete="email" inputmode="email" maxlength="160" placeholder="nombre@tuempresa.com">', false, 'No aceptamos correos personales (gmail, hotmail…).') +
+      campo('nombre', 'Nombre', '<input id="' + id('nombre') + '" type="text" autocomplete="given-name" maxlength="60">') +
+      campo('apellido', 'Apellido', '<input id="' + id('apellido') + '" type="text" autocomplete="family-name" maxlength="60">') +
+      campo('email', 'Correo empresarial', '<input id="' + id('email') + '" type="email" autocomplete="email" inputmode="email" maxlength="160" placeholder="nombre@tuempresa.com">', true, 'No aceptamos correos personales (gmail, hotmail…).') +
       campo('telefono', 'Teléfono / WhatsApp', '<div class="icf-tel"><select id="' + id('codigo') + '" autocomplete="tel-country-code" aria-label="Código de país">' + opcCod + '</select>' +
         '<input id="' + id('telefono') + '" type="tel" autocomplete="tel-national" inputmode="tel" maxlength="20" placeholder="Número sin el código"></div>', true) +
       campo('empresa', 'Empresa', '<input id="' + id('empresa') + '" type="text" autocomplete="organization" maxlength="150">') +
@@ -98,7 +99,8 @@ window.IC_FORM = (function () {
     });
 
     var reglas = {
-      nombre: function () { return V.validateName($('nombre').value); },
+      nombre: function () { return V.validateName($('nombre').value, 'nombre'); },
+      apellido: function () { return V.validateName($('apellido').value, 'apellido'); },
       email: function () { return V.validateEmail($('email').value, BLOQUEADOS); },
       telefono: function () { var c = porIso[cod.value]; return V.validatePhone($('telefono').value, c ? c[2] : '', c ? c[3] : null); },
       empresa: function () { return V.validateCompany($('empresa').value); },
@@ -125,11 +127,10 @@ window.IC_FORM = (function () {
       var res = {}, primero = null;
       Object.keys(reglas).forEach(function (k) { var r = revisar(k); res[k] = r; if (!r.ok && !primero) primero = control(k); });
       if (primero) { primero.focus(); return null; }
-      var completo = res.nombre.value.replace(/\s+/g, ' ').trim(), partes = completo.split(' ');
       return {
-        nombre_completo: completo,
-        nombre: partes.shift(),
-        apellido: partes.join(' '),
+        nombre_completo: res.nombre.value + ' ' + res.apellido.value,
+        nombre: res.nombre.value,
+        apellido: res.apellido.value,
         email: res.email.value,
         codigo_pais: (porIso[cod.value] || [])[2] || '',
         telefono: res.telefono.value,
