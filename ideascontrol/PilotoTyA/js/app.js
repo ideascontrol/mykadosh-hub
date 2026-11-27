@@ -92,7 +92,8 @@
   }
 
   var checks = {
-    nombre: function () { return V.validateName($('nombre').value); },
+    nombre: function () { return V.validateName($('nombre').value, 'nombre'); },
+    apellido: function () { return V.validateName($('apellido').value, 'apellido'); },
     correo: function () { return V.validateEmail($('correo').value, CFG.BLOCKED_EMAIL_DOMAINS); },
     codigo_pais: function () { return V.validateDialCode(selectedDial()); },
     telefono: function () {
@@ -163,7 +164,9 @@
 
     var payload = {
       request_id: state.requestId,
-      nombre_completo: results.nombre.value,
+      nombre: results.nombre.value,
+      apellido: results.apellido.value,
+      nombre_completo: results.nombre.value + ' ' + results.apellido.value,   // compatibilidad con el script anterior mientras se publica el nuevo
       correo_empresarial: results.correo.value,
       codigo_pais: results.codigo_pais.value,
       telefono: results.telefono.value,
@@ -220,7 +223,7 @@
     if (code === 'VALIDATION' && d.fields) {
       var first = null;
       Object.keys(d.fields).forEach(function (k) {
-        var map = { nombre_completo: 'nombre', correo_empresarial: 'correo', acepta_politicas: 'acepta' };
+        var map = { correo_empresarial: 'correo', acepta_politicas: 'acepta' };
         var id = map[k] || k;
         if ($(id)) { setError(id, d.fields[k]); if (!first) first = id; }
       });

@@ -9,12 +9,13 @@
     return String(v == null ? '' : v).replace(/[\u0000-\u001F\u007F]/g, ' ').replace(/\s+/g, ' ').trim();
   }
 
-  function validateName(v) {
-    var s = cleanText(v);
-    if (!s) return { ok: false, value: s, msg: 'Escribe tu nombre completo.' };
-    if (s.length < 3) return { ok: false, value: s, msg: 'El nombre es demasiado corto.' };
-    if (s.length > 120) return { ok: false, value: s, msg: 'El nombre no puede superar 120 caracteres.' };
-    if (!/[A-Za-zÀ-ÿ]/.test(s)) return { ok: false, value: s, msg: 'Escribe un nombre válido.' };
+  /* Nombre o apellido (campos separados). que: 'nombre' | 'apellido' */
+  function validateName(v, que) {
+    var s = cleanText(v), q = que === 'apellido' ? 'apellido' : 'nombre';
+    if (!s) return { ok: false, value: s, msg: 'Escribe tu ' + q + '.' };
+    if (s.length < 2) return { ok: false, value: s, msg: 'El ' + q + ' es demasiado corto.' };
+    if (s.length > 60) return { ok: false, value: s, msg: 'El ' + q + ' no puede superar 60 caracteres.' };
+    if (!/[A-Za-zÀ-ÿ]/.test(s)) return { ok: false, value: s, msg: 'Escribe un ' + q + ' válido.' };
     return { ok: true, value: s };
   }
 

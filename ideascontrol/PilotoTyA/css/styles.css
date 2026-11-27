@@ -143,6 +143,7 @@ section[id] { scroll-margin-top: 76px; }
 .card { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 32px; box-shadow: var(--shadow); }
 .field { margin-bottom: 18px; }
 .row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 14px; }
+.row--2 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 label { display: block; font-weight: 600; font-size: .93rem; margin-bottom: 6px; }
 .req { color: var(--err); }
 input[type="text"], input[type="email"], input[type="tel"], select {

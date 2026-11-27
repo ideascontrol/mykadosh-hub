@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Encode+Sans+Semi+Expanded:wght@600;700;800&family=Nunito+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v=20261029c">
+  <link rel="stylesheet" href="css/styles.css?v=20261127a">
 </head>
 <body>
   <a class="skip" href="#registro">Ir al formulario</a>
@@ -165,10 +165,17 @@
           <form id="lead-form" novalidate>
             <div class="alert" id="form-alert" role="alert" hidden></div>
 
-            <div class="field">
-              <label for="nombre">Nombre completo <span class="req" aria-hidden="true">*</span></label>
-              <input id="nombre" name="nombre" type="text" autocomplete="name" maxlength="120" required aria-describedby="nombre-err">
-              <p class="err" id="nombre-err"></p>
+            <div class="row row--2">
+              <div class="field">
+                <label for="nombre">Nombre <span class="req" aria-hidden="true">*</span></label>
+                <input id="nombre" name="nombre" type="text" autocomplete="given-name" maxlength="60" required aria-describedby="nombre-err">
+                <p class="err" id="nombre-err"></p>
+              </div>
+              <div class="field">
+                <label for="apellido">Apellido <span class="req" aria-hidden="true">*</span></label>
+                <input id="apellido" name="apellido" type="text" autocomplete="family-name" maxlength="60" required aria-describedby="apellido-err">
+                <p class="err" id="apellido-err"></p>
+              </div>
             </div>
 
             <div class="field">
@@ -250,8 +257,8 @@
 
   <script src="js/config.js?v=20261106c"></script>
   <script src="js/countries.js?v=20261106a"></script>
-  <script src="js/validation.js?v=20261029c"></script>
-  <script src="js/app.js?v=20261106c"></script>
+  <script src="js/validation.js?v=20261127a"></script>
+  <script src="js/app.js?v=20261127a"></script>
 <!-- Se cierra si se sale desde el Portal de Ideas Control -->
 <script src="/ideascontrol/shared/js/volver.js?v=0.1.6"></script>
 </body>
