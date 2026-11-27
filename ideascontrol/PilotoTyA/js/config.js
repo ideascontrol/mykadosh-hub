@@ -12,7 +12,7 @@ window.IC_CONFIG = {
   /* Identificación en la Base_Maestra_Microapps_Ideas_Control (pestañas Landings y Microapps). */
   LANDING_ID: 'LAN-001',
   MICROAPP_ID: 'APP-006',
-  FUENTE: 'Landing APP-006 - Piloto T&A',
+  FUENTE: 'Piloto T&A',
 
   /* Versión de la Política de Tratamiento de Datos (1106-MAN-GER) que acepta la persona.
      Igual que en las demás landings; se guarda en la hoja Consentimientos. */
