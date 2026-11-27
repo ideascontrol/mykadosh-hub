@@ -285,3 +285,9 @@ section[id], [id="otras"], [id="cronologia"] { scroll-margin-top: 84px; }
 @media (max-width: 900px) { .fases { grid-template-columns: 1fr 1fr; } .postimpl { grid-template-columns: 1fr; padding: 22px; } }
 @media (max-width: 560px) { .fases, .etapas, .pi-lista { grid-template-columns: 1fr; } .postimpl h3 { font-size: 23px; } }
 .nota-norma { margin: 18px 0 0; font-size: 13px; color: var(--gris); }
+.ruta { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-top: 30px; counter-reset: r; }
+.ruta div { background: #fff; border: 1px solid var(--borde); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 4px; position: relative; }
+.ruta i { font-style: normal; font-weight: 800; font-size: 12px; color: var(--teal); letter-spacing: .08em; } .ruta b { color: var(--navy); font-size: 15px; }
+.postimpl .etapas { margin-top: 0; align-content: center; }
+@media (max-width: 900px) { .ruta { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 560px) { .ruta { grid-template-columns: 1fr 1fr; } }
