@@ -16,7 +16,7 @@
     conocimiento: '/ideascontrol/Recursos/', ayuda: 'https://mesadeayuda.timevisionbi.com/', pago: 'https://checkout.wompi.co/l/VPOS_AwaH2Y',
     timevision: '/ideascontrol/TimeVision/',
     wa: 'https://wa.me/573213184853?text=' + encodeURIComponent('Hola Ideas Control, vengo de la página web y quiero más información.'),
-    facebook: 'https://www.facebook.com/BiometricosenColombia', instagram: 'https://www.instagram.com/ideascontrol.co', youtube: 'https://www.youtube.com/@ideascontrooficial'
+    facebook: 'https://www.facebook.com/BiometricosenColombia', instagram: 'https://www.instagram.com/ideascontrol.co', youtube: 'https://www.youtube.com/@ideascontrooficial', linkedin: 'https://www.linkedin.com/company/ideascontrol/'
   };
   window.IC_WEB = L;
   const enInicio = location.pathname.replace(/index\.html$/, '') === BASE;
@@ -46,7 +46,7 @@
       '<p style="margin-top:12px">Calle 85 #16-28, Oficina 402, Bogotá D.C.</p></div>' +
       '<div><h4>Soluciones</h4><a href="' + ancla('soluciones') + '">Equipos biométricos</a><a href="' + ancla('soluciones') + '">Plataforma de tiempo y asistencia</a><a href="' + ancla('timevision') + '">TimeVision BI</a><a href="' + ancla('productos') + '">Control de acceso y torniquetes</a><a href="' + L.nosotros + '#alianza">Alianza IC + GPA</a></div>' +
       '<div><h4>Clientes</h4><a href="' + L.ayuda + '" target="_blank" rel="noopener">Centro de ayuda</a><a href="' + L.pago + '" target="_blank" rel="noopener">Paga aquí</a><a href="' + L.herramientas + '">Herramientas gratuitas</a><a href="' + L.conocimiento + '">Centro de conocimiento</a></div>' +
-      '<div><h4>Síguenos</h4><a href="' + L.facebook + '" target="_blank" rel="noopener">Facebook</a><a href="' + L.instagram + '" target="_blank" rel="noopener">Instagram</a><a href="' + L.youtube + '" target="_blank" rel="noopener">YouTube</a><a href="#" class="ph">[ENLACE: LinkedIn]</a></div>' +
+      '<div><h4>Síguenos</h4><a href="' + L.facebook + '" target="_blank" rel="noopener">Facebook</a><a href="' + L.instagram + '" target="_blank" rel="noopener">Instagram</a><a href="' + L.youtube + '" target="_blank" rel="noopener">YouTube</a><a href="' + L.linkedin + '" target="_blank" rel="noopener">LinkedIn</a></div>' +
       '<div class="base"><span>© ' + new Date().getFullYear() + ' Ideas Control Equipos y Soluciones S.A.S.</span><span><a href="' + L.politica + '">Política de Tratamiento de Datos</a><a href="' + L.nosotros + '">Nosotros</a></span></div></div>';
     if (!document.querySelector('.borrador')) document.body.insertAdjacentHTML('beforeend', '<div class="borrador">BORRADOR · no publicado</div>');
   }
