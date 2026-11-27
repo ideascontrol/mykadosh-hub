@@ -262,3 +262,24 @@ section { padding: 84px 0; }
 #cabecera { position: sticky; top: 0; z-index: 50; }
 #cabecera .menu { position: relative; top: auto; }
 section[id], [id="otras"], [id="cronologia"] { scroll-margin-top: 84px; }
+
+/* Metodología de implementación y acompañamiento postimplementación */
+.fases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 34px; }
+.fases > div { background: #fff; border: 1px solid var(--borde); border-radius: var(--r); padding: 20px; display: flex; flex-direction: column; gap: 6px; }
+.fases i { font-style: normal; font-weight: 800; font-size: 13px; color: var(--teal); letter-spacing: .08em; }
+.fases b { font-size: 17px; color: var(--navy); } .fases span { color: var(--gris); font-size: 14.5px; }
+.fases em { font-style: normal; font-size: 12.5px; color: var(--navy2); background: var(--claro); border-radius: 8px; padding: 6px 10px; margin-top: auto; }
+.semanal { margin-top: 16px; background: var(--navy); color: #fff; border-radius: var(--r); padding: 14px 20px; display: flex; gap: 14px; flex-wrap: wrap; align-items: center; }
+.semanal b { color: var(--oro2); } .semanal span { color: #dbe6f1; font-size: 14.5px; }
+.postimpl { margin-top: 40px; background: #fff; border: 2px solid var(--oro); border-radius: 20px; padding: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 26px; box-shadow: var(--sombra); }
+.postimpl h3 { font-size: 28px; color: var(--navy); margin: 0 0 8px; } .postimpl .pi-tx > p:not(.eyebrow) { color: var(--gris); margin: 0; }
+.etapas { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+.etapas div { border-left: 4px solid var(--oro); background: var(--claro); border-radius: 0 12px 12px 0; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; }
+.etapas small { text-transform: uppercase; letter-spacing: .1em; font-size: 11px; font-weight: 800; color: var(--teal); }
+.etapas b { color: var(--navy); } .etapas span { font-size: 14px; color: var(--gris); }
+.pi-lista { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-content: start; }
+.pi-lista div { border: 1px solid var(--borde); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 4px; }
+.pi-lista b { color: var(--navy); font-size: 15px; } .pi-lista b::before { content: '✓ '; color: var(--teal); } .pi-lista span { font-size: 14px; color: var(--gris); }
+.pi-nota { grid-column: 1 / -1; margin: 0; font-size: 13.5px; color: var(--gris); border-top: 1px solid var(--borde); padding-top: 14px; }
+@media (max-width: 900px) { .fases { grid-template-columns: 1fr 1fr; } .postimpl { grid-template-columns: 1fr; padding: 22px; } }
+@media (max-width: 560px) { .fases, .etapas, .pi-lista { grid-template-columns: 1fr; } .postimpl h3 { font-size: 23px; } }
