@@ -278,13 +278,14 @@
         <div class="c"><label for="apellido">Apellido</label><input id="apellido" name="apellido" placeholder="Ej.: Gómez" autocomplete="family-name" maxlength="60"><div class="err"></div></div>
       </div>
       <div class="f2">
-        <div class="c"><label for="correo">Correo corporativo</label><input id="correo" name="correo" type="email" placeholder="nombre@empresa.com" autocomplete="email"><div class="err"></div></div>
+        <div class="c"><label for="correo">Correo electrónico</label><input id="correo" name="correo" type="email" placeholder="nombre@empresa.com" autocomplete="email"><div class="err"></div></div>
         <div class="c"><label for="empresa">Empresa</label><input id="empresa" name="empresa" class="mayus" placeholder="NOMBRE DE LA EMPRESA" autocomplete="organization"><div class="err"></div></div>
       </div>
       <div class="f2">
         <div class="c"><label for="pais">País</label><select id="pais" name="pais"></select><div class="err"></div></div>
         <div class="c"><label for="telefono">Teléfono</label><input id="telefono" name="telefono" inputmode="tel" placeholder="300 000 0000" autocomplete="tel"><div class="err"></div></div>
       </div>
+      <div class="c"><label for="empleados">Número de empleados</label><select id="empleados" name="empleados"><option value="" selected disabled>Selecciona…</option><option>1 - 10</option><option>11 - 50</option><option>51 - 200</option><option>201 - 500</option><option>Más de 500</option></select><div class="err"></div></div>
       <div class="c"><label for="necesidad">¿En qué te podemos ayudar?</label><textarea id="necesidad" name="necesidad" rows="3" placeholder="Cuéntanos brevemente tu necesidad"></textarea><div class="err"></div></div>
       <div class="c"><label class="ok"><input type="checkbox" name="acepto"> <span>Acepto la <a href="/ideascontrol/Privacidad/" target="_blank" rel="noopener">Política de Tratamiento de Datos Personales</a> de Ideas Control.</span></label><div class="err"></div></div>
       <input type="text" name="hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
@@ -297,7 +298,7 @@
 </main>
 <footer id="pie"></footer>
 <script>try{document.getElementById('tvpHoy').textContent='Hoy, '+new Date().toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'}).replace(/\./g,'').replace(/ de /g,' ');}catch(e){}</script>
-<script src="js/web.js?v=0.2.6"></script>
+<script src="js/web.js?v=0.2.7"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('bWa').href = IC_WEB.wa;

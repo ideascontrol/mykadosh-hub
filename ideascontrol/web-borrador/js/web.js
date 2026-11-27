@@ -68,7 +68,6 @@
   }
 
   // Formulario estándar IC (como PilotoTyA): nombre y apellido, correo corporativo, EMPRESA en mayúsculas, país, consentimiento
-  const PERSONALES = ['gmail.com', 'googlemail.com', 'hotmail.com', 'hotmail.es', 'hotmail.co', 'outlook.com', 'outlook.es', 'live.com', 'live.com.mx', 'msn.com', 'yahoo.com', 'yahoo.es', 'yahoo.com.co', 'yahoo.com.mx', 'ymail.com', 'icloud.com', 'me.com', 'aol.com', 'protonmail.com', 'proton.me'];
   const PAISES = [['CO', 'Colombia', '+57'], ['PA', 'Panamá', '+507'], ['EC', 'Ecuador', '+593'], ['CR', 'Costa Rica', '+506'], ['PE', 'Perú', '+51'], ['MX', 'México', '+52'], ['CL', 'Chile', '+56'], ['US', 'Estados Unidos', '+1'], ['XX', 'Otro país', '']];
   function formulario() {
     const f = document.getElementById('fContacto'); if (!f) return;
@@ -78,12 +77,14 @@
     const marcar = (campo, msg) => { const c = f[campo].closest('.c'); c.classList.toggle('mal', !!msg); c.querySelector('.err').textContent = msg || ''; return !msg; };
     f.onsubmit = (e) => {
       e.preventDefault();
-      const nom = f.nombre.value.trim().replace(/\s+/g, ' '), ape = f.apellido.value.trim().replace(/\s+/g, ' '), mail = f.correo.value.trim().toLowerCase(), dom = mail.split('@')[1] || '';
+      const nom = f.nombre.value.trim().replace(/\s+/g, ' '), ape = f.apellido.value.trim().replace(/\s+/g, ' '), mail = f.correo.value.trim().toLowerCase();
       let ok = true;
       const letra = /[A-Za-zÀ-ÿ]/;
       ok = marcar('nombre', nom.length < 2 || !letra.test(nom) ? 'Escribe tu nombre' : '') && ok;
       ok = marcar('apellido', ape.length < 2 || !letra.test(ape) ? 'Escribe tu apellido' : '') && ok;
-      ok = marcar('correo', !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail) ? 'Escribe un correo válido' : PERSONALES.indexOf(dom) >= 0 ? 'Usa tu correo corporativo (no Gmail, Hotmail, Outlook…)' : '') && ok;
+      // La página web acepta cualquier correo (también Gmail, Hotmail…); las landings exigen correo empresarial
+      ok = marcar('correo', !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail) ? 'Escribe un correo válido' : '') && ok;
+      ok = marcar('empleados', !f.empleados.value ? 'Selecciona el número de empleados' : '') && ok;
       ok = marcar('empresa', f.empresa.value.trim().length < 2 ? 'Escribe el nombre de tu empresa' : '') && ok;
       ok = marcar('necesidad', f.necesidad.value.trim().length < 5 ? 'Cuéntanos brevemente qué necesitas' : '') && ok;
       ok = marcar('acepto', !f.acepto.checked ? 'Debes aceptar la Política de Tratamiento de Datos' : '') && ok;
@@ -98,26 +99,30 @@
       // 1) Base_Maestra_Microapps_Ideas_Control (misma API que las landings): lead + consentimiento
       const lead = Object.assign({
         action: 'crear_lead', nombre: nom, apellido: ape, email: mail, empresa, pais: pais[1], codigo_pais: pais[2], telefono: tel,
-        comentario: f.necesidad.value.trim(), fuente: WEB_FUENTE, landing_id: WEB_LANDING_ID, microapp_id: WEB_MICROAPP_ID, hp: f.hp.value
+        empleados: f.empleados.value, comentario: f.necesidad.value.trim(), fuente: WEB_FUENTE, landing_id: WEB_LANDING_ID, microapp_id: WEB_MICROAPP_ID, hp: f.hp.value
       }, utm);
       // 2) Aviso por correo a info@ (script del formulario web, igual que antes)
       const datos = Object.assign({
         nombre: nom + ' ' + ape, correo: mail, empresa, pais: pais[1], codigo_pais: pais[2],
-        telefono: tel, necesidad: f.necesidad.value.trim(), origen: 'Página web · Agenda tu asesoría',
+        telefono: tel, necesidad: f.necesidad.value.trim() + '\n\nNúmero de empleados: ' + f.empleados.value, origen: 'Página web · Agenda tu asesoría',
         acepto_politica: 'SI', version_politica: VERSION_POLITICA, texto_autorizacion: TEXTO_AUTORIZACION,
         url_pagina: pagina, hp: f.hp.value
       }, utm);
       const post = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) })
         .then((r) => r.json()).then((d) => { if (!d || d.ok !== true) throw new Error((d && d.error) || 'Error'); return d; });
       btn.disabled = true; btn.textContent = 'Enviando…'; nota.textContent = '';
-      (leadWeb ? Promise.resolve({ lead_id: leadWeb }) : post(API_MICROAPPS, lead))
+      // La base y el correo van por separado: si uno falla, el otro igual recibe la solicitud
+      const enBase = (leadWeb ? Promise.resolve({ lead_id: leadWeb }) : post(API_MICROAPPS, lead))
         .then((d) => {
           if (!d.lead_id) throw new Error('Sin lead');
           leadWeb = d.lead_id;   // si algo falla después, el reintento no duplica el lead
           return post(API_MICROAPPS, { action: 'registrar_consentimiento', lead_id: leadWeb, tipo: 'tratamiento_datos', version_politica: VERSION_POLITICA,
             aceptado: true, fecha_aceptacion: fechaAcept, texto_autorizacion: TEXTO_AUTORIZACION, url_pagina: pagina, fuente: WEB_FUENTE });
         })
-        .then(() => post(CONTACTO_URL, datos).catch((x) => console.error('Aviso por correo no enviado', x)))   // el lead ya quedó guardado
+        .then(() => true, (x) => { console.error('No se guardó en la base', x); return false; });
+      enBase
+        .then((okBase) => post(CONTACTO_URL, datos).then(() => true, (x) => { console.error('Aviso por correo no enviado', x); return false; })
+          .then((okCorreo) => { if (!okBase && !okCorreo) throw new Error('Sin envío'); }))
         .then(() => {
           leadWeb = null;
           f.reset(); f.querySelectorAll('.c').forEach((c) => { c.classList.remove('mal'); const er = c.querySelector('.err'); if (er) er.textContent = ''; });
