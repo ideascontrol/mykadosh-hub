@@ -9,7 +9,7 @@
   let faltas = [], filtroTec = '';
 
   App.vistas.faltas = async function (c) {
-    if (!App.esAdmin()) { location.hash = ''; return; }
+    if (!App.puede('faltas')) { location.hash = ''; return; }
     c.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a><div class="ic-barra"><div style="flex:1"><h1 class="ic-titulo">Faltas</h1>' +
       '<p class="ic-subtitulo" style="margin:0">Registro confidencial de la Dirección de Operaciones. El procedimiento disciplinario sigue el Reglamento Interno de Trabajo (' + esc(CFG.manual) + ').</p></div>' +
       '<button class="ic-btn" id="bNueva">+ Registrar falta</button></div><div id="res"></div>' +

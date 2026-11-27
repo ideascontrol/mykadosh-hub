@@ -29,7 +29,7 @@
   }
 
   App.vistas.acta = async function (c) {
-    if (App.usuario.rol === 'TECNICO') { location.hash = ''; return; }
+    if (!App.puede('acta')) { location.hash = ''; return; }
     if (!ST.desde) { const p = presets()[1]; ST.desde = p[1]; ST.hasta = p[2]; }
     c.innerHTML = '<a class="ic-volver ope-noimp" href="#">← Menú principal</a>' +
       '<div class="ope-noimp"><h1 class="ic-titulo">Acta de equipos instalados</h1>' +

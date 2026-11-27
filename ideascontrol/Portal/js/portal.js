@@ -39,6 +39,8 @@
   }
   function saludo() { const h = new Date().getHours(); return h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches'; }
 
+  // Apps que ya leen la Matriz de permisos (fase 1); las demás se conectan en la fase 2
+  const CONECTADAS = ['APP-106', 'APP-107'];
   function pintar(raiz) {
     const oficina = esOficina();
     const apps = APPS.map((a) => {
@@ -46,8 +48,14 @@
       const url = a.fija ? a.url : (c.url || a.url);
       const datos = /sharepoint\.com/i.test(url || '') ? 'SHAREPOINT' : a.datos;   // p. ej. Gestión documental ya movida a SharePoint
       return Object.assign({}, a, { url, datos, nota: datos === a.datos ? a.nota : '', activa: !!url && !a.pronto });
-    }).filter((a) => !(a.acceso && acceso[a.acceso] === false) && !(a.soloOficina && !oficina) &&
-      !(a.solo && a.solo.indexOf(String(cuenta.username || '').toLowerCase()) < 0));   // solo: apps de uso personal
+    }).filter((a) => {
+      const antes = !(a.acceso && acceso[a.acceso] === false) && !(a.soloOficina && !oficina) &&
+        !(a.solo && a.solo.indexOf(String(cuenta.username || '').toLowerCase()) < 0);   // solo: apps de uso personal
+      if (!IC.permisos.activa()) return antes;
+      // Matriz activa: se ve la tarjeta si tiene al menos una opción de la app. Las apps que aún no leen la matriz
+      // (fase 2) solo se pueden quitar desde la matriz, no dar: dentro de la app siguen sus reglas anteriores.
+      return IC.permisos.algunaDe(a.id) && (CONECTADAS.indexOf(a.id) >= 0 || antes);
+    });
     const grupos = [];
     apps.forEach((a) => { if (grupos.indexOf(a.grupo) < 0) grupos.push(a.grupo); });
     let html = '<h1 class="ic-titulo">' + saludo() + ', ' + esc(String(cuenta.name || '').split(' ')[0]) + '</h1>' +
@@ -68,17 +76,18 @@
       });
       html += '</div>';
     });
-    const dueno = (CFG.verSitios || []).indexOf(String(cuenta.username || '').toLowerCase()) >= 0;   // solo la Dirección de Operaciones
+    const duenoAntes = (CFG.verSitios || []).indexOf(String(cuenta.username || '').toLowerCase()) >= 0;   // solo la Dirección de Operaciones
+    const dueno = IC.permisos.activa() ? IC.permisos.puede('PORTAL.otros') && duenoAntes : duenoAntes;
+    // Con la matriz activa, cada tarjeta de «Otros Procesos» también se da o se quita por separado
+    const sitioVisible = (s) => !IC.permisos.activa() || !s.permiso || IC.permisos.algunaDe(s.permiso);
     // Otros Procesos: lo de la Dirección de Operaciones (solo dueño) + el Centro de herramientas para clientes (personal de oficina)
-    const otros = (dueno ? CFG.sitios.map((s, i) =>
+    const otros = (dueno ? CFG.sitios.filter(sitioVisible).map((s, i) =>
       '<a class="ic-card' + (i === 0 ? ' dorado' : '') + '" href="' + esc(s.url) + '" target="_blank" rel="noopener"><div class="icono">' + (i === 0 ? ICO.checklist || ICO.sitio : /Reflexiones/.test(s.nombre) ? ICO.libro || ICO.sitio : ICO.sitio) + '</div><h3>' + esc(s.nombre) + '</h3><p>' + esc(s.texto) + '</p></a>').join('') : '') +
       (oficina ? '<a class="ic-card teal" href="/ideascontrol/Herramientas/" target="_blank" rel="noopener"><div class="icono">' + ICO.tareas + '</div><h3>Centro de herramientas empresariales ↗</h3>' +
         '<p>Diagnósticos, calculadoras y soluciones de Tiempo y Asistencia para compartir con clientes. Se abre en una ventana nueva.</p></a>' : '');
     if (otros) html += '<div class="ic-seccion">Otros Procesos</div><div class="ic-grid">' + otros + '</div>';
     html += '<div class="ic-pie">' + CFG.app.id + ' · v' + CFG.app.version + ' · Las apps internas guardan sus datos en SharePoint (IC Apps) con la cuenta de Microsoft 365 de cada usuario.</div>';
     raiz.innerHTML = html;
-    const bm = raiz.querySelector('#bMatriz');
-    if (bm) bm.onclick = (e) => { e.preventDefault(); MatrizAccesos.descargar().catch((er) => U.aviso('No se pudo armar la matriz: ' + U.mensajeError(er), 'err', 8000)); };
     // Cada app interna se abre en su propia pestaña; si ya está abierta, se vuelve a ella
     raiz.querySelectorAll('a[data-app]').forEach((el) => {
       el.addEventListener('click', (ev) => {
@@ -102,6 +111,7 @@
   async function complementar(raiz) {
     const email = String(cuenta.username || '').toLowerCase();
     try { await IC.graph.sitio(CFG.sitio.host, CFG.sitio.ruta); } catch (e) { U.aviso('No se pudo conectar con IC Apps: ' + U.mensajeError(e), 'warn', 7000); acceso = {}; return; }
+    await IC.permisos.cargar(email);   // Matriz de permisos (si está activa, decide qué tarjetas se ven)
     const tareas = [
       IC.graph.items('SYS_Microapps').then((r) => { r.forEach((x) => { catalogo[x.Title] = x; }); }).catch(() => {}),
       IC.graph.items('SYS_Usuarios').then((r) => {

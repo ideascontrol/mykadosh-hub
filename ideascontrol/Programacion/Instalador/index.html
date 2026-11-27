@@ -132,6 +132,8 @@ const LISTAS = [
     ['fecha_hora', 'dt', null, 1], ['usuario_id', 't', null, 1], ['app_id', 't'], ['entidad', 't', null, 1], ['registro_id', 't', null, 1],
     ['accion', 'c', ['CREAR', 'ACTUALIZAR', 'DESACTIVAR', 'CAMBIO_ESTADO', 'APROBAR', 'REVISION', 'ANULAR', 'GENERAR_PDF']],
     ['antes', 'm'], ['despues', 'm']] },
+  { n: 'SYS_Permisos', title: 'email', d: 'Matriz de permisos y accesos del portal: una fila por persona (permisos = opciones separadas por coma) y la fila __CONFIG__ (ACTIVA / INACTIVA)', cols: [
+    ['nombre', 't'], ['permisos', 'm'], ['estado', 'c', ['ACTIVO', 'INACTIVO']]] },
   { n: 'SYS_Accesos', title: 'acceso_id', d: 'Acceso de usuarios por microapp (rol por app)', cols: [
     ['email', 't', null, 1], ['nombre', 't'], ['app_id', 't', null, 1], ['rol', 'c', ['ADMIN', 'EDITOR', 'CONSULTA']], ['estado', 'c', ESTADO, 1]] },
   { n: 'OPE_Tipos', title: 'codigo', d: 'Tipos de actividad, días preferentes y capacidad', cols: [
@@ -1376,7 +1378,7 @@ const PERMISOS_TECNICOS = [
   ['NOV_Solicitudes', 3],       // además: cada técnico solo ve y edita sus propias solicitudes
   ['TAL_Programas', 2], ['TAL_Piezas', 2], ['TAL_Lecturas', 3], ['TAL_Coleccion', 2],
   ['TAR_Tareas', 3], ['TAR_Categorias', 2], ['MAE_Empresas', 2],   // APP-109 Gestión de Clientes: todo el personal ve y actualiza las tareas
-  ['SYS_Accesos', 2]            // solo lectura: cada app reconoce el rol que la Dirección le dio a la persona (p. ej. Consulta en Novedades)
+  ['SYS_Accesos', 2], ['SYS_Permisos', 2]          // solo lectura: cada app reconoce el rol que la Dirección le dio a la persona (p. ej. Consulta en Novedades)
 ];
 let tecnicosLista = [];
 async function pintarTecnicos() {
@@ -1493,8 +1495,17 @@ async function aplicarPermisos() {
     //    NOV_Solicitudes deja ver a cada quien solo lo suyo; el nivel «Editar» (incluye «Administrar listas») salta esa restricción solo en esta lista.
     try {
       const acc = listasExistentes.SYS_Accesos ? await itemsDeLista('SYS_Accesos') : [];
-      const consulta = Array.from(new Set(acc.map((i) => i.fields).filter((f) => f.app_id === 'APP-107' && f.estado !== 'INACTIVO' && (f.rol === 'CONSULTA' || f.rol === 'ADMIN'))
+      let consulta = Array.from(new Set(acc.map((i) => i.fields).filter((f) => f.app_id === 'APP-107' && f.estado !== 'INACTIVO' && (f.rol === 'CONSULTA' || f.rol === 'ADMIN'))
         .map((f) => String(f.email || '').trim().toLowerCase()).filter(Boolean)));
+      // Con la Matriz de permisos activa, manda la matriz: quien ve solicitudes de todo el personal en Novedades
+      const mx = listasExistentes.SYS_Permisos ? (await itemsDeLista('SYS_Permisos')).map((i) => i.fields) : [];
+      const cfgMx = mx.find((f) => f.Title === '__CONFIG__');
+      if (cfgMx && String(cfgMx.permisos || '').trim() === 'ACTIVA') {
+        const VER = ['APP-107.todas', 'APP-107.reporte', 'APP-107.calendario', 'APP-107.bandeja', 'APP-107.registrar'];
+        consulta = mx.filter((f) => f.Title !== '__CONFIG__' && f.estado !== 'INACTIVO' && String(f.permisos || '').split(',').some((x) => VER.indexOf(x.trim()) >= 0))
+          .map((f) => String(f.Title || '').trim().toLowerCase()).filter(Boolean);
+        log('Novedades · Consulta: se toma de la Matriz de permisos (' + consulta.length + ' personas)', 'info');
+      }
       const base = "web/lists/getbytitle('NOV_Solicitudes')";
       const editar = await sp('GET', 'web/roledefinitions/getbytype(6)?$select=Id,Name');
       const asig = (await sp('GET', base + '/roleassignments?$expand=Member,RoleDefinitionBindings')).value || [];

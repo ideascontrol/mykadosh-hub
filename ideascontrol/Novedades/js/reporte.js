@@ -65,7 +65,7 @@
 
   // ---------- Vista ----------
   App.vistas.reporte = async function (c) {
-    const propio = App.esTecnico();          // cada colaborador: solo sus novedades
+    const propio = !App.puede('reporte');   // sin «Reporte de novedades» (todo el personal): solo las suyas
     if (propio) F.tec = App.usuario.tecnico ? App.usuario.tecnico.Title : '__nadie';
     if (!F.desde) { const k = Ope.ym(Ope.hoy()), [y, m] = k.split('-').map(Number); F.desde = k + '-01'; F.hasta = Ope.finDeMes(y, m); }
     c.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a><div class="ic-barra"><div style="flex:1"><h1 class="ic-titulo">' + (propio ? 'Mi reporte de novedades' : 'Reporte de novedades') + '</h1>' +

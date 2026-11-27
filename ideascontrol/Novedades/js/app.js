@@ -7,10 +7,25 @@
           existe, del rol en la Programación APP-106) y del correo en OPE_Tecnicos.
    ===================================================================== */
 const App = { usuario: null, vistas: {}, estado: {} };
-App.esAdmin = () => App.usuario && App.usuario.rol === 'ADMIN';
-App.esTecnico = () => App.usuario && App.usuario.rol === 'TECNICO';
 // Toda persona registrada en el personal (cualquier rol) puede pedir novedades y ver las suyas
 App.esColaborador = () => !!(App.usuario && App.usuario.tecnico);
+/* Permiso por opción. Con la Matriz de permisos activa (Administrativos) manda la matriz;
+   si no, las reglas anteriores por rol (ADMIN / CONSULTA / TECNICO). Las opciones propias
+   (nueva, mias, mireporte) además exigen estar registrado en el personal. */
+App.puede = (op) => {
+  const u = App.usuario; if (!u) return false;
+  const propias = ['nueva', 'mias', 'mireporte'].indexOf(op) >= 0;
+  const m = IC.permisos.puede('APP-107.' + op);
+  if (m !== null) return m && (!propias || App.esColaborador());
+  const r = u.rol;
+  return ({ abrir: !!r, nueva: App.esColaborador(), mias: App.esColaborador(), mireporte: r === 'TECNICO',
+    bandeja: r === 'ADMIN', registrar: r === 'ADMIN', personal: r === 'ADMIN', faltas: r === 'ADMIN',
+    todas: !!r && r !== 'TECNICO', reporte: !!r && r !== 'TECNICO', calendario: !!r && r !== 'TECNICO' })[op] || false;
+};
+// ¿Ve las solicitudes de todo el personal? (si no, solo las suyas)
+App.verTodas = () => ['todas', 'reporte', 'calendario', 'bandeja', 'registrar'].some(App.puede);
+App.esAdmin = () => App.puede('bandeja');
+App.esTecnico = () => !App.verTodas();
 App.mias = () => App.esColaborador() ? App.solicitudes.filter((s) => s.tecnico_id === App.usuario.tecnico.Title) : [];
 const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNICO: 'Colaborador' };
 
@@ -25,7 +40,7 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
   // ---------- Datos ----------
   function normal(s) { s.fecha_inicio = Ope.dia(s.fecha_inicio); s.fecha_fin = Ope.dia(s.fecha_fin || s.fecha_inicio); return s; }
   async function cargarSolicitudes() {
-    const filtro = App.esTecnico() ? "fields/tecnico_id eq '" + App.usuario.tecnico.Title + "'" : null;
+    const filtro = App.esTecnico() ? "fields/tecnico_id eq '" + (App.usuario.tecnico ? App.usuario.tecnico.Title : '__nadie') + "'" : null;
     App.solicitudes = (await G.items('NOV_Solicitudes', { filtro, top: 999 })).map(normal)
       .sort((a, b) => String(b.fecha_inicio).localeCompare(a.fecha_inicio) || String(b.Title).localeCompare(a.Title));
     return App.solicitudes;
@@ -82,19 +97,17 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
     falta: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>'
   };
   function menu() {
-    const r = App.usuario.rol;
-    const it = [];
-    const col = App.esColaborador();
-    if (col) it.push(['nueva', 'Nueva solicitud', 'Solicite un permiso, vacaciones, licencia, reporte una incapacidad o pida un cambio de horario.', 'nueva', '']);
-    if (col) it.push(['mias', 'Mis solicitudes', 'Sus solicitudes actuales y anteriores, en cualquier estado: pendientes, aprobadas, rechazadas o anuladas, con la respuesta de la Dirección.', 'lista', '']);
-    if (r === 'TECNICO') it.push(['reporte', 'Mi reporte de novedades', 'Sus novedades entre fechas para enviar por correo: Excel, PDF o directo al correo.', 'reporte', '']);
-    if (r === 'ADMIN') it.push(['bandeja', 'Bandeja de aprobación', 'Solicitudes pendientes con su impacto en la programación. Aprobar o rechazar.', 'bandeja', '']);
-    if (r !== 'TECNICO') it.push(['todas', 'Solicitudes', 'Todas las solicitudes y su estado, con filtros.', 'lista', '']);
-    if (r !== 'TECNICO') it.push(['reporte', 'Reporte de novedades', 'Listado entre fechas para enviar por correo: Excel, PDF o copiar y pegar en el correo.', 'reporte', '']);
-    if (r !== 'TECNICO') it.push(['calendario', 'Calendario de ausencias', 'Quién está ausente cada día del mes (aprobadas y pendientes).', 'calendario', 'teal']);
-    if (r === 'ADMIN') it.push(['registrar', 'Registrar novedad', 'Registre una novedad a nombre de un colaborador (por ejemplo, una incapacidad reportada por teléfono).', 'nueva', 'teal']);
-    if (r === 'ADMIN') it.push(['personal', 'Personal', 'Colaboradores que usan la app: agregue al personal administrativo (los técnicos se administran en la Programación).', 'lista', '']);
-    if (r === 'ADMIN') it.push(['faltas', 'Faltas', 'Registro de faltas del personal y resumen por persona. Solo Dirección.', 'falta', 'dorado']);
+    const it = [], pu = App.puede;
+    if (pu('nueva')) it.push(['nueva', 'Nueva solicitud', 'Solicite un permiso, vacaciones, licencia, reporte una incapacidad o pida un cambio de horario.', 'nueva', '']);
+    if (pu('mias')) it.push(['mias', 'Mis solicitudes', 'Sus solicitudes actuales y anteriores, en cualquier estado: pendientes, aprobadas, rechazadas o anuladas, con la respuesta de la Dirección.', 'lista', '']);
+    if (pu('mireporte') && !pu('reporte')) it.push(['reporte', 'Mi reporte de novedades', 'Sus novedades entre fechas para enviar por correo: Excel, PDF o directo al correo.', 'reporte', '']);
+    if (pu('bandeja')) it.push(['bandeja', 'Bandeja de aprobación', 'Solicitudes pendientes con su impacto en la programación. Aprobar o rechazar.', 'bandeja', '']);
+    if (pu('todas')) it.push(['todas', 'Solicitudes', 'Todas las solicitudes y su estado, con filtros.', 'lista', '']);
+    if (pu('reporte')) it.push(['reporte', 'Reporte de novedades', 'Listado entre fechas para enviar por correo: Excel, PDF o copiar y pegar en el correo.', 'reporte', '']);
+    if (pu('calendario')) it.push(['calendario', 'Calendario de ausencias', 'Quién está ausente cada día del mes (aprobadas y pendientes).', 'calendario', 'teal']);
+    if (pu('registrar')) it.push(['registrar', 'Registrar novedad', 'Registre una novedad a nombre de un colaborador (por ejemplo, una incapacidad reportada por teléfono).', 'nueva', 'teal']);
+    if (pu('personal')) it.push(['personal', 'Personal', 'Colaboradores que usan la app: agregue al personal administrativo (los técnicos se administran en la Programación).', 'lista', '']);
+    if (pu('faltas')) it.push(['faltas', 'Faltas', 'Registro de faltas del personal y resumen por persona. Solo Dirección.', 'falta', 'dorado']);
     return it;
   }
   function vistaMenu(c) {
@@ -308,14 +321,14 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
       (s.respuesta ? '<div class="ic-alerta chica"><b>Respuesta de la Dirección' + (s.resuelto_por ? ' (' + esc(s.resuelto_por) + ')' : '') + ':</b> ' + esc(s.respuesta) + '</div>' : '') +
       (s.actividades ? '<p class="ope-nota">Ausencias en la Programación: ' + esc(s.actividades.split(';').length) + ' día(s).</p>' : '') +
       (im ? '<div class="ope-val-panel">' + htmlImpacto(im) + '</div>' : '') +
-      (App.esAdmin() && s.estado === 'SOLICITADA' ? U.campo({ name: 'resp', label: 'Respuesta al colaborador', t: 'textarea', c: 'c12', filas: 2, ph: 'Opcional al aprobar; obligatoria al rechazar' }) : '') +
+      (App.puede('bandeja') && s.estado === 'SOLICITADA' ? U.campo({ name: 'resp', label: 'Respuesta al colaborador', t: 'textarea', c: 'c12', filas: 2, ph: 'Opcional al aprobar; obligatoria al rechazar' }) : '') +
       (propia && (s.estado === 'SOLICITADA' || s.estado === 'APROBADA') && !puedeModificar(s) && s.fecha_inicio >= Ope.hoy() ? '<p class="ope-nota">Ya no se puede modificar (faltan menos de ' + CFG.diasModificar + ' días para el inicio). Si necesita un cambio, pídalo a la Dirección.</p>' : '') +
-      (App.esAdmin() && ajena(s) ? '<p class="ope-nota" style="color:#8a5a00">' + esc(Ope.nombreTec(s.tecnico_id)) + ' todavía no la ve en «Mis solicitudes». <a href="#" id="sEntregar">Hacerla visible para el colaborador</a></p>' : '') +
+      (App.puede('bandeja') && ajena(s) ? '<p class="ope-nota" style="color:#8a5a00">' + esc(Ope.nombreTec(s.tecnico_id)) + ' todavía no la ve en «Mis solicitudes». <a href="#" id="sEntregar">Hacerla visible para el colaborador</a></p>' : '') +
       '<p class="ope-nota">' + esc(s.Title) + ' · solicitada ' + esc(U.fmt.fechaHora(s._creado)) + (s.registrado_por ? ' · registrada por ' + esc(s.registrado_por) : '') + '</p>' +
       '<div class="ic-acciones"><button class="ic-btn sec" id="sCerrar">Cerrar</button>' +
       (puedeModificar(s) ? '<a class="ic-btn sec" href="#editar/' + encodeURIComponent(s.Title) + '" id="sMod">Modificar</a>' : '') +
-      ((propia && s.estado === 'SOLICITADA') || (App.esAdmin() && (s.estado === 'SOLICITADA' || s.estado === 'APROBADA')) ? '<button class="ic-btn sec peligro-txt" id="sAnular">Anular</button>' : '') +
-      (App.esAdmin() && s.estado === 'SOLICITADA' ? '<button class="ic-btn peligro" id="sRech">Rechazar</button><button class="ic-btn" id="sAprob">Aprobar</button>' : '') + '</div></div>';
+      ((propia && s.estado === 'SOLICITADA') || (App.puede('bandeja') && (s.estado === 'SOLICITADA' || s.estado === 'APROBADA')) ? '<button class="ic-btn sec peligro-txt" id="sAnular">Anular</button>' : '') +
+      (App.puede('bandeja') && s.estado === 'SOLICITADA' ? '<button class="ic-btn peligro" id="sRech">Rechazar</button><button class="ic-btn" id="sAprob">Aprobar</button>' : '') + '</div></div>';
     U.modal(s.Title + ' · ' + t.nombre, html, (cu) => {
       cu.querySelector('#sCerrar').onclick = U.cerrarModal;
       const bM = cu.querySelector('#sMod'); if (bM) bM.onclick = () => U.cerrarModal();
@@ -337,7 +350,7 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
       if (bN) bN.onclick = async () => {
         const ok = await U.confirmar('Anular ' + s.Title, s.estado === 'APROBADA' ? 'Se anula la novedad y se cancelan sus ausencias en la Programación.' : '¿Anular esta solicitud?', 'Anular', true);
         if (!ok) return;
-        try { await anular(s, propia && !App.esAdmin() ? 'por el colaborador' : 'por la Dirección'); U.aviso('Anulada', 'ok'); if (alCambiar) alCambiar(); } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
+        try { await anular(s, propia && !App.puede('bandeja') ? 'por el colaborador' : 'por la Dirección'); U.aviso('Anulada', 'ok'); if (alCambiar) alCambiar(); } catch (e) { U.aviso(U.mensajeError(e), 'err', 8000); }
       };
     });
   };
@@ -388,7 +401,7 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
   }
   const filtros = { tec: '', tipo: '', estado: '' };
   async function vistaTodas(c) {
-    c.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a><div class="ic-barra"><div style="flex:1"><h1 class="ic-titulo">Solicitudes</h1></div>' + (App.esAdmin() ? '<a class="ic-btn" href="#registrar">+ Registrar novedad</a>' : '') + '</div>' +
+    c.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a><div class="ic-barra"><div style="flex:1"><h1 class="ic-titulo">Solicitudes</h1></div>' + (App.puede('registrar') ? '<a class="ic-btn" href="#registrar">+ Registrar novedad</a>' : '') + '</div>' +
       '<div class="ic-filtros"><select id="fT"><option value="">Todo el personal</option>' + Ope.D.personal.map((t) => '<option value="' + esc(t.Title) + '">' + esc(t.nombre) + '</option>').join('') + '</select>' +
       '<select id="fTi"><option value="">Todos los tipos</option>' + TIPOS_NOV.map((t) => '<option value="' + t.id + '">' + esc(t.nombre) + '</option>').join('') + '</select>' +
       '<select id="fE"><option value="">Todos los estados</option>' + ESTADOS_NOV.map((e) => '<option value="' + e[0] + '">' + esc(e[1]) + '</option>').join('') + '</select></div><div id="t"><div class="ic-vacio">Cargando…</div></div>';
@@ -396,7 +409,7 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
     const dibujar = () => {
       filtros.tec = c.querySelector('#fT').value; filtros.tipo = c.querySelector('#fTi').value; filtros.estado = c.querySelector('#fE').value;
       const l = App.solicitudes.filter((s) => (!filtros.tec || s.tecnico_id === filtros.tec) && (!filtros.tipo || s.tipo === filtros.tipo) && (!filtros.estado || s.estado === filtros.estado));
-      const aj = App.esAdmin() ? App.solicitudes.filter(ajena) : [];
+      const aj = App.puede('bandeja') ? App.solicitudes.filter(ajena) : [];
       c.querySelector('#t').innerHTML = (aj.length ? '<div class="ic-alerta chica" style="margin-bottom:10px">' + aj.length + ' solicitud' + (aj.length === 1 ? '' : 'es') + ' registrada' + (aj.length === 1 ? '' : 's') + ' por la Dirección no se ve' + (aj.length === 1 ? '' : 'n') + ' en «Mis solicitudes» de su colaborador. <button class="ic-btn chico" id="bEntregar">Hacerlas visibles</button></div>' : '') +
         App.tablaSolicitudes(l, true);
       App.conectarSolicitudes(c, pintar);
@@ -451,6 +464,11 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
     } catch (e) { /* sin lectura de accesos: se intenta como colaborador */ }
     const t = Ope.D.personal.find((x) => String(x.email || '').toLowerCase() === email && x.estado !== 'INACTIVO') || null;
     if (!rol && t) rol = 'TECNICO';
+    // Matriz de permisos activa: entra quien tenga «Abrir la app»; el rol queda solo como etiqueta
+    await IC.permisos.cargar(email);
+    const m = IC.permisos.puede('APP-107.abrir');
+    if (m === false) rol = null;
+    else if (m === true) rol = email === IC.permisos.SIEMPRE ? 'ADMIN' : rol || (t ? 'TECNICO' : 'CONSULTA');
     return { nombre, email, rol, usuario_id: email, iniciales: t ? t.iniciales : U.fmt.iniciales(nombre), tecnico: t };
   }
 
@@ -468,14 +486,16 @@ const ROLES = { ADMIN: 'Dirección de Operaciones', CONSULTA: 'Consulta', TECNIC
         return;
       }
       pintarEncabezado();
-      const permitidas = ['', 'todas', 'calendario', 'editar'].concat(menu().map((i) => i[0]));
       const rutas = {
         '': () => vistaMenu(raiz), nueva: () => vistaForm(raiz, false),
         editar: async () => { const id = decodeURIComponent((location.hash.split('/')[1] || '')); await cargarSolicitudes(); const s = App.solicitudes.find((x) => x.Title === id); if (s) vistaForm(raiz, false, s); else location.hash = 'mias'; }, registrar: () => vistaForm(raiz, true), mias: () => vistaMias(raiz),
         bandeja: () => vistaBandeja(raiz), todas: () => vistaTodas(raiz), calendario: () => vistaCalendario(raiz),
         faltas: () => App.vistas.faltas(raiz), personal: () => App.vistas.personal(raiz), reporte: () => App.vistas.reporte(raiz)
       };
-      Object.keys(rutas).forEach((k) => { const fn = rutas[k]; rutas[k] = () => (permitidas.indexOf(k) >= 0 && (['todas', 'calendario'].indexOf(k) < 0 || !App.esTecnico()) ? fn() : (location.hash = '')); });
+      // Cada ruta exige su opción (matriz o reglas anteriores)
+      const OP = { nueva: 'nueva', mias: 'mias', editar: 'mias', registrar: 'registrar', bandeja: 'bandeja', todas: 'todas', calendario: 'calendario', faltas: 'faltas', personal: 'personal' };
+      const permitida = (k) => k === '' || (k === 'reporte' ? (App.puede('reporte') || App.puede('mireporte')) : App.puede(OP[k]));
+      Object.keys(rutas).forEach((k) => { const fn = rutas[k]; rutas[k] = () => (permitida(k) ? fn() : (location.hash = '')); });
       const volver = IC.auth.volverA(); if (volver) location.hash = volver;
       U.enrutar(rutas);
     } catch (e) {

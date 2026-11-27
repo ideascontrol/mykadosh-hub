@@ -73,7 +73,7 @@
 
   // ---------- vista ----------
   App.vistas.resumen = async function (c) {
-    if (App.usuario.rol === 'TECNICO') { location.hash = ''; return; }
+    if (!App.puede('resumen')) { location.hash = ''; return; }
     if (!ST.desde) { const p = presets()[0]; ST.desde = p[1]; ST.hasta = p[2]; }
     c.innerHTML = '<a class="ic-volver ope-noimp" href="#">← Menú principal</a>' +
       '<div class="ope-res-cab"><div><h1 class="ic-titulo">Resumen ejecutivo de instalaciones</h1><p class="ic-subtitulo" id="rsPer"></p></div>' +

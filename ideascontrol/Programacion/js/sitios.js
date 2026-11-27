@@ -105,7 +105,7 @@
   }
 
   App.vistas.sitios = async function (c) {
-    if (App.usuario.rol === 'TECNICO') { location.hash = ''; return; }
+    if (!App.puede('sitios')) { location.hash = ''; return; }
     // Desde el inicio de la programación en la app (26 oct 2026)
     if (!ST.desde) { ST.desde = INICIO; ST.hasta = Ope.sumar(Ope.hoy(), 120); }
     c.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a><h1 class="ic-titulo">Clientes y sitios</h1>' +
@@ -114,7 +114,7 @@
       '<label class="ope-lbl">Desde <input type="date" id="sD" value="' + ST.desde + '"></label><label class="ope-lbl">Hasta <input type="date" id="sH" value="' + ST.hasta + '"></label>' +
       '<select id="sEst"><option value="">Todos los estados</option>' + ESTADOS_SITIO.map((e) => '<option value="' + e[0] + '">' + esc(e[1]) + '</option>').join('') + '</select>' +
       '<input type="search" id="sQ" placeholder="Buscar sitio, sede, ciudad, dirección, ticket…" value="' + esc(ST.q) + '"><button class="ic-btn sec" id="sXls">Descargar Excel</button>' +
-      (App.usuario.rol === 'TECNICO' || App.usuario.rol === 'CONSULTA' ? '' : '<button class="ic-btn sec" id="sImp">Importar sedes (Excel)</button><input type="file" id="sArch" accept=".xlsx,.xls" hidden>') + '</div>' +
+      (!App.puedeEditar() ? '' : '<button class="ic-btn sec" id="sImp">Importar sedes (Excel)</button><input type="file" id="sArch" accept=".xlsx,.xls" hidden>') + '</div>' +
       '<div id="sRes"><div class="ic-vacio">Cargando la programación…</div></div>';
     let todo = [], listaSedes = [];
     const principales = () => { const m = {}; listaSedes.forEach((x) => { const k = n(x.cliente_principal || '(sin cliente principal)'); (m[k] = m[k] || { nombre: x.cliente_principal || '(sin cliente principal)', n: 0 }).n++; }); return Object.keys(m).map((k) => Object.assign({ k }, m[k])); };
@@ -179,7 +179,7 @@
       }; });
     }
     function detalleSede(f) {
-      const sd = f.sede, acts = f.acts.slice().sort((a, b) => b.fecha.localeCompare(a.fecha)), edita = App.usuario.rol !== 'CONSULTA';
+      const sd = f.sede, acts = f.acts.slice().sort((a, b) => b.fecha.localeCompare(a.fecha)), edita = App.puedeEditar();
       U.modal(sd.sitio + ' · sede ' + sd.Title, '<div class="ic-form"><p style="margin-top:0">' + esc([sd.ciudad, sd.direccion].filter(Boolean).join(' · ')) + ' · Estado: <b>' + esc(estNom(f.final)[1]) + '</b> · ' + acts.length + ' actividad(es)</p>' +
         (edita ? '<div class="ic-campos">' + U.campo({ name: 'estado', label: 'Estado registrado', t: 'select', op: ESTADOS_REG.concat(sd.estado && ESTADOS_REG.indexOf(sd.estado) < 0 ? [sd.estado] : []).map((x) => [x, x]), valor: sd.estado, c: 'c4', vacio: '— según la programación —' }) + U.campo({ name: 'notas', label: 'Notas', valor: sd.notas, c: 'c8' }) + '</div>' : '') +
         '<div id="sDet" style="margin-top:10px"></div><div class="ic-acciones"><button type="button" class="ic-btn sec" id="sCerrar">Cerrar</button>' + (edita ? '<button type="button" class="ic-btn" id="sGuardar">Guardar estado y notas</button>' : '') + '</div></div>', (cu) => {

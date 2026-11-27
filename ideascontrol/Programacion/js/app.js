@@ -8,8 +8,21 @@ const App = {
   vistas: {},             // App.vistas['agenda'] = fn(contenedor, params)
   estado: { mes: null, tipo: '', tec: '' }   // filtros compartidos entre vistas
 };
-App.puedeEditar = () => App.usuario && (App.usuario.rol === 'ADMIN' || App.usuario.rol === 'EDITOR');
-App.esAdmin = () => App.usuario && App.usuario.rol === 'ADMIN';
+/* Permiso por opción. Con la Matriz de permisos activa (Administrativos) manda la matriz;
+   si no, las reglas anteriores por rol (ADMIN / EDITOR / CONSULTA / TECNICO). */
+const OPC_LEGADO = {
+  mia: (r) => r === 'TECNICO', programar: (r) => r === 'ADMIN' || r === 'EDITOR', admin: (r) => r === 'ADMIN',
+  resumen: (r) => ['ADMIN', 'EDITOR', 'CONSULTA'].indexOf(r) >= 0, sitios: (r) => ['ADMIN', 'EDITOR', 'CONSULTA'].indexOf(r) >= 0,
+  acta: (r) => ['ADMIN', 'EDITOR', 'CONSULTA'].indexOf(r) >= 0, vendors: (r) => ['ADMIN', 'EDITOR', 'CONSULTA'].indexOf(r) >= 0
+};
+App.puede = (op) => {
+  const u = App.usuario; if (!u || !u.rol) return false;
+  const m = IC.permisos.puede('APP-106.' + op);
+  if (m !== null) return m && (op !== 'mia' || !!u.tecnico);   // «Mi agenda» exige estar registrado como técnico
+  return OPC_LEGADO[op] ? OPC_LEGADO[op](u.rol) : true;
+};
+App.puedeEditar = () => App.puede('programar');
+App.esAdmin = () => App.puede('admin');
 App.params = () => (location.hash || '#').slice(1).split('/').slice(1).map(decodeURIComponent);
 
 const ROLES = { ADMIN: 'Director de Operaciones', EDITOR: 'Programador', TECNICO: 'Técnico', CONSULTA: 'Consulta' };
@@ -81,7 +94,7 @@ function vistaMenu(c) {
     '<p class="ic-subtitulo">Programación de instalaciones, mantenimientos, soporte y rotación de oficina.</p>' +
     '<div class="ic-kpis">' + kpi('kOfi', 'Técnico de oficina hoy') + kpi('kCampo', 'Actividades en campo hoy') + kpi('kConf', 'Conflictos ⚠ próximos 30 días') + kpi('kSin', 'Días hábiles sin oficina este mes') + '</div>';
   MENU.forEach((g) => {
-    const items = g.items.filter((i) => (!i.admin || App.esAdmin()) && (!i.solo || i.solo === u.rol) && (!i.roles || i.roles.indexOf(u.rol) >= 0));
+    const items = g.items.filter((i) => App.puede(i.ruta));
     if (!items.length) return;
     html += '<div class="ic-seccion">' + g.grupo + '</div><div class="ic-grid">';
     items.forEach((i) => {
@@ -126,6 +139,11 @@ async function resolverAcceso(cuenta) {
   // Técnicos y personal administrativo registrado (Novedades › Personal): entran con el mismo acceso de los técnicos
   const t = Ope.D.personal.find((x) => String(x.email || '').toLowerCase() === email && x.estado !== 'INACTIVO') || null;
   if (!rol && t) rol = 'TECNICO';
+  // Matriz de permisos activa: entra quien tenga «Abrir la app»; el rol queda solo como etiqueta
+  await IC.permisos.cargar(email);
+  const m = IC.permisos.puede('APP-106.abrir');
+  if (m === false) rol = null;
+  else if (m === true) rol = email === IC.permisos.SIEMPRE ? 'ADMIN' : rol || (t ? 'TECNICO' : 'CONSULTA');
   return { nombre, email, rol, usuario_id: email, iniciales: t ? t.iniciales : IC.ui.fmt.iniciales(nombre), tecnico: t };
 }
 
@@ -144,7 +162,7 @@ async function arrancar() {
     App.usuario = await resolverAcceso(cuenta);
     if (!App.usuario.rol) {
       IC.ui.pantalla(raiz, { logo: CFG.logo, titulo: 'Usuario no habilitado',
-        texto: 'Su cuenta (' + App.usuario.email + ') no tiene acceso a la Programación de Operaciones. Pida al Director de Operaciones que lo agregue en Administración › Accesos.',
+        texto: 'Su cuenta (' + App.usuario.email + ') no tiene acceso a la Programación de Operaciones. Pida a la Dirección de Operaciones que le dé acceso en la Matriz de permisos.',
         boton: 'Cerrar sesión', alClic: () => IC.auth.salir() });
       return;
     }
@@ -152,7 +170,7 @@ async function arrancar() {
     const rutas = { '': () => vistaMenu(raiz) };
     MENU.forEach((g) => g.items.forEach((i) => {
       rutas[i.ruta] = async () => {
-        if ((i.admin && !App.esAdmin()) || (i.roles && i.roles.indexOf(App.usuario.rol) < 0)) { location.hash = ''; return; }
+        if (!App.puede(i.ruta)) { location.hash = ''; return; }
         if (i.ruta !== 'admin' && i.ruta !== 'vendors' && i.ruta !== 'acta' && i.ruta !== 'sitios') await Ope.catalogosFrescos(60);   // técnicos y habilidades al día (cambios desde otra pestaña)
         const fn = App.vistas[i.ruta];
         if (fn) fn(raiz, App.params()); else raiz.innerHTML = '<a class="ic-volver" href="#">← Menú principal</a><p>Módulo en construcción.</p>';

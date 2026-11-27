@@ -18,8 +18,6 @@ const App = { usuario: null };
       CFG.secciones.map(([g, items]) => '<div class="ic-seccion">' + esc(g) + '</div><div class="ic-grid">' + items.map(([n, t, url, ico, color, ext]) =>
         '<a class="ic-card ' + (color || '') + '" href="' + esc(url) + '"' + (ext ? ' target="_blank" rel="noopener"' : '') + (url === '#matriz' ? ' id="bMatriz"' : '') + '>' +
         '<div class="ad-ico">' + esc(ico) + '</div><h3>' + esc(n) + (ext ? ' ↗' : '') + '</h3><p>' + esc(t) + '</p></a>').join('') + '</div>').join('');
-    const bm = c.querySelector('#bMatriz');
-    if (bm) bm.onclick = (e) => { e.preventDefault(); U.conCarga(bm, () => MatrizAccesos.descargar()).catch((er) => U.aviso('No se pudo armar la matriz: ' + U.mensajeError(er), 'err', 8000)); };
   }
   async function arrancar() {
     const raiz = document.getElementById('contenido');

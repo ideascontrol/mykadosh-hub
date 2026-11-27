@@ -4,7 +4,7 @@
    Solo operaciones@ideascontrol.com.
    ===================================================================== */
 window.CFG = {
-  app: { id: 'APP-118', nombre: 'Administrativos', version: '0.1.0' },
+  app: { id: 'APP-118', nombre: 'Administrativos', version: '0.2.0' },
   auth: {
     clientId: 'bfe1678b-5690-4aa5-8ce8-6c2522b2a7d0',
     tenantId: 'f947955a-8748-4cc4-a54b-61ad1d4b0ba7',
@@ -30,10 +30,10 @@ window.CFG = {
       ['Ideas Control · documentos (SharePoint)', 'Bibliotecas de documentos: clientes, comercial, administración y documentación maestra.', 'https://ideascontrolsas.sharepoint.com/sites/IdeasControl', 'SP', '', true]
     ]],
     ['Administración', [
+      ['Matriz de permisos y accesos', 'Un solo lugar para dar y quitar, con un clic, cada opción del portal a cada persona. Activa, desactiva y descarga en Excel.', '/ideascontrol/Administrativos/Matriz/', 'MX', ''],
       ['Comercial · Administración', 'Usuarios de Comercial (rol y «Gestiona productos»), condiciones comerciales y parámetros de la cotización.', '/ideascontrol/Comercial/#admin', 'AD', 'dorado'],
-      ['Programación · Accesos', 'Quién entra a la Programación, Novedades, Proyectos y Talento, y con qué rol.', '/ideascontrol/Programacion/#admin/accesos', 'AD', 'dorado'],
-      ['Auditoría de registros', 'Quién creó, modificó o eliminó cada registro de las microapps y qué cambió (historial de SharePoint).', '/ideascontrol/Auditoria/', 'AU', 'dorado'],
-      ['Matriz de accesos (Excel)', 'Qué apps y módulos ve cada usuario de IC y con qué rol. Se arma con los datos actuales.', '#matriz', 'MX', 'dorado']
+      ['Roles de Proyectos y Talento', 'Temporal: roles de Proyectos y Talento mientras esas apps se conectan a la matriz (fase 2). Programación y Novedades ya se manejan en la matriz.', '/ideascontrol/Programacion/#admin/accesos', 'AD', 'dorado'],
+      ['Auditoría de registros', 'Quién creó, modificó o eliminó cada registro de las microapps y qué cambió (historial de SharePoint).', '/ideascontrol/Auditoria/', 'AU', 'dorado']
     ]],
     ['Tablas maestras', [
       ['Técnicos y personal', 'Personal de IC (Ideas Control, Administrativo, Técnicos de campo): correo, vinculación y matriz de habilidades. Es la lista de «Responsables» de todas las apps.', '/ideascontrol/Programacion/#admin/tecnicos', 'TM', 'teal'],
