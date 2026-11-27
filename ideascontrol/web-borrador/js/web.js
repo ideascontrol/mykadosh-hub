@@ -8,6 +8,10 @@
   // Aplicación web de Google Apps Script que guarda la solicitud en Google Sheets y avisa a info@ideascontrol.com
   // (código completo en web-borrador/apps-script/Code.gs). Pegar aquí la URL /exec de la implementación.
   const CONTACTO_URL = 'https://script.google.com/macros/s/AKfycbx_Y54_wDcVyotAzwM9YXRLIdYnS0zqOcLEUUk4mvwSjAxoUmOCrc9gSpuKGdOTuFuIjQ/exec';
+  // Base_Maestra_Microapps_Ideas_Control: misma API que las landings (pestañas Leads y Consentimientos)
+  const API_MICROAPPS = 'https://script.google.com/macros/s/AKfycbwGt0M2Uk2DiwVphpiPgTutLdjUGhw2N7yvQ6nc9s2IrbxQY1qCDLrAn3-i5WXm3R1u/exec';
+  const WEB_LANDING_ID = 'LAN-005', WEB_MICROAPP_ID = '', WEB_FUENTE = 'Página web';
+  let leadWeb = null;
   const VERSION_POLITICA = '1.1';
   const TEXTO_AUTORIZACION = 'Autorizo de manera previa, expresa e informada a Ideas Control Equipos y Soluciones S.A.S. para tratar mis datos personales con la finalidad de atender mi solicitud, contactarme y compartirme información sobre sus soluciones, conforme a su Política de Tratamiento de Datos Personales (Ley 1581 de 2012).';
   const L = {
@@ -70,12 +74,15 @@
     const f = document.getElementById('fContacto'); if (!f) return;
     f.pais.innerHTML = PAISES.map((p) => '<option value="' + p[0] + '">' + p[1] + (p[2] ? ' (' + p[2] + ')' : '') + '</option>').join('');
     f.empresa.addEventListener('input', () => { const p = f.empresa.selectionStart; f.empresa.value = f.empresa.value.toUpperCase(); f.empresa.setSelectionRange(p, p); });
+    ['input', 'change'].forEach((ev) => f.addEventListener(ev, (e) => { const c = e.target.closest && e.target.closest('.c'); if (c && c.classList.contains('mal')) { c.classList.remove('mal'); c.querySelector('.err').textContent = ''; } }));
     const marcar = (campo, msg) => { const c = f[campo].closest('.c'); c.classList.toggle('mal', !!msg); c.querySelector('.err').textContent = msg || ''; return !msg; };
     f.onsubmit = (e) => {
       e.preventDefault();
-      const nom = f.nombre.value.trim(), mail = f.correo.value.trim().toLowerCase(), dom = mail.split('@')[1] || '';
+      const nom = f.nombre.value.trim().replace(/\s+/g, ' '), ape = f.apellido.value.trim().replace(/\s+/g, ' '), mail = f.correo.value.trim().toLowerCase(), dom = mail.split('@')[1] || '';
       let ok = true;
-      ok = marcar('nombre', nom.split(/\s+/).length < 2 ? 'Escribe tu nombre y apellido' : '') && ok;
+      const letra = /[A-Za-zÀ-ÿ]/;
+      ok = marcar('nombre', nom.length < 2 || !letra.test(nom) ? 'Escribe tu nombre' : '') && ok;
+      ok = marcar('apellido', ape.length < 2 || !letra.test(ape) ? 'Escribe tu apellido' : '') && ok;
       ok = marcar('correo', !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail) ? 'Escribe un correo válido' : PERSONALES.indexOf(dom) >= 0 ? 'Usa tu correo corporativo (no Gmail, Hotmail, Outlook…)' : '') && ok;
       ok = marcar('empresa', f.empresa.value.trim().length < 2 ? 'Escribe el nombre de tu empresa' : '') && ok;
       ok = marcar('necesidad', f.necesidad.value.trim().length < 5 ? 'Cuéntanos brevemente qué necesitas' : '') && ok;
@@ -85,24 +92,40 @@
       const nota = document.getElementById('fNota'), btn = document.getElementById('fEnviar');
       if (!CONTACTO_URL) { nota.innerHTML = '<b>Envío pendiente de conexión:</b> falta pegar la URL de Apps Script en js/web.js.'; return; }
       const pais = PAISES.find((p) => p[0] === f.pais.value) || PAISES[0];
-      const datos = {
-        nombre: nom, correo: mail, empresa: f.empresa.value.trim().toUpperCase(), pais: pais[1], codigo_pais: pais[2],
-        telefono: f.telefono.value.trim(), necesidad: f.necesidad.value.trim(), origen: 'Página web · Agenda tu asesoría',
+      const q = new URLSearchParams(location.search), utm = {};
+      ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'].forEach((k) => { utm[k] = (q.get(k) || '').slice(0, 100); });
+      const empresa = f.empresa.value.trim().toUpperCase(), tel = f.telefono.value.trim(), fechaAcept = new Date().toISOString(), pagina = location.href.split('#')[0];
+      // 1) Base_Maestra_Microapps_Ideas_Control (misma API que las landings): lead + consentimiento
+      const lead = Object.assign({
+        action: 'crear_lead', nombre: nom, apellido: ape, email: mail, empresa, pais: pais[1], codigo_pais: pais[2], telefono: tel,
+        fuente: WEB_FUENTE, landing_id: WEB_LANDING_ID, microapp_id: WEB_MICROAPP_ID, hp: f.hp.value
+      }, utm);
+      // 2) Aviso por correo a info@ (script del formulario web, igual que antes)
+      const datos = Object.assign({
+        nombre: nom + ' ' + ape, correo: mail, empresa, pais: pais[1], codigo_pais: pais[2],
+        telefono: tel, necesidad: f.necesidad.value.trim(), origen: 'Página web · Agenda tu asesoría',
         acepto_politica: 'SI', version_politica: VERSION_POLITICA, texto_autorizacion: TEXTO_AUTORIZACION,
-        url_pagina: location.href.split('#')[0], hp: f.hp.value
-      };
-      const q = new URLSearchParams(location.search); ['utm_source', 'utm_medium', 'utm_campaign'].forEach((k) => { datos[k] = q.get(k) || ''; });
+        url_pagina: pagina, hp: f.hp.value
+      }, utm);
+      const post = (url, body) => fetch(url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) })
+        .then((r) => r.json()).then((d) => { if (!d || d.ok !== true) throw new Error((d && d.error) || 'Error'); return d; });
       btn.disabled = true; btn.textContent = 'Enviando…'; nota.textContent = '';
-      fetch(CONTACTO_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(datos) })
-        .then((r) => r.json())
+      (leadWeb ? Promise.resolve({ lead_id: leadWeb }) : post(API_MICROAPPS, lead))
         .then((d) => {
-          if (!d || !d.ok) throw new Error((d && d.error) || 'Error');
+          if (!d.lead_id) throw new Error('Sin lead');
+          leadWeb = d.lead_id;   // si algo falla después, el reintento no duplica el lead
+          return post(API_MICROAPPS, { action: 'registrar_consentimiento', lead_id: leadWeb, tipo: 'tratamiento_datos', version_politica: VERSION_POLITICA,
+            aceptado: true, fecha_aceptacion: fechaAcept, texto_autorizacion: TEXTO_AUTORIZACION, url_pagina: pagina, fuente: WEB_FUENTE });
+        })
+        .then(() => post(CONTACTO_URL, datos).catch((x) => console.error('Aviso por correo no enviado', x)))   // el lead ya quedó guardado
+        .then(() => {
+          leadWeb = null;
           f.reset(); f.querySelectorAll('.c').forEach((c) => { c.classList.remove('mal'); const er = c.querySelector('.err'); if (er) er.textContent = ''; });
           nota.textContent = 'Usamos tus datos solo para responder tu solicitud.';
           window.scrollTo(0, 0);
-          aviso('Gracias. Recibimos tu solicitud y un asesor de Ideas Control te contactará pronto.');
+          aviso('Gracias. Recibimos tu solicitud y un asesor de Ideas Control se pondrá en contacto contigo próximamente.');
         })
-        .catch(() => { nota.innerHTML = '<b>No pudimos enviar tu solicitud.</b> Inténtalo de nuevo o escríbenos a info@ideascontrol.com.'; })
+        .catch(() => { nota.innerHTML = '<b>No pudimos enviar tu solicitud.</b> Revisa los datos e inténtalo de nuevo, o escríbenos a info@ideascontrol.com.'; })
         .finally(() => { btn.disabled = false; btn.textContent = 'Enviar solicitud'; });
     };
   }

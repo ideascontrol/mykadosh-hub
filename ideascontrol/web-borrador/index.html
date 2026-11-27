@@ -262,18 +262,21 @@
     <div>
       <p class="eyebrow">Contacto</p>
       <h2>Hablemos de tu operación</h2>
-      <p class="sub">Un asesor te contacta en menos de <span class="ph">[N]</span> horas hábiles.</p>
+      <p class="sub">Un asesor se pondrá en contacto contigo próximamente.</p>
       <ul class="datos">
         <li><i>☎</i><div><b>PBX</b><small>+57 322 850 6363</small></div></li>
         <li><i>💬</i><div><b>WhatsApp</b><small>+57 321 318 4853</small></div></li>
-        <li><i>📱</i><div><b>Asesores comerciales</b><small><span class="ph">[NOMBRE]</span> +57 321 318 4853 · <span class="ph">[NOMBRE]</span> +57 310 862 6973 · <span class="ph">[NOMBRE]</span> +57 314 208 9877</small></div></li>
+        <li><i>📱</i><div><b>Asesores comerciales</b><small>+57 321 318 4853 · +57 310 862 6973 · +57 314 208 9877</small></div></li>
         <li><i>✉</i><div><b>Correo</b><small>info@ideascontrol.com</small></div></li>
         <li><i>📍</i><div><b>Oficina</b><small>Calle 85 #16-28, Oficina 402, Bogotá D.C.</small></div></li>
       </ul>
     </div>
     <form class="form" id="fContacto" novalidate>
       <h3>Agenda tu asesoría</h3>
-      <div class="c"><label for="nombre">Nombre y apellido</label><input id="nombre" name="nombre" placeholder="Ej.: Laura Gómez" autocomplete="name"><div class="err"></div></div>
+      <div class="f2">
+        <div class="c"><label for="nombre">Nombre</label><input id="nombre" name="nombre" placeholder="Ej.: Laura" autocomplete="given-name" maxlength="60"><div class="err"></div></div>
+        <div class="c"><label for="apellido">Apellido</label><input id="apellido" name="apellido" placeholder="Ej.: Gómez" autocomplete="family-name" maxlength="60"><div class="err"></div></div>
+      </div>
       <div class="f2">
         <div class="c"><label for="correo">Correo corporativo</label><input id="correo" name="correo" type="email" placeholder="nombre@empresa.com" autocomplete="email"><div class="err"></div></div>
         <div class="c"><label for="empresa">Empresa</label><input id="empresa" name="empresa" class="mayus" placeholder="NOMBRE DE LA EMPRESA" autocomplete="organization"><div class="err"></div></div>
@@ -294,7 +297,7 @@
 </main>
 <footer id="pie"></footer>
 <script>try{document.getElementById('tvpHoy').textContent='Hoy, '+new Date().toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'}).replace(/\./g,'').replace(/ de /g,' ');}catch(e){}</script>
-<script src="js/web.js?v=0.2.4"></script>
+<script src="js/web.js?v=0.2.5"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
     document.getElementById('bWa').href = IC_WEB.wa;
