@@ -148,37 +148,70 @@ window.MKT_PLAN = (function () {
     });
   }
 
+  // ---------- Envío por lotes ($batch de Graph: 20 operaciones por llamada) ----------
+  const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+  const limpiar = (o) => { const r = {}; Object.keys(o).forEach((k) => { let v = o[k]; if (v === '' || v == null) return; if (k !== 'Title' && typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v)) v += 'T12:00:00Z'; r[k] = v; }); return r; };
+  async function lotes(ops, avance) {   // ops: [{ method, url, body, nombre }]
+    const err = []; let hechos = 0;
+    for (let i = 0; i < ops.length; i += 20) {
+      let pend = ops.slice(i, i + 20).map((o, k) => Object.assign({ id: String(i + k) }, o));
+      for (let intento = 1; pend.length && intento <= 6; intento++) {
+        const r = await G.llamar('POST', '/$batch', { requests: pend.map((o) => { const q = { id: o.id, method: o.method, url: o.url }; if (o.body) { q.body = o.body; q.headers = { 'Content-Type': 'application/json' }; } return q; }) });
+        const reintentar = []; let pausa = 0;
+        (r.responses || []).forEach((x) => {
+          const o = pend.find((y) => y.id === x.id);
+          if (x.status >= 200 && x.status < 300 || (o.method === 'DELETE' && x.status === 404)) hechos++;
+          else if (x.status === 429 || x.status === 503 || x.status === 504) { reintentar.push(o); pausa = Math.max(pausa, Number((x.headers || {})['Retry-After'] || intento * 2)); }
+          else err.push(o.nombre + ': ' + ((x.body && x.body.error && x.body.error.message) || ('error ' + x.status)));
+        });
+        pend = reintentar;
+        if (pend.length) await espera(pausa * 1000);
+      }
+      pend.forEach((o) => err.push(o.nombre + ': SharePoint no respondió (intente de nuevo)'));
+      avance(Math.min(ops.length, i + 20), ops.length);
+    }
+    return { hechos, err };
+  }
+
   async function aplicar(plan, borrar, m, alTerminar) {
-    const res = m.querySelector('#rpRes'), botones = m.querySelectorAll('button'); botones.forEach((b) => { b.disabled = true; });
-    const paso = (t) => { res.innerHTML = '<p><b>' + esc(t) + '</b></p><p class="sec">No cierre esta ventana.</p>'; };
-    const err = [];
+    const res = m.querySelector('#rpRes'); m.querySelectorAll('button').forEach((b) => { b.disabled = true; });
+    const paso = (t, n, tot) => { res.innerHTML = '<p><b>' + esc(t) + '</b></p>' + (tot ? '<div class="ic-barra-prog"><div style="width:' + Math.round(100 * n / tot) + '%"></div></div>' : '') + '<p class="sec">No cierre ni recargue esta pestaña hasta que termine. Si se interrumpe, vuelva a ejecutarlo: continúa donde quedó.</p>'; };
+    const noSalir = (e) => { e.preventDefault(); e.returnValue = ''; };
+    window.addEventListener('beforeunload', noSalir);
+    let err = [], nTemas = 0, nPubs = 0;
     try {
-      let n = 0;
-      for (const p of borrar.pubs) { if (++n % 10 === 0) paso('Borrando publicaciones: ' + n + ' de ' + borrar.pubs.length + '…'); try { await G.eliminar(L.pubs, p._id); } catch (e) { err.push(p.Title + ': ' + U.mensajeError(e)); } }
-      n = 0;
-      for (const t of borrar.temas) { if (++n % 10 === 0) paso('Borrando temas: ' + n + ' de ' + borrar.temas.length + '…'); try { await G.eliminar(L.temas, t._id); } catch (e) { err.push(t.Title + ': ' + U.mensajeError(e)); } }
+      const sid = await G.sitio(CFG.sitio.host, CFG.sitio.ruta), lT = await G.listaId(L.temas), lP = await G.listaId(L.pubs);
+      const urlT = '/sites/' + sid + '/lists/' + lT + '/items', urlP = '/sites/' + sid + '/lists/' + lP + '/items';
+      paso('Borrando el plan anterior…', 0, 1);
+      let r = await lotes(borrar.pubs.map((p) => ({ method: 'DELETE', url: urlP + '/' + p._id, nombre: p.Title })), (n, t) => paso('Borrando publicaciones: ' + n + ' de ' + t, n, t));
+      err = err.concat(r.err);
+      r = await lotes(borrar.temas.map((t) => ({ method: 'DELETE', url: urlT + '/' + t._id, nombre: t.Title })), (n, t) => paso('Borrando temas: ' + n + ' de ' + t, n, t));
+      err = err.concat(r.err);
       const [colT, colP] = await Promise.all([columnas(L.temas), columnas(L.pubs)]);
-      const solo = (o, cols) => { const r = {}; Object.keys(o).forEach((k) => { if (o[k] !== '' && o[k] != null && (!cols || k === 'Title' || cols.indexOf(k) >= 0)) r[k] = o[k]; }); return r; };
+      const solo = (o, cols) => { const x = {}; Object.keys(o).forEach((k) => { if (!cols || k === 'Title' || cols.indexOf(k) >= 0) x[k] = o[k]; }); return limpiar(x); };
       const faltan = colT ? ['publico', 'recurso_visual', 'etapa_embudo', 'control_previo'].filter((k) => colT.indexOf(k) < 0) : [];
+      paso('Reservando la numeración…', 0, 1);
       let nT = await G.reservar('TEM', plan.temas.length);
       const totP = plan.temas.reduce((a, t) => a + t.pubs.length, 0);
-      let nP = totP ? await G.reservar('PUB', totP) : 0, hechos = 0;
-      for (const [i, t] of plan.temas.entries()) {
-        if (i % 5 === 0) paso('Cargando temas y publicaciones: ' + i + ' de ' + plan.temas.length + ' temas…');
+      let nP = totP ? await G.reservar('PUB', totP) : 0;
+      const opsT = [], opsP = [];
+      plan.temas.forEach((t) => {
         const id = 'TEM-' + M().pad(nT++, 4), campos = { Title: id, estado: 'ACTIVO', orden: nT };
         CAMPOS_T.forEach((k) => { campos[k] = t[k]; });
         if (t.semana_inicio) campos.semana_inicio = t.semana_inicio;
-        try { await G.crear(L.temas, solo(campos, colT)); } catch (e) { err.push(id + ': ' + U.mensajeError(e)); continue; }
-        for (const p of t.pubs) {
+        opsT.push({ method: 'POST', url: urlT, body: { fields: solo(campos, colT) }, nombre: id });
+        t.pubs.forEach((p) => {
           const pid = 'PUB-' + M().pad(nP++, 5);
-          const f = { Title: pid, tema_id: id, fecha: p.fecha, fecha_semana: t.semana_inicio || M().lunesDe(p.fecha), canal: p.canal, formato: p.formato, titulo: p.titulo, estado: 'Planeada', origen_id: p.origen_id };
-          try { await G.crear(L.pubs, solo(f, colP)); hechos++; } catch (e) { err.push(pid + ': ' + U.mensajeError(e)); }
-        }
-      }
+          opsP.push({ method: 'POST', url: urlP, body: { fields: solo({ Title: pid, tema_id: id, fecha: p.fecha, fecha_semana: t.semana_inicio || M().lunesDe(p.fecha), canal: p.canal, formato: p.formato, titulo: p.titulo, estado: 'Planeada', origen_id: p.origen_id }, colP) }, nombre: pid });
+        });
+      });
+      r = await lotes(opsT, (n, t) => paso('Cargando temas: ' + n + ' de ' + t, n, t)); err = err.concat(r.err); nTemas = r.hechos;
+      r = await lotes(opsP, (n, t) => paso('Cargando publicaciones: ' + n + ' de ' + t, n, t)); err = err.concat(r.err); nPubs = r.hechos;
       U.cerrarModal();
       if (faltan.length) U.aviso('Plan cargado sin «' + faltan.join('», «') + '»: falta actualizar la lista de temas (Instalador IC Apps › Crear estructura).', 'warn', 12000);
-      U.aviso('Plan reemplazado: ' + borrar.temas.length + ' tema(s) y ' + borrar.pubs.length + ' publicación(es) borrados; ' + plan.temas.length + ' tema(s) y ' + hechos + ' publicación(es) cargados.' + (err.length ? ' Con ' + err.length + ' error(es): ' + err.slice(0, 3).join(' · ') : ''), err.length ? 'warn' : 'ok', 14000);
-    } catch (e) { U.aviso('Se detuvo el reemplazo: ' + U.mensajeError(e) + (err.length ? ' · ' + err.slice(0, 3).join(' · ') : ''), 'err', 14000); U.cerrarModal(); }
+      U.aviso('Plan reemplazado: ' + borrar.temas.length + ' tema(s) y ' + borrar.pubs.length + ' publicación(es) borrados; ' + nTemas + ' tema(s) y ' + nPubs + ' publicación(es) cargados.' + (err.length ? ' Con ' + err.length + ' error(es): ' + err.slice(0, 3).join(' · ') : ''), err.length ? 'warn' : 'ok', 15000);
+    } catch (e) { console.error(e); U.cerrarModal(); U.aviso('Se detuvo el reemplazo: ' + U.mensajeError(e) + '. Vuelva a ejecutarlo: continúa donde quedó.' + (err.length ? ' · ' + err.slice(0, 3).join(' · ') : ''), 'err', 15000); }
+    finally { window.removeEventListener('beforeunload', noSalir); }
     alTerminar && alTerminar();
   }
 
