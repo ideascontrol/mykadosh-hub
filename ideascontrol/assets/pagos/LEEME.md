@@ -2,7 +2,7 @@
 
 Coloca aquí los archivos oficiales (SVG o PNG con fondo transparente) con estos nombres exactos:
 
-- `pse.svg`: logo PSE (ACH Colombia)
+- `pse.png`: logo PSE (ACH Colombia), ya cargado
 - `visa.svg`: marca de aceptación Visa
 - `mastercard.svg`: marca de aceptación Mastercard
 
