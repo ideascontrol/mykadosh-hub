@@ -98,7 +98,7 @@
       // 1) Base_Maestra_Microapps_Ideas_Control (misma API que las landings): lead + consentimiento
       const lead = Object.assign({
         action: 'crear_lead', nombre: nom, apellido: ape, email: mail, empresa, pais: pais[1], codigo_pais: pais[2], telefono: tel,
-        fuente: WEB_FUENTE, landing_id: WEB_LANDING_ID, microapp_id: WEB_MICROAPP_ID, hp: f.hp.value
+        comentario: f.necesidad.value.trim(), fuente: WEB_FUENTE, landing_id: WEB_LANDING_ID, microapp_id: WEB_MICROAPP_ID, hp: f.hp.value
       }, utm);
       // 2) Aviso por correo a info@ (script del formulario web, igual que antes)
       const datos = Object.assign({
