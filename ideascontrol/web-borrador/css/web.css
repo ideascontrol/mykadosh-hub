@@ -283,3 +283,4 @@ section[id], [id="otras"], [id="cronologia"] { scroll-margin-top: 84px; }
 .pi-nota { grid-column: 1 / -1; margin: 0; font-size: 13.5px; color: var(--gris); border-top: 1px solid var(--borde); padding-top: 14px; }
 @media (max-width: 900px) { .fases { grid-template-columns: 1fr 1fr; } .postimpl { grid-template-columns: 1fr; padding: 22px; } }
 @media (max-width: 560px) { .fases, .etapas, .pi-lista { grid-template-columns: 1fr; } .postimpl h3 { font-size: 23px; } }
+.nota-norma { margin: 18px 0 0; font-size: 13px; color: var(--gris); }
