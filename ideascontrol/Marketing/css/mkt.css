@@ -42,8 +42,8 @@
 .mkt-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
 .ic-bloque .ic-form { border: 0; box-shadow: none; padding: 8px 0 0; }
 .ic-bloque > .cab .sec { font-size: 12.5px; color: var(--ic-gris); }
-.mkt-dl { display: grid; grid-template-columns: 130px 1fr; gap: 8px 12px; font-size: 13.5px; margin: 8px 0; }
-.mkt-dl dt { color: var(--ic-gris); } .mkt-dl dd { margin: 0; white-space: pre-line; }
+.mkt-dl { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 8px 12px; font-size: 13.5px; margin: 8px 0; }
+.mkt-dl dt { color: var(--ic-gris); } .mkt-dl dd { margin: 0; white-space: pre-line; overflow-wrap: anywhere; min-width: 0; }
 .mkt-personas { list-style: none; margin: 8px 0; padding: 0; }
 .mkt-personas li { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-bottom: 1px solid #EEF2F5; font-size: 14px; }
 .mkt-ok { color: #0F6B4F; font-weight: 700; } .mkt-no { color: #A3271B; font-weight: 700; }
@@ -218,3 +218,4 @@ th.mkt-ord.on .mkt-flecha { opacity: 1; }
 .mkt-nota-larga .mkt-nota { max-height: 360px; overflow: auto; background: var(--ic-fondo); border-radius: 8px; padding: 10px 12px; }
 @media print { .mkt-nota-larga .mkt-nota { display: none; } }
 @media print { .mkt-nota-larga summary b { display: none; } }
+.mkt-ficha > *, .ic-bloque { min-width: 0; }
