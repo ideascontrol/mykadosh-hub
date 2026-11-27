@@ -9,7 +9,7 @@
 <link rel="icon" href="/ideascontrol/assets/ideascontrol.webp">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/web.css?v=0.2.9">
+<link rel="stylesheet" href="css/web.css?v=0.3.2">
 </head>
 <body>
 <header id="cabecera"></header>
@@ -25,13 +25,23 @@
       <div class="bots"><a class="btn oro" href="/ideascontrol/DiagnosticoMadurezTyA/">📋 Haz el diagnóstico gratis</a><a class="btn lin" id="bWa" href="#" target="_blank" rel="noopener">💬 Escríbenos por WhatsApp</a></div>
       <div class="checks"><span>Normativa CO, PA, EC y CR</span><span>Soporte propio</span><span>Integración con nómina</span></div>
     </div>
-    <div class="panel">
-      <div class="flota a"><span class="ic">🎫</span><div><b>Ticket resuelto</b><span>Soporte en línea</span></div></div>
-      <h4>TimeVision · Planta <span class="ph">[SEDE]</span></h4>
-      <div class="kpis"><div class="kpi">Presentes<b><span class="ph">[N]</span></b>▲ a tiempo</div><div class="kpi">Tardanzas<b><span class="ph">[N]</span></b>turno A</div><div class="kpi">Horas extra semana<b><span class="ph">[N]</span> h</b>listas para nómina</div></div>
-      <div class="barras"><i style="height:55%"></i><i style="height:70%"></i><i style="height:50%"></i><i style="height:75%"></i><i class="alta" style="height:92%"></i><i style="height:68%"></i><i style="height:60%"></i><i style="height:72%"></i></div>
-      <div class="marcas"><div>Marcación · lector facial · Portería 1 <em>A tiempo</em></div><div>Marcación · huella · Bodega <em class="t">Tardanza</em></div><div>Marcación · app móvil · Ruta norte <em>A tiempo</em></div></div>
-      <div class="flota b"><span class="ic">◉</span><div><b>Lector biométrico</b><span>Huella · rostro · palma · tarjeta</span></div></div>
+    <div class="panel tvp">
+      <div class="flota a"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/><path d="M19 20a3 3 0 0 1-3 2h-3"/></svg></span><div><b>Ticket resuelto</b><span>Soporte en línea</span></div></div>
+      <div class="tvp-cab"><span class="tvp-logo"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span><div><b>TimeVision</b><small>Control de tiempo y asistencia</small></div><span class="tvp-sel">Planta: <b>Sede Principal</b> <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></div>
+      <div class="tvp-k">
+        <div class="k1"><span class="ki"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.3c2.1.7 3.5 2.8 3.5 5.7"/></svg></span><div><small>Presentes</small><b>186</b><em>de 200 colaboradores</em></div></div>
+        <div class="k2"><span class="ki"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><div><small>Tardanzas</small><b>12</b><em>(6&nbsp;%)</em></div></div>
+        <div class="k3"><span class="ki"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2 8l10 5 10-5-10-5z"/><path d="m2 13 10 5 10-5"/><path d="m2 17.5 10 5 10-5" opacity=".5"/></svg></span><div><small>Horas extra esta semana</small><b>48 h</b><em class="baja">▼ 14&nbsp;% vs. semana anterior</em></div></div>
+      </div>
+      <div class="tvp-gh"><b>Marcaciones durante la jornada</b><span class="tvp-fecha"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg> <span id="tvpHoy">Hoy</span> <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span></div>
+      <div class="tvp-graf"><div class="eje"><span>200</span><span>160</span><span>120</span><span>80</span><span>40</span><span>0</span></div><div class="plot"><i style="height:32.5%" title="06:00: 65 marcaciones"></i><i style="height:62.5%" title="08:00: 125 marcaciones"></i><i style="height:77.5%" title="10:00: 155 marcaciones"></i><i class="alta" style="height:92.5%" title="12:00: 185 marcaciones"></i><i style="height:77.5%" title="14:00: 155 marcaciones"></i><i style="height:62.5%" title="16:00: 125 marcaciones"></i><i style="height:45.0%" title="18:00: 90 marcaciones"></i></div><div></div><div class="lbl"><span>06:00</span><span>08:00</span><span>10:00</span><span>12:00</span><span>14:00</span><span>16:00</span><span>18:00</span></div></div>
+      <b class="tvp-st">Últimas marcaciones</b>
+      <table class="tvp-t"><thead><tr><th>Hora</th><th>Registro</th><th>Ubicación</th><th>Estado</th></tr></thead><tbody>
+        <tr><td><b>07:02</b></td><td><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><circle cx="9.5" cy="10" r=".6"/><circle cx="14.5" cy="10" r=".6"/><path d="M9.5 15a3.5 3.5 0 0 0 5 0"/></svg> Lector facial</td><td>Portería 1</td><td><em>A tiempo</em></td></tr>
+        <tr><td><b>07:18</b></td><td><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11v3a8 8 0 0 1-1.5 4.5"/><path d="M8.5 8.8A4 4 0 0 1 16 11v1.5a12 12 0 0 1-.9 4.5"/><path d="M5.5 12V11a6.5 6.5 0 0 1 11-4.7"/><path d="M8 14.5a10 10 0 0 1-1.3 4.2"/><path d="M19 10.5v1.5c0 1.2-.1 2.4-.4 3.5"/></svg> Huella</td><td>Bodega</td><td><em class="t">Tardanza</em></td></tr>
+        <tr><td><b>07:00</b></td><td><svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18h2"/></svg> App móvil</td><td>Ruta norte</td><td><em>A tiempo</em></td></tr>
+      </tbody></table>
+      <div class="flota b"><span class="ic"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11v3a8 8 0 0 1-1.5 4.5"/><path d="M8.5 8.8A4 4 0 0 1 16 11v1.5a12 12 0 0 1-.9 4.5"/><path d="M5.5 12V11a6.5 6.5 0 0 1 11-4.7"/><path d="M8 14.5a10 10 0 0 1-1.3 4.2"/><path d="M19 10.5v1.5c0 1.2-.1 2.4-.4 3.5"/></svg></span><div><b>Lector biométrico</b><span>Huella · rostro · palma · tarjeta</span></div></div>
     </div>
   </div>
 </section>
@@ -283,6 +293,7 @@
 
 </main>
 <footer id="pie"></footer>
+<script>try{document.getElementById('tvpHoy').textContent='Hoy, '+new Date().toLocaleDateString('es-CO',{day:'numeric',month:'short',year:'numeric'}).replace(/\./g,'').replace(/ de /g,' ');}catch(e){}</script>
 <script src="js/web.js?v=0.2.3"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
